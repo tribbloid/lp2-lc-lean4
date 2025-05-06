@@ -1,0 +1,27 @@
+
+# Workspace
+- Developed in WindSurf but compatible with VSCode
+
+# Environment
+- The code is written in Lean 4.18
+- The build system is elan
+- all compilation errors are displayed in LSP
+- do not run terminal command to check errors
+
+# Code Style
+- every lean 4 definition should be identical to its counterpart in Rocq defition
+- Hint in Rocq file should be converted to a AESOP annotation or macro tactic definition
+- built-in tactics and AESOP is preferred for automated proof search
+
+# Workflow
+- complete 1 theorem at a time, starting from top to bottom
+- do not use "sorry" anywhere
+- do not define new axiom
+- do not introduce new dependency
+- use definition in Mathlib
+- make sure that the written file has no error
+
+# Caution:
+
+- Std.Data is now replaced by Mathlib.Data in lean 4
+- {} should be used to represent an empty Finset
