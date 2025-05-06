@@ -1,0 +1,32 @@
+**/build
+**/out
+**/output
+**/.idea
+**/.history
+
+#lean
+**/lakefile.olean
+**/lake-packages/*
+
+lean
+#jvm
+*.class
+**/*.log
+**/logs
+**/target/
+**/*.olean
+**/.lake
+
+
+# VSCode
+**/.vscode/
+**/.scala_dependencies
+**/.worksheet
+
+# IntelliJ-IDEA
+**.iml
+**/.idea/
+**/.idea_modules/
+
+#Misc
+**/temp
