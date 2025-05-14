@@ -9,9 +9,6 @@ deriving BEq, Hashable, Inhabited, DecidableEq
 
 /- We use section variables to represent both term and type variables -/
 
--- variable (x : Var) -- For term variables
--- variable (X : Var) -- For type variables
-
 /- Description of the Language -/
 
 /- Representation of pre-types -/
