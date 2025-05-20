@@ -88,8 +88,10 @@ namespace Rosetta
         where (F : Type)
 
       def A2 : Type := sorry
-      def F1(v: A2) : Type := sorry
-      def F2 : A2 -> Type := sorry
+      def B2: Prop := sorry
+
+      def K1(v: A2) : Type := sorry
+      def K2 : B2 -> Prop := sorry
 
       class HasD (v: A2)
         where (D : Type)
@@ -99,9 +101,20 @@ namespace Rosetta
       -- for all v that satisfy A, fn(v) always satisfy D(v)
       namespace universal
 
-        def fn1 (v : A1) : v.F := sorry
+        def f1 (v : A1) : v.F := sorry
 
-        def fn2 : (v : A2) -> F1 (v) := sorry
+        def f2 : (v: A1) -> v.F := sorry
+
+        def f3 : ∀ (v : A1), v.F := sorry
+
+        #check f1 = f2
+        #check f1 = f3
+
+        def g1 : (v : A2) -> K1 v := sorry
+
+        def g2 : ∀ (v : A2), K1 v := sorry
+
+        #check g1 = g2
 
       end universal
 
@@ -110,13 +123,27 @@ namespace Rosetta
       -- if v satisfy A, at least one v2 can be found to satisfy D(v), such that fn(v)(v2) satisfy B
       namespace existential
 
-        def B : Type := sorry
+        abbrev F1 : Type 1 := (v: A1) × v.F -- TODO: WTF? why is it not Type 0? Like G1
 
-        def fn1(v: A1)(v2: v.F): B := sorry
+        def f1: F1 := sorry
+        def f2: Σ (v: A1), v.F := sorry
 
-        def fn2(v: A2): F1 (v) -> B := sorry
+        #check f1 = f2
 
-        def fn3: (v: A1) -> v.F -> B := sorry
+        abbrev G1 : Type 0 := (v: A2) × K1 v
+        abbrev G2 : Type 0 := Σ (v: A2), K1 v
+
+        #check G1 = G2
+
+        def g1: G1 := sorry
+        def g2: G2 := g1
+
+        #check g1 = g2
+
+        def a2 : A2 := sorry
+
+        -- def h1: Σ (v: B2), F2 v := sorry -- won't work
+        def h2: ∃ (v: B2), K2 v := sorry
 
       end existential
     end DependentTypes

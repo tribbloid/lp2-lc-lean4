@@ -7,9 +7,9 @@
 <!-- - all compilation errors are displayed in LSP -->
 
 # Code Style
-- each definition in Lean (variables, functions, types, tactics) should have the same name (case insensitive, preserving underscore) as the Rocq definition it is based on
-- each definition in Lean should be accompanied by a comment with line number that indicates the Rocq definition it is based on, these line numbers should be strictly incremental and in the same order as the Rocq definition it is based on (except for the Hint and Ltac definitions)
-- each Hint in Rocq (for proof search) should be converted to a tactic or AESOP annotation in Lean
+- each definition in Lean (variables, functions, types, tactics) should have a name identical or similar to the Rocq definition it is based on, do not remove or replace underscore, change case if necessary
+- each definition in Lean should be accompanied by a comment with line number that indicates the Rocq definition it is based on, these line numbers should be strictly incremental and in the same order as the Rocq definition they refer to
+- each hint in Rocq (for proof search) should be converted to a tactic or AESOP annotation in Lean
 - each Ltac and other tactic definition in Rocq should be converted to a macro tactic definition in Lean
 - use built-in tactics and AESOP for proof search if possible, only add new macro tactic if necessary
 
@@ -20,6 +20,7 @@
 - do not use "open"
 - do not define new axiom
 - do not introduce new dependency
+- avoid writing comment longer than 2 lines
 - prefer definition in Mathlib
 
 <!-- # Caution: -->
