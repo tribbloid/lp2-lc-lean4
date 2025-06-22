@@ -2,34 +2,32 @@
 # Environment
 - The code is written in Lean 4.18
 - The build system is lake
-- Build errors can observed by running "lake build"
-<!-- - do not run terminal command to check errors -->
-<!-- - all compilation errors are displayed in LSP -->
+- Mathlib and AESOP are preferred dependencies
+- Build errors can observed by running "lake build <file path>"
 
 # Code Style
-- prefer definition in Mathlib if applicable
-- prefer built-in tactics and AESOP for proof search if applicable
+- Each Rocq definition (variable, function, type, prop, lemma, theorem, tactic) should be translated to a Lean definition with identical name, add prefix `def_` if necessary
+- each Lean definition should be accompanied by a comment with line number that indicates the Rocq definition it is based on, these line numbers should be strictly incremental and in the same order as the Rocq definition they are based on
+- Rocq `Set` and `Prop` should be converted to a Lean `Prop`
+- Rocq `Type` should also be converted to a Lean `Prop`, avoid declaring Lean `Type` unless necessary
+- Rocq `Var` in `LibLN` should be converted to a Lean structure type with `name : String` as the only member
+- Rocq `Hint Constructors` should be converted to a Lean aesop constructor attribute annotating the relevant type constructor
+- Rocq `Hint Resolve` and other kinds of `Hint` should be converted to a Lean aesop attribute annotating a function. It should be noted that Lean attribute cannot annotate an inductive case, so new function may need to be created to handle the case
+- Rocq `Lemma` should be converted to Lean `Theorem`
+- Rocq `Ltac` and `Tactic Notation` should be converted to a macro definition for Lean tactic
+
+# General Code Style
 - do not introduce new dependency
+- minimise code changes
 - avoid writing comment longer than 2 lines
 - avoid writing comment that is not necessary
+- avoid removing comment
 - do not write "sorry"
 - do not write "open"
 - do not define new axiom
 - when creating new Lean file, do not include `.` in file name
 
-# Code Style for Translating from Rocq to Lean
-- Each Rocq definition (variable, function, type, prop, lemma, theorem, tactic) should be translated to a Lean definition with the same name, only add prefix `def` if necessary
-- each Lean definition should be accompanied by a comment with line number that indicates the Rocq definition it is based on, these line numbers should be strictly incremental and in the same order as the Rocq definition they are based on
-- Rocq `Type` should be converted to Lean `Prop`
-- Rocq `Set` and `Prop` should also be converted to Lean `Prop`
-- Rocq `Hint` should be converted to Lean attribute or AESOP attribute 
-- Rocq `Lemma` shoudl be converted to Lean `Theorem`
-- Rocq `Ltac` should be converted to a macro definition for Lean tactic
 
 # Workflow
 - write 1 definition at a time, starting from top to bottom
 - compile often to make sure that the definition has no error
-
-<!-- # Caution: -->
-<!-- - Std.Data is now replaced by Mathlib.Data in lean 4
-- {} should be used to represent an empty Finset -->
