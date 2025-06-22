@@ -7,21 +7,28 @@
 <!-- - all compilation errors are displayed in LSP -->
 
 # Code Style
-- each definition in Lean (variables, functions, types, tactics) should have a name identical or similar to the Rocq definition it is based on, do not remove or replace underscore, change case if necessary
-- each definition in Lean should be accompanied by a comment with line number that indicates the Rocq definition it is based on, these line numbers should be strictly incremental and in the same order as the Rocq definition they refer to
-- each hint in Rocq (for proof search) should be converted to a tactic or AESOP annotation in Lean
-- each Ltac and other tactic definition in Rocq should be converted to a macro tactic definition in Lean
-- use built-in tactics and AESOP for proof search if possible, only add new macro tactic if necessary
+- prefer definition in Mathlib if applicable
+- prefer built-in tactics and AESOP for proof search if applicable
+- do not introduce new dependency
+- avoid writing comment longer than 2 lines
+- avoid writing comment that is not necessary
+- do not write "sorry"
+- do not write "open"
+- do not define new axiom
+- when creating new Lean file, do not include `.` in file name
+
+# Code Style for Translating from Rocq to Lean
+- Each Rocq definition (variable, function, type, prop, lemma, theorem, tactic) should be translated to a Lean definition with the same name, only add prefix `def` if necessary
+- each Lean definition should be accompanied by a comment with line number that indicates the Rocq definition it is based on, these line numbers should be strictly incremental and in the same order as the Rocq definition they are based on
+- Rocq `Type` should be converted to Lean `Prop`
+- Rocq `Set` and `Prop` should also be converted to Lean `Prop`
+- Rocq `Hint` should be converted to Lean attribute or AESOP attribute 
+- Rocq `Lemma` shoudl be converted to Lean `Theorem`
+- Rocq `Ltac` should be converted to a macro definition for Lean tactic
 
 # Workflow
 - write 1 definition at a time, starting from top to bottom
 - compile often to make sure that the definition has no error
-- do not use "sorry"
-- do not use "open"
-- do not define new axiom
-- do not introduce new dependency
-- avoid writing comment longer than 2 lines
-- prefer definition in Mathlib
 
 <!-- # Caution: -->
 <!-- - Std.Data is now replaced by Mathlib.Data in lean 4
