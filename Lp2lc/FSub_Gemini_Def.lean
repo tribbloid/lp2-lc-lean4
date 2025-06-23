@@ -119,6 +119,9 @@ instance : BEq bind where
 -- line 133
 abbrev env := List (Var × bind)
 
+-- line 134: domain of environment
+def dom (E : env) : Vars := E.map (·.1) |>.toFinset
+
 -- from LibLN
 def binds (x : Var) (b : bind) (E : env) : Prop := E.lookup x = some b
 
