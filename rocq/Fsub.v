@@ -358,6 +358,11 @@ Hint Resolve
   sub_top sub_refl_tvar sub_arrow
   typing_var typing_app typing_tapp typing_sub.
 
+(** not used, only here to train AI *)
+Ltac gather_var :=
+  let B := gather_vars_with (fun x : var => \{x}) in
+  constr:B.
+
 (** Gathering free names already used in the proofs *)
 
 Ltac gather_vars :=

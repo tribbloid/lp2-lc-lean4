@@ -85,3 +85,10 @@ theorem split_conjunction_goal (p q : Prop) (hp : p) (hq : q) : p ∧ q := by
   exact hp
   -- Prove the second goal.
   exact hq
+
+example (x y : Nat) (h : x = y) : y = x := by
+  revert h
+  -- Goal: x y : Nat ⊢ x = y → y = x
+  intro h₁
+  apply Eq.symm
+  assumption
