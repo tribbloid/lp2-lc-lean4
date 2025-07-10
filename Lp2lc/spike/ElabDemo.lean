@@ -30,6 +30,23 @@ example (x y : String) (p : x = y) : y = x := by
   show_types_of_all_vars
   exact Eq.symm p
 
+
+elab "show_types_of_all_vars_alt" : tactic =>
+  withMainContext do
+    let mut typeList : Array String := #[]
+    for decl in (← getLCtx) do
+      if decl.isImplementationDetail then continue
+      let type := decl.type
+      let name := m!"  {decl.userName}: {type}"
+      typeList := typeList.push (← name.toString)
+    let multiLineString := "Types of all variables in context:\n" ++ String.intercalate "\n" typeList.toList
+    logInfo multiLineString
+
+example (x y : String) (p : x = y) : y = x := by
+  show_types_of_all_vars_alt
+  exact Eq.symm p
+
+
 elab "show_types_of_all_vars_monadic" : tactic =>
   withMainContext (
     logInfo (m!"Types of all variables in context (monadic):") >>= fun _ =>
