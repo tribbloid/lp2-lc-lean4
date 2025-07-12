@@ -1,6 +1,6 @@
 
 # Environment
-- The code is written in Lean 4.18
+- The code is written in the latest Lean 4
 - The build system is lake
 - Mathlib and AESOP are preferred dependencies
 - Build errors can observed by running "lake build <file path>"
@@ -14,17 +14,19 @@
 - Rocq `Hint Constructors` should be converted to a Lean aesop constructor attribute annotating the relevant type constructor
 - Rocq `Hint Resolve` and other kinds of `Hint` should be converted to a Lean aesop attribute annotating a function. It should be noted that Lean attribute cannot annotate an inductive case, so new function may need to be created to handle the case
 - Rocq `Lemma` should be converted to Lean `Theorem`
-- Rocq `Ltac` and `Tactic Notation` should be converted to a macro definition for Lean tactic
+- Rocq `Tactic Notation` should be converted to Lean tactic macro, input and output of the macro should be logged, followed by an example demonstrating its use case
+- Rocq `Ltac` should be converted to Lean elaborator, input and output of the macro should be logged, followed by an example demonstrating its use case
 
 # General Code Style
+- keep your code changes minimal and local
 - do not introduce new dependency
-- minimise code changes
-- avoid writing comment longer than 2 lines
-- avoid writing comment that is not necessary
-- avoid removing comment
+- make sure there is no compiler or LSP warning, particularly unused variable warnings
+- do not write placeholder implementation
+- do not write duplicated or redundant implementation
+- do not write comment longer than 2 lines
+- do not write comment that is not necessary
+- do not removing comment
 - do not write "sorry"
-- do not write "open"
-- do not define new axiom
 - when creating new Lean file, do not include `.` in file name
 
 
