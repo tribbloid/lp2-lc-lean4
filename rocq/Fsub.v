@@ -353,11 +353,11 @@ Definition subst_tb (Z : var) (P : typ) (b : bind) : bind :=
 
 (** Constructors as hints. *)
 
-Hint Constructors type term wft ok okt value red.
+Hint Constructors type term wft ok okt value red : core.
 
 Hint Resolve
   sub_top sub_refl_tvar sub_arrow
-  typing_var typing_app typing_tapp typing_sub.
+  typing_var typing_app typing_tapp typing_sub : core.
 
 (** not used, only here to train AI *)
 Ltac gather_var :=
@@ -467,7 +467,7 @@ Lemma subst_tt_open_tt : forall T1 T2 X P, type P ->
   subst_tt X P (open_tt T1 T2) =
   open_tt (subst_tt X P T1) (subst_tt X P T2).
 Proof.
-  unfold open_tt. auto with* subst_tt_open_tt_rec.
+  intros. unfold open_tt. apply* subst_tt_open_tt_rec.
 Qed.
 
 (** Substitution and open_var for distinct names commute. *)
@@ -526,7 +526,7 @@ Qed.
 Lemma subst_te_fresh : forall X U e,
   X \notin fv_te e -> subst_te X U e = e.
 Proof.
-  induction e; simpl; intros; f_equal*; auto with* subst_tt_fresh.
+  induction e; simpl; intros; f_equal*; auto using subst_tt_fresh.
 Qed.
 
 (** Substitution distributes on the open operation. *)
@@ -537,7 +537,7 @@ Lemma subst_te_open_te : forall e T X U, type U ->
 Proof.
   intros. unfold open_te. generalize 0.
   induction e; intros; simpls; f_equal*;
-  auto with* subst_tt_open_tt_rec.
+  auto using subst_tt_open_tt_rec.
 Qed.
 
 (** Substitution and open_var for distinct names commute. *)
@@ -648,7 +648,7 @@ Lemma subst_ee_open_te_var : forall z u e X, term u ->
 Proof.
   introv. unfold open_te. generalize 0.
   induction e; intros; simpl; f_equal*.
-  case_var*. symmetry. auto with* open_te_rec_term.
+case_var*. symmetry. auto using open_te_rec_term.
 Qed.
 
 (** Substitutions preserve local closure. *)
@@ -776,7 +776,7 @@ Lemma wft_open : forall E U T1 T2,
   wft E (open_tt T2 U).
 Proof.
   introv Ok WA WU. inversions WA. pick_fresh X.
-  auto with* wft_type. rewrite* (@subst_tt_intro X).
+  auto using wft_type. rewrite* (@subst_tt_intro X).
   lets K: (@wft_subst_tb empty).
   specializes_vars K. clean_empty K. apply* K.
   (* todo: apply empty ? *)
@@ -1189,7 +1189,7 @@ Proof.
      by building back what has been deconstructed too much *)
   assert (sub E (typ_all S1 S2) (typ_all T1 T2)).
     apply_fresh* sub_all as y.
-  auto with*.
+auto using wft_type.
   (* case: all / all *)
   apply_fresh sub_all as Y. auto with*.
   applys~ (H0 Y). lets: (IHW T1).
