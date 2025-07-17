@@ -3,8 +3,9 @@
 * Brian Aydemir & Arthur Charguéraud, March 2007                           *
 ***************************************************************************)
 
+Require Import TLC.LibTactics.
+Require Import TLC.LibLN.
 Set Implicit Arguments.
-Require Import LibLN.
 Implicit Types x : var.
 Implicit Types X : var.
 
@@ -361,7 +362,7 @@ Hint Resolve
 (** not used, only here to train AI *)
 Ltac gather_var :=
   let B := gather_vars_with (fun x : var => \{x}) in
-  constr:B.
+  constr:(B).
 
 (** Gathering free names already used in the proofs *)
 
