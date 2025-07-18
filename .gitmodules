@@ -1,0 +1,3 @@
+[submodule "original/dot-calculus"]
+	path = original/dot-calculus
+	url = https://github.com/samuelgruetter/dot-calculus

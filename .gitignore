@@ -31,3 +31,9 @@ lean
 #Misc
 **/temp
 /.lake
+
+# Coq intermediate files
+*.vo
+*.glob
+*.aux
+**.lia.cache
