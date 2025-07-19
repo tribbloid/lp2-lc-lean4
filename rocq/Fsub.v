@@ -353,11 +353,11 @@ Definition subst_tb (Z : var) (P : typ) (b : bind) : bind :=
 
 (** Constructors as hints. *)
 
-Hint Constructors type term wft ok okt value red.
+Hint Constructors type term wft ok okt value red: core.
 
 Hint Resolve
   sub_top sub_refl_tvar sub_arrow
-  typing_var typing_app typing_tapp typing_sub.
+  typing_var typing_app typing_tapp typing_sub: core.
 
 (** not used, only here to train AI *)
 Ltac gather_var :=
@@ -679,7 +679,7 @@ Proof.
   apply_fresh* term_tabs as Y. rewrite* subst_ee_open_te_var.
 Qed.
 
-Hint Resolve subst_tt_type subst_te_term subst_ee_term.
+Hint Resolve subst_tt_type subst_te_term subst_ee_term: core.
 
 
 (* ********************************************************************** *)
@@ -776,10 +776,13 @@ Lemma wft_open : forall E U T1 T2,
   wft E U ->
   wft E (open_tt T2 U).
 Proof.
-  introv Ok WA WU. inversions WA. pick_fresh X.
+  introv Ok WA WU.
+  inversions WA.
+  pick_fresh X.
   eauto using wft_type. rewrite* (@subst_tt_intro X).
   lets K: (@wft_subst_tb empty).
-  specializes_vars K. clean_empty K. apply* K.
+  specializes_vars K. clean_empty K.
+  apply* K.
   (* todo: apply empty ? *)
 Qed.
 
