@@ -1,0 +1,33 @@
+| Coq name | Lean name | Category |
+| ---|---|---|
+| typ | typ | data |
+| trm | trm | data |
+| open_tt_rec | open_tt_rec | def |
+| open_tt | open_tt | def |
+| open_te_rec | open_te_rec | def |
+| open_te | open_te | def |
+| open_ee_rec | open_ee_rec | def |
+| open_ee | open_ee | def |
+| def_type (Coq: type) | def_type | Prop |
+| def_term (Coq: term) | def_term | Prop |
+| bind | bind | data |
+| env | env | alias |
+| dom | dom | def |
+| binds | binds | def |
+| wft | wft | Prop |
+| okt | okt | Prop |
+| sub | sub | Prop |
+| typing | typing | Prop |
+| value | value | Prop |
+| red | red | Prop |
+| preservation | preservation | def |
+| progress | progress | def |
+| fv_tt | fv_tt | def |
+| fv_te | fv_te | def |
+| fv_ee | fv_ee | def |
+| subst_tt | subst_tt | def |
+| subst_te | subst_te | def |
+| subst_ee | subst_ee | def |
+| subst_tb | subst_tb | def |
+| map_subst_tb | map_subst_tb | def |
+| possible_types | possible_types | Prop |

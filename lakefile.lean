@@ -7,6 +7,9 @@ package «lp2lc» where
 lean_lib «Lp2lc» where
   -- add library configuration options here
 
+lean_lib «Spike» where
+  -- add library configuration options here
+
 @[default_target]
 lean_exe «lp2lc» where
   root := `Main
@@ -16,12 +19,12 @@ lean_exe «lp2lc» where
   supportInterpreter := true
 
 require aesop from git
-  "https://github.com/leanprover-community/aesop" @ "v4.21.0"
+  "https://github.com/leanprover-community/aesop" @ "v4.22.0"
 
 
 require batteries from
-  git "https://github.com/leanprover-community/batteries" @ "v4.21.0"
+  git "https://github.com/leanprover-community/batteries" @ "v4.22.0"
 
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4" @ "v4.21.0"
+  "https://github.com/leanprover-community/mathlib4" @ "v4.22.0"

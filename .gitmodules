@@ -1,3 +1,6 @@
-[submodule "original/dot-calculus"]
-	path = original/dot-calculus
+[submodule "original/minidot"]
+	path = original/minidot
+	url = https://github.com/TiarkRompf/minidot
+[submodule "original/dot"]
+	path = original/dot
 	url = https://github.com/samuelgruetter/dot-calculus
