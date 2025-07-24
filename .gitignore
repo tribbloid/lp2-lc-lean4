@@ -34,6 +34,9 @@ lean
 
 # Coq intermediate files
 *.vo
+*.vio
+*.vos
+*.vok
 *.glob
 *.aux
 **.lia.cache
