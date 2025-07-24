@@ -1,6 +1,6 @@
 (*
- DSub (D<:)
- T ::= Top | p.Type | { Type = T } | { Type <: T } | (z: T) -> T^z
+ DSubSup (D<:>)
+ T ::= Bot | Top | p.Type | { Type: S..U } | (z: T) -> T^z
  t ::= p | t t
  p ::= x | v
  v ::= { Type = T } | lambda x:T.t
@@ -13,7 +13,7 @@
 ***************************************************************************)
 
 Set Implicit Arguments.
-Require Import LibLN.
+Require Import TLC.LibLN.
 Implicit Types x : var.
 
 (* ********************************************************************** *)
@@ -22,9 +22,10 @@ Implicit Types x : var.
 (** Representation of pre-types *)
 
 Inductive typ : Set :=
+  | typ_bot   : typ
   | typ_top   : typ
   | typ_sel  : trm -> typ
-  | typ_mem   : bool -> typ -> typ
+  | typ_mem   : typ -> typ -> typ
   | typ_all   : typ -> typ -> typ
 
 (** Representation of pre-terms *)
@@ -38,9 +39,10 @@ with trm : Set :=
 
 Fixpoint open_t_rec (k : nat) (f : trm) (T : typ) {struct T} : typ :=
   match T with
+  | typ_bot         => typ_bot
   | typ_top         => typ_top
   | typ_sel t       => typ_sel (open_e_rec k f t)
-  | typ_mem b T     => typ_mem b (open_t_rec k f T)
+  | typ_mem T1 T2   => typ_mem (open_t_rec k f T1) (open_t_rec k f T2)
   | typ_all T1 T2   => typ_all (open_t_rec k f T1) (open_t_rec (S k) f T2)
   end
 
@@ -66,14 +68,17 @@ Notation "t 'open_e_var' x" := (open_e t (trm_fvar x)) (at level 67).
 (** Types as locally closed pre-types *)
 
 Inductive type : typ -> Prop :=
+  | type_bot :
+      type typ_bot
   | type_top :
       type typ_top
   | type_sel : forall e1,
       term e1 ->
       type (typ_sel e1)
-  | type_mem : forall b T1,
+  | type_mem : forall T1 T2,
       type T1 ->
-      type (typ_mem b T1)
+      type T2 ->
+      type (typ_mem T1 T2)
   | type_all : forall L T1 T2,
       type T1 ->
       (forall x, x \notin L -> type (T2 open_t_var x)) ->
@@ -114,15 +119,18 @@ Definition env := LibEnv.env typ.
   that T is a type *)
 
 Inductive wft : env -> typ -> Prop :=
+  | wft_bot : forall E,
+      wft E typ_bot
   | wft_top : forall E,
       wft E typ_top
   | wft_sel : forall E e,
       value e \/ (exists x, trm_fvar x = e) ->
       wfe E e ->
       wft E (typ_sel e)
-  | wft_mem : forall E b T1,
+  | wft_mem : forall E T1 T2,
       wft E T1 ->
-      wft E (typ_mem b T1)
+      wft E T2 ->
+      wft E (typ_mem T1 T2)
   | wft_all : forall L E T1 T2,
       wft E T1 ->
       (forall x, x \notin L ->
@@ -158,6 +166,10 @@ Inductive okt : env -> Prop :=
 (** Subtyping relation *)
 
 Inductive sub : env -> typ -> typ -> Prop :=
+  | sub_bot : forall E T,
+      okt E ->
+      wft E T ->
+      sub E typ_bot T
   | sub_top : forall E S,
       okt E ->
       wft E S ->
@@ -166,18 +178,15 @@ Inductive sub : env -> typ -> typ -> Prop :=
       okt E ->
       wft E (typ_sel t) ->
       sub E (typ_sel t) (typ_sel t)
-  | sub_sel1 : forall E U t,
-      has E t (typ_mem false U) ->
+  | sub_sel1 : forall E S U t,
+      has E t (typ_mem S U) ->
       sub E (typ_sel t) U
-  | sub_sel2 : forall E S t,
-      has E t (typ_mem true S) ->
+  | sub_sel2 : forall E S U t,
+      has E t (typ_mem S U) ->
       sub E S (typ_sel t)
-  | sub_mem_false : forall E b1 T1 T2,
-      sub E T1 T2 ->
-      sub E (typ_mem b1 T1) (typ_mem false T2)
-  | sub_mem_true : forall E T1 T2,
-      sub E T1 T2 -> sub E T2 T1 ->
-      sub E (typ_mem true T1) (typ_mem true T2)
+  | sub_mem : forall E S1 U1 S2 U2,
+      sub E S2 S1 -> sub E U1 U2 ->
+      sub E (typ_mem S1 U1) (typ_mem S2 U2)
   | sub_all : forall L E S1 S2 T1 T2,
       sub E T1 S1 ->
       (forall x, x \notin L ->
@@ -193,9 +202,9 @@ with has : env -> trm -> typ -> Prop :=
       okt E ->
       binds x T E ->
       has E (trm_fvar x) T
-  | has_mem : forall E b T,
+  | has_mem : forall E T,
       okt E -> wft E T ->
-      has E (trm_mem T) (typ_mem b T)
+      has E (trm_mem T) (typ_mem T T)
   | has_abs : forall E V e T,(* dummy case for smooth substitution lemma, see val_typing_has *)
       okt E -> wfe E (trm_abs V e) -> wft E (typ_all V T) ->
       has E (trm_abs V e) (typ_all V T) (* return typ doesn't matter, as long as it's moot for sel1 and sel2 *)
@@ -219,7 +228,7 @@ Inductive typing : env -> trm -> typ -> Prop :=
   | typing_mem : forall E T1,
       okt E ->
       wft E T1 ->
-      typing E (trm_mem T1) (typ_mem true T1)
+      typing E (trm_mem T1) (typ_mem T1 T1)
   | typing_app : forall T1 E e1 e2 T2,
       typing E e1 (typ_all T1 T2) ->
       typing E e2 T1 ->
@@ -276,9 +285,10 @@ Definition progress := forall e T,
 
 Fixpoint fv_t (T : typ) {struct T} : vars :=
   match T with
+  | typ_bot         => \{}
   | typ_top         => \{}
   | typ_sel t       => fv_e t
-  | typ_mem b T1   => (fv_t T1)
+  | typ_mem T1 T2   => (fv_t T1) \u (fv_t T2)
   | typ_all T1 T2   => (fv_t T1) \u (fv_t T2)
   end
 
@@ -297,9 +307,10 @@ with fv_e (e : trm) {struct e} : vars :=
 
 Fixpoint subst_t (z : var) (u : trm) (T : typ) {struct T} : typ :=
   match T with
+  | typ_bot         => typ_bot
   | typ_top         => typ_top
   | typ_sel t       => typ_sel (subst_e z u t)
-  | typ_mem b T1    => typ_mem b (subst_t z u T1)
+  | typ_mem T1 T2   => typ_mem (subst_t z u T1) (subst_t z u T2)
   | typ_all T1 T2   => typ_all (subst_t z u T1) (subst_t z u T2)
   end
 
@@ -319,11 +330,11 @@ with subst_e (z : var) (u : trm) (e : trm) {struct e} : trm :=
 
 (** Constructors as hints. *)
 
-Hint Constructors type term wft wfe ok okt value red.
+Hint Constructors type term wft wfe ok okt value red : core.
 
 Hint Resolve
-  sub_top sub_refl_sel
-  typing_var typing_app typing_sub.
+  sub_bot sub_top sub_refl_sel
+  typing_var typing_app typing_sub : core.
 
 (** Gathering free names already used in the proofs *)
 
@@ -347,7 +358,7 @@ Tactic Notation "apply_fresh" constr(T) "as" ident(x) :=
   apply_fresh_base T gather_vars x.
 
 Tactic Notation "apply_fresh" "*" constr(T) "as" ident(x) :=
-  apply_fresh T as x; auto*.
+  apply_fresh T as x; eauto.
 
 (** These tactics help applying a lemma which conclusion mentions
   an environment (E & F) in the particular case when F is empty *)
@@ -369,7 +380,7 @@ Tactic Notation "apply_empty" constr(F) :=
   apply_empty_bis (get_env) F.
 
 Tactic Notation "apply_empty" "*" constr(F) :=
-  apply_empty F; auto*.
+  apply_empty F; eauto.
 
 Scheme typ_mut := Induction for typ Sort Prop
 with   trm_mut := Induction for trm Sort Prop.
@@ -402,23 +413,23 @@ Proof.
   try (introv IH1 IH2 Neq H);
   try (introv IH Neq H);
   try (introv Neq H);
-  simpl in *; inversion H; f_equal*.
-  case_nat*. case_nat*.
+  simpl in *; inversion H; f_equal; eauto.
+  case_nat; eauto. case_nat; eauto.
 Qed.
 
 Lemma open_rec_lc : (forall T,
   type T -> forall u k, T = open_t_rec k u T) /\ (forall e,
   term e -> forall u k, e = open_e_rec k u e).
 Proof.
-  apply lc_mutind; intros; simpl; f_equal*.
-  pick_fresh x. apply* ((proj1 open_rec_lc_core) T2 0 (trm_fvar x)).
-  pick_fresh x. apply* ((proj2 open_rec_lc_core) e1 0 (trm_fvar x)).
+  apply lc_mutind; intros; simpl; f_equal; eauto.
+  pick_fresh x. eauto using ((proj1 open_rec_lc_core) T2 0 (trm_fvar x)).
+  pick_fresh x. eauto using ((proj2 open_rec_lc_core) e1 0 (trm_fvar x)).
 Qed.
 
 Lemma open_t_var_type : forall x T,
   type T -> T open_t_var x = T.
 Proof.
-  intros. unfold open_t. rewrite* <- (proj1 open_rec_lc).
+  intros. unfold open_t. rewrite <- (proj1 open_rec_lc); eauto.
 Qed.
 
 (** Substitution for a fresh name is identity. *)
@@ -427,8 +438,8 @@ Lemma subst_fresh : (forall T z u,
   z \notin fv_t T -> subst_t z u T = T) /\ (forall e z u,
   z \notin fv_e e -> subst_e z u e = e).
 Proof.
-  apply typ_trm_mutind; simpl; intros; f_equal*.
-  case_var*.
+  apply typ_trm_mutind; simpl; intros; f_equal; eauto.
+  case_var; eauto.
 Qed.
 
 (** Substitution distributes on the open operation. *)
@@ -439,23 +450,23 @@ Lemma subst_open_rec : (forall T1 t2 x u n, term u ->
   subst_e x u (open_e_rec n t2 t1) =
   open_e_rec n (subst_e x u t2) (subst_e x u t1)).
 Proof.
-  apply typ_trm_mutind; intros; simpls; f_equal*.
-  case_nat*.
-  case_var*. rewrite* <- (proj2 open_rec_lc).
+  apply typ_trm_mutind; intros; simpls; f_equal; eauto.
+  case_nat; eauto.
+  case_var; eauto. rewrite <- (proj2 open_rec_lc); eauto.
 Qed.
 
 Lemma subst_t_open_t : forall T1 t2 x u, term u ->
   subst_t x u (open_t T1 t2) =
   open_t (subst_t x u T1) (subst_e x u t2).
 Proof.
-  unfold open_t. auto* (proj1 subst_open_rec).
+  unfold open_t. eauto using (proj1 subst_open_rec).
 Qed.
 
 Lemma subst_e_open_e : forall t1 t2 x u, term u ->
   subst_e x u (open_e t1 t2) =
   open_e (subst_e x u t1) (subst_e x u t2).
 Proof.
-  unfold open_e. auto* (proj2 subst_open_rec).
+  unfold open_e. eauto using (proj2 subst_open_rec).
 Qed.
 
 (** Substitution and open_var for distinct names commute. *)
@@ -463,15 +474,15 @@ Qed.
 Lemma subst_t_open_t_var : forall x y u T, y <> x -> term u ->
   (subst_t x u T) open_t_var y = subst_t x u (T open_t_var y).
 Proof.
-  introv Neq Wu. rewrite* subst_t_open_t.
-  simpl. case_var*.
+  introv Neq Wu. rewrite subst_t_open_t; eauto.
+  simpl. case_var; eauto.
 Qed.
 
 Lemma subst_e_open_e_var : forall x y u e, y <> x -> term u ->
   (subst_e x u e) open_e_var y = subst_e x u (e open_e_var y).
 Proof.
-  introv Neq Wu. rewrite* subst_e_open_e.
-  simpl. case_var*.
+  introv Neq Wu. rewrite subst_e_open_e; eauto.
+  simpl. case_var; eauto.
 Qed.
 
 (** Opening up a body t with a type u is the same as opening
@@ -481,16 +492,16 @@ Lemma subst_t_intro : forall x T2 u,
   x \notin fv_t T2 -> term u ->
   open_t T2 u = subst_t x u (T2 open_t_var x).
 Proof.
-  introv Fr Wu. rewrite* subst_t_open_t.
-  rewrite* (proj1 subst_fresh). simpl. case_var*.
+  introv Fr Wu. rewrite subst_t_open_t; eauto.
+  rewrite (proj1 subst_fresh); eauto. simpl. case_var; eauto.
 Qed.
 
 Lemma subst_e_intro : forall x t2 u,
   x \notin fv_e t2 -> term u ->
   open_e t2 u = subst_e x u (t2 open_e_var x).
 Proof.
-  introv Fr Wu. rewrite* subst_e_open_e.
-  rewrite* (proj2 subst_fresh). simpl. case_var*.
+  introv Fr Wu. rewrite subst_e_open_e; eauto.
+  rewrite (proj2 subst_fresh); eauto. simpl. case_var; eauto.
 Qed.
 
 (** Substitutions preserve local closure. *)
@@ -500,21 +511,21 @@ Lemma subst_lc :
   (forall e, term e -> forall z u, term u -> term (subst_e z u e)).
 Proof.
   apply lc_mutind; intros; simpl; auto.
-  apply_fresh* type_all as X. rewrite* subst_t_open_t_var.
-  case_var*.
-  apply_fresh* term_abs as y. rewrite* subst_e_open_e_var.
+  apply_fresh type_all as X; eauto. rewrite subst_t_open_t_var; eauto.
+  case_var; eauto.
+  apply_fresh term_abs as y; eauto. rewrite subst_e_open_e_var; eauto.
 Qed.
 
 Lemma subst_t_type : forall T z u,
   type T -> term u -> type (subst_t z u T).
 Proof.
-  intros. apply* (proj1 subst_lc).
+  intros. eapply (proj1 subst_lc); eauto.
 Qed.
 
 Lemma subst_e_term : forall e1 z e2,
   term e1 -> term e2 -> term (subst_e z e2 e1).
 Proof.
-  intros. apply* (proj2 subst_lc).
+  intros. eapply (proj2 subst_lc); eauto.
 Qed.
 
 Lemma subst_e_value : forall e1 z e2,
@@ -525,12 +536,12 @@ Proof.
     assert (trm_abs (subst_t z e2 V) (subst_e z e2 e0) = subst_e z e2 (trm_abs V e0)) as A. {
       simpl. reflexivity.
     }
-    rewrite A. apply* subst_e_term.
+    rewrite A. eapply subst_e_term; eauto.
   - apply value_mem.
     assert (trm_mem (subst_t z e2 V) = subst_e z e2 (trm_mem V)) as A. {
       simpl. reflexivity.
     }
-    rewrite A. apply* subst_e_term.
+    rewrite A. eapply subst_e_term; eauto.
 Qed.
 
 Lemma value_is_term: forall e, value e -> term e.
@@ -538,7 +549,7 @@ Proof.
   introv H. inversion H; subst; eauto.
 Qed.
 
-Hint Resolve subst_t_type subst_e_term subst_e_value value_is_term.
+Hint Resolve subst_t_type subst_e_term subst_e_value value_is_term : core.
 
 (* ********************************************************************** *)
 (** * Properties of well-formedness of a type in an environment *)
@@ -577,9 +588,9 @@ Lemma wf_weaken :
                  wfe (E & F & G) e).
 Proof.
   apply wf_mutind; intros; subst; eauto.
-  apply_fresh* wft_all as Y. apply_ih_bind* H0.
-  apply (@wfe_var U). apply* binds_weaken.
-  apply_fresh* wfe_abs as y. apply_ih_bind* H0.
+  apply_fresh wft_all as Y; eauto. apply_ih_bind H0; eauto.
+  apply (@wfe_var U). eapply binds_weaken; eauto.
+  apply_fresh wfe_abs as y; eauto. apply_ih_bind H0; eauto.
 Qed.
 
 Lemma wft_weaken : forall G T E F,
@@ -639,13 +650,13 @@ Lemma wf_narrow : (forall E0 T, wft E0 T -> forall V F U E x,
   wfe (E & x ~ U & F) e).
 Proof.
   apply wf_mutind; intros; subst; eauto.
-  apply_fresh* wft_all as Y. apply_ih_bind* H0.
+  apply_fresh wft_all as Y; eauto. apply_ih_bind H0; eauto.
   destruct (binds_middle_inv b) as [K|[K|K]]; try destructs K.
-    applys wfe_var. apply* binds_concat_right.
+    applys wfe_var. eapply binds_concat_right; eauto.
     subst. applys wfe_var. apply~ binds_middle_eq.
     applys wfe_var. apply~ binds_concat_left.
-     apply* binds_concat_left.
-  apply_fresh* wfe_abs as y. apply_ih_bind* H0.
+     eapply binds_concat_left; eauto.
+  apply_fresh wfe_abs as y; eauto. apply_ih_bind H0; eauto.
 Qed.
 
 Lemma wft_narrow : forall V F U T E x,
@@ -671,27 +682,27 @@ Lemma wf_subst : (forall E0 T, wft E0 T -> forall F Q E Z u,
 Proof.
   apply wf_mutind; intros; subst; simpl; eauto.
   - destruct o as [? | [? ?]].
-    + apply* wft_sel. left. apply subst_e_value. assumption. apply* wfe_term.
-    + subst. simpl. case_var*.
-      * apply_empty* wft_weaken.
-      * apply* wft_sel. rewrite* <- ((proj2 subst_fresh) (trm_fvar x) Z u).
+    + eapply wft_sel; eauto. left. apply subst_e_value. assumption. eapply wfe_term; eauto.
+    + subst. simpl. case_var.
+      * apply_empty wft_weaken; eauto.
+      * eapply wft_sel; eauto. rewrite <- ((proj2 subst_fresh) (trm_fvar x) Z u); eauto.
         simpl. auto.
-  - apply_fresh* wft_all as Y.
+  - apply_fresh wft_all as Y; eauto.
     lets: wft_type.
-    rewrite* subst_t_open_t_var.
-    apply_ih_map_bind* H0. apply* wfe_term.
-  - case_var*.
-    + apply_empty* (proj2 wf_weaken).
+    rewrite subst_t_open_t_var; eauto.
+    apply_ih_map_bind H0; eauto. eapply wfe_term; eauto.
+  - case_var.
+    + apply_empty (proj2 wf_weaken); eauto.
     + destruct (binds_concat_inv b) as [?|[? ?]].
       apply (@wfe_var (subst_t Z u U)).
        apply~ binds_concat_right.
       destruct (binds_push_inv H3) as [[? ?]|[? ?]].
         subst. false~.
-        applys wfe_var. apply* binds_concat_left.
-  - apply_fresh* wfe_abs as y.
+        applys wfe_var. eapply binds_concat_left; eauto.
+  - apply_fresh wfe_abs as y; eauto.
     lets: (proj2 wf_lc).
-    rewrite* subst_e_open_e_var.
-    apply_ih_map_bind* H0.
+    rewrite subst_e_open_e_var; eauto.
+    apply_ih_map_bind H0; eauto.
 Qed.
 
 Lemma wft_subst : forall F Q E Z u T,
@@ -711,7 +722,7 @@ Lemma wft_subst1 : forall F Q Z u T,
 Proof.
   intros.
   rewrite <- (@concat_empty_l typ (map (subst_t Z u) F)).
-  apply* wft_subst.
+  eapply wft_subst; eauto.
   rewrite concat_empty_l. eassumption.
   rewrite concat_empty_l. eassumption.
 Qed.
@@ -739,10 +750,10 @@ Lemma wft_open : forall E u T1 T2,
   wft E (open_t T2 u).
 Proof.
   introv Ok WA VU WU. inversions WA. pick_fresh X.
-  auto* wft_type. rewrite* (@subst_t_intro X).
+  eauto using wft_type. rewrite (@subst_t_intro X); eauto.
   lets K: (@wft_subst empty).
-  specializes_vars K. clean_empty K. apply* K.
-  apply* wfe_term.
+  specializes_vars K. clean_empty K. eapply K; eauto.
+  eapply wfe_term; eauto.
 Qed.
 
 (* ********************************************************************** *)
@@ -757,7 +768,7 @@ Proof.
   induction 1; auto.
 Qed.
 
-Hint Extern 1 (ok _) => apply ok_from_okt.
+Hint Extern 1 (ok _) => apply ok_from_okt : core.
 
 (** Extraction from an assumption in a well-formed environments *)
 
@@ -765,13 +776,13 @@ Lemma wft_from_env_has : forall x U E,
   okt E -> binds x U E -> wft E U.
 Proof.
   induction E using env_ind; intros Ok B.
-  false* binds_empty_inv.
+  false. eapply binds_empty_inv; eauto.
   inversions Ok.
     false (empty_push_inv H0).
     destruct (eq_push_inv H) as [? [? ?]]. subst. clear H.
      destruct (binds_push_inv B) as [[? ?]|[? ?]]. subst.
-       apply_empty* wft_weaken.
-       apply_empty* wft_weaken.
+       apply_empty wft_weaken; eauto.
+       apply_empty wft_weaken; eauto.
 Qed.
 
 (** Extraction from a well-formed environment *)
@@ -779,7 +790,7 @@ Qed.
 Lemma wft_from_okt : forall x T E,
   okt (E & x ~ T) -> wft E T.
 Proof.
-  intros. inversions* H.
+  intros. inversions H; eauto.
   false (empty_push_inv H1).
   destruct (eq_push_inv H0) as [? [? ?]]. subst. assumption.
 Qed.
@@ -791,13 +802,13 @@ Lemma wft_weaken_right : forall T E F,
   ok (E & F) ->
   wft (E & F) T.
 Proof.
-  intros. apply_empty* wft_weaken.
+  intros. apply_empty wft_weaken; eauto.
 Qed.
 
-Hint Resolve wft_weaken_right.
-Hint Resolve wft_from_okt.
-Hint Immediate wft_from_env_has.
-Hint Resolve wft_subst.
+Hint Resolve wft_weaken_right : core.
+Hint Resolve wft_from_okt : core.
+Hint Immediate wft_from_env_has : core.
+Hint Resolve wft_subst : core.
 
 (* ********************************************************************** *)
 (** ** Properties of well-formedness of an environment *)
@@ -808,15 +819,19 @@ Lemma okt_push_inv : forall E x T,
   okt (E & x ~ T) -> okt E /\ wft E T /\ x # E.
 Proof.
   introv O. inverts O.
-    false* empty_push_inv.
+    false. eapply empty_push_inv; eauto.
     lets (?&M&?): (eq_push_inv H). subst. eauto.
 Qed.
 
 Lemma okt_push_type : forall E x T,
   okt (E & x ~ T) -> type T.
-Proof. intros. applys wft_type. forwards*: okt_push_inv. Qed.
+Proof. 
+  intros. 
+  assert (okt E /\ wft E T /\ x # E) as [? [? ?]] by (eapply okt_push_inv; eauto).
+  eapply wft_type; eauto.
+Qed.
 
-Hint Immediate okt_push_type.
+Hint Immediate okt_push_type : core.
 
 (** Through narrowing *)
 
@@ -826,10 +841,10 @@ Lemma okt_narrow : forall V (E F:env) U x,
   okt (E & x ~ U & F).
 Proof.
   introv O W. induction F using env_ind.
-  rewrite concat_empty_r in *. lets*: (okt_push_inv O).
-  rewrite concat_assoc in *.
-  lets (?&?&?): (okt_push_inv O).
-  applys~ okt_push. applys* wft_narrow.
+  - rewrite concat_empty_r in *. lets K: (okt_push_inv O). destructs K. eauto.
+  - rewrite concat_assoc in *.
+    lets (?&?&?): (okt_push_inv O).
+    applys~ okt_push. eapply wft_narrow; eauto.
 Qed.
 
 (** Through substitution *)
@@ -840,11 +855,42 @@ Lemma okt_subst : forall Q Z u (E F:env),
   okt (E & map (subst_t Z u) F).
 Proof.
  introv O V W. induction F using env_ind.
-  rewrite map_empty. rewrite concat_empty_r in *.
-   lets*: (okt_push_inv O).
-  rewrite map_push. rewrite concat_assoc in *.
-   lets*: (okt_push_inv O).
-   apply okt_push. apply* IHF. apply* wft_subst. auto*.
+ - rewrite map_empty. rewrite concat_empty_r in *.
+   lets K: (okt_push_inv O). destructs K. eauto.
+ - autorewrite with rew_env_map. rewrite concat_assoc in *.
+   lets (Ho&Hwft&Hfr): (okt_push_inv O).
+   apply okt_push. 
+   + eapply IHF; eauto. 
+   + eapply wft_subst; eauto.
+   + (* x # E & map (subst_t Z u) F *)
+     (* We have Hfr: x # E & Z ~ Q & F *)
+     (* Need to show: x # E & map (subst_t Z u) F *)
+     (* Since dom (map f F) = dom F, this should be provable *)
+     (* Split Hfr to get x # E and x # Z ~ Q & F separately *)
+     assert (x # E) as HfrE.
+     { unfold "#" in Hfr. 
+       assert (dom E \c dom (Z ~ Q & F) = dom (E & Z ~ Q & F)) as A.
+       { apply dom_concat. }
+       rewrite <- A in Hfr.
+       rewrite notin_union in Hfr. destruct Hfr as [H1 H2]. assumption. }
+     assert (x # F) as HfrF.
+     { unfold "#" in Hfr.
+       assert (dom E \c dom (Z ~ Q & F) = dom (E & Z ~ Q & F)) as A.
+       { apply dom_concat. }
+       rewrite <- A in Hfr.
+       rewrite notin_union in Hfr. destruct Hfr as [H1 H2].
+       assert (dom (Z ~ Q) \c dom F = dom (Z ~ Q & F)) as B.
+       { apply dom_concat. }
+       rewrite <- B in H2.
+       rewrite notin_union in H2. destruct H2 as [H3 H4]. assumption. }
+     (* Now use dom_map to show x # map (subst_t Z u) F *)
+     assert (x # map (subst_t Z u) F) as HfrMapF.
+     { unfold "#". rewrite (@LibEnv.dom_map typ typ (subst_t Z u) F). assumption. }
+     (* Finally combine to get x # E & map (subst_t Z u) F *)
+     unfold "#".
+     assert (dom E \c dom (map (subst_t Z u) F) = dom (E & map (subst_t Z u) F)) as C.
+     { apply dom_concat. }
+     rewrite <- C. rewrite notin_union. split; assumption.
 Qed.
 
 Lemma okt_subst1 : forall Q Z u (F:env),
@@ -853,13 +899,13 @@ Lemma okt_subst1 : forall Q Z u (F:env),
   okt (map (subst_t Z u) F).
 Proof.
   intros.
-  rewrite <- concat_empty_l. apply* okt_subst.
+  rewrite <- concat_empty_l. eapply okt_subst; eauto.
   rewrite concat_empty_l. eassumption.
 Qed.
 
 (** Automation *)
 
-Hint Resolve okt_narrow okt_subst wft_weaken.
+Hint Resolve okt_narrow okt_subst wft_weaken : core.
 
 
 (* ********************************************************************** *)
@@ -884,14 +930,14 @@ Lemma notin_fv_t_open : forall y x T,
   x \notin fv_t (T open_t_var y) ->
   x \notin fv_t T.
 Proof.
-  unfold open_t. intros. apply* (proj1 notin_fv_open_rec).
+  unfold open_t. intros. eapply (proj1 notin_fv_open_rec); eauto.
 Qed.
 
 Lemma notin_fv_e_open : forall y x e,
   x \notin fv_e (e open_e_var y) ->
   x \notin fv_e e.
 Proof.
-  unfold open_e. intros. apply* (proj2 notin_fv_open_rec).
+  unfold open_e. intros. eapply (proj2 notin_fv_open_rec); eauto.
 Qed.
 
 Lemma notin_fv_wf_rec :
@@ -901,9 +947,9 @@ Lemma notin_fv_wf_rec :
      wfe E e -> forall x, x # E -> x \notin fv_e e).
 Proof.
   apply wf_mutind; intros; simpl; eauto.
-  notin_simpl; auto. pick_fresh Y. apply* (@notin_fv_t_open Y).
+  notin_simpl; auto. pick_fresh Y. eapply (@notin_fv_t_open Y); eauto.
   rewrite notin_singleton. intro. subst. applys binds_fresh_inv b H.
-  notin_simpl; auto. pick_fresh y. apply* (@notin_fv_e_open y).
+  notin_simpl; auto. pick_fresh y. eapply (@notin_fv_e_open y); eauto.
 Qed.
 
 Lemma notin_fv_wf : forall E x T,
@@ -917,7 +963,7 @@ Lemma map_subst_id : forall G z u,
 Proof.
   induction 1; intros Fr; autorewrite with rew_env_map; simpl.
   auto.
-  rewrite* <- IHokt. rewrite* (proj1 subst_fresh). apply* notin_fv_wf.
+  rewrite <- IHokt; eauto. rewrite (proj1 subst_fresh); eauto. eapply notin_fv_wf; eauto.
 Qed.
 
 
@@ -930,26 +976,26 @@ Lemma sub_has_regular : (forall E S T,
   sub E S T -> okt E /\ wft E S /\ wft E T) /\ (forall E p T,
   has E p T -> okt E /\ wft E (typ_sel p) /\ wft E T).
 Proof.
-  apply sub_has_mutind; intros; try auto*.
-  splits*. destruct H as [? [? A]]. inversion A; subst. assumption.
-  splits*. destruct H as [? [? A]]. inversion A; subst. assumption.
-  split. auto*. split;
-   apply_fresh* wft_all as Y;
-    forwards~: (H0 Y); apply_empty* (@wft_narrow T1).
-  splits*. apply wft_sel. left. apply value_mem. apply* wfe_term. apply* wfe_mem.
-  splits*. apply wft_sel. left. apply value_abs. apply* wfe_term. assumption.
+  apply sub_has_mutind; intros; try eauto.
+  splits; eauto. destruct H as [? [? A]]. inversion A; subst. assumption.
+  splits; eauto. destruct H as [? [? A]]. inversion A; subst. assumption.
+  split. eauto. split;
+   apply_fresh wft_all as Y; eauto;
+    forwards~: (H0 Y); apply_empty (@wft_narrow T1); eauto.
+  splits; eauto. apply wft_sel. left. apply value_mem. eapply wfe_term; eauto. eapply wfe_mem; eauto.
+  splits; eauto. apply wft_sel. left. apply value_abs. eapply wfe_term; eauto. assumption.
 Qed.
 
 Lemma sub_regular : forall E S T,
   sub E S T -> okt E /\ wft E S /\ wft E T.
 Proof.
-  intros. apply* (proj1 sub_has_regular).
+  intros. eapply (proj1 sub_has_regular); eauto.
 Qed.
 
 Lemma has_regular : forall E p T,
   has E p T -> okt E /\ wft E (typ_sel p) /\ wft E T.
 Proof.
-  intros. apply* (proj2 sub_has_regular).
+  intros. eapply (proj2 sub_has_regular); eauto.
 Qed.
 
 Lemma has_regular_e : forall E p T,
@@ -965,23 +1011,23 @@ Lemma typing_regular : forall E e T,
   typing E e T -> okt E /\ wfe E e /\ wft E T.
 Proof.
   induction 1.
-  splits*.
+  splits; eauto.
   splits.
    pick_fresh y. specializes H0 y. destructs~ H0.
-    forwards*: okt_push_inv.
-   apply_fresh* wfe_abs as y.
+    forwards: okt_push_inv; eauto.
+   apply_fresh wfe_abs as y; eauto.
      pick_fresh y. forwards~ K: (H0 y). destructs K.
-       forwards*: okt_push_inv.
+       forwards: okt_push_inv; eauto.
      forwards~ K: (H0 y). destructs K. auto.
-   apply_fresh* wft_all as Y.
+   apply_fresh wft_all as Y; eauto.
      pick_fresh y. forwards~ K: (H0 y). destructs K.
-      forwards*: okt_push_inv.
+      forwards: okt_push_inv; eauto.
      forwards~ K: (H0 Y). destructs K.
-      forwards*: okt_push_inv.
-  splits*.
-  splits*.
-  splits*.
-  splits*. destructs~ (sub_regular H0).
+      forwards: okt_push_inv; eauto.
+  splits; eauto.
+  splits; eauto.
+  splits; eauto.
+  splits; eauto. destructs~ (sub_regular H0).
 Qed.
 
 (** The value relation is restricted to well-formed objects. *)
@@ -989,7 +1035,7 @@ Qed.
 Lemma value_regular : forall t,
   value t -> term t.
 Proof.
-  induction 1; auto*.
+  induction 1; eauto.
 Qed.
 
 (** The reduction relation is restricted to well-formed objects. *)
@@ -997,8 +1043,8 @@ Qed.
 Lemma red_regular : forall t t',
   red t t' -> term t /\ term t'.
 Proof.
-  induction 1; split; auto* value_regular.
-  inversions H. pick_fresh y. rewrite* (@subst_e_intro y).
+  induction 1; split; eauto using value_regular.
+  inversions H. pick_fresh y. rewrite (@subst_e_intro y); eauto.
 Qed.
 
 (** Automation *)
@@ -1008,7 +1054,7 @@ Hint Extern 1 (okt ?E) =>
   | H: sub _ _ _ |- _ => apply (proj31 (sub_regular H))
   | H: has _ _ _ |- _ => apply (proj31 (has_regular H))
   | H: typing _ _ _ |- _ => apply (proj31 (typing_regular H))
-  end.
+  end : core.
 
 Hint Extern 1 (wft ?E ?T) =>
   match goal with
@@ -1016,28 +1062,28 @@ Hint Extern 1 (wft ?E ?T) =>
   | H: sub E T _ |- _ => apply (proj32 (sub_regular H))
   | H: sub E _ T |- _ => apply (proj33 (sub_regular H))
   | H: has E _ T |- _ => apply (proj33 (has_regular H))
-  end.
+  end : core.
 
 Hint Extern 1 (wfe ?E ?e) =>
   match goal with
   | H: typing E e _ |- _ => apply (proj32 (typing_regular H))
   | H: has E e _ |- _ => apply (proj2 (has_regular_e H))
-  end.
+  end : core.
 
 Hint Extern 1 (type ?T) =>
-  let go E := apply (@wft_type E); auto in
+  let go E := apply (@wft_type E); eauto in
   match goal with
   | H: typing ?E _ T |- _ => go E
   | H: sub ?E T _ |- _ => go E
   | H: sub ?E _ T |- _ => go E
-  end.
+  end : core.
 
 Hint Extern 1 (term ?e) =>
   match goal with
   | H: typing _ ?e _ |- _ => apply (wfe_term (proj32 (typing_regular H)))
   | H: red ?e _ |- _ => apply (proj1 (red_regular H))
   | H: red _ ?e |- _ => apply (proj2 (red_regular H))
-  end.
+  end : core.
 
 (***************************************************************************
 * Preservation and Progress for System-F with Subtyping - Proofs           *
@@ -1060,8 +1106,8 @@ Lemma sub_reflexivity : forall E T,
 Proof.
   introv Ok WI. lets W: (wft_type WI). gen E.
   induction W; intros; inversions WI; eauto.
-  destruct b. apply* sub_mem_true. apply* sub_mem_false.
-  apply_fresh* sub_all as Y.
+  eapply sub_mem; eauto.
+  apply_fresh sub_all as Y; eauto.
 Qed.
 
 (* ********************************************************************** *)
@@ -1076,16 +1122,15 @@ Lemma sub_has_weakening : (forall E0 S T, sub E0 S T -> forall E F G,
    has (E & F & G) p T).
 Proof.
   apply sub_has_mutind; intros; subst; auto.
-  apply* sub_sel1.
-  apply* sub_sel2.
-  apply* sub_mem_false.
-  apply* sub_mem_true.
-  apply_fresh* sub_all as Y. apply_ih_bind* H0.
-  apply* sub_trans.
-  apply* has_var. apply* binds_weaken.
-  apply* has_mem.
-  apply* has_abs. apply* wfe_weaken.
-  apply* has_sub.
+  eapply sub_sel1; eauto.
+  eapply sub_sel2; eauto.
+  eapply sub_mem; eauto.
+  apply_fresh sub_all as Y; eauto. apply_ih_bind H0; eauto.
+  eapply sub_trans; eauto.
+  eapply has_var; eauto. eapply binds_weaken; eauto.
+  eapply has_mem; eauto.
+  eapply has_abs; eauto. eapply wfe_weaken; eauto.
+  eapply has_sub; eauto.
 Qed.
 
 Lemma sub_weakening : forall E F G S T,
@@ -1093,7 +1138,7 @@ Lemma sub_weakening : forall E F G S T,
    okt (E & F & G) ->
    sub (E & F & G) S T.
 Proof.
-  intros. apply* (proj1 sub_has_weakening).
+  intros. eapply (proj1 sub_has_weakening); eauto.
 Qed.
 
 Lemma sub_weakening1 : forall E F G S T,
@@ -1106,7 +1151,7 @@ Proof.
     rewrite concat_empty_r. rewrite concat_assoc. reflexivity.
   }
   rewrite A.
-  apply* sub_weakening.
+  eapply sub_weakening; eauto.
   rewrite concat_empty_r. assumption.
   rewrite <- A. assumption.
 Qed.
@@ -1121,7 +1166,7 @@ Proof.
     rewrite concat_empty_r. rewrite concat_empty_l. reflexivity.
   }
   rewrite <- A.
-  apply* sub_weakening.
+  eapply sub_weakening; eauto.
   rewrite concat_empty_r. assumption.
   rewrite A. assumption.
 Qed.
@@ -1131,7 +1176,7 @@ Lemma has_weakening : forall E F G p T,
    okt (E & F & G) ->
    has (E & F & G) p T.
 Proof.
-  intros. apply* (proj2 sub_has_weakening).
+  intros. eapply (proj2 sub_has_weakening); eauto.
 Qed.
 
 Lemma has_weakening1 : forall E F G p T,
@@ -1144,7 +1189,7 @@ Proof.
     rewrite concat_empty_r. rewrite concat_assoc. reflexivity.
   }
   rewrite A.
-  apply* has_weakening.
+  eapply has_weakening; eauto.
   rewrite concat_empty_r. assumption.
   rewrite <- A. assumption.
 Qed.
@@ -1159,7 +1204,7 @@ Proof.
     rewrite concat_empty_r. rewrite concat_empty_l. reflexivity.
   }
   rewrite <- A.
-  apply* has_weakening.
+  eapply has_weakening; eauto.
   rewrite concat_empty_r. assumption.
   rewrite A. assumption.
 Qed.
@@ -1169,7 +1214,7 @@ Qed.
 
 Section NarrowTrans.
 
-Hint Resolve wft_narrow.
+Hint Resolve wft_narrow : core.
 
 Lemma sub_has_narrowing_aux :
   (forall E0 S T, sub E0 S T ->
@@ -1184,21 +1229,22 @@ Lemma sub_has_narrowing_aux :
    sub E P Q ->
    has (E & z ~ P & F) p T).
 Proof.
-  Hint Constructors sub has.
+Hint Constructors sub has : core.
   apply sub_has_mutind; intros; subst; eauto.
-  apply* sub_top.
-  apply* sub_refl_sel.
-  apply_fresh* sub_all as Y. apply_ih_bind H0; eauto.
+  eapply sub_bot; eauto.
+  eapply sub_top; eauto.
+  eapply sub_refl_sel; eauto.
+  apply_fresh sub_all as Y; eauto. apply_ih_bind H0; eauto.
   tests EQ: (x = z).
     lets M: (@okt_narrow Q).
     apply binds_middle_eq_inv in b. subst.
-    eapply has_sub. eapply has_var. apply* M. apply binds_middle_eq.
+    eapply has_sub. eapply has_var. eapply M; eauto. apply binds_middle_eq.
       eapply ok_from_okt in o. eapply ok_middle_inv in o. destruct o as [o1 o2]. apply o2.
       eapply sub_weakening1; eauto.
-      auto*.
+      eauto.
     eapply has_var; eauto. binds_cases b; auto.
-  apply* has_mem.
-  apply* has_abs. eapply (proj2 wf_narrow); eauto.
+  eapply has_mem; eauto.
+  eapply has_abs; eauto. eapply (proj2 wf_narrow); eauto.
 Qed.
 
 Lemma sub_narrowing : forall Q E F Z P S T,
@@ -1207,7 +1253,7 @@ Lemma sub_narrowing : forall Q E F Z P S T,
   sub (E & Z ~ P & F) S T.
 Proof.
   intros.
-  apply* (proj1 sub_has_narrowing_aux).
+  eapply (proj1 sub_has_narrowing_aux); eauto.
 Qed.
 
 Lemma sub_narrowing_empty : forall Q Z P S T,
@@ -1235,7 +1281,7 @@ Proof.
   apply A.
 Qed.
 
-Hint Resolve has_value_var.
+Hint Resolve has_value_var : core.
 
 Lemma var_typing_has: forall E x Q,
   typing E (trm_fvar x) Q ->
@@ -1243,7 +1289,7 @@ Lemma var_typing_has: forall E x Q,
 Proof.
   introv H. remember (trm_fvar x) as t. gen Heqt.
   induction H; intros; subst; try solve [inversion Heqt].
-  - inversion Heqt. subst. apply* has_var.
+  - inversion Heqt. subst. eapply has_var; eauto.
   - eapply has_sub. eapply IHtyping; eauto. assumption.
 Qed.
 
@@ -1255,9 +1301,9 @@ Proof.
   introv Hv H.
   lets R: (typing_regular H).
   induction H; intros; subst; try solve [inversion Hv].
-  - apply* has_abs.
-  - apply* has_mem.
-  - apply* has_sub.
+  - eapply has_abs; eauto.
+  - eapply has_mem; eauto.
+  - eapply has_sub; eauto.
 Qed.
 
 Lemma sub_has_through_subst : (forall E0 S T, sub E0 S T -> forall Q E F Z u,
@@ -1270,49 +1316,49 @@ Lemma sub_has_through_subst : (forall E0 S T, sub E0 S T -> forall Q E F Z u,
   has (E & map (subst_t Z u) F) (subst_e Z u p) (subst_t Z u T)).
 Proof.
   apply sub_has_mutind; intros; subst; simpl.
-  - apply* sub_top.
-  - simpl. apply* sub_refl_sel.
+  - eapply sub_bot; eauto.
+  - eapply sub_top; eauto.
+  - simpl. eapply sub_refl_sel; eauto.
     assert (typ_sel (subst_e Z u t) = subst_t Z u (typ_sel t)) as A by auto.
-    rewrite A. auto*.
-  - apply* sub_sel1.
-  - apply* sub_sel2.
-  - apply* sub_mem_false.
-  - apply* sub_mem_true.
-  - apply_fresh* sub_all as X.
-    rewrite* subst_t_open_t_var. rewrite* subst_t_open_t_var.
-    apply_ih_map_bind* H0.
-  - apply* sub_trans.
+    rewrite A. eauto.
+  - eapply sub_sel1; eauto. eapply H. reflexivity. auto. auto.
+  - eapply sub_sel2; eauto. eapply H. reflexivity. auto. auto.
+  - eapply sub_mem; eauto.
+  - apply_fresh sub_all as X; eauto.
+    rewrite subst_t_open_t_var; eauto. rewrite subst_t_open_t_var; eauto.
+    apply_ih_map_bind H0; eauto.
+  - eapply sub_trans; eauto.
   - case_var.
     + apply binds_middle_eq_inv in b; eauto. subst.
       destruct H0 as [H0 | [x H0]].
-      * apply_empty* has_weakening1.
-        rewrite (proj1 subst_fresh). apply* val_typing_has.
-        apply* (@notin_fv_wf E0).
+      * apply_empty has_weakening1; eauto.
+        rewrite (proj1 subst_fresh). eapply val_typing_has; eauto.
+        eapply (@notin_fv_wf E0); eauto.
       * subst. rewrite (proj1 subst_fresh).
-        apply_empty* has_weakening1. apply var_typing_has. assumption.
-        apply* (@notin_fv_wf E0).
+        apply_empty has_weakening1; eauto. apply var_typing_has. assumption.
+        eapply (@notin_fv_wf E0); eauto.
     + destruct (binds_concat_inv b) as [?|[? ?]].
-      * eapply has_var. auto*.
+      * eapply has_var. eauto.
         apply binds_concat_right. apply binds_map. eassumption.
-      * applys has_var. apply* okt_subst.
+      * applys has_var. eapply okt_subst; eauto.
         assert (T = subst_t Z u T) as B. {
           rewrite (proj1 subst_fresh). reflexivity.
-          apply* (@notin_fv_wf E0). apply* wft_from_env_has.
+          eapply (@notin_fv_wf E0); eauto. eapply wft_from_env_has; eauto.
           apply binds_concat_left_inv in H2. eassumption.
-          auto*.
+          eauto.
         }
         apply binds_concat_left. rewrite <- B.
         apply binds_concat_left_inv in H2. apply H2.
-        auto*. auto*.
-  - apply* has_mem.
-  - apply* has_abs.
+        eauto. eauto.
+  - eapply has_mem; eauto.
+  - eapply has_abs; eauto.
     assert (trm_abs (subst_t Z u V) (subst_e Z u e) =
             subst_e Z u (trm_abs V e)) as A by solve [simpl; reflexivity].
     rewrite A. eapply (proj2 wf_subst); eauto.
     assert (typ_all (subst_t Z u V) (subst_t Z u T) =
             subst_t Z u (typ_all V T)) as B by solve [simpl; reflexivity].
-    rewrite B. apply* wft_subst.
-  - apply* has_sub.
+    rewrite B. eapply wft_subst; eauto.
+  - eapply has_sub; eauto.
 Qed.
 
 (* ********************************************************************** *)
@@ -1327,13 +1373,13 @@ Lemma typing_weakening : forall E F G e T,
    typing (E & F & G) e T.
 Proof.
   introv Typ. gen F. inductions Typ; introv Ok.
-  apply* typing_var. apply* binds_weaken.
-  apply_fresh* typing_abs as x. forwards~ K: (H x).
+  eapply typing_var; eauto. eapply binds_weaken; eauto.
+  apply_fresh typing_abs as x; eauto. forwards~ K: (H x).
    apply_ih_bind (H0 x); eauto.
-  apply* typing_mem.
-  apply* typing_app.
+  eapply typing_mem; eauto.
+  eapply typing_app; eauto.
   eapply typing_appvar; eauto. eapply (proj2 sub_has_weakening); eauto.
-  apply* typing_sub. apply* sub_weakening.
+  eapply typing_sub; eauto. eapply sub_weakening; eauto.
 Qed.
 
 (************************************************************************ *)
@@ -1347,14 +1393,14 @@ Proof.
   introv PsubQ Typ. gen_eq E': (E & X ~ Q & F). gen F.
   inductions Typ; introv EQ; subst; simpl.
   - binds_cases H0.
-    + apply* typing_var.
-    + subst. apply* typing_sub. apply* sub_weakening1.
-    + apply* typing_var.
-  - apply_fresh* typing_abs as y. apply_ih_bind* H0.
-  - apply* typing_mem. apply* wft_narrow.
-  - apply* typing_app. apply* wft_narrow.
-  - apply* typing_appvar. apply* (proj2 sub_has_narrowing_aux). apply* wft_narrow.
-  - apply* typing_sub. apply* (@sub_narrowing Q).
+    + eapply typing_var; eauto.
+    + subst. eapply typing_sub; eauto. eapply sub_weakening1; eauto.
+    + eapply typing_var; eauto.
+  - apply_fresh typing_abs as y; eauto. apply_ih_bind H0; eauto.
+  - eapply typing_mem; eauto. eapply wft_narrow; eauto.
+  - eapply typing_app; eauto. eapply wft_narrow; eauto.
+  - eapply typing_appvar; eauto. eapply (proj2 sub_has_narrowing_aux); eauto. eapply wft_narrow; eauto.
+  - eapply typing_sub; eauto. eapply (@sub_narrowing Q); eauto.
 Qed.
 
 Lemma typing_narrowing_empty : forall Q X P e T,
@@ -1383,22 +1429,22 @@ Proof.
     + binds_get H0.
       rewrite (proj1 subst_fresh).
       apply_empty typing_weakening. assumption.
-      apply* okt_subst.
-      apply* (@notin_fv_wf E).
+      eapply okt_subst; eauto.
+      eapply (@notin_fv_wf E); eauto.
     + binds_cases H0.
       rewrite (proj1 subst_fresh). eapply typing_var; eauto.
-      apply (@notin_fv_wf E). eapply wft_from_env_has. auto*. eapply B0. auto*.
-      apply* typing_var.
-  - apply_fresh* typing_abs as y.
-    rewrite* subst_e_open_e_var. rewrite* subst_t_open_t_var.
+      apply (@notin_fv_wf E). eapply wft_from_env_has. eauto. eapply B0. eauto.
+      eapply typing_var; eauto.
+  - apply_fresh typing_abs as y; eauto.
+    rewrite subst_e_open_e_var; eauto. rewrite subst_t_open_t_var; eauto.
     rewrite <- concat_assoc_map_push.
     eapply H0; eauto. rewrite concat_assoc. auto.
-  - apply* typing_mem.
+  - eapply typing_mem; eauto.
   - eapply typing_app. eapply IHTypT1; eauto. eapply IHTypT2; eauto.
-    apply* wft_subst.
+    eapply wft_subst; eauto.
   - eapply typing_appvar. eapply IHTypT1; eauto. eapply IHTypT2; eauto.
-    apply* (proj2 sub_has_through_subst).
-    eapply subst_t_open_t. auto*. apply* wft_subst.
+    eapply (proj2 sub_has_through_subst); eauto.
+    eapply subst_t_open_t. eauto. eapply wft_subst; eauto.
   - eapply typing_sub. eapply IHTypT; eauto.
     eapply (proj1 sub_has_through_subst); eauto.
 Qed.
@@ -1411,6 +1457,9 @@ Qed.
 
 
 Inductive psub : typ -> typ -> Prop :=
+  | psub_bot : forall U,
+      wft empty U ->
+      psub typ_bot U
   | psub_top : forall S,
       wft empty S ->
       psub S typ_top
@@ -1423,12 +1472,9 @@ Inductive psub : typ -> typ -> Prop :=
   | psub_sel2 : forall S,
       wft empty S ->
       psub S (typ_sel (trm_mem S))
-  | psub_mem_false : forall b1 T1 T2,
-      psub T1 T2 ->
-      psub (typ_mem b1 T1) (typ_mem false T2)
-  | psub_mem_true : forall T1 T2,
-      psub T1 T2 -> psub T2 T1 ->
-      psub (typ_mem true T1) (typ_mem true T2)
+  | psub_mem : forall S1 U1 S2 U2,
+      psub S2 S1 -> psub U1 U2 ->
+      psub (typ_mem S1 U1) (typ_mem S2 U2)
   | psub_all : forall L S1 S2 T1 T2,
       psub T1 S1 ->
       (forall x, x \notin L ->
@@ -1450,25 +1496,23 @@ Proof.
   - subst. inversion Hwf; subst. false. apply* binds_empty_inv.
 Qed.
 
-Hint Constructors psub.
+Hint Constructors psub : core.
 
 Lemma psub_sub: forall S T,
   psub S T -> sub empty S T.
 Proof.
   intros. induction H; eauto.
-  - apply* sub_sel1. apply* has_mem.
-  - apply* sub_sel2. apply* has_mem.
-  - apply* sub_mem_false.
-  - apply* sub_mem_true.
-  - apply_fresh* sub_all as y.
-    rewrite concat_empty_l. auto*.
+  - eapply sub_sel1; eauto. eapply has_mem; eauto.
+  - eapply sub_sel2; eauto. eapply has_mem; eauto.
+  - eapply sub_mem; eauto.
+  - apply_fresh sub_all as y; eauto.
+    rewrite concat_empty_l. eauto.
   - eapply sub_trans; eauto.
 Qed.
 
 Inductive possible_types : nat -> trm -> typ -> Prop :=
 | pt_top : forall n v, value v -> wfe empty v -> possible_types n v typ_top
-| pt_mem_true : forall n T T', psub T T' -> psub T' T -> possible_types n (trm_mem T) (typ_mem true T')
-| pt_mem_false : forall n T U, psub T U -> possible_types n (trm_mem T) (typ_mem false U)
+| pt_mem : forall n T S U, psub S T -> psub T U -> possible_types n (trm_mem T) (typ_mem S U)
 | pt_all : forall L n V V' e1 T1 T1',
   (forall X, X \notin L -> typing (X ~ V) (e1 open_e_var X) (T1 open_t_var X)) ->
   psub V' V ->
@@ -1486,15 +1530,14 @@ Lemma possible_types_value : forall n p T,
   possible_types n p T ->
   value p.
 Proof.
-  introv Hpt. induction Hpt; eauto.
-  - apply psub_sub in H. auto*.
-  - apply psub_sub in H. auto*.
-  - apply value_abs. apply_fresh* term_abs as y.
-    apply psub_sub in H0. auto*.
+  intros. induction H; eauto.
+  - apply psub_sub in H. eauto.
+  - apply value_abs. apply_fresh term_abs as y; eauto.
+    apply psub_sub in H0. eauto.
     assert (y \notin L) as Fr by auto.
     specialize (H y Fr). apply typing_regular in H.
-    destruct H as [? [A ?]]. apply* wfe_term.
-  - apply value_abs. apply* wfe_term.
+    destruct H as [? [A ?]]. eapply wfe_term; eauto.
+  - apply value_abs. eapply wfe_term; eauto.
 Qed.
 
 Lemma possible_types_wfe : forall n p T,
@@ -1502,10 +1545,9 @@ Lemma possible_types_wfe : forall n p T,
   wfe empty p.
 Proof.
   introv Hpt. induction Hpt; eauto.
-  - apply psub_sub in H. auto*.
-  - apply psub_sub in H. auto*.
-  - apply_fresh* wfe_abs as y.
-    apply psub_sub in H0. auto*.
+  - apply psub_sub in H. eauto.
+  - apply_fresh wfe_abs as y; eauto.
+    apply psub_sub in H0. eauto.
     assert (y \notin L) as FrL by auto. specialize (H y FrL).
     apply typing_regular in H. destruct H as [? [A ?]].
     rewrite concat_empty_l. assumption.
@@ -1516,14 +1558,13 @@ Lemma possible_types_wft : forall n p T,
   wft empty T.
 Proof.
   introv Hpt. induction Hpt; eauto.
-  - apply psub_sub in H. auto*.
-  - apply psub_sub in H. auto*.
-  - apply_fresh* wft_all as y.
-    apply psub_sub in H0. auto*.
+  - apply psub_sub in H. apply psub_sub in H0. eapply wft_mem; eauto.
+  - apply_fresh wft_all as y; eauto.
+    apply psub_sub in H0. eauto.
     assert (y \notin L) as FrL by auto. specialize (H1 y FrL).
     apply sub_regular in H1. destruct H1 as [? [? A]].
     rewrite concat_empty_l. assumption.
-  - apply wft_sel. left. apply value_mem. apply* wfe_term. apply* wfe_mem.
+  - apply wft_sel. left. apply value_mem. eapply wfe_term; eauto. eapply wfe_mem; eauto.
 Qed.
 
 Lemma has_empty_var_false: forall x T,
@@ -1534,7 +1575,7 @@ Proof.
   remember (trm_fvar x) as p. generalize dependent x.
   remember empty as E. gen HeqE.
   induction H; intros; subst; eauto.
-  - apply* binds_empty_inv.
+  - eapply binds_empty_inv; eauto.
   - inversion Heqp.
   - inversion Heqp.
 Qed.
@@ -1546,20 +1587,19 @@ Lemma possible_types_closure_psub : forall n v T U,
 Proof.
   introv Hpt Hsub. generalize dependent v.
   induction Hsub; intros; subst; eauto.
-  - apply pt_top. apply* possible_types_value. apply* possible_types_wfe.
+  - inversion Hpt.
+  - apply pt_top. eapply possible_types_value; eauto. eapply possible_types_wfe; eauto.
   - inversion Hpt; subst. assumption.
-  - apply* pt_sel.
+  - eapply pt_sel; eauto.
   - inversion Hpt; subst.
-    * apply pt_mem_false. eapply psub_trans; eauto.
-    * apply pt_mem_false. eapply psub_trans; eauto.
-  - inversion Hpt; subst. apply* pt_mem_true.
-  - inversion Hpt; subst. apply_fresh* pt_all as y.
+    apply pt_mem. eapply psub_trans; eauto. eapply psub_trans; eauto.
+  - inversion Hpt; subst. apply_fresh pt_all as y; eauto.
     eapply sub_trans.
-    eapply sub_narrowing_empty. eapply psub_sub. eassumption. auto*. auto*.
-    apply pt_all_shallow; eauto. apply_fresh* wft_all as y.
-    apply psub_sub in Hsub. auto*.
+    eapply sub_narrowing_empty. eapply psub_sub. eassumption. eauto. eauto.
+    apply pt_all_shallow; eauto. apply_fresh wft_all as y; eauto.
+    apply psub_sub in Hsub. eauto.
     rewrite concat_empty_l.
-    assert (y \notin L) as Fr by auto. specialize (H y Fr). auto*.
+    assert (y \notin L) as Fr by auto. specialize (H y Fr). eauto.
 Qed.
 
 Lemma psub_reflexivity : forall T,
@@ -1568,13 +1608,10 @@ Lemma psub_reflexivity : forall T,
 Proof.
   introv WI. lets W: (wft_type WI). remember empty as E. gen E.
   induction W; intros; inversions WI; eauto.
-  destruct b. apply* psub_mem_true. apply* psub_mem_false.
-  apply_fresh* psub_all as y.
-  assert (y \notin L0)as Fr0 by auto. specialize (H5 y Fr0).
-  rewrite concat_empty_l in H5.
-  apply* sub_reflexivity. rewrite <- concat_empty_l. apply* okt_push.
-Grab Existential Variables.
-pick_fresh y. apply y.
+  - apply_fresh psub_all as y; eauto.
+    assert (y \notin L0)as Fr0 by auto. specialize (H5 y Fr0).
+    rewrite concat_empty_l in H5.
+    eapply sub_reflexivity; eauto. rewrite <- concat_empty_l. eapply okt_push; eauto.
 Qed.
 
 Lemma sub_psub_aux:
@@ -1585,24 +1622,24 @@ Proof.
   - specialize (H eq_refl).
     inversion H; subst.
     eapply psub_trans. eapply psub_sel1.
-    apply psub_sub in H3. auto*.
+    apply psub_sub in H4. eauto.
     assumption.
   - specialize (H eq_refl).
     inversion H; subst.
     eapply psub_trans. eassumption. eapply psub_sel2.
-    apply psub_sub in H1. auto*.
-  - apply_fresh* psub_all as y.
-    rewrite <- (@concat_empty_l typ (y ~ T1)). auto*.
-  - false. apply* binds_empty_inv.
-  - destruct b. apply pt_mem_true; eauto. apply pt_mem_false; eauto.
-  - apply* pt_all_shallow.
+    apply psub_sub in H4. eauto.
+  - apply_fresh psub_all as y; eauto.
+    rewrite <- (@concat_empty_l typ (y ~ T1)). eauto.
+  - false. eapply binds_empty_inv; eauto.
+  - apply pt_mem; eauto.
+  - eapply pt_all_shallow; eauto.
   - eapply possible_types_closure_psub; eauto.
 Qed.
 
 Lemma sub_psub: forall S T,
   sub empty S T -> psub S T.
 Proof.
-  intros. apply* (proj1 sub_psub_aux).
+  intros. eapply (proj1 sub_psub_aux); eauto.
 Qed.
 
 Lemma possible_types_closure : forall n v T U,
@@ -1611,7 +1648,7 @@ Lemma possible_types_closure : forall n v T U,
   possible_types n v U.
 Proof.
   intros. eapply possible_types_closure_psub; eauto.
-  apply* sub_psub.
+  eapply sub_psub; eauto.
 Qed.
 
 Lemma possible_types_typing : forall v T,
@@ -1631,7 +1668,7 @@ Proof.
     rewrite <- concat_empty_l. eauto.
     assert (Y \notin L0) as Fr by eauto.
     specialize (H7 Y Fr). rewrite concat_empty_l in H7. eapply H7.
-  - apply pt_mem_true. apply* psub_reflexivity. apply* psub_reflexivity.
+  - apply pt_mem. eapply psub_reflexivity; eauto. eapply psub_reflexivity; eauto.
   - eapply possible_types_closure; eauto.
 Qed.
 
@@ -1649,7 +1686,7 @@ Proof.
   }
   inversion Hc; subst.
   repeat eexists; eauto.
-  apply* psub_sub.
+  eapply psub_sub; eauto.
 Qed.
 
 (** Canonical Forms (14) *)
@@ -1701,33 +1738,33 @@ Proof.
   induction Typ; introv QEQ; introv Red;
    try solve [inversion Typ; congruence]; try solve [ inversion Red ].
   - (* case: app *)
-    inversions Red; try solve [ apply* typing_app ].
+    inversions Red; try solve [ eapply typing_app; eauto ].
     destruct~ (typing_inv_abs Typ1 (U1:=T1) (U2:=T2)) as [P1 [S2 [L P2]]].
-     apply* sub_reflexivity.
+     eapply sub_reflexivity; eauto.
      pick_fresh X. forwards~ K: (P2 X). destruct K.
-      rewrite* (@subst_e_intro X).
+      rewrite (@subst_e_intro X); eauto.
       erewrite <- (proj1 subst_fresh).
       eapply typing_through_subst1.
       eapply typing_sub. eapply typing_narrowing_empty. eapply P1. eassumption.
       rewrite <- (@open_t_var_type X).
       assert (X \notin L) as FrL by auto.
       specialize (P2 X FrL). destruct P2 as [P2t P2s].
-      eassumption. apply* wft_type. assumption. assumption. auto*.
+      eassumption. eapply wft_type; eauto. assumption. assumption. eauto.
   - (* case: appvar *)
-    inversions Red; try solve [ apply* typing_appvar ].
+    inversions Red; try solve [ eapply typing_appvar; eauto ].
     lets HV2: (has_empty_value H). false. eapply value_red_contra in HV2; eauto.
     destruct~ (typing_inv_abs Typ1 (U1:=T1) (U2:=T2)) as [P1 [S2 [L P2]]].
-    apply* sub_reflexivity.
+    eapply sub_reflexivity; eauto.
     pick_fresh X. forwards~ K: (P2 X). destruct K.
-     rewrite* (@subst_t_intro X).
-     rewrite* (@subst_e_intro X).
+     rewrite (@subst_t_intro X); eauto.
+     rewrite (@subst_e_intro X); eauto.
      eapply typing_through_subst1.
      eapply typing_sub. eapply typing_narrowing_empty. eapply P1. eassumption.
      assert (X \notin L) as FrL by auto.
      specialize (P2 X FrL). destruct P2 as [P2t P2s].
      eassumption. assumption. assumption.
   - (* case sub *)
-    apply* typing_sub.
+    eapply typing_sub; eauto.
 Qed.
 
 (* ********************************************************************** *)
@@ -1743,22 +1780,21 @@ Proof.
   introv Typ. gen_eq E: (@empty typ). lets Typ': Typ.
   induction Typ; intros EQ; subst.
   - (* case: var *)
-    false* binds_empty_inv.
+    false. eapply binds_empty_inv; eauto.
   - (* case: abs *)
-    left*.
+    left. eauto.
   - (* case: mem *)
-    left*.
+    left. eauto.
   - (* case: app *)
-    right. destruct* IHTyp1 as [Val1 | [e1' Rede1']].
-    destruct* IHTyp2 as [Val2 | [e2' Rede2']].
+    right. destruct IHTyp1 as [Val1 | [e1' Rede1']]; eauto.
+    destruct IHTyp2 as [Val2 | [e2' Rede2']]; eauto.
       destruct (canonical_form_abs Val1 Typ1) as [S [e3 EQ]].
-        subst. exists* (open_e e3 e2).
+        subst. exists (open_e e3 e2). eauto.
   - (* case: appvar *)
-    right. destruct* IHTyp1 as [Val1 | [e1' Rede1']].
-    destruct* IHTyp2 as [Val2 | [e2' Rede2']].
+    right. destruct IHTyp1 as [Val1 | [e1' Rede1']]; eauto.
+    destruct IHTyp2 as [Val2 | [e2' Rede2']]; eauto.
       destruct (canonical_form_abs Val1 Typ1) as [S [e3 EQ]].
-        subst. exists* (open_e e3 e2).
+        subst. exists (open_e e3 e2). eauto.
   - (* case: sub *)
-    auto*.
+    eauto.
 Qed.
-

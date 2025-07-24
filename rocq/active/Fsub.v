@@ -431,15 +431,15 @@ Lemma open_tt_rec_type_core : forall T j V U i, i <> j ->
   (open_tt_rec j V T) = open_tt_rec i U (open_tt_rec j V T) ->
   T = open_tt_rec i U T.
 Proof.
-  induction T; introv Neq H; simpl in *; inversion H; f_equal*.
-  case_nat*. case_nat*.
+  induction T; introv Neq H; simpl in *; inversion H; f_equal; eauto.
+  case_nat; eauto. case_nat; eauto.
 Qed.
 
 Lemma open_tt_rec_type : forall T U,
   type T -> forall k, T = open_tt_rec k U T.
 Proof.
-  induction 1; intros; simpl; f_equal*. unfolds open_tt.
-  pick_fresh X. apply* (@open_tt_rec_type_core T2 0 (typ_fvar X)).
+  induction 1; intros; simpl; f_equal; eauto. unfolds open_tt.
+  pick_fresh X. apply (@open_tt_rec_type_core T2 0 (typ_fvar X)); eauto.
 Qed.
 
 (** Substitution for a fresh name is identity. *)
@@ -447,8 +447,8 @@ Qed.
 Lemma subst_tt_fresh : forall Z U T,
   Z \notin fv_tt T -> subst_tt Z U T = T.
 Proof.
-  induction T; simpl; intros; f_equal*.
-  case_var*.
+  induction T; simpl; intros; f_equal; eauto.
+  case_var; eauto.
 Qed.
 
 (** Substitution distributes on the open operation. *)
@@ -776,14 +776,16 @@ Lemma wft_open : forall E U T1 T2,
   wft E U ->
   wft E (open_tt T2 U).
 Proof.
-  introv Ok WA WU.
-  inversions WA.
+  intros Ok WA WU.
+  inversion WA; subst.
   pick_fresh X.
-  eauto using wft_type. rewrite* (@subst_tt_intro X).
-  lets K: (@wft_subst_tb empty).
-  specializes_vars K. clean_empty K.
-  apply* K.
-  (* todo: apply empty ? *)
+  assert (H_type_U: type U) by (eauto using wft_type).
+  rewrite (subst_tt_intro X T2 U H_type_U).
+  { eauto using notin_fv_wf, wft_weaken_right, okt_sub. }
+  apply wft_subst_tb with (F:=empty) (Q:=T1).
+  - eauto.
+  - exact WU.
+  - simpl. exact Ok.
 Qed.
 
 (* ********************************************************************** *)
