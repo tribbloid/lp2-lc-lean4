@@ -14,7 +14,7 @@ Here are the rules:
 - `Omega` library has been superseded by `Lia`, so `Require Import Omega.` should be replaced with `Require Import Lia.`.
 - All Hint defined in the code should be add into `core` hint database.
 - DO NOT delete code, every line in the original proof is necessary.
-- Your proofs should not be much longer than the old version, if you can't make the proof short enough, you should give up (by using `give_up` tactic) and move to the next one.
+- Your proofs should not be much longer than the old version, if you can't make the proof short enough, you should insert an `admit` where proof check fails (but do not delete other part of the proof), and move to the next one.
 - start your upgrade from `Fsub.v`, then upgrade and compile other coq files individually, starting from the shortest and gradually proceed to longer ones. Do not use make file to compile the whole directory.
 
 try to upgrade as many files as possible
