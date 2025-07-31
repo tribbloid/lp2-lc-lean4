@@ -21,7 +21,7 @@ The structure of the project is written in `./AGENT.md`
 # Workflow
 
 1. Scan the entire `active` directory, find all the Coq files and rank them by length.
-2. Upgrade each coq files individually and from top-down, from the shortest to longer ones. Compile often to verify your revision.
+2. Upgrade each coq files individually and from top-down, from the shortest to longer ones. Compile often (using installed coqc) to verify your revision.
 3. try to upgrade as many files as possible.
 
 Do not use make file to compile the whole directory.
