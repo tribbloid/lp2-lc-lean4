@@ -1,6 +1,6 @@
 # Objective: Upgrade Coq Proof Files
 
-Could you upgrade the syntax of Coq file(s) from 8.4 to 8.18? Do not touch other files
+Could you upgrade the syntax of the Coq file(s) from 8.4 to 8.18? Do not touch other files
 
 # Rules
 
