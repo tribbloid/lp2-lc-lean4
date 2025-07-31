@@ -557,7 +557,9 @@ Proof.
     - inversions H. unfold label_for_dec in *. simpl.
       case_if~.
     - simpl. destruct d as [t'|].
-      * case_if~. apply (IHDs2 n T1 T2). unfold decs_has. assumption.
+      * case_if.
+        { contradiction C. unfold label_for_dec. congruence. }
+        { apply (IHDs2 n T1 T2). unfold decs_has. assumption. }
       * apply (IHDs2 n T1 T2). unfold decs_has. assumption.
 Qed.
 

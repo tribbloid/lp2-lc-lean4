@@ -866,9 +866,9 @@ Proof.
        inversions H4. split; apply_empty* wft_weaken.
        destruct* (IHE H0 H4). split; apply_empty* wft_weaken.
     destruct (eq_push_inv H) as [? [? ?]]. subst. clear H.
-     destruct (binds_push_inv B) as [[? ?]|[? ?]]. subst.
-       inversions H3.
-       apply_empty* wft_weaken.
+    destruct (binds_push_inv B) as [[? ?]|[? ?]]. subst.
+    false*.
+    destruct* (IHE H0 H3).
 Qed.
 
 (** Extraction from a typing assumption in a well-formed environments *)

@@ -776,16 +776,12 @@ Lemma wft_open : forall E U T1 T2,
   wft E U ->
   wft E (open_tt T2 U).
 Proof.
-  intros Ok WA WU.
-  inversion WA; subst.
-  pick_fresh X.
-  assert (H_type_U: type U) by (eauto using wft_type).
-  rewrite (subst_tt_intro X T2 U H_type_U).
-  { eauto using notin_fv_wf, wft_weaken_right, okt_sub. }
-  apply wft_subst_tb with (F:=empty) (Q:=T1).
-  - eauto.
-  - exact WU.
-  - simpl. exact Ok.
+  introv Ok WA WU.
+  inversions WA. pick_fresh X.
+  rewrite* (@subst_tt_intro X).
+  lets K: (@wft_subst_tb empty).
+  specializes_vars K. clean_empty K. apply* K.
+  apply* wft_type.
 Qed.
 
 (* ********************************************************************** *)
@@ -800,7 +796,7 @@ Proof.
   induction 1; auto.
 Qed.
 
-Hint Extern 1 (ok _) => apply ok_from_okt.
+Hint Extern 1 (ok _) => apply ok_from_okt : core.
 
 (** Extraction from a subtyping assumption in a well-formed environments *)
 
@@ -870,10 +866,10 @@ Proof.
   intros. apply_empty* wft_weaken.
 Qed.
 
-Hint Resolve wft_weaken_right.
-Hint Resolve wft_from_okt_typ wft_from_okt_sub.
-Hint Immediate wft_from_env_has_sub wft_from_env_has_typ.
-Hint Resolve wft_subst_tb.
+Hint Resolve wft_weaken_right : core.
+Hint Resolve wft_from_okt_typ wft_from_okt_sub : core.
+Hint Immediate wft_from_env_has_sub wft_from_env_has_typ : core.
+Hint Resolve wft_subst_tb : core.
 
 
 (* ********************************************************************** *)
@@ -901,7 +897,7 @@ Qed.
 
 Lemma okt_push_sub_type : forall E X T,
   okt (E & X ~<: T) -> type T.
-Proof. intros. applys wft_type. forwards*: okt_push_sub_inv. Qed.
+Proof. intros. destruct (okt_push_sub_inv H) as [_ [H1 _]]. apply (wft_type H1). Qed.
 
 Lemma okt_push_typ_inv : forall E x T,
   okt (E & x ~: T) -> okt E /\ wft E T /\ x # E.
@@ -914,9 +910,9 @@ Qed.
 
 Lemma okt_push_typ_type : forall E X T,
   okt (E & X ~: T) -> type T.
-Proof. intros. applys wft_type. forwards*: okt_push_typ_inv. Qed.
+Proof. intros. destruct (okt_push_typ_inv H) as [_ [H1 _]]. apply (wft_type H1). Qed.
 
-Hint Immediate okt_push_sub_type okt_push_typ_type.
+Hint Immediate okt_push_sub_type okt_push_typ_type : core.
 
 (** Through narrowing *)
 
@@ -971,8 +967,8 @@ Qed.
 
 (** Automation *)
 
-Hint Resolve okt_narrow okt_subst_tb wft_weaken.
-Hint Immediate okt_strengthen.
+Hint Resolve okt_narrow okt_subst_tb wft_weaken : core.
+Hint Immediate okt_strengthen : core.
 
 
 (* ********************************************************************** *)
@@ -1017,9 +1013,9 @@ Lemma sub_regular : forall E S T,
   sub E S T -> okt E /\ wft E S /\ wft E T.
 Proof.
   induction 1. eauto. eauto. eauto. jauto_set; auto. (* eauto too slow *)
-  split. eauto. split;
+  eauto.
    apply_fresh* wft_all as Y;
-    forwards~: (H1 Y); apply_empty* (@wft_narrow T1).
+    forwards~: (H1 Y); apply_empty (@wft_narrow T1).
 Qed.
 
 (** The typing relation is restricted to well-formed objects. *)
