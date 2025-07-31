@@ -9,8 +9,10 @@ Here are the rules:
 
 - LibLN and some other libraries are moved to TLC library, when importing them, the TLC prefix will be required.
   - e.g. `Require Import LibLN.` should be replaced with `Require Import TLC.LibLN.`.
-- `auto*` tactic with no argument should be replaced with `eauto`
-- `auto*` tactic with 1 argument should be replaced with `eauto using`
+- a tactic with `*` suffix should be replaced with the same tactic with `e` prefix:
+  - e.g. `auto*` tactic with no argument should be replaced with `eauto`.
+- in the above case, if the tactic is applied on parameter(s), an extra `using` keyword may be required before the parameter(s):
+  - e.g. `auto* X` should be replaced with `eauto using X`
 - `Omega` library has been superseded by `Lia`, so `Require Import Omega.` should be replaced with `Require Import Lia.`.
 - All Hint defined in the code should be add into `core` hint database.
 - DO NOT delete code, every line in the original proof is necessary.
