@@ -1,9 +1,10 @@
+# Objective: Upgrade Coq Proof Files
 
 The directory `active` contains some coq proof files written in coq 8.4. Could you upgrade their syntax to be compatible with coq 8.18? Do not touch other directories.
 
 The structure of the project is written in `./AGENT.md`
 
-Here are the rules:
+# Rules
 
 - LibLN and some other libraries are moved to TLC library, when importing them, the TLC prefix will be required.
   - e.g. `Require Import LibLN.` should be replaced with `Require Import TLC.LibLN.`.
@@ -14,9 +15,13 @@ Here are the rules:
 - `Omega` library has been superseded by `Lia`, so `Require Import Omega.` should be replaced with `Require Import Lia.`.
 - All Hint defined in the code should be add into `core` hint database.
 - DO NOT delete code, every line in the original proof is necessary.
-- Your proofs should not be much longer than the old version, if you can't make the proof short enough, you should insert an `admit` where proof check fails (but do not delete other part of the proof), and move to the next one.
-- start your upgrade from `Fsub.v`, then upgrade and compile other coq files individually, starting from the shortest and gradually proceed to longer ones. Do not use make file to compile the whole directory.
+<!-- - Your proofs should not be much longer than the old version, if you can't make the proof short enough, you should insert an `admit` where proof check fails (but do not delete other part of the proof), and move to the next one. -->
+- Your proofs should not be much longer than the old version, if you can't make the proof short enough, you should introduce a temporary axiom and use it as a placeholder at where proof check fails (WITHOUT deleting other lines), then move on to other proofs.
 
-try to upgrade as many files as possible
+# Workflow
 
-Coq 8.18 with compatible TLC are already installed, compile often to verify your revision.
+1. Scan the entire `active` directory, find all the Coq files and rank them by length.
+2. Upgrade each coq files individually and from top-down, from the shortest to longer ones. Compile often to verify your revision.
+3. try to upgrade as many files as possible.
+
+Do not use make file to compile the whole directory.
