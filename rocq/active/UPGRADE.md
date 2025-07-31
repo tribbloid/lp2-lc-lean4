@@ -16,7 +16,7 @@ The structure of the project is written in `./AGENT.md`
 - All Hint defined in the code should be add into `core` hint database.
 - DO NOT delete code, every line in the original proof is necessary.
 <!-- - Your proofs should not be much longer than the old version, if you can't make the proof short enough, you should insert an `admit` where proof check fails (but do not delete other part of the proof), and move to the next one. -->
-- Your proofs should not be much longer than the old version, if you can't make the proof short enough, you should introduce a temporary axiom and use it as a placeholder at where proof check fails (WITHOUT deleting other lines), then move on to other proofs.
+- Your proofs should not be much longer than the old version, if you can't make the proof short enough, you should introduce a minimal and temporary axiom and use it as a placeholder to replace the missing step of the proof, do not delete other parts or steps of the proof. Afterwards, move on to the next proof.
 
 # Workflow
 
