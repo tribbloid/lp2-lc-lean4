@@ -32,6 +32,9 @@ lean
 **/temp
 /.lake
 
+#NTFS/Fuse
+**.fuse_hidden*
+
 # Coq intermediate files
 *.vo
 *.vio
