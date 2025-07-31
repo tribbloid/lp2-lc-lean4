@@ -1,8 +1,6 @@
 # Objective: Upgrade Coq Proof Files
 
-The directory `active` contains some coq proof files written in coq 8.4. Could you upgrade their syntax to be compatible with coq 8.18? Do not touch other directories.
-
-The structure of the project is written in `./AGENT.md`
+Could you upgrade the syntax of Coq file(s) from 8.4 to 8.18? Do not touch other files
 
 # Rules
 
@@ -14,9 +12,10 @@ The structure of the project is written in `./AGENT.md`
   - e.g. `auto* X` should be replaced with `eauto using X`
 - `Omega` library has been superseded by `Lia`, so `Require Import Omega.` should be replaced with `Require Import Lia.`.
 - All Hint defined in the code should be add into `core` hint database.
-- DO NOT delete code, every line in the original proof is necessary.
+- Do NOT delete code, every line in the original proof is necessary.
 <!-- - Your proofs should not be much longer than the old version, if you can't make the proof short enough, you should insert an `admit` where proof check fails (but do not delete other part of the proof), and move to the next one. -->
-- Your proofs should not be much longer than the old version, if you can't make the proof short enough, you should introduce a minimal and temporary axiom and use it as a placeholder to replace the missing step of the proof, do not delete other parts or steps of the proof. Afterwards, move on to the next proof.
+- Your proofs should not be much longer than the old version. If you can't make the proof short enough, you should introduce a minimal and temporary axiom and use it as a placeholder to replace the missing step of the proof, do NOT delete or replace other parts or steps of the proof. Afterwards, move on to the remainder of the file.
+- Do NOT use `admit` or `give_up`.
 
 # Workflow
 
