@@ -7,6 +7,8 @@ The structure of the project is written in `./AGENT.md`
 
 Here are the rules:
 
+- Write the most compact, elegant and minimal patch for the given task
+- Both warning and error messages should be fixed
 - LibLN and some other libraries are moved to TLC library, when importing them, the TLC prefix will be required.
   - e.g. `Require Import LibLN.` should be replaced with `Require Import TLC.LibLN.`.
 - `auto*` tactic with no argument should be replaced with `eauto`
