@@ -14,6 +14,7 @@
 
 Set Implicit Arguments.
 Require Import TLC.LibLN.
+Import LibEnv.
 Implicit Types x : var.
 
 (* ********************************************************************** *)
