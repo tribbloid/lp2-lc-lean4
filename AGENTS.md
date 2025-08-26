@@ -1,119 +1,55 @@
-# AGENTS.md
-
-This file provides guidance for AI agents working on the lp2-lc-lean4 project, which focuses on System-F with subtyping implementations in Lean 4, converted from Rocq (Coq).
-
 ## Project Overview
 
-**lp2-lc-lean4** is a Lean 4 implementation of System-F with subtyping, exploring type theory concepts and demonstrating the motto "who needs type constructor? (in lean 4)". The project converts formal proofs and definitions from Rocq/Coq to Lean 4.
+**lp2-lc-lean4** is a Lean 4 project to proof the soundness of various type theories. The project contains formal proofs and definitions converted from Coq 8.4 to Lean 4
+
+The project depends on Mathlib and AESOP
 
 ## Key Commands
 
 ### Build & Check
 - `lake build` - Build the entire project
-- `lake exe lp2lc` - Run the main executable
-- `lean --check` - Check syntax and types
+- `lake build <file path>` - Build one file
 
 ### Development
 - `lake clean` - Clean build artifacts
 - `lake update` - Update dependencies
 
-## Project Structure
-
-### Core Directory: `Lp2lc/`
-
-- **`Active.lean`** - Main active imports (currently imports from Claude4/ and active/)
-- **`Basic.lean`** - Basic definitions and examples
-- **`Example.lean`** - Demonstrates dual namespace patterns and basic inductive types
-- **`Rosetta.lean`** - Type theory rosetta stone showing different paradigms
-
-### Subdirectories
-
-- **`Claude4/`** - AI-assisted implementations
-  - `FSub_Claude_Tac.lean` - Tactics for System-F subtyping proofs
-  - `FSub_Gemini_Def.lean` - Core definitions for System-F with subtyping
-  
-- **`active/`** - Currently empty, likely for active development
-- **`draft/`** - Draft implementations and experiments
-- **`spike/`** - Experimental code and proof-of-concepts
-- **`__UNUSED/`** - Deprecated or unused code
-
-## Dependencies
-
-- **Lean version**: 4.22.0
-- **mathlib**: v4.22.0 (comprehensive math library)
-- **batteries**: v4.22.0 (extended standard library)
-- **aesop**: v4.22.0 (automation tactic)
+## Workflow
+- write 1 definition at a time, starting from top to bottom
+- compile often to make sure that your definition and proof has no error
+- if you cannot complete a proof, close it with "sorry" as a placeholder and move to other proofs, then come back later
+- only introduce new dependency after my approval
 
 ## Code Conventions
+
+### General
+- Your code should be minimal and elegant
+- eliminate compiler or LSP warning as soon as possible, particularly unused variable warnings
+- when creating new Lean file, do not include `.` in file name
+- do not write duplicated or redundant implementation
+- Do not write comment unless is a line number
+- do not remove comment
 
 ### Naming
 - Use snake_case for definitions and functions
 - Use PascalCase for types and structures
-- Prefix with namespace (e.g., `Lp2lc.FSub`)
 
 ### Import Style
 - Use quoted module names: `import «Lp2lc».module`
 - Group imports logically (Lean core, external deps, local modules)
 
-### Comments
-- Use block comments for file headers: `/-...-/`
-- Include attribution and conversion notes from original Rocq code
-- Line comments with `--` for implementation details
+### Conversion Rules
+- Converted Lean code should be in Lp2lc directory, with file name and directory structure similar to its corresponding Coq file, e.g. `Lp2lc_coq/active/agents.v` should be converted into `Lp2lc/active/agent.lean`
+- Lean file should have the same name and relative path as the corresponding Coq file, e.g. `Lp2lc/agents/agents.lean`
+- Lean definition (variable, function, type, prop, lemma, theorem, tactic) and corresponding Coq definition should have identical names, add prefix `def_` if necessary
+- Lean definition and corresponding Coq definition should have the same order
+- Lean definition should each have a comment of line number pointing to the corresponding Coq definition, these line numbers should be strictly incremental
+- Coq `Set` and `Prop` should be converted to a Lean `Prop`
+- Coq `Type` should also be converted to a Lean `Prop`, avoid declaring Lean `Type` unless necessary
+- Coq `Var` in `LibLN` should be converted to a Lean structure type with `name : String` as the only member
+- Coq `Hint Constructors` should be converted to a Lean aesop constructor attribute annotating the relevant type constructor
+- Coq `Hint Resolve` and other kinds of `Hint` should be converted to a Lean aesop attribute annotating a function. It should be noted that Lean attribute cannot annotate an inductive case, so new function may need to be created to handle the case
+- Coq `Lemma` should be converted to Lean `Theorem`
+- Coq `Tactic Notation` should be converted to Lean tactic macro, input and output of the macro should be logged, followed by an example demonstrating its use case
+- Coq `Ltac` should be converted to Lean elaborator, input and output of the macro should be logged, followed by an example demonstrating its use case
 
-### File Organization
-- Each file starts with header comment explaining purpose
-- Open necessary namespaces early
-- Group related definitions together
-- Use `namespace` blocks for organization
-
-## Common Patterns
-
-### Type Definitions
-```lean
-inductive typ : Type where
-  | typ_top   : typ
-  | typ_bvar  : Nat -> typ
-  | typ_fvar  : Var -> typ
-  | typ_arrow : typ -> typ -> typ
-  | typ_all   : typ -> typ -> typ
-```
-
-### Structure Definitions
-```lean
-structure Var where
-  name : String
-deriving Repr, BEq, Hashable, DecidableEq
-```
-
-### Elaborators and Tactics
-- Use `elab` for custom syntax
-- Implement `unsafe do` for meta-programming
-- Log progress with `logInfo`
-
-## Testing
-
-The project doesn't appear to have formal tests yet. When adding tests:
-- Create `*.test.lean` files
-- Use `#check` for type checking
-- Use `#eval` for computation verification
-- Follow mathlib testing patterns
-
-## Common Issues
-
-- **Symbol resolution**: Use full namespace paths when importing
-- **Meta-programming**: Custom elaborators require `unsafe do`
-- **Finset conversion**: Converting computed values back to expressions has limitations
-
-## Development Workflow
-
-1. Make changes in appropriate subdirectory (`active/`, `draft/`, or `spike/`)
-2. Update `Active.lean` imports if needed
-3. Run `lake build` to check compilation
-4. Test with `#check` and `#eval` statements
-
-## File Patterns
-
-- **Definitions**: End with `_Def.lean`
-- **Tactics**: End with `_Tac.lean`
-- **Examples**: Use `Example.lean` or descriptive names
-- **Experimental**: Place in `spike/` directory

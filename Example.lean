@@ -21,14 +21,3 @@ namespace dual
     (getImpl α).cons a as
 
 end dual
-
-inductive MyNat where
-  | zero : MyNat
-  | succ : MyNat → MyNat
-
--- Define addition for MyNat
--- def MyNat.add (a b : MyNat) : MyNat :=
---   MyNat.rec
---     b                -- base case: add zero b = b
---     (fun _ sum => MyNat.succ sum)  -- recursive case
---     a
