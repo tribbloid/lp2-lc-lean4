@@ -12,6 +12,7 @@ You should do the following tasks by the numbers:
    1. `Def.lean`: definitions and axioms.
    2. `Proof.lean`: theorems and proofs (including proof scaffolds)
    3. `Auxiliary.lean`: auxiliary tactics and lemma to support the original proofs
+- DO NOT write into any other files
 
 ### 2. Definition Conversion
 - Extract all definitions, axioms, types from Coq source
