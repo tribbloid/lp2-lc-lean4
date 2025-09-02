@@ -19,8 +19,6 @@ lean
 
 
 # VSCode
-**/.vscode/
-**/.scala_dependencies
 **/.worksheet
 
 # IntelliJ-IDEA
