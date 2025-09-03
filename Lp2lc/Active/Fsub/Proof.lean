@@ -209,12 +209,35 @@ theorem subst_ee_intro : ∀ x u e,
 -- Coq line 637: Lemma subst_te_open_ee_var
 theorem subst_te_open_ee_var : ∀ Z P x e,
   open_ee (subst_te Z P e) (trm_fvar x) = subst_te Z P (open_ee e (trm_fvar x)) := by
-  sorry -- Needs careful proof with open_ee_rec
+  intro Z P x
+  simp only [open_ee]
+  -- Need to prove the general version with open_ee_rec
+  intro e
+  suffices h : ∀ k, open_ee_rec k (trm_fvar x) (subst_te Z P e) = 
+                     subst_te Z P (open_ee_rec k (trm_fvar x) e) by
+    exact h 0
+  intro k
+  induction e generalizing k with
+  | trm_bvar n =>
+    simp [open_ee_rec, subst_te]
+    split_ifs <;> rfl
+  | trm_fvar y =>
+    simp [open_ee_rec, subst_te]
+  | trm_abs V e1 ih =>
+    simp only [open_ee_rec, subst_te]
+    congr 1
+    exact ih (k + 1)
+  | trm_app e1 e2 ih1 ih2 =>
+    simp [open_ee_rec, subst_te, ih1, ih2]
+  | trm_tabs V e1 ih =>
+    simp [open_ee_rec, subst_te, ih]
+  | trm_tapp e1 V ih =>
+    simp [open_ee_rec, subst_te, ih]
 
 -- Coq line 647: Lemma subst_ee_open_te_var
 theorem subst_ee_open_te_var : ∀ z u e X, def_term u →
   open_te (subst_ee z u e) (typ_fvar X) = subst_ee z u (open_te e (typ_fvar X)) := by
-  sorry -- Needs careful proof with open_te_rec
+  sorry -- Requires careful handling of if-then-else in subst_ee
 
 -- Substitutions preserve local closure
 
