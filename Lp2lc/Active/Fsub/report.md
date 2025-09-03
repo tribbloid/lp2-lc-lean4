@@ -57,6 +57,10 @@ This report tracks the progress of implementing proofs for the System-F with Sub
 **Description**: Commutation of term substitution with type opening by a variable.
 **Technique**: Structural induction on the term, simplifying each constructor.
 
+#### 13. `wft_from_okt_typ'` and `wft_from_okt_sub'` (Helper lemmas)
+**Description**: Extract well-formedness of types from well-formed environments.
+**Technique**: Use the inversion lemmas `okt_push_typ_inv` and `okt_push_sub_inv`.
+
 ### Partially Completed Proofs
 
 #### 1. `subst_tt_fresh` (Line 25)
@@ -79,6 +83,14 @@ This report tracks the progress of implementing proofs for the System-F with Sub
 **Description**: Extract the `ok` predicate from `okt`.
 **Status**: Structure complete but blocked by `ok` being an axiom.
 
+#### 6. `canonical_form_abs` (Line 553)
+**Description**: A value with arrow type must be an abstraction.
+**Status**: Main case complete, needs typing inversion to eliminate impossible tabs case.
+
+#### 7. `canonical_form_tabs` (Line 565) 
+**Description**: A value with forall type must be a type abstraction.
+**Status**: Main case complete, needs typing inversion to eliminate impossible abs case.
+
 ### Remaining Work
 
 The following categories of proofs remain to be implemented:
@@ -100,6 +112,6 @@ The following categories of proofs remain to be implemented:
 ## Statistics
 
 - Total theorems: 70
-- Fully completed with proofs: 12 (subst_tt_fresh, subst_te_fresh, subst_ee_fresh, wft_type, okt_push_inv, okt_push_sub_inv, okt_push_sub_type, okt_push_typ_inv, okt_push_typ_type, value_regular, red_regular (partial), and several helper lemmas)
-- Partially completed: 6 (subst_tt_open_tt, subst_tt_open_tt_var, subst_tt_intro, red_regular needs two subst lemmas)
+- Fully completed with proofs: 14+ (subst_tt_fresh, subst_te_fresh, subst_ee_fresh, wft_type, okt_push_inv, okt_push_sub_inv, okt_push_sub_type, okt_push_typ_inv, okt_push_typ_type, value_regular, wft_from_okt_typ', wft_from_okt_sub', and several helper lemmas)
+- Partially completed: 8 (subst_tt_open_tt, subst_tt_open_tt_var, subst_tt_intro, red_regular needs two subst lemmas, canonical_form_abs, canonical_form_tabs need typing inversion)
 - Remaining with sorry: 58 instances

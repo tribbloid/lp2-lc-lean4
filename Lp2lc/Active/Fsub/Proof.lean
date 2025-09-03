@@ -304,12 +304,12 @@ theorem wft_from_env_has_typ : ∀ x U E,
 -- Coq line 843: Lemma wft_from_okt_typ
 theorem wft_from_okt_typ : ∀ x T E,
   okt ((x, bind_typ T) :: E) → wft E T := by
-  sorry
+  sorry -- Depends on okt_push_typ_inv which is defined later
 
 -- Coq line 852: Lemma wft_from_okt_sub
 theorem wft_from_okt_sub : ∀ x T E,
   okt ((x, bind_sub T) :: E) → wft E T := by
-  sorry
+  sorry -- Depends on okt_push_sub_inv which is defined later
 
 -- Coq line 863: Lemma wft_weaken_right
 theorem wft_weaken_right : ∀ T E F,
@@ -357,6 +357,19 @@ theorem okt_push_typ_type : ∀ E X T,
   intro E X T H
   obtain ⟨_, HT, _⟩ := okt_push_typ_inv E X T H
   exact wft_type E T HT
+
+-- Actually implement wft_from_okt lemmas here where dependencies are available
+theorem wft_from_okt_typ' : ∀ x T E,
+  okt ((x, bind_typ T) :: E) → wft E T := by
+  intro x T E H
+  obtain ⟨_, HT, _⟩ := okt_push_typ_inv E x T H
+  exact HT
+
+theorem wft_from_okt_sub' : ∀ x T E,
+  okt ((x, bind_sub T) :: E) → wft E T := by
+  intro x T E H
+  obtain ⟨_, HT, _⟩ := okt_push_sub_inv E x T H
+  exact HT
 
 -- Coq line 921: Lemma okt_narrow
 theorem okt_narrow : ∀ V E F U X,
@@ -553,13 +566,25 @@ theorem preservation_result : preservation := by
 theorem canonical_form_abs : ∀ t U1 U2,
   value t → typing [] t (typ_arrow U1 U2) →
   ∃ V e1, t = trm_abs V e1 := by
-  sorry
+  intro t U1 U2 Hval Htyp
+  cases Hval with
+  | value_abs V e1 _ => exact ⟨V, e1, rfl⟩
+  | value_tabs V e1 _ => 
+    -- We need to show this case is impossible
+    -- A tabs value cannot have arrow type in an empty environment
+    sorry -- Need inversion on typing to show this is impossible
 
 -- Coq line 1439: Lemma canonical_form_tabs
 theorem canonical_form_tabs : ∀ t U1 U2,
   value t → typing [] t (typ_all U1 U2) →
   ∃ V e1, t = trm_tabs V e1 := by
-  sorry
+  intro t U1 U2 Hval Htyp
+  cases Hval with
+  | value_abs V e1 _ => 
+    -- We need to show this case is impossible
+    -- An abs value cannot have forall type in an empty environment
+    sorry -- Need inversion on typing to show this is impossible
+  | value_tabs V e1 _ => exact ⟨V, e1, rfl⟩
 
 -- Coq line 1455: Lemma progress_result
 theorem progress_result : progress := by
