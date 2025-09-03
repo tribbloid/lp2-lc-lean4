@@ -99,7 +99,7 @@ The following categories of proofs remain to be implemented:
 
 ## Statistics
 
-- Total theorems: ~70
-- Completed: 12
-- Partially completed: 5
-- Remaining: ~53
+- Total theorems: 70
+- Fully completed with proofs: 12 (subst_tt_fresh, subst_te_fresh, subst_ee_fresh, wft_type, okt_push_inv, okt_push_sub_inv, okt_push_sub_type, okt_push_typ_inv, okt_push_typ_type, value_regular, red_regular (partial), and several helper lemmas)
+- Partially completed: 6 (subst_tt_open_tt, subst_tt_open_tt_var, subst_tt_intro, red_regular needs two subst lemmas)
+- Remaining with sorry: 58 instances

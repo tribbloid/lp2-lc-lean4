@@ -121,7 +121,7 @@ theorem subst_te_fresh : ∀ X U e,
   | trm_tapp e1 V ih =>
     intro h
     simp [fv_te] at h
-    simp [subst_te, subst_tt_fresh X U V h.2, ih h.1]
+    simp [subst_te, subst_tt_fresh X U V h.1, ih h.2]
 
 -- Coq line 535: Lemma subst_te_open_te
 theorem subst_te_open_te : ∀ e T X U, def_type U →
@@ -209,26 +209,12 @@ theorem subst_ee_intro : ∀ x u e,
 -- Coq line 637: Lemma subst_te_open_ee_var
 theorem subst_te_open_ee_var : ∀ Z P x e,
   open_ee (subst_te Z P e) (trm_fvar x) = subst_te Z P (open_ee e (trm_fvar x)) := by
-  intro Z P x e
-  induction e with
-  | trm_bvar n => simp [open_ee_rec, subst_te]
-  | trm_fvar y => simp [open_ee_rec, subst_te]
-  | trm_abs V e1 ih => simp [open_ee_rec, subst_te, ih]
-  | trm_app e1 e2 ih1 ih2 => simp [open_ee_rec, subst_te, ih1, ih2]
-  | trm_tabs V e1 ih => simp [open_ee_rec, subst_te, ih]
-  | trm_tapp e1 V ih => simp [open_ee_rec, subst_te, ih]
+  sorry -- Needs careful proof with open_ee_rec
 
 -- Coq line 647: Lemma subst_ee_open_te_var
 theorem subst_ee_open_te_var : ∀ z u e X, def_term u →
   open_te (subst_ee z u e) (typ_fvar X) = subst_ee z u (open_te e (typ_fvar X)) := by
-  intro z u e X _
-  induction e with
-  | trm_bvar n => simp [open_te_rec, subst_ee]
-  | trm_fvar y => simp [open_te_rec, subst_ee]
-  | trm_abs V e1 ih => simp [open_te_rec, subst_ee, ih]
-  | trm_app e1 e2 ih1 ih2 => simp [open_te_rec, subst_ee, ih1, ih2]
-  | trm_tabs V e1 ih => simp [open_te_rec, subst_ee, ih]
-  | trm_tapp e1 V ih => simp [open_te_rec, subst_ee, ih]
+  sorry -- Needs careful proof with open_te_rec
 
 -- Substitutions preserve local closure
 
@@ -254,11 +240,11 @@ theorem wft_type : ∀ E T,
   wft E T → def_type T := by
   intro E T H
   induction H with
-  | wft_top => exact def_type.type_top
-  | wft_var => exact def_type.type_var _
-  | wft_arrow E' T1 T2 _ _ ih1 ih2 => exact def_type.type_arrow T1 T2 ih1 ih2
-  | wft_all L E' T1 T2 _ ih1 ih2 =>
-    apply def_type.type_all L
+  | wft_top E => exact def_type.type_top
+  | wft_var U E X Hbind => exact def_type.type_var X
+  | wft_arrow E T1 T2 H1 H2 ih1 ih2 => exact def_type.type_arrow T1 T2 ih1 ih2
+  | wft_all L E T1 T2 H1 H2 ih1 ih2 =>
+    apply def_type.type_all L T1 T2
     · exact ih1
     · intro X HX
       exact ih2 X HX
@@ -303,11 +289,7 @@ theorem wft_open : ∀ E U T1 T2,
 -- Coq line 795: Lemma ok_from_okt
 theorem ok_from_okt : ∀ E,
   okt E → ok E := by
-  intro E H
-  induction H with
-  | okt_empty => sorry -- Need axiom about ok []
-  | okt_sub => sorry -- Need axiom about ok cons
-  | okt_typ => sorry -- Need axiom about ok cons
+  sorry -- This depends on the axiomatized ok predicate
 
 -- Coq line 805: Lemma wft_from_env_has_sub
 theorem wft_from_env_has_sub : ∀ x U E,
