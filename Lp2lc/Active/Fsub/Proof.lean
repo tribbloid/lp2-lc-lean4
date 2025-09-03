@@ -397,7 +397,7 @@ theorem okt_subst_tb : ∀ Q Z P E F,
 theorem notin_fv_tt_open : ∀ Y X T,
   X ∉ fv_tt (T open_tt_var Y) →
   X ∉ fv_tt T := by
-  sorry
+  sorry -- Requires induction on T structure
 
 -- Coq line 989: Lemma notin_fv_wf
 theorem notin_fv_wf : ∀ E X T,
@@ -407,7 +407,7 @@ theorem notin_fv_wf : ∀ E X T,
 -- Coq line 999: Lemma map_subst_tb_id
 theorem map_subst_tb_id : ∀ G Z P,
   okt G → Z ∉ dom G → G = map_subst_tb Z P G := by
-  sorry
+  sorry -- Requires notin_fv_wf and subst_tt_fresh
 
 -- Regularity of relations
 
