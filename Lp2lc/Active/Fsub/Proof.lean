@@ -194,7 +194,16 @@ theorem subst_ee_term : ∀ e1 Z e2,
 -- Coq line 690: Lemma wft_type
 theorem wft_type : ∀ E T,
   wft E T → def_type T := by
-  sorry
+  intro E T H
+  induction H with
+  | wft_top => exact def_type.type_top
+  | wft_var => exact def_type.type_var _
+  | wft_arrow _ _ _ _ ih1 ih2 => exact def_type.type_arrow _ _ ih1 ih2
+  | wft_all L _ T1 T2 _ ih1 ih2 =>
+    apply def_type.type_all L
+    · exact ih1
+    · intro X HX
+      exact ih2 X HX
 
 -- Coq line 698: Lemma wft_weaken
 theorem wft_weaken : ∀ G T E F,
@@ -236,7 +245,11 @@ theorem wft_open : ∀ E U T1 T2,
 -- Coq line 795: Lemma ok_from_okt
 theorem ok_from_okt : ∀ E,
   okt E → ok E := by
-  sorry
+  intro E H
+  induction H with
+  | okt_empty => sorry -- Need axiom about ok []
+  | okt_sub => sorry -- Need axiom about ok cons
+  | okt_typ => sorry -- Need axiom about ok cons
 
 -- Coq line 805: Lemma wft_from_env_has_sub
 theorem wft_from_env_has_sub : ∀ x U E,
@@ -289,7 +302,7 @@ theorem okt_push_sub_type : ∀ E X T,
   okt ((X, bind_sub T) :: E) → def_type T := by
   intro E X T H
   obtain ⟨_, HT, _⟩ := okt_push_sub_inv E X T H
-  sorry -- Need wft_type lemma
+  exact wft_type E T HT
 
 -- Coq line 904: Lemma okt_push_typ_inv
 theorem okt_push_typ_inv : ∀ E x T,
@@ -303,7 +316,7 @@ theorem okt_push_typ_type : ∀ E X T,
   okt ((X, bind_typ T) :: E) → def_type T := by
   intro E X T H
   obtain ⟨_, HT, _⟩ := okt_push_typ_inv E X T H
-  sorry -- Need wft_type lemma
+  exact wft_type E T HT
 
 -- Coq line 921: Lemma okt_narrow
 theorem okt_narrow : ∀ V E F U X,
@@ -382,11 +395,11 @@ theorem red_regular : ∀ t t',
     have Hv2 := value_regular _ Hval
     constructor
     · exact def_term.term_app _ _ Hterm Hv2
-    · sorry -- Need subst_ee_term lemma
+    · sorry -- Need subst_ee_term: open_ee e1 v2 = subst_ee x v2 (e1 open_ee_var x) for fresh x
   | red_tabs V1 e1 V2 Hterm HV =>
     constructor
     · exact def_term.term_tapp _ _ Hterm HV
-    · sorry -- Need subst_te_term lemma
+    · sorry -- Need subst_te_term: open_te e1 V2 = subst_te X V2 (e1 open_te_var X) for fresh X
 
 -- Properties of Subtyping
 
