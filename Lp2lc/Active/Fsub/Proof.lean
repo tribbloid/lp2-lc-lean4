@@ -198,8 +198,8 @@ theorem wft_type : ∀ E T,
   induction H with
   | wft_top => exact def_type.type_top
   | wft_var => exact def_type.type_var _
-  | wft_arrow _ _ _ _ ih1 ih2 => exact def_type.type_arrow _ _ ih1 ih2
-  | wft_all L _ T1 T2 _ ih1 ih2 =>
+  | wft_arrow E' T1 T2 _ _ ih1 ih2 => exact def_type.type_arrow T1 T2 ih1 ih2
+  | wft_all L E' T1 T2 _ ih1 ih2 =>
     apply def_type.type_all L
     · exact ih1
     · intro X HX
