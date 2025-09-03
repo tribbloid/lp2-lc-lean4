@@ -31,7 +31,7 @@ You should do the following tasks by the numbers:
 - Replace `sorry` with complete proofs
 - Add auxiliary tactics/lemmas to `Auxiliary.lean` as needed
 - Build and verify after every change
-- if you made progress by successfully verifying a new proof, update `report.md` to summarize your progress, then git commit into the current branch
+- if you made progress by successfully verifying a new proof, update `report.md` (with numbers in the overview) to summarize your progress, then git commit into the current branch
 - do not delete proofs that are already successfully verified
 
 Repeat step 4 until all proofs are discharged and verified. Do not ask for permission.

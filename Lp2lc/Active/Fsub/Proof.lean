@@ -146,7 +146,7 @@ theorem subst_te_intro : ∀ X U e,
 theorem open_ee_rec_term_core : ∀ e j v u i, i ≠ j →
   open_ee_rec j v e = open_ee_rec i u (open_ee_rec j v e) →
   e = open_ee_rec i u e := by
-  sorry
+  sorry -- Complex case analysis on bound variables
 
 -- Coq line 576: Lemma open_ee_rec_type_core'
 theorem open_ee_rec_type_core' : ∀ e j V u i,
