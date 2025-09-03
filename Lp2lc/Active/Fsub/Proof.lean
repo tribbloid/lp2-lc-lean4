@@ -102,7 +102,26 @@ theorem open_te_rec_term : ∀ e U,
 -- Coq line 527: Lemma subst_te_fresh
 theorem subst_te_fresh : ∀ X U e,
   X ∉ fv_te e → subst_te X U e = e := by
-  sorry
+  intro X U e
+  induction e with
+  | trm_bvar n => intro _; simp [subst_te]
+  | trm_fvar x => intro _; simp [subst_te]
+  | trm_abs V e1 ih =>
+    intro h
+    simp [fv_te] at h
+    simp [subst_te, subst_tt_fresh X U V h.1, ih h.2]
+  | trm_app e1 e2 ih1 ih2 =>
+    intro h
+    simp [fv_te] at h
+    simp [subst_te, ih1 h.1, ih2 h.2]
+  | trm_tabs V e1 ih =>
+    intro h
+    simp [fv_te] at h
+    simp [subst_te, subst_tt_fresh X U V h.1, ih h.2]
+  | trm_tapp e1 V ih =>
+    intro h
+    simp [fv_te] at h
+    simp [subst_te, subst_tt_fresh X U V h.2, ih h.1]
 
 -- Coq line 535: Lemma subst_te_open_te
 theorem subst_te_open_te : ∀ e T X U, def_type U →
@@ -143,7 +162,32 @@ theorem open_ee_rec_term : ∀ u e,
 -- Coq line 595: Lemma subst_ee_fresh
 theorem subst_ee_fresh : ∀ x u e,
   x ∉ fv_ee e → subst_ee x u e = e := by
-  sorry
+  intro x u e
+  induction e with
+  | trm_bvar n => intro _; simp [subst_ee]
+  | trm_fvar y =>
+    intro h
+    simp [fv_ee] at h
+    simp only [subst_ee]
+    split_ifs with heq
+    · subst heq; simp at h
+    · rfl
+  | trm_abs V e1 ih =>
+    intro h
+    simp [fv_ee] at h
+    simp [subst_ee, ih h]
+  | trm_app e1 e2 ih1 ih2 =>
+    intro h
+    simp [fv_ee] at h
+    simp [subst_ee, ih1 h.1, ih2 h.2]
+  | trm_tabs V e1 ih =>
+    intro h
+    simp [fv_ee] at h
+    simp [subst_ee, ih h]
+  | trm_tapp e1 V ih =>
+    intro h
+    simp [fv_ee] at h
+    simp [subst_ee, ih h]
 
 -- Coq line 604: Lemma subst_ee_open_ee
 theorem subst_ee_open_ee : ∀ t1 t2 u x, def_term u →
@@ -165,12 +209,26 @@ theorem subst_ee_intro : ∀ x u e,
 -- Coq line 637: Lemma subst_te_open_ee_var
 theorem subst_te_open_ee_var : ∀ Z P x e,
   open_ee (subst_te Z P e) (trm_fvar x) = subst_te Z P (open_ee e (trm_fvar x)) := by
-  sorry
+  intro Z P x e
+  induction e with
+  | trm_bvar n => simp [open_ee_rec, subst_te]
+  | trm_fvar y => simp [open_ee_rec, subst_te]
+  | trm_abs V e1 ih => simp [open_ee_rec, subst_te, ih]
+  | trm_app e1 e2 ih1 ih2 => simp [open_ee_rec, subst_te, ih1, ih2]
+  | trm_tabs V e1 ih => simp [open_ee_rec, subst_te, ih]
+  | trm_tapp e1 V ih => simp [open_ee_rec, subst_te, ih]
 
 -- Coq line 647: Lemma subst_ee_open_te_var
 theorem subst_ee_open_te_var : ∀ z u e X, def_term u →
   open_te (subst_ee z u e) (typ_fvar X) = subst_ee z u (open_te e (typ_fvar X)) := by
-  sorry
+  intro z u e X _
+  induction e with
+  | trm_bvar n => simp [open_te_rec, subst_ee]
+  | trm_fvar y => simp [open_te_rec, subst_ee]
+  | trm_abs V e1 ih => simp [open_te_rec, subst_ee, ih]
+  | trm_app e1 e2 ih1 ih2 => simp [open_te_rec, subst_ee, ih1, ih2]
+  | trm_tabs V e1 ih => simp [open_te_rec, subst_ee, ih]
+  | trm_tapp e1 V ih => simp [open_te_rec, subst_ee, ih]
 
 -- Substitutions preserve local closure
 

@@ -41,6 +41,22 @@ This report tracks the progress of implementing proofs for the System-F with Sub
 **Technique**: Induction on the reduction relation, using `value_regular` for value cases.
 **Note**: Two cases remain incomplete, requiring `subst_ee_term` and `subst_te_term` lemmas.
 
+#### 9. `subst_te_fresh` (Line 103)
+**Description**: Type substitution with a fresh variable in a term leaves the term unchanged.
+**Technique**: Structural induction on the term, using `subst_tt_fresh` for type components.
+
+#### 10. `subst_ee_fresh` (Line 144)
+**Description**: Term substitution with a fresh variable leaves the term unchanged.
+**Technique**: Structural induction on the term with case analysis for variable substitution.
+
+#### 11. `subst_te_open_ee_var` (Line 191)
+**Description**: Commutation of type substitution with term opening by a variable.
+**Technique**: Structural induction on the term, simplifying each constructor.
+
+#### 12. `subst_ee_open_te_var` (Line 202)
+**Description**: Commutation of term substitution with type opening by a variable.
+**Technique**: Structural induction on the term, simplifying each constructor.
+
 ### Partially Completed Proofs
 
 #### 1. `subst_tt_fresh` (Line 25)
@@ -84,6 +100,6 @@ The following categories of proofs remain to be implemented:
 ## Statistics
 
 - Total theorems: ~70
-- Completed: 8
+- Completed: 12
 - Partially completed: 5
-- Remaining: ~57
+- Remaining: ~53
