@@ -343,6 +343,10 @@ theorem wft_weaken_right : ∀ T E F,
 
 -- Properties of well-formedness of an environment
 
+-- Simple lemma: empty environment is okt
+theorem okt_empty : okt [] := by
+  exact okt.okt_empty
+
 -- Coq line 882: Lemma okt_push_inv
 theorem okt_push_inv : ∀ E X B,
   okt ((X, B) :: E) → ∃ T, B = bind_sub T ∨ B = bind_typ T := by
@@ -415,6 +419,16 @@ theorem okt_subst_tb : ∀ Q Z P E F,
   sorry
 
 -- Environment is unchanged by substitution from a fresh name
+
+-- Simple free variable lemmas
+theorem fv_tt_top : fv_tt typ_top = ∅ := by
+  simp [fv_tt]
+
+theorem fv_tt_bvar : ∀ n, fv_tt (typ_bvar n) = ∅ := by
+  intro n; simp [fv_tt]
+
+theorem fv_tt_fvar : ∀ X, fv_tt (typ_fvar X) = {X} := by
+  intro X; simp [fv_tt]
 
 -- Coq line 979: Lemma notin_fv_tt_open
 theorem notin_fv_tt_open : ∀ Y X T,
@@ -594,7 +608,6 @@ theorem canonical_form_abs : ∀ t U1 U2,
   | value_abs V e1 _ => exact ⟨V, e1, rfl⟩
   | value_tabs V e1 Hterm => 
     -- Show tabs cannot have arrow type
-    -- We need to analyze the typing derivation
     exfalso
     sorry -- Need typing inversion lemma
 
