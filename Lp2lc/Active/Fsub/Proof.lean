@@ -132,13 +132,13 @@ theorem subst_te_open_te : ∀ e T X U, def_type U →
 -- Coq line 546: Lemma subst_te_open_te_var
 theorem subst_te_open_te_var : ∀ X Y U e, Y ≠ X → def_type U →
   open_te (subst_te X U e) (typ_fvar Y) = subst_te X U (open_te e (typ_fvar Y)) := by
-  sorry
+  sorry -- Need subst_tt_open_tt_rec first
 
 -- Coq line 556: Lemma subst_te_intro
 theorem subst_te_intro : ∀ X U e,
   X ∉ fv_te e → def_type U →
   open_te e U = subst_te X U (e open_te_var X) := by
-  sorry
+  sorry -- Depends on subst_te_open_te_var
 
 -- Properties of term substitution in terms
 
