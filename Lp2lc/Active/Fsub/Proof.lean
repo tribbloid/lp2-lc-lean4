@@ -204,7 +204,7 @@ theorem subst_ee_open_ee_var : ∀ x y u e, y ≠ x → def_term u →
 theorem subst_ee_intro : ∀ x u e,
   x ∉ fv_ee e → def_term u →
   open_ee e u = subst_ee x u (e open_ee_var x) := by
-  sorry
+  sorry -- Need subst_ee_open_ee first
 
 -- Coq line 637: Lemma subst_te_open_ee_var
 theorem subst_te_open_ee_var : ∀ Z P x e,
