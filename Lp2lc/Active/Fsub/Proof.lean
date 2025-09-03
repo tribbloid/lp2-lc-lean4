@@ -237,7 +237,7 @@ theorem subst_te_open_ee_var : ∀ Z P x e,
 -- Coq line 647: Lemma subst_ee_open_te_var
 theorem subst_ee_open_te_var : ∀ z u e X, def_term u →
   open_te (subst_ee z u e) (typ_fvar X) = subst_ee z u (open_te e (typ_fvar X)) := by
-  sorry -- Requires careful handling of if-then-else in subst_ee
+  sorry -- Need to handle type substitution in substituted terms
 
 -- Substitutions preserve local closure
 
@@ -327,12 +327,12 @@ theorem wft_from_env_has_typ : ∀ x U E,
 -- Coq line 843: Lemma wft_from_okt_typ
 theorem wft_from_okt_typ : ∀ x T E,
   okt ((x, bind_typ T) :: E) → wft E T := by
-  sorry -- Depends on okt_push_typ_inv which is defined later
+  sorry -- Depends on okt_push_typ_inv which is defined below
 
 -- Coq line 852: Lemma wft_from_okt_sub
 theorem wft_from_okt_sub : ∀ x T E,
   okt ((x, bind_sub T) :: E) → wft E T := by
-  sorry -- Depends on okt_push_sub_inv which is defined later
+  sorry -- Depends on okt_push_sub_inv which is defined below
 
 -- Coq line 863: Lemma wft_weaken_right
 theorem wft_weaken_right : ∀ T E F,
@@ -381,14 +381,14 @@ theorem okt_push_typ_type : ∀ E X T,
   obtain ⟨_, HT, _⟩ := okt_push_typ_inv E X T H
   exact wft_type E T HT
 
--- Actually implement wft_from_okt lemmas here where dependencies are available
-theorem wft_from_okt_typ' : ∀ x T E,
+-- Now we can implement wft_from_okt lemmas that were declared with sorry above
+theorem wft_from_okt_typ.impl : ∀ x T E,
   okt ((x, bind_typ T) :: E) → wft E T := by
   intro x T E H
   obtain ⟨_, HT, _⟩ := okt_push_typ_inv E x T H
   exact HT
 
-theorem wft_from_okt_sub' : ∀ x T E,
+theorem wft_from_okt_sub.impl : ∀ x T E,
   okt ((x, bind_sub T) :: E) → wft E T := by
   intro x T E H
   obtain ⟨_, HT, _⟩ := okt_push_sub_inv E x T H
