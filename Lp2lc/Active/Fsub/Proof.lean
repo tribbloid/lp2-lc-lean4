@@ -97,7 +97,7 @@ theorem open_te_rec_type_core : ∀ e j Q i P, i ≠ j →
 -- Coq line 514: Lemma open_te_rec_term
 theorem open_te_rec_term : ∀ e U,
   def_term e → ∀ k, e = open_te_rec k U e := by
-  sorry
+  sorry -- Need to handle ℕ vs Var type mismatch
 
 -- Coq line 527: Lemma subst_te_fresh
 theorem subst_te_fresh : ∀ X U e,
@@ -157,7 +157,7 @@ theorem open_ee_rec_type_core' : ∀ e j V u i,
 -- Coq line 583: Lemma open_ee_rec_term
 theorem open_ee_rec_term : ∀ u e,
   def_term e → ∀ k, e = open_ee_rec k u e := by
-  sorry
+  sorry -- Need to handle ℕ vs Var type mismatch
 
 -- Coq line 595: Lemma subst_ee_fresh
 theorem subst_ee_fresh : ∀ x u e,
@@ -339,7 +339,7 @@ theorem wft_weaken_right : ∀ T E F,
   wft E T →
   ok (E ++ F) →
   wft (E ++ F) T := by
-  sorry
+  sorry -- Need to handle the argument order for wft_weaken
 
 -- Properties of well-formedness of an environment
 
