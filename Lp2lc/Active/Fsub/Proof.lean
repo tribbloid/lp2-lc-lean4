@@ -294,12 +294,12 @@ theorem ok_from_okt : ∀ E,
 -- Coq line 805: Lemma wft_from_env_has_sub
 theorem wft_from_env_has_sub : ∀ x U E,
   okt E → binds x (bind_sub U) E → wft E U := by
-  sorry
+  sorry -- Requires weakening lemma
 
 -- Coq line 824: Lemma wft_from_env_has_typ
 theorem wft_from_env_has_typ : ∀ x U E,
   okt E → binds x (bind_typ U) E → wft E U := by
-  sorry
+  sorry -- Requires weakening lemma
 
 -- Coq line 843: Lemma wft_from_okt_typ
 theorem wft_from_okt_typ : ∀ x T E,
@@ -461,7 +461,7 @@ theorem sub_reflexivity : ∀ E T,
   okt E →
   wft E T →
   sub E T T := by
-  sorry
+  sorry -- Requires careful induction on wft structure
 
 -- Coq line 1135: Lemma sub_weakening
 theorem sub_weakening : ∀ E F G S T,
@@ -569,10 +569,11 @@ theorem canonical_form_abs : ∀ t U1 U2,
   intro t U1 U2 Hval Htyp
   cases Hval with
   | value_abs V e1 _ => exact ⟨V, e1, rfl⟩
-  | value_tabs V e1 _ => 
-    -- We need to show this case is impossible
-    -- A tabs value cannot have arrow type in an empty environment
-    sorry -- Need inversion on typing to show this is impossible
+  | value_tabs V e1 Hterm => 
+    -- Show tabs cannot have arrow type
+    -- We need to analyze the typing derivation
+    exfalso
+    sorry -- Need typing inversion lemma
 
 -- Coq line 1439: Lemma canonical_form_tabs
 theorem canonical_form_tabs : ∀ t U1 U2,
@@ -580,10 +581,10 @@ theorem canonical_form_tabs : ∀ t U1 U2,
   ∃ V e1, t = trm_tabs V e1 := by
   intro t U1 U2 Hval Htyp
   cases Hval with
-  | value_abs V e1 _ => 
-    -- We need to show this case is impossible
-    -- An abs value cannot have forall type in an empty environment
-    sorry -- Need inversion on typing to show this is impossible
+  | value_abs V e1 Hterm => 
+    -- Show abs cannot have forall type
+    exfalso
+    sorry -- Need typing inversion lemma
   | value_tabs V e1 _ => exact ⟨V, e1, rfl⟩
 
 -- Coq line 1455: Lemma progress_result
