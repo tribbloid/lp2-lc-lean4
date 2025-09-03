@@ -24,14 +24,17 @@ You should do the following tasks by the numbers:
 - Extract all theorems and lemmas from Coq source
 - Create theorem statements with `sorry` proof bodies in `Proof.lean`
 - Maintain original declaration order
+- git commit into the current branch after this step is complete
 
 ### 4. Proof Implementation
 - Discharge & implement proofs top-down approach
-- Add auxiliary tactics/lemmas to `Auxiliary.lean` as needed
-- Compile frequently to verify correctness
 - Replace `sorry` with complete proofs
+- Add auxiliary tactics/lemmas to `Auxiliary.lean` as needed
+- Build and verify after every change
+- if you made progress by successfully verifying a new proof, update `report.md` to summarize your progress, then git commit into the current branch
+- do not delete proofs that are already successfully verified
 
-Wwrite 1 definition at a time and immediately compile afterwards, compile often to verify your work, and do not ask for permission.
+Repeat step 4 until all proofs are discharged and verified. Do not ask for permission.
 
 ## Conversion Rules
 - Preserve original names (add `def_` prefix only if required by Lean syntax) and orders
