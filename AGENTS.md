@@ -4,6 +4,9 @@
 
 The project depends on Mathlib and AESOP
 
+## Planning Rules
+- Always save your plan and TODO list as a new markdown file in `plans` directory.
+
 ## Coding Rules
 
 ### General
@@ -23,6 +26,11 @@ The project depends on Mathlib and AESOP
 - Use quoted module names: `import «Lp2lc».module`
 - Group imports logically (Lean core, external deps, local modules)
 
+## Quality Checks
+- Lean files build successfully with `lake build`.
+- [ ] All files compile without errors or warning.
+- [ ] No unused variable warnings.
+- [ ] All theorems proven or marked with TODO.
 
 ## Key Commands
 

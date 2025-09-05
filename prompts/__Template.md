@@ -1,1 +1,1 @@
-run task `xxx.md` for file `yyy.v` using rules in `AGENTS.md`
+can you rank files under Lp2lc_coq\Active by their sizes (in ascending order) and execute the task defined in prompts\Define.md on each of them?
