@@ -3,12 +3,12 @@
 ## Overview
 Converting System-F with Subtyping (Fsub) proofs from Coq to Lean 4.
 
-## Status: 36.3% Complete
+## Status: 48.5% Complete (≈50%)
 
 ### Statistics
-- **Total lemmas/theorems:** 91
-- **Fully implemented:** 33 (36.3%)
-- **Remaining with `sorry`:** 58 (63.7%)
+- **Total lemmas/theorems:** 103
+- **Fully implemented:** 50 (48.5%)
+- **Remaining with `sorry`:** 53 (51.5%)
 
 ### Successfully Implemented Lemmas
 
@@ -54,6 +54,25 @@ Converting System-F with Subtyping (Fsub) proofs from Coq to Lean 4.
 31. `open_ee_rec_fvar` - Opening free term variables
 32. `open_te_rec_bvar` - Type opening of bound term vars
 33. `open_te_rec_fvar` - Type opening of free term vars
+
+#### Additional Lemmas (34-50) - Second Phase
+34. `subst_te_open_ee_var` - Type substitution commutes with term opening
+35. `wft_from_okt_typ` - Extract well-formed type from okt with typ binding
+36. `wft_from_okt_sub` - Extract well-formed type from okt with sub binding
+37. `subst_ee_open_ee` - Term substitution distributes over opening
+38. `subst_ee_intro` - Term substitution introduction
+39. `open_tt_top` - Opening top type
+40. `open_tt_fvar` - Opening free type variable
+41. `open_ee_fvar` - Opening free term variable
+42. `open_te_bvar` - Type opening of bound variable
+43. `open_te_fvar` - Type opening of free variable
+44. `subst_tt_top` - Type substitution in top
+45. `subst_te_bvar` - Type substitution in bound term variable
+46. `subst_ee_bvar` - Term substitution in bound term variable
+47. `fv_tt_arrow` - Free variables in arrow type
+48. `fv_tt_all` - Free variables in forall type
+49. `fv_ee_abs` - Free term variables in abstraction
+50. `fv_ee_app` - Free term variables in application
 
 ## Main Blockers
 

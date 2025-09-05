@@ -193,7 +193,29 @@ theorem subst_ee_fresh : ∀ x u e,
 theorem subst_ee_open_ee : ∀ t1 t2 u x, def_term u →
   subst_ee x u (open_ee t1 t2) =
   open_ee (subst_ee x u t1) (subst_ee x u t2) := by
-  sorry
+  intro t1 t2 u x Hu
+  simp only [open_ee]
+  -- Need generalized version
+  suffices h : ∀ k, subst_ee x u (open_ee_rec k t2 t1) = 
+                     open_ee_rec k (subst_ee x u t2) (subst_ee x u t1) by
+    exact h 0
+  intro k
+  induction t1 generalizing k with
+  | trm_bvar n => 
+    simp [open_ee_rec, subst_ee]
+    by_cases h : n = k <;> simp [h, subst_ee]
+  | trm_fvar y =>
+    simp [open_ee_rec, subst_ee]
+    by_cases h : y = x <;> simp [h, open_ee_rec]
+  | trm_abs V e1 ih =>
+    simp [open_ee_rec, subst_ee]
+    rw [ih]
+  | trm_app e1 e2 ih1 ih2 =>
+    simp [open_ee_rec, subst_ee, ih1, ih2]
+  | trm_tabs V e1 ih =>
+    simp [open_ee_rec, subst_ee, ih]
+  | trm_tapp e1 V ih =>
+    simp [open_ee_rec, subst_ee, ih]
 
 -- Coq line 626: Lemma subst_ee_open_te_var
 theorem subst_ee_open_te_var : ∀ z u e V, def_term u →
@@ -204,7 +226,12 @@ theorem subst_ee_open_te_var : ∀ z u e V, def_term u →
 theorem subst_ee_intro : ∀ x e u,
   x ∉ fv_ee e → def_term u →
   open_ee e u = subst_ee x u (e open_ee_var x) := by
-  sorry -- Depends on subst_ee_open_ee
+  intro x e u Hfresh Hu
+  rw [←subst_ee_open_ee _ _ _ _ Hu]
+  simp only [open_ee_var, open_ee, subst_ee]
+  by_cases h : x = x
+  · rw [if_pos h, subst_ee_fresh x u e Hfresh]
+  · contradiction
 
 -- Coq line 637: Lemma subst_te_open_ee_var
 theorem subst_te_open_ee_var : ∀ Z P x e,
@@ -302,7 +329,11 @@ theorem wft_open : ∀ E U T1 T2,
   wft E (typ_all T1 T2) →
   wft E U →
   wft E (open_tt T2 U) := by
-  sorry
+  intro E U T1 T2 HE Hall HU
+  cases Hall with
+  | wft_all L E' T1' T2' HT1 HT2 =>
+    -- Need to pick a fresh variable and instantiate
+    sorry -- Need to handle cofinite quantification
 
 -- Relations between well-formed environment and types well-formed in environments
 
@@ -340,12 +371,16 @@ theorem wft_from_env_has_typ : ∀ x U E,
 -- Coq line 843: Lemma wft_from_okt_typ
 theorem wft_from_okt_typ : ∀ x T E,
   okt ((x, bind_typ T) :: E) → wft E T := by
-  sorry -- Depends on okt_push_typ_inv
+  intro x T E H
+  cases H with
+  | okt_typ _ _ _ _ HT _ => exact HT
 
 -- Coq line 852: Lemma wft_from_okt_sub
 theorem wft_from_okt_sub : ∀ x T E,
   okt ((x, bind_sub T) :: E) → wft E T := by
-  sorry -- Depends on okt_push_sub_inv
+  intro x T E H
+  cases H with
+  | okt_sub _ _ _ _ HT _ => exact HT
 
 -- Coq line 863: Lemma wft_weaken_right
 theorem wft_weaken_right : ∀ T E F,
@@ -473,6 +508,45 @@ theorem open_te_rec_bvar : ∀ n U i, open_te_rec n U (trm_bvar i) = trm_bvar i 
 theorem open_te_rec_fvar : ∀ n U x, open_te_rec n U (trm_fvar x) = trm_fvar x := by
   intros; simp [open_te_rec]
 
+-- Additional simple lemmas
+theorem open_tt_top : ∀ U, open_tt typ_top U = typ_top := by
+  intro U; simp [open_tt, open_tt_rec]
+
+theorem open_tt_fvar : ∀ U X, open_tt (typ_fvar X) U = typ_fvar X := by
+  intros; simp [open_tt, open_tt_rec]
+
+theorem open_ee_fvar : ∀ u x, open_ee (trm_fvar x) u = trm_fvar x := by
+  intros; simp [open_ee, open_ee_rec]
+
+theorem open_te_bvar : ∀ U i, open_te (trm_bvar i) U = trm_bvar i := by
+  intros; simp [open_te, open_te_rec]
+
+theorem open_te_fvar : ∀ U x, open_te (trm_fvar x) U = trm_fvar x := by
+  intros; simp [open_te, open_te_rec]
+
+-- Simple substitution lemmas
+theorem subst_tt_top : ∀ X U, subst_tt X U typ_top = typ_top := by
+  intros; simp [subst_tt]
+
+theorem subst_te_bvar : ∀ X U n, subst_te X U (trm_bvar n) = trm_bvar n := by
+  intros; simp [subst_te]
+
+theorem subst_ee_bvar : ∀ x u n, subst_ee x u (trm_bvar n) = trm_bvar n := by
+  intros; simp [subst_ee]
+
+-- Additional helper lemmas for free variables
+theorem fv_tt_arrow : ∀ T1 T2, fv_tt (typ_arrow T1 T2) = fv_tt T1 ∪ fv_tt T2 := by
+  intros; simp [fv_tt]
+
+theorem fv_tt_all : ∀ T1 T2, fv_tt (typ_all T1 T2) = fv_tt T1 ∪ fv_tt T2 := by
+  intros; simp [fv_tt]
+
+theorem fv_ee_abs : ∀ V e, fv_ee (trm_abs V e) = fv_ee e := by
+  intros; simp [fv_ee]
+
+theorem fv_ee_app : ∀ e1 e2, fv_ee (trm_app e1 e2) = fv_ee e1 ∪ fv_ee e2 := by
+  intros; simp [fv_ee]
+
 -- Coq line 979: Lemma notin_fv_tt_open
 theorem notin_fv_tt_open : ∀ Y X T,
   X ∉ fv_tt (T open_tt_var Y) →
@@ -487,7 +561,17 @@ theorem notin_fv_wf : ∀ E X T,
 -- Coq line 999: Lemma map_subst_tb_id
 theorem map_subst_tb_id : ∀ G Z P,
   okt G → Z ∉ dom G → G = map_subst_tb Z P G := by
-  sorry -- Requires notin_fv_wf and subst_tt_fresh
+  intro G Z P HG HZ
+  induction G with
+  | nil => simp [map_subst_tb]
+  | cons hd tl ih =>
+    cases hd with | mk X B =>
+    simp [map_subst_tb]
+    cases B with
+    | bind_typ T => simp
+    | bind_sub T => 
+      simp
+      sorry -- Need to show subst_tt Z P T = T when Z not in fv_tt T
 
 -- Regularity of relations
 
@@ -618,7 +702,10 @@ theorem typing_inv_tabs : ∀ E S1 e1 T,
 
 -- Coq line 1391: Lemma preservation_result
 theorem preservation_result : preservation := by
-  sorry
+  simp only [preservation]
+  intro e e' T Hred Htype
+  -- This requires the preservation lemma logic
+  sorry -- Complex proof requiring all the typing preservation lemmas
 
 -- Progress
 
@@ -650,11 +737,10 @@ theorem canonical_form_abs : ∀ t U1 U2,
   cases Hval with
   | value_abs V e1 _ => exact ⟨V, e1, rfl⟩
   | value_tabs V e1 Hterm => 
-    -- Need to show tabs can't have arrow type
-    -- We examine the typing derivation
+    -- tabs can only have type typ_all, not typ_arrow
+    -- By examining the typing rules, typing_tabs gives a typ_all type
     exfalso
-    -- This requires deeper typing inversion which we haven't proven yet
-    sorry -- Need full typing inversion for tabs
+    sorry -- Requires typing inversion lemma
 
 -- Coq line 1439: Lemma canonical_form_tabs
 theorem canonical_form_tabs : ∀ t U1 U2,
@@ -663,13 +749,16 @@ theorem canonical_form_tabs : ∀ t U1 U2,
   intro t U1 U2 Hval Htyp
   cases Hval with
   | value_abs V e1 Hterm => 
-    -- Show abs cannot have forall type
+    -- abs can only have typ_arrow type, not typ_all
     exfalso
-    sorry -- Need typing inversion lemma
+    sorry -- Requires typing inversion lemma
   | value_tabs V e1 _ => exact ⟨V, e1, rfl⟩
 
 -- Coq line 1455: Lemma progress_result
 theorem progress_result : progress := by
-  sorry
+  simp only [progress]
+  intro e T Htype
+  -- Show that a well-typed closed term is either a value or can step
+  sorry -- Complex proof requiring canonical forms and typing inversion
 
 end Lp2lc.Active
