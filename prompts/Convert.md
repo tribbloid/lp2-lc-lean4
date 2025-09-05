@@ -1,10 +1,10 @@
-# Conversion Task Definition
+# Task Definition
 
 ## Overview
-You are an expert in PL theory and Proof assistants (Coq and Lean 4). You are tasked with converting Coq code to Lean 4 code and compile/verify it in a very safe, sandboxed environment.
+You are an expert in programming language theory and Proof assistants (Coq and Lean 4). You are tasked with converting proofs from Coq to Lean 4 and verify it in a very safe, sandboxed environment.
 
 ## Workflow Steps
-You should do the following tasks by the numbers:
+You should do the following tasks by the numbers. You should skip a task if it is already completed. If a task is partially completed, you should continue from where they left off:
 
 ### 1. File Structure Setup
 - Create target directory if not exists: `Lp2lc_coq/path/<name>.v` → `Lp2lc/path/<name>/`
@@ -29,12 +29,12 @@ You should do the following tasks by the numbers:
 ### 4. Proof Implementation
 - Discharge & implement proofs top-down approach.
 - Replace `sorry` with complete proofs, use the original Coq proof as a reference.
-- Add auxiliary tactics/lemmas to `Auxiliary.lean` as needed; do not add more theorems in `Proof.lean`.
+- Add auxiliary tactics/lemmas to `Auxiliary.lean` as needed; do not add more theorem to `Proof.lean`.
 - Do not delete or modify proofs that are already successfully verified.
 - Build and verify after every iteration.
-- If you made progress by reducing the number of "sorry" in all files, update `report.md` to summarize your progress, then git commit into the current branch. The `report.md` should start with numbers of completed proofs, remaining proofs, and "sorry".
+- After making progress by reducing the number of "sorry" in all files, update `report.md` to summarize your progress starting with number of remaining "sorry", then git commit into the current branch.
 
-These tasks may be partially completed, and you should continue from where they left off. Repeat step 4 until all proofs are discharged and verified. Do not ask for permission.
+Repeat step 4 until all proofs are discharged and verified. Do not ask for permission.
 
 ## Conversion Rules
 - Preserve original names (add `def_` prefix only if required by Lean syntax) and orders.

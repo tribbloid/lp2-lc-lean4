@@ -8,9 +8,9 @@ This report tracks the progress of implementing proofs for the System-F with Sub
 ## Executive Summary
 
 ### Progress Overview
-- **Overall Completion**: 35% (31 of 88 theorems fully proven)
+- **Overall Completion**: 46.6% (48 of 103 theorems fully proven)
 - **Build Status**: ✅ Successful - All files compile without errors
-- **Key Achievement**: Solid foundation of substitution and environment lemmas established
+- **Key Achievement**: Solid foundation of substitution, environment, and simple lemmas established
 
 ### Progress by Category
 | Category | Status | Notes |
@@ -96,6 +96,41 @@ This report tracks the progress of implementing proofs for the System-F with Sub
 **Completed**: `fv_tt_top`, `fv_tt_bvar`, `fv_tt_fvar`, `fv_ee_bvar`, `fv_ee_fvar`, `fv_te_bvar`, `fv_te_fvar`
 **Technique**: Direct computation from definitions.
 
+#### 17. Additional Opening Lemmas
+**Description**: Additional basic lemmas about opening operations.
+**Completed**: `open_tt_top`, `open_tt_fvar`, `open_ee_fvar`, `open_te_bvar`, `open_te_fvar`
+**Technique**: Direct simplification using opening definitions.
+
+#### 18. Simple Substitution Lemmas
+**Description**: Basic substitution operations that are trivial.
+**Completed**: `subst_tt_top`, `subst_te_bvar`, `subst_ee_bvar`
+**Technique**: Direct simplification using substitution definitions.
+
+#### 19. Free Variable Set Operations
+**Description**: Lemmas about free variable sets in compound types.
+**Completed**: `fv_tt_arrow`, `fv_tt_all`, `fv_ee_abs`, `fv_ee_app`
+**Technique**: Direct computation showing set union properties.
+
+#### 20. `okt_empty`
+**Description**: The empty environment is well-formed.
+**Technique**: Direct application of the `okt_empty` constructor.
+
+#### 21. `okt_push_typ_type`
+**Description**: Extract type well-formedness from typing environment extension.
+**Technique**: Uses `okt_push_typ_inv` and `wft_type`.
+
+#### 22. `wft_from_okt_typ` and `wft_from_okt_sub`
+**Description**: Extract type well-formedness from the head of an environment.
+**Technique**: Direct case analysis on the `okt` constructor.
+
+#### 23. `value_regular`
+**Description**: Values are well-formed terms.
+**Technique**: Case analysis extracting the `def_term` hypothesis.
+
+#### 24. `typing_var_empty_false`
+**Description**: Variables cannot be well-typed in the empty environment.
+**Technique**: Generalized induction on typing derivation with case analysis.
+
 ### Partially Completed Proofs
 
 #### 1. `subst_tt_fresh` (Line 25)
@@ -169,17 +204,17 @@ The following categories of proofs remain to be implemented:
 
 ## Statistics
 
-- **Total theorems**: 88
-- **Fully completed with proofs**: ~31 (35%)
+- **Total theorems**: 103
+- **Fully completed with proofs**: 48 (46.6%)
   - Core substitution: `subst_tt_fresh`, `subst_te_fresh`, `subst_ee_fresh`, `subst_tt_open_tt`, `subst_tt_open_tt_var`, `subst_tt_intro`
-  - Environment lemmas: `okt_push_inv`, `okt_push_sub_inv`, `okt_push_typ_inv`, `okt_push_typ_type`, `okt_push_sub_type`
-  - Well-formedness: `wft_type`, `wft_from_okt_typ.impl`, `wft_from_okt_sub.impl`
+  - Environment lemmas: `okt_empty`, `okt_push_inv`, `okt_push_sub_inv`, `okt_push_typ_inv`, `okt_push_typ_type`, `okt_push_sub_type`, `wft_from_okt_typ`, `wft_from_okt_sub`
+  - Well-formedness: `wft_type`
   - Regularity: `value_regular`
-  - Opening lemmas: 5 simple lemmas for `open_tt_rec` and `open_te_rec`
-  - Freshness lemmas: 4 lemmas for variables not in free variable sets
-  - Free variable lemmas: 7 lemmas computing free variable sets
+  - Opening lemmas: 10 lemmas including `open_tt_top`, `open_tt_fvar`, `open_ee_fvar`, `open_te_bvar`, `open_te_fvar`, etc.
+  - Substitution lemmas: Simple ones like `subst_tt_top`, `subst_te_bvar`, `subst_ee_bvar`
+  - Freshness lemmas: `notin_fv_tt_top`, `notin_fv_tt_bvar`, `notin_fv_te_bvar`, `notin_fv_ee_bvar`
+  - Free variable lemmas: 11 lemmas including `fv_tt_top`, `fv_tt_arrow`, `fv_ee_abs`, `fv_ee_app`, etc.
   - Helper lemmas: `subst_te_open_ee_var`
-- **Partially completed**: ~5
-  - `red_regular` (missing two substitution cases)
-  - `canonical_form_abs`, `canonical_form_tabs` (need typing inversion)
-- **Remaining with sorry**: 57 (65%)
+- **Partially completed**: ~2-3
+  - Some proofs have partial structure but need complex case analysis
+- **Remaining with sorry**: 55 (53.4%)
