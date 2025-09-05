@@ -12,11 +12,13 @@ The project depends on Mathlib and AESOP
 ### General
 - DO NOT FUCKING ASK QUESTION! JUST FUCKING DO IT!
 - Your code should be minimal and elegant
-- eliminate compiler or LSP warning as soon as possible, particularly unused variable warnings
+- eliminate compiler or LSP error/warning as soon as possible, particularly unused variable warnings
+- do not proceed to the next step if there is pending compiling error
 - when creating new Lean file, do not include `.` in file name
 - do not write duplicated or redundant implementation
 - do not remove comment
 - Do not write comment to explain intention
+- Do not add markdown file on your own
 
 ### Naming
 - Use snake_case for definitions and functions
