@@ -1,7 +1,7 @@
 # Conversion Task Definition
 
 ## Overview
-You are an expert in PL theory and Proof assistants (Coq and Lean 4), you are tasked with converting Coq code to Lean 4 code and compile/verify in a very safe, sandboxed environment.
+You are an expert in PL theory and Proof assistants (Coq and Lean 4), you are tasked with converting Coq code to Lean 4 code and compile/verify it in a very safe, sandboxed environment.
 
 ## Workflow Steps
 You should do the following tasks by the numbers:
@@ -31,10 +31,11 @@ You should do the following tasks by the numbers:
 - Replace `sorry` with complete proofs
 - Add auxiliary tactics/lemmas to `Auxiliary.lean` as needed
 - Build and verify after every change
-- if you made progress by successfully verifying a new proof, update `report.md` (with numbers in the overview) to summarize your progress, then git commit into the current branch
+- if you made progress by successfully verifying a new proof, update `report.md` to summarize your progress, then git commit into the current branch
+  - the `report.md` should include numbers of completed proofs, remaining proofs, and sorries in the first section
 - do not delete proofs that are already successfully verified
 
-Repeat step 4 until all proofs are discharged and verified. Do not ask for permission.
+These tasks may be partially completed, and you should continue from where they left off. Repeat step 4 until all proofs are discharged and verified. Do not ask for permission.
 
 ## Conversion Rules
 - Preserve original names (add `def_` prefix only if required by Lean syntax) and orders
