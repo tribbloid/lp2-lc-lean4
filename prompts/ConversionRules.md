@@ -2,7 +2,8 @@
 ### General Rules
 see [this](../AGENTS.md)
 
-## Conversion Rules
+### Conversion Rules
+- Compile the project
 - Preserve original names (add `def_` prefix only if required by Lean syntax) and orders.
 - Prefix each declaration with a comment indicating original Coq line number (strictly incremental).
 - Use "sorry" with "TODO" comment for incomplete proofs.

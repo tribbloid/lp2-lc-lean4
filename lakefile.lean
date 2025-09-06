@@ -24,4 +24,4 @@ require batteries from
 
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4" @ "v4.22.0"
+  "https://github.com/leanprover-community/mathlib4" @ "stable"
