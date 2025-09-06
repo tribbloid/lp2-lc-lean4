@@ -214,6 +214,249 @@ theorem canonical_form_tabs (t U1 U2 : typ) : value t → typing [] t (all U1 U2
 -- Coq: Lp2lc_coq\Active\Fsub.v:1455-1455
 theorem progress_result : progress := by sorry
 
+namespace Lp2lc.Active.FsubL_alt
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:464-470
+theorem open_tt_rec_type_core (T : typ) (j : Nat) (V U : typ) (i : Nat) (h : i ≠ j) : type U → type (open_tt_rec j V T) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:472-479
+theorem open_tt_rec_type (T U : typ) : type U → type (open_tt T U) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:481-488
+theorem subst_tt_fresh (Z : String) (U T : typ) : Z ∉ fv_tt T → subst_tt Z U T = T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:490-498
+theorem subst_tt_open_tt_rec (T1 T2 X P : typ) (n : Nat) : type P → subst_tt X P (open_tt_rec n T1 T2) = open_tt_rec n (subst_tt X P T1) (subst_tt X P T2) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:500-507
+theorem subst_tt_open_tt (T1 T2 X P : typ) : type P → subst_tt X P (open_tt T1 T2) = open_tt (subst_tt X P T1) (subst_tt X P T2) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:509-517
+theorem subst_tt_open_tt_var (X Y : String) (U T : typ) : Y ≠ X → type U → subst_tt X U (open_tt T (var (Nat.ofString Y))) = open_tt (subst_tt X U T) (var (Nat.ofString Y)) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:519-529
+theorem subst_tt_intro (X : String) (T2 U : typ) : X ∉ fv_tt T2 → type U → open_tt (subst_tt X U T2) U = T2 := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:531-536
+theorem open_te_rec_term_core (e : trm) (j : Nat) (u : trm) (i : Nat) (P : Prop) : term u → term (open_te_rec j u e) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:538-545
+theorem open_te_rec_type_core (e : trm) (j : Nat) (Q : typ) (i : Nat) (P : Prop) : i ≠ j → type Q → type (open_te_rec j Q e) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:547-558
+theorem open_te_rec_term (e : trm) (U : typ) : term e → type U → term (open_te e U) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:560-566
+theorem subst_te_fresh (X : String) (U : typ) (e : trm) : X ∉ fv_te e → subst_te X U e = e := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:568-577
+theorem subst_te_open_te (e : trm) (T X : String) (U : typ) : type U → subst_te X U (open_te e (var (Nat.ofString T))) = open_te (subst_te X U e) (subst_tt X U (var (Nat.ofString T))) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:579-587
+theorem subst_te_open_te_var (X Y : String) (U : typ) (e : trm) : Y ≠ X → type U → subst_te X U (open_te e (var (Nat.ofString Y))) = open_te (subst_te X U e) (var (Nat.ofString Y)) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:589-599
+theorem subst_te_intro (X : String) (U : typ) (e : trm) : X ∉ fv_te e → type U → open_te (subst_te X U e) U = e := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:601-607
+theorem open_ee_rec_term_core (e : trm) (j : Nat) (v u : trm) (i : Nat) : i ≠ j → term u → term (open_ee_rec j v e) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:609-614
+theorem open_ee_rec_type_core (e : trm) (j : Nat) (V : typ) (u : trm) (i : Nat) : term u → type (open_ee_rec j u e) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:616-626
+theorem open_ee_rec_term (u e : trm) : term u → term e → term (open_ee e u) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:628-635
+theorem subst_ee_fresh (x : String) (u e : trm) : x ∉ fv_ee e → subst_ee x u e = e := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:637-647
+theorem subst_ee_open_ee (t1 t2 u : trm) (x : String) : term u → subst_ee x u (open_ee t1 t2) = open_ee (subst_ee x u t1) (subst_ee x u t2) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:649-657
+theorem subst_ee_open_ee_var (x y : String) (u e : trm) : y ≠ x → term u → subst_ee x u (open_ee e (var (Nat.ofString y))) = open_ee (subst_ee x u e) (var (Nat.ofString y)) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:659-668
+theorem subst_ee_intro (x : String) (u e : trm) : x ∉ fv_ee e → term u → open_ee (subst_ee x u e) u = e := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:670-678
+theorem subst_te_open_ee_var (Z : String) (P : typ) (x : String) (e : trm) : term P → x ≠ Z → subst_te Z P (open_ee e (var (Nat.ofString x))) = open_ee (subst_te Z P e) (var (Nat.ofString x)) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:680-688
+theorem subst_ee_open_te_var (z : String) (u : trm) (e : trm) (X : String) : term u → X ∉ fv_te e → subst_ee z u (open_te e (var (Nat.ofString X))) = open_te (subst_ee z u e) (var (Nat.ofString X)) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:690-696
+theorem subst_tt_type (T : typ) (Z : String) (P : typ) : type T → type P → type (subst_tt Z P T) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:698-704
+theorem subst_te_term (e : trm) (Z : String) (P : typ) : term e → type P → term (subst_te Z P e) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:706-721
+theorem subst_ee_term (e1 : trm) (Z : String) (e2 : trm) : term e1 → term e2 → term (subst_ee Z e2 e1) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:723-729
+theorem wft_type (E : env) (T : typ) : wft E T → type T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:731-742
+theorem wft_weaken (G : env) (T : typ) (E F : env) : wft (E ++ G) T → okt F → wft (E ++ F ++ G) T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:744-754
+theorem wft_weaken_empty (T : typ) (F : env) : wft [] T → okt F → wft F T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:756-771
+theorem wft_narrow (V0 V1 F U0 U1 T E X : typ) : wft (E ++ (X, bind.sub U0 U1) :: F) V0 → sub E U0 T → sub E T U1 → wft (E ++ (X, bind.sub T T) :: F) V1 := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:773-788
+theorem wft_strengthen (E F : env) (x : String) (U T : typ) : wft (E ++ (x, bind.typ U) :: F) T → sub E U T → wft (E ++ F) T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:790-813
+theorem wft_subst_tb (F Q0 Q1 E : env) (Z : String) (P T : typ) : wft (E ++ (Z, bind.typ P) :: F) Q0 → wft E P → sub E T P → wft (E ++ F) (subst_tt Z T Q1) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:815-826
+theorem wft_subst_tb_empty (F Q0 Q1 Z : String) (P T : typ) : wft ((Z, bind.typ P) :: F) Q0 → wft [] P → sub [] T P → wft F (subst_tt Z T Q1) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:828-845
+theorem wft_open (E : env) (U T0 T1 T2 : typ) : wft E U → wft (E ++ ("_", bind.sub U U) :: []) T0 → (∀ X, wft (E ++ (X, bind.sub U U) :: []) T1) → wft E (open_tt T2 T0) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:847-855
+theorem ok_from_okt (E : env) : okt E → List.Sorted (· < ·) (E.keys) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:857-874
+theorem wft_from_env_has_sub (x : String) (U0 U1 E : env) : List.lookup x E = some (bind.sub U0 U1) → wft E U0 ∧ wft E U1 := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:876-893
+theorem wft_from_env_has_typ (x : String) (U E : env) : List.lookup x E = some (bind.typ U) → wft E U := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:895-902
+theorem wft_from_okt_typ (x : String) (T : typ) (E : env) : okt E → List.lookup x E = some (bind.typ T) → wft E T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:904-913
+theorem wft_from_okt_sub (x : String) (T0 T1 : typ) (E : env) : okt E → List.lookup x E = some (bind.sub T0 T1) → wft E T0 ∧ wft E T1 := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:915-932
+theorem wft_weaken_right (T : typ) (E F : env) : wft E T → okt F → wft (E ++ F) T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:934-941
+theorem okt_push_inv (E : env) (X : String) (B : bind) : okt ((X, B) :: E) → okt E ∧ X ∉ E.keys := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:943-950
+theorem okt_push_sub_inv (E : env) (X : String) (T0 T1 : typ) : okt ((X, bind.sub T0 T1) :: E) → okt E ∧ X ∉ E.keys := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:952-954
+theorem okt_push_sub_type (E : env) (X : String) (T0 T1 : typ) : okt ((X, bind.sub T0 T1) :: E) → wft E T0 ∧ wft E T1 := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:956-963
+theorem okt_push_typ_inv (E : env) (x : String) (T : typ) : okt ((x, bind.typ T) :: E) → okt E ∧ x ∉ E.keys := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:965-971
+theorem okt_push_typ_type (E : env) (X : String) (T : typ) : okt ((X, bind.typ T) :: E) → wft E T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:973-988
+theorem okt_narrow (V0 V1 : typ) (E F : env) (U0 U1 X : String) : okt (E ++ (X, bind.sub U0 U1) :: F) → sub E V0 U0 → sub E U1 V1 → okt (E ++ (X, bind.sub V0 V1) :: F) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:990-1004
+theorem okt_strengthen (x : String) (T : typ) (E F : env) : okt (E ++ (x, bind.typ T) :: F) → sub E U T → okt (E ++ F) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1006-1020
+theorem okt_subst_tb (Q0 Q1 Z : String) (P : typ) (E F : env) : okt (E ++ (Z, bind.typ P) :: F) → wft E P → okt (E ++ F) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1022-1039
+theorem okt_subst_tb_empty (Q0 Q1 Z : String) (P : typ) (F : env) : okt ((Z, bind.typ P) :: F) → wft [] P → okt F := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1041-1049
+theorem notin_fv_tt_open (Y X : String) (T : typ) : Y ∉ fv_tt T → open_tt T (var (Nat.ofString Y)) = T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1051-1060
+theorem notin_fv_wf (E : env) (X : String) (T : typ) : wft E T → X ∉ fv_tt T → wft (E ++ (X, bind.sub T T) :: []) T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1062-1077
+theorem map_subst_tb_id (G : env) (Z : String) (P : typ) : (∀ x, List.lookup x G = none) → wft G P → List.map (subst_tb Z P) G = G := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1079-1096
+theorem sub_regular (E : env) (S T : typ) : sub E S T → wft E S ∧ wft E T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1098-1139
+theorem typing_regular (E : env) (e : trm) (T : typ) : typing E e T → term e ∧ wft E T ∧ okt E := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1141-1147
+theorem value_regular (t : trm) : value t → term t := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1149-1199
+theorem red_regular (t t' : trm) : red t t' → term t ∧ term t' := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1201-1212
+theorem sub_reflexivity (E : env) (T : typ) : wft E T → sub E T T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1214-1228
+theorem sub_weakening (E F G : env) (S T : typ) : sub (E ++ G) S T → okt F → sub (E ++ F ++ G) S T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1230-1245
+theorem sub_weakening_empty (F G : env) (S T : typ) : sub G S T → okt F → sub (F ++ G) S T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1247-1282
+theorem sub_narrowing_aux (Q0 Q1 F E : env) (Z : String) (P0 P1 S T : typ) : (∀ E S T, sub E S T → sub E S T) → wft (E ++ (Z, bind.sub P0 P1) :: F) S → wft (E ++ (Z, bind.sub P0 P1) :: F) T → sub (E ++ (Z, bind.sub S S) :: F) T T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1284-1292
+theorem sub_narrowing (Q0 Q1 E F : env) (Z : String) (P0 P1 S T : typ) : sub (E ++ (Z, bind.sub P0 P1) :: F) S T → sub E P0 S → sub E T P1 → sub (E ++ (Z, bind.sub S S) :: F) T T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1294-1310
+theorem sub_narrowing_empty (Q0 Q1 Z : String) (P0 P1 S T : typ) : sub ((Z, bind.sub P0 P1) :: []) S T → sub [] P0 S → sub [] T P1 → sub ((Z, bind.sub S S) :: []) T T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1312-1370
+theorem sub_through_subst_tt (Q0 Q1 E F : env) (Z S T P : typ) : wft (E ++ (Z, bind.typ P) :: F) S → wft (E ++ (Z, bind.typ P) :: F) T → wft E P → sub (E ++ F) (subst_tt Z P S) (subst_tt Z P T) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1372-1394
+theorem typing_weakening (E F G : env) (e : trm) (T : typ) : typing (E ++ G) e T → okt F → typing (E ++ F ++ G) e T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1396-1413
+theorem sub_strengthening (x : String) (U E F S T : typ) : sub (E ++ (x, bind.typ U) :: F) S T → sub E U S → sub (E ++ F) S T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1415-1430
+theorem typing_narrowing (Q0 Q1 E F : env) (X : String) (P0 P1 e T : typ) : typing (E ++ (X, bind.sub P0 P1) :: F) e T → sub E Q0 P0 → sub E P1 Q1 → typing (E ++ (X, bind.sub Q0 Q1) :: F) e T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1432-1447
+theorem typing_narrowing_empty (Q0 Q1 X : String) (P0 P1 e T : typ) : typing ((X, bind.sub P0 P1) :: []) e T → sub [] Q0 P0 → sub [] P1 Q1 → typing ((X, bind.sub Q0 Q1) :: []) e T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1449-1470
+theorem typing_through_subst_ee (U E F : env) (x T e u : trm) : typing (E ++ (x, bind.typ U) :: F) e T → typing E u U → typing (E ++ F) (subst_ee x u e) T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1472-1510
+theorem typing_through_subst_te (Q0 Q1 E F : env) (Z e T P : typ) : typing (E ++ (Z, bind.typ P) :: F) e T → wft E P → sub E Q0 P → typing (E ++ F) (subst_te Z Q0 e) (subst_tt Z Q1 T) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1512-1525
+inductive possible_types : trm → typ → Prop :=
+  | pt_var : ∀ x T, possible_types (var x) T
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1527-1538
+theorem possible_types_value (p T : typ) : value p → possible_types p T → (∃ U, p = abs T U) ∨ (∃ U, p = tabs T U) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1540-1558
+theorem possible_types_closure (v T U : typ) : value v → possible_types v T → sub [] T U → possible_types v U := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1560-1585
+theorem possible_types_typing (v T : typ) : value v → typing [] v T → possible_types v T := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1587-1601
+theorem typing_inv_abs (S1 e1 T : typ) : typing [] (abs S1 e1) T → ∃ T2, T = arr S1 T2 ∧ (∀ x, typing [(x, bind.typ S1)] e1 T2) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1603-1622
+theorem typing_inv_tabs (S10 S11 e1 T : typ) : typing [] (tabs S10 e1) T → ∃ T2, T = all S11 T2 ∧ (∀ X, typing [(X, bind.sub S10 S11)] e1 T2) := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1624-1658
+theorem preservation_result : preservation := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1660-1666
+theorem value_not_bot (t : trm) (T : typ) : value t → typing [] t T → T ≠ bot := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1668-1676
+theorem canonical_form_abs (t U1 U2 : typ) : value t → typing [] t (arr U1 U2) → ∃ e, t = abs U1 e := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1678-1689
+theorem canonical_form_tabs (t U0 U1 U2 : typ) : value t → typing [] t (all U0 U1) → ∃ e, t = tabs U0 e := by sorry
+
+-- Coq: Lp2lc_coq\Active\FsubL_alt.v:1691-1691
+theorem progress_result : progress := by sorry
+
 import Lp2lc.Active.Fsub.Def
 import Lp2lc.Active.FsubL_alt.Def
 import Lp2lc.Active.Dsub.Def
