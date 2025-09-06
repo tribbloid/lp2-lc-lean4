@@ -5,5 +5,5 @@
    2. `Proof.lean`: theorems and proofs (including proof scaffolds).
    3. `Auxiliary.lean`: auxiliary tactics and lemmas to support the original proofs.
    4. `report.md`: progress report, always start with number of remaining "sorry".
-  All these files should be imported in its corresponding module aggregator file.
+  All these files should be imported into the Active module that can be compiled by `lake build`
 - DO NOT write into any other files.
