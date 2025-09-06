@@ -16,8 +16,10 @@ Build the entire project to verify that your code is imported, compiled, and cor
 
 #### 1. File Structure Setup
 - Locate the Coq source file.
+- Locate the Lean project at [here](../lakefile.lean) and [here](../lean-toolchain)
 - Locate the corresponding Lean target directory and files as defined in [this](FileStructure.md), create if missing.
 - Do not delete existing file or directory.
+- Do not remove any file contents
 
 #### 2. Definition Conversion
 - Extract all definitions, axioms, types from Coq source.
