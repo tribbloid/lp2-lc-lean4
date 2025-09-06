@@ -22,5 +22,8 @@ You should do the following tasks by the numbers. You should skip a task if it i
 - Maintain original declaration order.
 - Git commit into the current branch after this step is complete.
 
+### 4. Verify Scaffold
+- Use `lake build` to verify that your code are compiled and correct
+
 ## Rules
 see [this](ConversionRules.md)

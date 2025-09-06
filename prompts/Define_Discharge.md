@@ -22,13 +22,19 @@ You should do the following tasks by the numbers. You should skip a task if it i
 - Maintain original declaration order.
 - Git commit into the current branch after this step is complete.
 
-### 4. Proof Implementation
+### 4. Verify Scaffold
+- Use `lake build` to verify that your code are compiled and correct
+
+### 5. Proof Implementation
 - Discharge & implement proofs top-down approach.
 - Replace `sorry` with complete proofs, use the original Coq proof as a reference.
 - Add auxiliary tactics/lemmas to `Auxiliary.lean` as needed; do not add more theorem to `Proof.lean`.
 - Do not delete or modify proofs that are already successfully verified.
 - Build and verify after every iteration.
 - After making progress by reducing the number of "sorry" in all files, update `report.md` to summarize your progress, then git commit into the current branch.
+
+### 6. Verify Proofs
+- Use `lake build` again to verify that your code are compiled and correct
 
 Repeat step 4 until all proofs are discharged and verified. Do not ask for permission.
 
