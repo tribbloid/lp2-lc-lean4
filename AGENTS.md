@@ -16,7 +16,7 @@ The project depends on MathLib and AESOP.
 - Build early and often, prioritize correctness over progress.
 - Eliminate compiler or LSP error as soon as possible.
 - Do not proceed to the next step if there is a pending compiling error.
-- Do not use any git command except `git commit`.
+- Do not create new branch in git.
 - Do not write duplicated or redundant implementation.
 - Do not remove comments.
 - Do not write comments to explain intention.
