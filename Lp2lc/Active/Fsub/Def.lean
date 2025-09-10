@@ -6,15 +6,11 @@
 import Std
 import Mathlib.Data.Finset.Basic
 import Aesop
+import «Lp2lc».Shared
 
-namespace Lp2lc.Active
+namespace Lp2lc.Active.Fsub
 
--- line 49
-structure Var where
-  name : String
-  deriving Repr, BEq, Hashable, DecidableEq
-
-abbrev Vars := Finset Var
+-- Var and Vars are provided by Shared
 
 -- line 17
 inductive typ : Type where
@@ -123,7 +119,7 @@ inductive bind : Type where
 abbrev env := List (Var × bind)
 
 -- line 134
-def dom (E : env) : Vars := E.map (·.1) |>.toFinset
+def dom (E : env) : Vars := Env.domOf E
 
 -- from LibLN
 -- line 145
@@ -149,9 +145,6 @@ inductive wft : env -> typ -> Prop where
 -- placeholder
 -- line 200
 axiom ok : env -> Prop
-
--- Axiom: there is always a variable fresh from a finite set.
-axiom var_fresh : (L : Vars) -> ∃ X : Var, X ∉ L
 
 -- line 161
 inductive okt : env -> Prop where
@@ -324,4 +317,6 @@ def subst_tb (Z : Var) (P : typ) (b : bind) : bind :=
 
 -- Map a type substitution over an environment
 def map_subst_tb (Z : Var) (P : typ) (E : env) : env :=
-  E.map (fun (p : Var × bind) => (p.1, subst_tb Z P p.2))
+  Env.mapSecond (subst_tb Z P) E
+
+end Lp2lc.Active.Fsub

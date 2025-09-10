@@ -1,1 +1,1 @@
-can you rank files under Lp2lc_coq\Active by their sizes (in ascending order) and execute the task defined in prompts\Define.md on each of them?
+can you convert all coq files under `Lp2lc_coq/Active` according to task defined in `prompts/Define.md`? Write your plans into `plan` and code into `Lp2lc/Active`

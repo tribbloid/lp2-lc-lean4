@@ -26,7 +26,7 @@ Build the entire project to verify that your code is imported, compiled, and cor
 - Add auxiliary tactics/lemmas to `Auxiliary.lean` as needed; do not add more theorem to `Proof.lean`.
 - Do not delete or modify proofs that are already successfully verified.
 - Build and verify after every iteration.
-- After making progress by reducing the number of "sorry" in all files, update `report.md` to summarize your progress, then git commit into the current branch.
+- After making progress by reducing the number of "sorry" in all files, update `Proof.progress.md` to summarize your progress, then git commit into the current branch.
 
 Repeat until all proofs are discharged and verified. Do not ask for permission.
 

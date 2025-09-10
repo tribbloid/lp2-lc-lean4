@@ -4,7 +4,7 @@
 
 import «Lp2lc».Active.Fsub.Def
 
-namespace Lp2lc.Active
+namespace Lp2lc.Active.Fsub
 
 open typ trm bind
 
@@ -194,6 +194,12 @@ theorem subst_ee_open_ee : ∀ t1 t2 u x, def_term u →
   subst_ee x u (open_ee t1 t2) =
   open_ee (subst_ee x u t1) (subst_ee x u t2) := by
   sorry -- Complex case analysis with def_term preservation
+
+-- Coq line 612: Lemma subst_ee_open_ee_var
+theorem subst_ee_open_ee_var : ∀ x y u e, y ≠ x → def_term u →
+  open_ee (subst_ee x u e) (trm_fvar y) =
+  subst_ee x u (open_ee e (trm_fvar y)) := by
+  sorry
 
 -- Coq line 626: Lemma subst_ee_open_te_var
 theorem subst_ee_open_te_var : ∀ z u e V, def_term u →
@@ -584,4 +590,4 @@ theorem progress_result : progress := by
   intro e T Htype
   sorry -- Complex proof requiring canonical forms and typing inversion
 
-end Lp2lc.Active
+end Lp2lc.Active.Fsub
