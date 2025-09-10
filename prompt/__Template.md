@@ -1,1 +1,1 @@
-can you convert all coq files under `Lp2lc_coq/Active` according to task defined in `prompt/Define.md`? Write your plans into `gen/plan` and code into `Lp2lc/Active`
+can you convert all coq files under `Lp2lc_coq/Active` according to task defined in `prompt/Define.md`? Write/update your plans into `gen/plan` and code into `Lp2lc/Active`
