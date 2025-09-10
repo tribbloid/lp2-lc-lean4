@@ -7,6 +7,9 @@ package «lp2lc» where
 lean_lib «Lp2lc» where
   -- add library configuration options here
 
+lean_lib «Spike» where
+  -- add library configuration options here
+
 @[default_target]
 lean_exe «lp2lc» where
   root := `Main

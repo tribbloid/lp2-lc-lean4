@@ -21,6 +21,7 @@ The project depends on MathLib and AESOP.
 - Do not remove comments.
 - Do not write comments to explain intention.
 - Do not add markdown files on your own.
+- Do not change build file unless asked to
 
 ### Lean Prover Convention
 
