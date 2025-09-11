@@ -40,14 +40,12 @@ Build the project to verify that your code is imported, compiled, and correct. D
 If a task is half-done, continue from where they left off.
 
 #### 1. Definition Conversion
-
 - Extract all definitions, axioms, types from Coq source.
 - Convert to Lean 4 syntax following conversion rules.
 - Write to `Def.lean` with original line number comments.
 - Update `Def.progress.md` to reflect your progress.
 
 #### 2. Proof Scaffolding
-
 - Extract all theorems and lemmas from Coq source.
 - Create theorem statements with `sorry` proof bodies in `Proof.lean`.
 - Update `Proof.progress.md` to reflect your progress.
@@ -56,12 +54,10 @@ If a task is half-done, continue from where they left off.
 - Git commit into the current branch after this step is complete.
 
 #### 3. Verification
-
 - Verify the progress in `Def.progress.md` and `Proof.progress.md` by comparing with the Lean source.
 - For any Coq definition or proof that is not converted to Lean, continue the conversion from where they differs.
 
 ### 3. Aggregation
-
 - Finally, Check if all Coq source files have been converted into corresponding Lean modules.
 
 ## Rules

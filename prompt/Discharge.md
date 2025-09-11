@@ -6,29 +6,42 @@ You are an expert in programming language theory and Proof assistants (Coq and L
 ## Workflow Steps
 
 ### 1. Source Scan
+
 - Scan all Coq sources and rank them by size (in ascending order).
+- Read the Lean build file [here](../lakefile.lean)
+
+### 2. File Structure Verification
+
+For each Coq source file:
+
+- Ask for clarification if necessary.
 
 ### 2. Conversion
 
-For each Coq source file, execute the following tasks sequentially. Skip a task if it is already completed. If a task is partially completed, continue from where they left off.
+For each Coq source file, execute the following tasks sequentially.
 
-Build the entire project to verify that your code is imported, compiled, and correct. Do this after every step and iteration.
+Build the project to verify that your code is imported, compiled, and correct. Do this after every step and iteration.
 
-#### 1. File Structure Association
-- Locate the Coq source file.
-- Locate the corresponding Lean target directory and files as defined in [this](FileStructure.md).
-- Read theorems in `Proof.lean`.
+If a task is half-done, continue from where they left off.
+
+#### 1. Read theorems
+- Read the corresponding Lean module, progress reports and `specs.md` as defined in [this](FileStructure.md)
 - Do not delete existing file or directory.
+- Ask for clarification if necessary.
 
-#### 2. Proof Implementation
+#### 2. Discharge Theorems
 - Discharge each theorem by implementing its proof top-down approach.
 - Replace `sorry` with complete proofs, use the original Coq proof as a reference.
 - Add auxiliary tactics/lemmas to `Auxiliary.lean` as needed; do not add more theorem to `Proof.lean`.
 - Do not delete or modify proofs that are already successfully verified.
 - Build and verify after every iteration.
-- After making progress by reducing the number of "sorry" in all files, update `Proof.progress.md` to summarize your progress, then git commit into the current branch.
+- Update `Proof.progress.md` to reflect the latest progress
+- If progress has been made, git commit into the current branch.
 
-Repeat until all proofs are discharged and verified. Do not ask for permission.
+#### 3. Verification
+- Verify `Proof.progress.md` by comparing the list of theorems with the Lean source.
+- Repeat `2. Discharge Theorems` step until all proofs are discharged and verified.
+- Do not ask for permission until you reach a milestone.
 
 ## Rules
 see [this](ConversionRules.md)
