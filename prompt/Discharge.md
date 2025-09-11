@@ -10,12 +10,6 @@ You are an expert in programming language theory and Proof assistants (Coq and L
 - Scan all Coq sources and rank them by size (in ascending order).
 - Read the Lean build file [here](../lakefile.lean)
 
-### 2. File Structure Verification
-
-For each Coq source file:
-
-- Ask for clarification if necessary.
-
 ### 2. Conversion
 
 For each Coq source file, execute the following tasks sequentially.
