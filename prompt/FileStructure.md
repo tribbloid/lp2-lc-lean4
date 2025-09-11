@@ -18,6 +18,7 @@
        - If the Lean theorem is discharged and proven (yes/no)
        - Category
     6. `specs.md`: clarify all ambiguity and choices in implementation. Read it first before asking questions.
+- Each directory/module (including their parents `Lp2lc` and `Lp2lc/Active`) should be accompanied by a module aggregator lean file with imports
 - Each `.md` file should be:
   - As detailed as possible. E.g. `Proof.progress.md` should list every lemma and theorems in Coq and Lean files.
   - Continuously revised and tracked by planning agent and be carried out by a sub-agent working on conversion.

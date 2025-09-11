@@ -6,25 +6,28 @@ You are an expert in programming language theory and Proof assistants (Coq and L
 ## Workflow Steps
 
 ### 1. Source Scan
-
 - Scan all Coq sources and rank them by size (in ascending order).
 - Read the Lean build file [here](../lakefile.lean)
 
-### 2. Conversion
+### 2. Find File Structure
 
-For each Coq source file, execute the following tasks sequentially.
+For each Coq source file:
+
+- Find the corresponding file structure as defined in [this](FileStructure.md), including Lean directory/modules, module aggregators, markdown reports and sections.
+
+### 3. Conversion
+
+For each pair of Coq source file and Lean module, execute the following tasks sequentially.
 
 Build the project to verify that your code is imported, compiled, and correct. Do this after every step and iteration.
 
 If a task is half-done, continue from where they left off.
 
-#### 1. Read theorems
-- Read the corresponding Lean module, progress reports and `specs.md` as defined in [this](FileStructure.md)
-- Do not delete existing file or directory.
-- Ask for clarification if necessary.
+#### 1. Read Theorems
+- Read each theorems defined in `Proof.lean` and compare with Coq source.
 
 #### 2. Discharge Theorems
-- Discharge each theorem by implementing its proof top-down approach.
+- Discharge each unimplemented theorem by implementing its proof top-down approach.
 - Replace `sorry` with complete proofs, use the original Coq proof as a reference.
 - Add auxiliary tactics/lemmas to `Auxiliary.lean` as needed; do not add more theorem to `Proof.lean`.
 - Do not delete or modify proofs that are already successfully verified.

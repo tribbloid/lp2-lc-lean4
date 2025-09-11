@@ -13,7 +13,7 @@ The project depends on MathLib and AESOP.
 ### General
 - DO NOT FUCKING ASK QUESTION! JUST FUCKING DO IT!
 - Your code should be minimal and elegant.
-- Build early and often, prioritize correctness over progress.
+- Build after every revision, build early and often, prioritize correctness over progress.
 - Eliminate compiler or LSP error as soon as possible.
 - Do not proceed to the next step if there is a pending compiling error.
 - Do not create new branch in git.

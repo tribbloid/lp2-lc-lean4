@@ -16,8 +16,7 @@ proofs from Coq to Lean 4 and verify it in a very safe, sandboxed environment.
 
 For each Coq source file:
 
-- Create (if not exists) the corresponding Lean directory/module, file structure, and sections as defined
-  in [this](FileStructure.md)
+- Create (if not exists) the corresponding file structure as defined in [this](FileStructure.md), including Lean directory/modules, module aggregators, markdown reports and sections.
 - Do not delete existing file or directory.
 - Do not remove any file contents.
 
