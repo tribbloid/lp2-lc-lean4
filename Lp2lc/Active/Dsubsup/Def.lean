@@ -187,4 +187,29 @@ mutual
     | trm_app e1 e2     => trm_app (subst_e z u e1) (subst_e z u e2)
 end
 
+/-- [Coq ~L1491-~L1601] Pseudo-subtyping on empty env (psub) -/ 
+inductive psub : typ -> typ -> Prop where
+  | psub_bot : (U : typ) -> wft [] U -> psub typ_bot U
+  | psub_top : (S : typ) -> wft [] S -> psub S typ_top
+  | psub_refl_sel : (t : trm) -> wft [] (typ_sel t) -> psub (typ_sel t) (typ_sel t)
+  | psub_sel1 : (U : typ) -> wft [] U -> psub (typ_sel (trm_mem U)) U
+  | psub_sel2 : (S : typ) -> wft [] S -> psub S (typ_sel (trm_mem S))
+  | psub_mem : (S1 U1 S2 U2 : typ) -> psub S2 S1 -> psub U1 U2 -> psub (typ_mem S1 U1) (typ_mem S2 U2)
+  | psub_all : (L : Vars) -> (S1 S2 T1 T2 : typ) ->
+      psub T1 S1 -> (∀ (x : Var), x ∉ L -> sub [(x, T1)] (open_t S2 (trm_fvar x)) (open_t T2 (trm_fvar x))) ->
+      psub (typ_all S1 S2) (typ_all T1 T2)
+  | psub_trans : (S T U : typ) -> psub S T -> psub T U -> psub S U
+
+/-- [Coq ~L1575-~L1601] Possible types for values -/ 
+inductive possible_types : Nat -> trm -> typ -> Prop where
+  | pt_top : (n : Nat) -> (v : trm) -> value v -> wfe [] v -> possible_types n v typ_top
+  | pt_mem : (n : Nat) -> (T S U : typ) -> psub S T -> psub T U -> possible_types n (trm_mem T) (typ_mem S U)
+  | pt_all : (L : Vars) -> (n : Nat) -> (V V' : typ) -> (e1 : trm) -> (T1 T1' : typ) ->
+      (∀ X, X ∉ L -> typing [(X, V)] (open_e e1 (trm_fvar X)) (open_t T1 (trm_fvar X))) ->
+      psub V' V -> (∀ X, X ∉ L -> sub [(X, V')] (open_t T1 (trm_fvar X)) (open_t T1' (trm_fvar X))) ->
+      possible_types (n + 1) (trm_abs V e1) (typ_all V' T1')
+  | pt_all_shallow : (V V' : typ) -> (e1 : trm) -> (T1' : typ) -> wfe [] (trm_abs V e1) -> wft [] (typ_all V' T1') ->
+      possible_types 0 (trm_abs V e1) (typ_all V' T1')
+  | pt_sel : (n : Nat) -> (v : trm) -> (S : typ) -> possible_types n v S -> possible_types n v (typ_sel (trm_mem S))
+
 end Lp2lc.Active.Dsubsup
