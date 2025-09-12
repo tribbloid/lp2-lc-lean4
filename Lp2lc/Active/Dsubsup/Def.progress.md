@@ -25,3 +25,5 @@
 | fv_e | fv_e | def |
 | subst_t | subst_t | def |
 | subst_e | subst_e | def |
+|| psub | psub | Prop |
+|| possible_types | possible_types | Prop |
