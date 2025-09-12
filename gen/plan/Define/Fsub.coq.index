@@ -1,0 +1,120 @@
+17:Inductive typ : Set :=
+26:Inductive trm : Set :=
+36:Fixpoint open_tt_rec (K : nat) (U : typ) (T : typ) {struct T} : typ :=
+45:Definition open_tt T U := open_tt_rec 0 U T.
+49:Fixpoint open_te_rec (K : nat) (U : typ) (e : trm) {struct e} : trm :=
+59:Definition open_te t U := open_te_rec 0 U t.
+63:Fixpoint open_ee_rec (k : nat) (f : trm) (e : trm) {struct e} : trm :=
+73:Definition open_ee t u := open_ee_rec 0 u t.
+77:Notation "T 'open_tt_var' X" := (open_tt T (typ_fvar X)) (at level 67).
+78:Notation "t 'open_te_var' X" := (open_te t (typ_fvar X)) (at level 67).
+79:Notation "t 'open_ee_var' x" := (open_ee t (trm_fvar x)) (at level 67).
+83:Inductive type : typ -> Prop :=
+99:Inductive term : trm -> Prop :=
+123:Inductive bind : Set :=
+127:Notation "X ~<: T" := (X ~ bind_sub T)
+129:Notation "x ~: T" := (x ~ bind_typ T)
+134:Definition env := LibEnv.env bind.
+141:Inductive wft : env -> typ -> Prop :=
+161:Inductive okt : env -> Prop :=
+171:Inductive sub : env -> typ -> typ -> Prop :=
+196:Inductive typing : env -> trm -> typ -> Prop :=
+224:Inductive value : trm -> Prop :=
+232:Inductive red : trm -> trm -> Prop :=
+256:Definition preservation := forall E e e' T,
+261:Definition progress := forall e T,
+275:Fixpoint fv_tt (T : typ) {struct T} : vars :=
+286:Fixpoint fv_te (e : trm) {struct e} : vars :=
+298:Fixpoint fv_ee (e : trm) {struct e} : vars :=
+310:Fixpoint subst_tt (Z : var) (U : typ) (T : typ) {struct T} : typ :=
+321:Fixpoint subst_te (Z : var) (U : typ) (e : trm) {struct e} : trm :=
+333:Fixpoint subst_ee (z : var) (u : trm) (e : trm) {struct e} : trm :=
+345:Definition subst_tb (Z : var) (P : typ) (b : bind) : bind :=
+356:Hint Constructors type term wft ok okt value red: core.
+358:Hint Resolve
+430:Lemma open_tt_rec_type_core : forall T j V U i, i <> j ->
+438:Lemma open_tt_rec_type : forall T U,
+447:Lemma subst_tt_fresh : forall Z U T,
+456:Lemma subst_tt_open_tt_rec : forall T1 T2 X P n, type P ->
+466:Lemma subst_tt_open_tt : forall T1 T2 X P, type P ->
+476:Lemma subst_tt_open_tt_var : forall X Y U T, Y <> X -> type U ->
+486:Lemma subst_tt_intro : forall X T2 U,
+498:Lemma open_te_rec_term_core : forall e j u i P ,
+505:Lemma open_te_rec_type_core : forall e j Q i P, i <> j ->
+514:Lemma open_te_rec_term : forall e U,
+527:Lemma subst_te_fresh : forall X U e,
+535:Lemma subst_te_open_te : forall e T X U, type U ->
+546:Lemma subst_te_open_te_var : forall X Y U e, Y <> X -> type U ->
+556:Lemma subst_te_intro : forall X U e,
+568:Lemma open_ee_rec_term_core : forall e j v u i, i <> j ->
+576:Lemma open_ee_rec_type_core : forall e j V u i,
+583:Lemma open_ee_rec_term : forall u e,
+595:Lemma subst_ee_fresh : forall x u e,
+604:Lemma subst_ee_open_ee : forall t1 t2 u x, term u ->
+616:Lemma subst_ee_open_ee_var : forall x y u e, y <> x -> term u ->
+626:Lemma subst_ee_intro : forall x u e,
+637:Lemma subst_te_open_ee_var : forall Z P x e,
+647:Lemma subst_ee_open_te_var : forall z u e X, term u ->
+657:Lemma subst_tt_type : forall T Z P,
+665:Lemma subst_te_term : forall e Z P,
+673:Lemma subst_ee_term : forall e1 Z e2,
+682:Hint Resolve subst_tt_type subst_te_term subst_ee_term: core.
+690:Lemma wft_type : forall E T,
+698:Lemma wft_weaken : forall G T E F,
+713:Lemma wft_narrow : forall V F U T E X,
+730:Lemma wft_strengthen : forall E F x U T,
+747:Lemma wft_subst_tb : forall F Q E Z P T,
+773:Lemma wft_open : forall E U T1 T2,
+795:Lemma ok_from_okt : forall E,
+801:Hint Extern 1 (ok _) => apply ok_from_okt.
+805:Lemma wft_from_env_has_sub : forall x U E,
+824:Lemma wft_from_env_has_typ : forall x U E,
+843:Lemma wft_from_okt_typ : forall x T E,
+852:Lemma wft_from_okt_sub : forall x T E,
+863:Lemma wft_weaken_right : forall T E F,
+871:Hint Resolve wft_weaken_right.
+872:Hint Resolve wft_from_okt_typ wft_from_okt_sub.
+873:Hint Immediate wft_from_env_has_sub wft_from_env_has_typ.
+874:Hint Resolve wft_subst_tb.
+882:Lemma okt_push_inv : forall E X B,
+891:Lemma okt_push_sub_inv : forall E X T,
+900:Lemma okt_push_sub_type : forall E X T,
+904:Lemma okt_push_typ_inv : forall E x T,
+913:Lemma okt_push_typ_type : forall E X T,
+917:Hint Immediate okt_push_sub_type okt_push_typ_type.
+921:Lemma okt_narrow : forall V (E F:env) U X,
+938:Lemma okt_strengthen : forall x T (E F:env),
+954:Lemma okt_subst_tb : forall Q Z P (E F:env),
+972:Hint Resolve okt_narrow okt_subst_tb wft_weaken.
+973:Hint Immediate okt_strengthen.
+979:Lemma notin_fv_tt_open : forall Y X T,
+989:Lemma notin_fv_wf : forall E X T,
+999:Lemma map_subst_tb_id : forall G Z P,
+1014:Lemma sub_regular : forall E S T,
+1025:Lemma typing_regular : forall E e T,
+1062:Lemma value_regular : forall t,
+1070:Lemma red_regular : forall t t',
+1080:Hint Extern 1 (okt ?E) =>
+1086:Hint Extern 1 (wft ?E ?T) =>
+1093:Hint Extern 1 (type ?T) =>
+1101:Hint Extern 1 (term ?e) =>
+1122:Lemma sub_reflexivity : forall E T,
+1135:Lemma sub_weakening : forall E F G S T,
+1152:Definition transitivity_on Q := forall E S T,
+1155:Hint Unfold transitivity_on.
+1157:Hint Resolve wft_narrow.
+1159:Lemma sub_narrowing_aux : forall Q F E Z P S T,
+1183:Lemma sub_transitivity : forall Q,
+1203:Lemma sub_narrowing : forall Q E F Z P S T,
+1218:Lemma sub_through_subst_tt : forall Q E F Z S T P,
+1254:Lemma typing_weakening : forall E F G e T,
+1273:Lemma sub_strengthening : forall x U E F S T,
+1288:Lemma typing_narrowing : forall Q E F X P e T,
+1306:Lemma typing_through_subst_ee : forall U E F x T e u,
+1329:Lemma typing_through_subst_te : forall Q E F Z e T P,
+1359:Lemma typing_inv_abs : forall E S1 e1 T,
+1371:Lemma typing_inv_tabs : forall E S1 e1 T,
+1391:Lemma preservation_result : preservation.
+1426:Lemma canonical_form_abs : forall t U1 U2,
+1439:Lemma canonical_form_tabs : forall t U1 U2,
+1455:Lemma progress_result : progress.
