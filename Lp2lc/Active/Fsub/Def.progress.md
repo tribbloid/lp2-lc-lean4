@@ -13,6 +13,7 @@
 | wft | wft | Prop |
 | okt | okt | Prop |
 | sub | sub | Prop |
+|| dom | dom | def |
 | typing | typing | Prop |
 | value | value | Prop |
 | red | red | Prop |
