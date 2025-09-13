@@ -50,7 +50,6 @@ If a task is half-done, continue from where they left off.
 - Update `Proof.progress.md` to reflect your progress.
 - DO NOT try to discharge the proofs.
 - Maintain original declaration order.
-- Git commit into the current branch after this step is complete.
 
 #### 3. Verification
 - Verify the progress in `Def.progress.md` and `Proof.progress.md` by comparing with the Lean source.
