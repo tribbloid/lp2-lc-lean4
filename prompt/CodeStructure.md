@@ -1,4 +1,4 @@
-### File Structure
+### Code Structure
 
 - All Coq sources should be [here](../Lp2lc_coq/Active)
 - All converted Lean files and modules should be under [this](../Lp2lc/Active) module
@@ -17,7 +17,7 @@
        - Lean theorem name
        - If the Lean theorem is discharged and proven (yes/no)
        - Category
-    6. `specs.md`: clarify all ambiguity and choices in implementation. Read it first before asking questions.
+    6. `question.md`: questions and answers to clarify all ambiguity and choices in implementation.
 - Each directory/module (including their parents `Lp2lc` and `Lp2lc/Active`) should be accompanied by a module aggregator lean file with imports
 - In addition, types and axioms shared between modules should be in `Lp2lc/Active/Shared.lean`.
 - Each `.md` file should be:

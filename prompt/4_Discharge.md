@@ -13,7 +13,7 @@ You are an expert in programming language theory and Proof assistants (Coq and L
 
 For each Coq source file:
 
-- Find the corresponding file structure as defined [here](FileStructure.md).
+- Find the corresponding file structure as defined [here](CodeStructure.md).
 
 ### 3. Conversion
 

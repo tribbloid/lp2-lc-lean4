@@ -15,7 +15,7 @@ proofs from Coq to Lean 4 and verify it in a very safe, sandboxed environment.
 
 For each Coq source file:
 
-- Find the corresponding file structure as defined in [this](FileStructure.md).
+- Find the corresponding file structure as defined in [this](CodeStructure.md).
 
 ### 3. Conversion
 
@@ -27,21 +27,24 @@ If a task is half-done, continue from where they left off.
 
 DO NOT delete theorem or progress report entry in any case.
 
-#### 1. Convert Definitions
+#### 1. Enforce Code Structure
+- Comment out all theorems in `Def.lean`
+- Delete all axioms in `Proof.lean` and `Auxiliary.lean`
+
+#### 2. Convert Definitions
 - Extract all definitions, axioms, types from Coq source.
 - Convert to Lean 4 syntax following conversion rules.
 - Write to `Def.lean` with original line number comments.
 - Revise `Def.progress.md` to reflect your progress.
 
-#### 2. Convert Theorems into Scaffolds
+#### 3. Convert Theorems into Scaffolds
 - Extract all theorems and lemmas from Coq source.
 - Create theorem statements with `sorry` proof bodies in `Proof.lean` following conversion rules.
-- Delete axioms declarations (if exists) in `Proof.lean`.
 - Revise `Proof.progress.md` to reflect your progress.
 - DO NOT try to discharge the proofs.
 - Maintain original declaration order.
 
-#### 3. Checklist
+#### 4. Checklist
 Check the following criteria, ensure that:
 
 [ ] Each `Def.progress.md` entry is defined in `Def.lean` and the original Coq source.

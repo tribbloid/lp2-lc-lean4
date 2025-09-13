@@ -16,7 +16,7 @@ proofs from Coq to Lean 4 and verify it in a very safe, sandboxed environment.
 
 For each Coq source file:
 
-- Create (if not exists) the corresponding file structure as defined in [this](FileStructure.md), including Lean directory/modules, module aggregators, markdown reports and sections.
+- Create (if not exists) the corresponding file structure as defined in [this](CodeStructure.md), including Lean directory/modules, module aggregators, markdown reports and sections.
 - Do not delete existing file or directory.
 - Do not remove any file contents.
 
@@ -25,7 +25,7 @@ For each Coq source file:
 For each pair of Coq source file and Lean module:
 
 - Verify the file structure and sections created in step 2.
-- Update `progress.md` files in the Lean directory as defined in [this](FileStructure.md) to reflect conversion progress.
+- Update `progress.md` files in the Lean directory as defined in [this](CodeStructure.md) to reflect conversion progress.
     - Read definitions, axioms, types from the Coq source and compare with `Def.lean`, report in `Def.progress.md`.
     - Read theorems, lemma and proofs from the Coq source and compare with `Proof.lean`, report in `Proof.progress.md`.
 - Ask for clarification if necessary.
