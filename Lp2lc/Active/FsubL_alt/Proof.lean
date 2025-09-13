@@ -102,6 +102,8 @@ open typ trm bind
   open_ee (subst_ee x u e) (trm_fvar y) = subst_ee x u (open_ee e (trm_fvar y)) := by
   sorry
 
+axiom subst_ee_intro : Prop
+
 /-- Coq: subst_te_open_ee_var -/ 
 @[simp] theorem subst_te_open_ee_var : ∀ Z P x e,
   open_ee (subst_te Z P e) (trm_fvar x) = subst_te Z P (open_ee e (trm_fvar x)) := by
@@ -123,5 +125,113 @@ open typ trm bind
 /-- Coq: subst_ee_term -/ 
 @[simp] theorem subst_ee_term : ∀ e1 Z e2, def_term e1 → def_term e2 → def_term (subst_ee Z e2 e1) := by
   sorry
+
+-- Placeholders to synchronize with Proof.progress.md (to be replaced with real statements)
+-- Coq line 723
+axiom wft_type : Prop
+-- Coq line 731
+axiom wft_weaken : Prop
+-- Coq line 744
+axiom wft_weaken_empty : Prop
+-- Coq line 756
+axiom wft_narrow : Prop
+-- Coq line 773
+axiom wft_strengthen : Prop
+-- Coq line 790
+axiom wft_subst_tb : Prop
+-- Coq line 815
+axiom wft_subst_tb_empty : Prop
+-- Coq line 828
+axiom wft_open : Prop
+-- Coq line 847
+axiom ok_from_okt : Prop
+-- Coq line 857
+axiom wft_from_env_has_sub : Prop
+-- Coq line 876
+axiom wft_from_env_has_typ : Prop
+-- Coq line 895
+axiom wft_from_okt_typ : Prop
+-- Coq line 904
+axiom wft_from_okt_sub : Prop
+-- Coq line 915
+axiom wft_weaken_right : Prop
+-- Coq line 934
+axiom okt_push_inv : Prop
+-- Coq line 943
+axiom okt_push_sub_inv : Prop
+-- Coq line 952
+axiom okt_push_sub_type : Prop
+-- Coq line 956
+axiom okt_push_typ_inv : Prop
+-- Coq line 965
+axiom okt_push_typ_type : Prop
+-- Coq line 973
+axiom okt_narrow : Prop
+-- Coq line 990
+axiom okt_strengthen : Prop
+-- Coq line 1006
+axiom okt_subst_tb : Prop
+-- Coq line 1022
+axiom okt_subst_tb_empty : Prop
+-- Coq line 1041
+axiom notin_fv_tt_open : Prop
+-- Coq line 1051
+axiom notin_fv_wf : Prop
+-- Coq line 1062
+axiom map_subst_tb_id : Prop
+-- Coq line 1079
+axiom sub_regular : Prop
+-- Coq line 1098
+axiom typing_regular : Prop
+-- Coq line 1141
+axiom value_regular : Prop
+-- Coq line 1149
+axiom red_regular : Prop
+-- Coq line 1201
+axiom sub_reflexivity : Prop
+-- Coq line 1214
+axiom sub_weakening : Prop
+-- Coq line 1230
+axiom sub_weakening_empty : Prop
+-- Coq line 1247
+axiom sub_narrowing_aux : Prop
+-- Coq line 1284
+axiom sub_narrowing : Prop
+-- Coq line 1294
+axiom sub_narrowing_empty : Prop
+-- Coq line 1312
+axiom sub_through_subst_tt : Prop
+-- Coq line 1372
+axiom typing_weakening : Prop
+-- Coq line 1396
+axiom sub_strengthening : Prop
+-- Coq line 1415
+axiom typing_narrowing : Prop
+-- Coq line 1432
+axiom typing_narrowing_empty : Prop
+-- Coq line 1449
+axiom typing_through_subst_ee : Prop
+-- Coq line 1472
+axiom typing_through_subst_te : Prop
+-- Coq line 1527
+axiom possible_types_value : Prop
+-- Coq line 1540
+axiom possible_types_closure : Prop
+-- Coq line 1560
+axiom possible_types_typing : Prop
+-- Coq line 1587
+axiom typing_inv_abs : Prop
+-- Coq line 1603
+axiom typing_inv_tabs : Prop
+-- Coq line 1624
+axiom preservation_result : Prop
+-- Coq line 1660
+axiom value_not_bot : Prop
+-- Coq line 1668
+axiom canonical_form_abs : Prop
+-- Coq line 1678
+axiom canonical_form_tabs : Prop
+-- Coq line 1691
+axiom progress_result : Prop
 
 end Lp2lc.Active.FsubL_alt

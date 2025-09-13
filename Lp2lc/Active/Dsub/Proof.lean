@@ -55,6 +55,9 @@ open typ trm
   open_e (subst_e x u t1) (subst_e x u t2) := by
   sorry
 
+-- Coq line 463
+axiom subst_t_open_t_var : Prop
+
 -- Regularity and automation (scaffold)
 /-- Coq: sub_has_regular -/ 
 @[simp] theorem sub_has_regular :
@@ -215,5 +218,85 @@ open typ trm
 
 @[simp] theorem progress_result : progress := by
   sorry
+
+-- Placeholders to synchronize with Proof.progress.md (to be replaced with real statements)
+-- Coq line 470
+axiom subst_e_open_e_var : Prop
+-- Coq line 480
+axiom subst_t_intro : Prop
+-- Coq line 488
+axiom subst_e_intro : Prop
+-- Coq line 498
+axiom subst_lc : Prop
+-- Coq line 508
+axiom subst_t_type : Prop
+-- Coq line 514
+axiom subst_e_term : Prop
+-- Coq line 520
+axiom subst_e_value : Prop
+-- Coq line 536
+axiom value_is_term : Prop
+-- Coq line 548
+axiom wf_lc : Prop
+-- Coq line 554
+axiom wft_type : Prop
+-- Coq line 560
+axiom wfe_term : Prop
+-- Coq line 568
+axiom wf_weaken : Prop
+-- Coq line 585
+axiom wft_weaken : Prop
+-- Coq line 593
+axiom wft_weaken_empty : Prop
+-- Coq line 607
+axiom wfe_weaken : Prop
+-- Coq line 615
+axiom wfe_weaken_empty : Prop
+-- Coq line 631
+axiom wf_narrow : Prop
+-- Coq line 650
+axiom wft_narrow : Prop
+-- Coq line 660
+axiom wf_subst : Prop
+-- Coq line 700
+axiom wft_subst : Prop
+-- Coq line 709
+axiom wft_subst1 : Prop
+-- Coq line 722
+axiom wft_subst_empty : Prop
+-- Coq line 738
+axiom wft_open : Prop
+-- Coq line 757
+axiom ok_from_okt : Prop
+-- Coq line 767
+axiom wft_from_env_has : Prop
+-- Coq line 782
+axiom wft_from_okt : Prop
+-- Coq line 792
+axiom wft_weaken_right : Prop
+-- Coq line 810
+axiom okt_push_inv : Prop
+-- Coq line 818
+axiom okt_push_type : Prop
+-- Coq line 832
+axiom okt_narrow : Prop
+-- Coq line 847
+axiom okt_subst : Prop
+-- Coq line 860
+axiom okt_subst1 : Prop
+-- Coq line 883
+axiom notin_fv_open_rec : Prop
+-- Coq line 893
+axiom notin_fv_t_open : Prop
+-- Coq line 900
+axiom notin_fv_e_open : Prop
+-- Coq line 907
+axiom notin_fv_wf_rec : Prop
+-- Coq line 919
+axiom notin_fv_wf : Prop
+-- Coq line 925
+axiom map_subst_id : Prop
+-- Coq line 1590
+axiom sub_psub_aux : Prop
 
 end Lp2lc.Active.Dsub

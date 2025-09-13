@@ -201,11 +201,6 @@ theorem subst_ee_open_ee_var : ∀ x y u e, y ≠ x → def_term u →
   subst_ee x u (open_ee e (trm_fvar y)) := by
   sorry
 
--- Coq line 626: Lemma subst_ee_open_te_var
-theorem subst_ee_open_te_var : ∀ z u e V, def_term u →
-  open_te (subst_ee z u e) V = subst_ee z u (open_te e V) := by
-  sorry -- Need def_term preservation under opening
-
 -- Coq line 636: Lemma subst_ee_intro
 theorem subst_ee_intro : ∀ x e u,
   x ∉ fv_ee e → def_term u →
@@ -239,6 +234,11 @@ theorem subst_te_open_ee_var : ∀ Z P x e,
     simp [open_ee_rec, subst_te, ih]
   | trm_tapp e1 V ih =>
     simp [open_ee_rec, subst_te, ih]
+
+-- Coq line 626: Lemma subst_ee_open_te_var
+theorem subst_ee_open_te_var : ∀ z u e V, def_term u →
+  open_te (subst_ee z u e) V = subst_ee z u (open_te e V) := by
+  sorry -- Need def_term preservation under opening
 
 -- Substitutions preserve local closure
 

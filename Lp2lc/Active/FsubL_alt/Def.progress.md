@@ -1,5 +1,5 @@
-|| Coq name | Lean name | Category |
-|---|---|---|
+| Coq name | Lean name | Category |
+| ---|---|---|
 | typ | typ | data |
 | trm | trm | data |
 | open_tt_rec | open_tt_rec | def |
@@ -10,6 +10,7 @@
 | open_ee | open_ee | def |
 | bind | bind | data |
 | env | env | alias |
+| dom | dom | def |
 | Env.dom | Env.dom | def |
 | binds | binds | def |
 | wft | wft | Prop |

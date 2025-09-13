@@ -1,5 +1,5 @@
 | Coq name | Lean name | Category |
-|---|---|---|
+| ---|---|---|
 | typ | typ | data |
 | trm | trm | data |
 | open_t_rec | open_t_rec | def |
@@ -10,6 +10,7 @@
 | term (lc) | def_term | Prop |
 | value | value | Prop |
 | env | env | alias |
+| dom | dom | def |
 | Env.dom | Env.dom | def |
 | binds | binds | def |
 | wft | wft | Prop |
@@ -25,5 +26,5 @@
 | fv_e | fv_e | def |
 | subst_t | subst_t | def |
 | subst_e | subst_e | def |
-|| psub | psub | Prop |
-|| possible_types | possible_types | Prop |
+| psub | psub | Prop |
+| possible_types | possible_types | Prop |

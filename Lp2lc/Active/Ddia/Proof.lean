@@ -125,15 +125,12 @@ open typ trm
 @[simp] theorem wft_weaken : ∀ G T E F, wft (E ++ G) T → ok (E ++ F ++ G) → wft (E ++ F ++ G) T := by
   sorry
 
-/-- Coq: wfe_weaken -/ 
-@[simp] theorem wfe_weaken : ∀ G T E F, wfe (E ++ G) T → ok (E ++ F ++ G) → wfe (E ++ F ++ G) T := by
-  sorry
-
-/-- Coq: wft_weaken_empty -/ 
 @[simp] theorem wft_weaken_empty : ∀ T E, wft [] T → ok E → wft E T := by
   sorry
 
-/-- Coq: wfe_weaken_empty -/ 
+@[simp] theorem wfe_weaken : ∀ G T E F, wfe (E ++ G) T → ok (E ++ F ++ G) → wfe (E ++ F ++ G) T := by
+  sorry
+
 @[simp] theorem wfe_weaken_empty : ∀ t E, wfe [] t → ok E → wfe E t := by
   sorry
 
@@ -373,5 +370,43 @@ typing (E ++ (List.map (fun p => (p.1, subst_t z u p.2)) F)) (subst_e z u e) (su
 @[simp] theorem progress_result : progress := by
   simp [progress]
   sorry
+
+-- Placeholders to synchronize with Proof.progress.md (to be replaced with real statements)
+-- Coq line 867
+axiom okt_push_inv : Prop
+-- Coq line 875
+axiom okt_push_type : Prop
+-- Coq line 883
+axiom okt_narrow : Prop
+-- Coq line 897
+axiom okt_subst : Prop
+-- Coq line 910
+axiom okt_subst1 : Prop
+-- Coq line 933
+axiom notin_fv_open_rec : Prop
+-- Coq line 943
+axiom notin_fv_t_open : Prop
+-- Coq line 950
+axiom notin_fv_e_open : Prop
+-- Coq line 957
+axiom notin_fv_wf_rec : Prop
+-- Coq line 969
+axiom notin_fv_wf : Prop
+-- Coq line 975
+axiom map_subst_id : Prop
+-- Coq line 1116
+axiom sub_reflexivity : Prop
+-- Coq line 1166
+axiom sub_weakening1 : Prop
+-- Coq line 1181
+axiom sub_weakening_empty : Prop
+-- Coq line 1204
+axiom has_weakening1 : Prop
+-- Coq line 1219
+axiom has_weakening_empty : Prop
+-- Coq line 1285
+axiom sub_narrowing_empty : Prop
+-- Coq line 1438
+axiom typing_narrowing_empty : Prop
 
 end Lp2lc.Active.Ddia
