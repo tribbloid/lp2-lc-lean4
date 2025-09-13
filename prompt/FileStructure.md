@@ -19,6 +19,7 @@
        - Category
     6. `specs.md`: clarify all ambiguity and choices in implementation. Read it first before asking questions.
 - Each directory/module (including their parents `Lp2lc` and `Lp2lc/Active`) should be accompanied by a module aggregator lean file with imports
+  - `Lp2lc/Active` should also contain an extra `Shared.lean`: types and axioms shared between modules. 
 - Each `.md` file should be:
   - As detailed as possible. E.g. `Proof.progress.md` should list every lemma and theorems in Coq and Lean files.
   - Continuously revised and tracked by planning agent and be carried out by a sub-agent working on conversion.
