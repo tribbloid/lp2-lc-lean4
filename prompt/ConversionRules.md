@@ -14,8 +14,4 @@ see [this](../AGENTS.md)
 - `Lemma` → `Theorem`.
 - `Tactic Notation` → Lean tactic macro with examples.
 - `Ltac` → Lean elaborator with examples.
-- `LibEnv` lemma reference `ok E` → a minimal abstract `ok : env → Prop` in `Aux.lean` to keep statements typechecking.
-
-### Success Criteria
-- Complete 1:1 conversion of all declarations.
-- Proofs verified or explicitly marked as incomplete.
+- `LibEnv` lemma reference `ok E` → a minimal abstract `ok : env → Prop` to keep statements typechecking.

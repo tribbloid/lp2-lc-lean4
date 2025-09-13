@@ -11,8 +11,6 @@ The project depends on MathLib and AESOP.
 ## Coding Rules
 
 ### General
-- DO NOT FUCKING ASK QUESTION! JUST FUCKING DO IT!
-- Your code should be minimal and elegant.
 - Build after every revision, build early and often, prioritize correctness over progress.
 - Eliminate compiler or LSP error as soon as possible.
 - Do not proceed to the next step if there is a pending compiling error.
@@ -21,7 +19,7 @@ The project depends on MathLib and AESOP.
 - Do not remove comments.
 - Do not write comments to explain intention.
 - Do not add markdown files on your own.
-- Do not change build file unless asked to
+- Do not change build file unless asked to.
 
 ### Lean Prover Convention
 

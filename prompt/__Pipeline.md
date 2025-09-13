@@ -1,1 +1,0 @@
-execute all tasks defined [here](Define.md) and [here](Discharge.md)

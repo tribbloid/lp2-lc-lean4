@@ -6,8 +6,8 @@
     - These directories/modules are independent from each other, DO NOT import from lean file from a different module.
 - The directory always contains 5 files:
     1. `Def.lean`: definitions, types and axioms.
-    2. `Proof.lean`: original theorems and proofs, should NOT contain axioms.
-    3. `Auxiliary.lean`: auxiliary tactics and lemmas to support the original theorems.
+    2. `Proof.lean`: original theorems and proofs, no axioms allowed.
+    3. `Auxiliary.lean`: auxiliary tactics and lemmas to support the original theorems, no axioms allowed.
     4. `Def.progress.md`: conversion progress of `Def.lean`, contains a table of 3 columns:
           - Coq name
           - Lean name
@@ -19,7 +19,7 @@
        - Category
     6. `specs.md`: clarify all ambiguity and choices in implementation. Read it first before asking questions.
 - Each directory/module (including their parents `Lp2lc` and `Lp2lc/Active`) should be accompanied by a module aggregator lean file with imports
-  - `Lp2lc/Active` should also contain an extra `Shared.lean`: types and axioms shared between modules. 
+- In addition, types and axioms shared between modules should be in `Lp2lc/Active/Shared.lean`.
 - Each `.md` file should be:
   - As detailed as possible. E.g. `Proof.progress.md` should list every lemma and theorems in Coq and Lean files.
   - Continuously revised and tracked by planning agent and be carried out by a sub-agent working on conversion.
