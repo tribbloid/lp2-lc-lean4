@@ -6,8 +6,8 @@
     - These directories/modules are independent from each other, DO NOT import from lean file from a different module.
 - The directory always contains 5 files:
     1. `Def.lean`: definitions, types and axioms.
-    2. `Proof.lean`: theorems and proofs.
-    3. `Auxiliary.lean`: auxiliary tactics and lemmas to support the original proofs.
+    2. `Proof.lean`: original theorems and proofs, should NOT contain axioms.
+    3. `Auxiliary.lean`: auxiliary tactics and lemmas to support the original theorems.
     4. `Def.progress.md`: conversion progress of `Def.lean`, contains a table of 3 columns:
           - Coq name
           - Lean name

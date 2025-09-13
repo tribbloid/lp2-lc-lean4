@@ -1,7 +1,7 @@
 import Std
 import Mathlib.Data.Finset.Basic
 import Aesop
-import «Lp2lc».Shared
+import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.FsubL_alt
 
