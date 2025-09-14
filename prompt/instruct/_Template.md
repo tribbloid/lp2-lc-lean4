@@ -1,1 +1,5 @@
-Convert coq proof at `Lp2lc_coq/Active/<coq_source>.v` into Lean module under `Lp2lc/Active`, as specified in `prompt/<sub_task>.md`.
+Start the conversion from coq proof at `Lp2lc_coq/Active/<coq_source>.v` as specified in `prompt/1_Scaffold.md`, save your work into `Lp2lc/Active`.
+
+---
+
+Complete the conversion from coq proof at `Lp2lc_coq/Active/<coq_source>.v` as specified in `prompt/2_Discharge.md`, save your work into `Lp2lc/Active`.

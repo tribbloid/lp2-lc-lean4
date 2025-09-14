@@ -1,0 +1,7 @@
+- Preservation/progress are kept as empty-environment properties, matching Coq FsubL_alt definitions.
+- We use def_type/def_term instead of type/term to avoid Lean keyword conflicts.
+- Environment operations use List (HList) with ++ as concatenation in theorem statements; local helpers use Shared.Env for domOf and lookup.
+- Each module is independent; only Shared is imported from siblings. No cross-module imports among Fsub, FsubL_alt, etc.
+- Coq line numbers are recorded as comments immediately before each declaration or theorem; they are strictly increasing.
+- Substitution over environments is implemented via map_subst_tb following the pair-mapping used in Fsub.
+- Any completed, trusted proofs in the future can be migrated into Lp2lc/Active/Fsub.lean per project preference; for now, Proof.lean contains only sorry stubs.
