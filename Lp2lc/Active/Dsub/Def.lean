@@ -146,7 +146,7 @@ end
 
 /-- Coq lines 152-156: Well-formed environments -/
 -- alias for abstract ok predicate from Shared (used in some lemmas)
-notation "ok" => Lp2lc.Active.ok
+-- use shared ok from Lp2lc.Active.Shared
 
 inductive okt : env -> Prop where
   | okt_empty : okt []                                          -- lines 153-154

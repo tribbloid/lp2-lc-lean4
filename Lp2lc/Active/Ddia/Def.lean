@@ -107,7 +107,7 @@ abbrev env := List (Var × typ)
 @[simp] def binds (x : Var) (T : typ) (E : env) : Prop := E.lookup x = some T
 
 -- bring abstract ok into scope (mirrors LibEnv.ok signature)
-notation "ok" => Lp2lc.Active.ok
+-- use shared ok from Lp2lc.Active.Shared
 
 /- Coq lines 134–175: Well-formedness of types/terms in env -/
 mutual

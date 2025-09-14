@@ -162,7 +162,7 @@ inductive wft : env → typ → Prop where
       wft E (typ.typ_all T0 T1 T2)
 
 -- placeholder shared ok is imported from Shared
-notation "ok" => Lp2lc.Active.ok
+-- use shared ok from Lp2lc.Active.Shared
 
 -- line 176
 inductive okt : env → Prop where

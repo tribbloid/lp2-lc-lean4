@@ -6,7 +6,7 @@ import «Lp2lc».Active.Shared
 namespace Lp2lc.Active.Dot
 
 -- Provide a local alias for shared environment well-formedness
-notation "ok" => Lp2lc.Active.ok
+-- use shared ok from Lp2lc.Active.Shared
 
 -- [Coq: Dot.v line 13]
 structure typ_label where
