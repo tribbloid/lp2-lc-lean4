@@ -7,11 +7,28 @@ proofs from Coq to Lean 4 and verify it in a very safe, sandboxed environment.
 
 ## Workflow Steps
 
-### 1. Source Scan
-- Scan all Coq sources and rank them by size (in ascending order).
-- Read the Lean build file [here](../lakefile.lean)
+### 1. File Structure Setup
+- Create/verify the corresponding file structure for the Coq source as defined in [this](CodeStructure.md), including Lean directory/module, module aggregator, markdown reports.
+- Do not delete existing file or directory.
+- Do not remove any file contents.
+- Verify that:
+    [ ] Coq source file -> Lean module aggregator.
+    [ ] Lean module contains the proper file structure as defined in [this](CodeStructure.md)?
 
-### 2. Locate File Structure
+### 2. Enforce Code Structure
+- Delete all theorems in `Def.lean`, including their entries in `Def.progress.md`.
+- Delete all axioms in `Proof.lean` and `Auxiliary.lean`, including their entries in `Proof.progress.md`.
+
+### 3. Report Conversion Progress
+- Extract definitions, axioms, types from the Coq source and compare them with conversion result in `Def.lean`.
+- Revise `Def.progress.md` to reflect conversion progress.
+
+#### 3. Report Theorems
+- Extract theorems, lemma and proofs from the Coq source.
+- Compare them with conversion result in `Proof.lean`.
+- Summarize their status in `Proof.progress.md`.
+
+
 
 For each Coq source file:
 

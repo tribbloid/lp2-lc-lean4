@@ -2,7 +2,9 @@ import «Lp2lc».Active.Dsubsup.Def
 
 namespace Lp2lc.Active.Dsubsup
 
-/-- Minimal placeholder: structural ok predicate for environments used in narrowing/weakening lemmas -/
-axiom ok : env -> Prop
+/-!
+Auxiliary lemmas and small utilities to support theorem statements.
+No axioms are allowed in this file. Keep lightweight and independent.
+-/
 
 end Lp2lc.Active.Dsubsup

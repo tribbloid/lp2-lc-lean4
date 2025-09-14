@@ -1,215 +1,219 @@
+/-***************************************************************************
+* DSubSup (D<:>)                                                           *
+* Port of Coq source: Lp2lc_coq/Active/Dsubsup.v                           *
+* Notes:                                                                   *
+* - Keep this file restricted to core syntax, operations, and judgments.   *
+* - No theorems here; theorem statements reside in Proof.lean.             *
+* - No axioms allowed here.                                                *
+***************************************************************************-/
+
 import Std
 import Mathlib.Data.Finset.Basic
-import Aesop
 import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Dsubsup
 
--- Coq source: Lp2lc_coq/Active/Dsubsup.v
--- Auto-scaffolded: definitions and judgments. Proofs are left as sorry (see Proof.lean).
+open Lp2lc.Active
+open Std
+
+/-- Abstract variable type shared across modules -/
+abbrev Var := Lp2lc.Active.Var
+abbrev Vars := Lp2lc.Active.Vars
+
+/-- Environment is abstract here; reuse the shared `ok` predicate -/
+notation "ok" => Lp2lc.Active.ok
+
+/-!
+## Language (mirroring Coq inductives)
+
+Coq (Dsubsup.v) summary:
+- typ ::= Bot | Top | sel p | {Type : S..U} | (z : T) -> T^z
+- trm ::= p | t t
+- p   ::= x | v
+- v   ::= { Type = T } | lambda x:T.t
+
+We encode a minimal skeleton sufficient to state theorems. Details of LibLN
+and locally nameless infra are not reimplemented here; we keep shapes faithful
+and provide open/subst as total functions to support statement formation.
+-/
 
 mutual
-  -- [Coq L24-29, L33-38]
-  inductive typ : Type where
-    | typ_bot   : typ
-    | typ_top   : typ
-    | typ_sel   : trm -> typ
-    | typ_mem   : typ -> typ -> typ
-    | typ_all   : typ -> typ -> typ
-    deriving BEq, DecidableEq
+  inductive Trm where
+    | bvar : Nat -> Trm
+    | fvar : Var -> Trm
+    | abs  : Typ -> Trm -> Trm
+    | mem  : Typ -> Trm
+    | app  : Trm -> Trm -> Trm
+    deriving Repr, BEq
 
-  inductive trm : Type where
-    | trm_bvar : Nat -> trm
-    | trm_fvar : Var -> trm
-    | trm_abs  : typ -> trm -> trm
-    | trm_mem  : typ -> trm
-    | trm_app  : trm -> trm -> trm
-    deriving BEq, DecidableEq
+  /-- Types depend on terms in `sel` and second arg of `all` -/
+  inductive Typ where
+    | bot   : Typ
+    | top   : Typ
+    | sel   : Trm -> Typ
+    | mem   : Typ -> Typ -> Typ
+    | all   : Typ -> Typ -> Typ
+    deriving Repr, BEq
 end
 
-open typ trm
-
--- [Coq L40-58] Opening operations (mutual)
+/-- opening (locally nameless style). We provide simple structurally recursive
+    total functions; they mimic the Coq `open_t_rec` / `open_e_rec`. -/
 mutual
-  partial def open_t_rec (k : Nat) (f : trm) (T : typ) : typ :=
+  def openTRec (k : Nat) (f : Trm) (T : Typ) : Typ :=
     match T with
-    | typ_bot           => typ_bot
-    | typ_top           => typ_top
-    | typ_sel t         => typ_sel (open_e_rec k f t)
-    | typ_mem T1 T2     => typ_mem (open_t_rec k f T1) (open_t_rec k f T2)
-    | typ_all T1 T2     => typ_all (open_t_rec k f T1) (open_t_rec (k + 1) f T2)
+    | Typ.bot       => Typ.bot
+    | Typ.top       => Typ.top
+    | Typ.sel t     => Typ.sel (openERec k f t)
+    | Typ.mem T1 T2 => Typ.mem (openTRec k f T1) (openTRec k f T2)
+    | Typ.all T1 T2 => Typ.all (openTRec k f T1) (openTRec (k+1) f T2)
 
-  partial def open_e_rec (k : Nat) (f : trm) (e : trm) : trm :=
+  def openERec (k : Nat) (f : Trm) (e : Trm) : Trm :=
     match e with
-    | trm_bvar i        => if k = i then f else (trm_bvar i)
-    | trm_fvar x        => trm_fvar x
-    | trm_abs V e1      => trm_abs (open_t_rec k f V) (open_e_rec (k + 1) f e1)
-    | trm_mem T         => trm_mem (open_t_rec k f T)
-    | trm_app e1 e2     => trm_app (open_e_rec k f e1) (open_e_rec k f e2)
+    | Trm.bvar i      => if k = i then f else Trm.bvar i
+    | Trm.fvar x      => Trm.fvar x
+    | Trm.abs V e1    => Trm.abs (openTRec k f V) (openERec (k+1) f e1)
+    | Trm.mem T       => Trm.mem (openTRec k f T)
+    | Trm.app e1 e2   => Trm.app (openERec k f e1) (openERec k f e2)
 end
 
-@[simp] def open_t (T : typ) (f : trm) : typ := open_t_rec 0 f T
-@[simp] def open_e (t : trm) (u : trm) : trm := open_e_rec 0 u t
+abbrev openT (T : Typ) (f : Trm) : Typ := openTRec 0 f T
+abbrev openE (t : Trm) (u : Trm) : Trm := openERec 0 u t
 
--- [Coq L65-67] Notations
-notation:67 T " open_t_var " x => open_t T (trm_fvar x)
-notation:67 t " open_e_var " x => open_e t (trm_fvar x)
+notation:67 T " open_t_var " x => openT T (Trm.fvar x)
+notation:67 t " open_e_var " x => openE t (Trm.fvar x)
 
--- [Coq L70-102] Local closure (mutual)
+/-- Local closure predicates (skeletal) -/
 mutual
-  inductive def_type : typ -> Prop where
-    | type_bot : def_type typ_bot
-    | type_top : def_type typ_top
-    | type_sel : (e1 : trm) -> def_term e1 -> def_type (typ_sel e1)
-    | type_mem : (T1 T2 : typ) -> def_type T1 -> def_type T2 -> def_type (typ_mem T1 T2)
-    | type_all : (L : Vars) -> (T1 T2 : typ) -> def_type T1 -> (∀ x, x ∉ L -> def_type (open_t T2 (trm_fvar x))) -> def_type (typ_all T1 T2)
-
-  inductive def_term : trm -> Prop where
-    | term_var : (x : Var) -> def_term (trm_fvar x)
-    | term_abs : (L : Vars) -> (V : typ) -> (e1 : trm) -> def_type V -> (∀ x, x ∉ L -> def_term (open_e e1 (trm_fvar x))) -> def_term (trm_abs V e1)
-    | term_mem : (T1 : typ) -> def_type T1 -> def_term (trm_mem T1)
-    | term_app : (e1 e2 : trm) -> def_term e1 -> def_term e2 -> def_term (trm_app e1 e2)
+  inductive LcT : Typ -> Prop where
+    | bot : LcT Typ.bot
+    | top : LcT Typ.top
+    | sel : ∀ e, LcE e -> LcT (Typ.sel e)
+    | mem : ∀ T1 T2, LcT T1 -> LcT T2 -> LcT (Typ.mem T1 T2)
+    | all : ∀ (L : Vars) (T1 T2), LcT T1 -> (∀ x, x ∉ L -> LcT (T2 open_t_var x)) -> LcT (Typ.all T1 T2)
+  
+  inductive LcE : Trm -> Prop where
+    | var : ∀ x, LcE (Trm.fvar x)
+    | abs : ∀ (L : Vars) (V : Typ) (e : Trm), LcT V -> (∀ x, x ∉ L -> LcE (e open_e_var x)) -> LcE (Trm.abs V e)
+    | mem : ∀ T, LcT T -> LcE (Trm.mem T)
+    | app : ∀ e1 e2, LcE e1 -> LcE e2 -> LcE (Trm.app e1 e2)
 end
 
--- [Coq L106-110] Values
-inductive value : trm -> Prop where
-  | value_abs  : (V : typ) -> (e1 : trm) -> def_term (trm_abs V e1) -> value (trm_abs V e1)
-  | value_mem  : (V : typ) -> def_term (trm_mem V) -> value (trm_mem V)
+/-- Values -/
+inductive Value : Trm -> Prop where
+  | abs  : ∀ V e1, LcE (Trm.abs V e1) -> Value (Trm.abs V e1)
+  | mem  : ∀ V,   LcE (Trm.mem V)     -> Value (Trm.mem V)
 
--- [Coq L114] Environment as list of type bindings
-abbrev env := List (Var × typ)
+/-- Environment as list of (Var × Typ) akin to Coq env typ. -/
+abbrev Env := List (Var × Typ)
 
-namespace Env
-  def dom (E : env) : Vars := Lp2lc.Active.Env.domOf E
-end Env
+/-- Lookup-based binding predicate, following the style in Fsub. -/
+@[simp] def bindsT (x : Var) (T : Typ) (E : Env) : Prop := E.lookup x = some T
 
--- [Coq L126, 140] binds helper
-@[simp] def binds (x : Var) (U : typ) (E : env) : Prop := E.lookup x = some U
-
--- [Coq L121-154, 155-175] Well-formedness (mutual)
+/-- Well-formed type/term in environment (skeletal to state theorems) -/
 mutual
-  inductive wft : env -> typ -> Prop where
-    | wft_bot : (E : env) -> wft E typ_bot
-    | wft_top : (E : env) -> wft E typ_top
-    | wft_sel : (E : env) -> (e : trm) -> (value e ∨ ∃ x, trm_fvar x = e) -> wfe E e -> wft E (typ_sel e)
-    | wft_mem : (E : env) -> (T1 T2 : typ) -> wft E T1 -> wft E T2 -> wft E (typ_mem T1 T2)
-    | wft_all : (L : Vars) -> (E : env) -> (T1 T2 : typ) -> wft E T1 -> (∀ x, x ∉ L -> wft ((x, T1) :: E) (open_t T2 (trm_fvar x))) -> wft E (typ_all T1 T2)
-
-  inductive wfe : env -> trm -> Prop where
-    | wfe_var : (U : typ) -> (E : env) -> (x : Var) -> binds x U E -> wfe E (trm_fvar x)
-    | wfe_abs : (L : Vars) -> (E : env) -> (V : typ) -> (e : trm) -> wft E V -> (∀ x, x ∉ L -> wfe ((x, V) :: E) (open_e e (trm_fvar x))) -> wfe E (trm_abs V e)
-    | wfe_mem : (E : env) -> (T : typ) -> wft E T -> wfe E (trm_mem T)
-    | wfe_app : (E : env) -> (e1 e2 : trm) -> wfe E e1 -> wfe E e2 -> wfe E (trm_app e1 e2)
+  inductive Wft : Env -> Typ -> Prop where
+    | bot : ∀ E, Wft E Typ.bot
+    | top : ∀ E, Wft E Typ.top
+    | sel : ∀ E e, (Value e ∨ ∃ x, Trm.fvar x = e) -> Wfe E e -> Wft E (Typ.sel e)
+    | mem : ∀ E T1 T2, Wft E T1 -> Wft E T2 -> Wft E (Typ.mem T1 T2)
+    | all : ∀ (L : Vars) E T1 T2, Wft E T1 -> (∀ x, x ∉ L -> Wft ((x,T1)::E) (T2 open_t_var x)) -> Wft E (Typ.all T1 T2)
+  
+  inductive Wfe : Env -> Trm -> Prop where
+    | var : ∀ U E x, bindsT x U E -> Wfe E (Trm.fvar x)
+    | abs : ∀ (L : Vars) E V e, Wft E V -> (∀ x, x ∉ L -> Wfe ((x,V)::E) (e open_e_var x)) -> Wfe E (Trm.abs V e)
+    | mem : ∀ E T, Wft E T -> Wfe E (Trm.mem T)
+    | app : ∀ E e1 e2, Wfe E e1 -> Wfe E e2 -> Wfe E (Trm.app e1 e2)
 end
 
--- [Coq L181-185] okt env
-inductive okt : env -> Prop where
-  | okt_empty : okt []
-  | okt_push : (E : env) -> (x : Var) -> (T : typ) -> okt E -> wft E T -> E.lookup x = none -> okt ((x, T) :: E)
+/-- Well-formed environment (okt in Coq) -/
+inductive Okt : Env -> Prop where
+  | nil  : Okt []
+  | push : ∀ E x T, Okt E -> Wft E T -> (E.lookup x = none) -> Okt ((x,T)::E)
 
--- [Coq L168-199, 200-214] Subtyping and has (mutual)
+/-- Subtyping and has-judgment (skeletal for statements) -/
 mutual
-  inductive sub : env -> typ -> typ -> Prop where
-    | sub_bot : (E : env) -> (T : typ) -> okt E -> wft E T -> sub E typ_bot T
-    | sub_top : (E : env) -> (S : typ) -> okt E -> wft E S -> sub E S typ_top
-    | sub_refl_sel : (E : env) -> (t : trm) -> okt E -> wft E (typ_sel t) -> sub E (typ_sel t) (typ_sel t)
-    | sub_sel1 : (E : env) -> (S U : typ) -> (t : trm) -> has E t (typ_mem S U) -> sub E (typ_sel t) U
-    | sub_sel2 : (E : env) -> (S U : typ) -> (t : trm) -> has E t (typ_mem S U) -> sub E S (typ_sel t)
-    | sub_mem : (E : env) -> (S1 U1 S2 U2 : typ) -> sub E S2 S1 -> sub E U1 U2 -> sub E (typ_mem S1 U1) (typ_mem S2 U2)
-    | sub_all : (L : Vars) -> (E : env) -> (S1 S2 T1 T2 : typ) ->
-        sub E T1 S1 -> (∀ x, x ∉ L -> sub ((x, T1) :: E) (open_t S2 (trm_fvar x)) (open_t T2 (trm_fvar x))) -> sub E (typ_all S1 S2) (typ_all T1 T2)
-    | sub_trans : (E : env) -> (S T U : typ) -> sub E S T -> sub E T U -> sub E S U
-
-  inductive has : env -> trm -> typ -> Prop where
-    | has_var : (E : env) -> (x : Var) -> (T : typ) -> okt E -> binds x T E -> has E (trm_fvar x) T
-    | has_mem : (E : env) -> (T : typ) -> okt E -> wft E T -> has E (trm_mem T) (typ_mem T T)
-    | has_abs : (E : env) -> (V : typ) -> (e : trm) -> (T : typ) -> okt E -> wfe E (trm_abs V e) -> wft E (typ_all V T) -> has E (trm_abs V e) (typ_all V T)
-    | has_sub : (E : env) -> (t : trm) -> (T U : typ) -> has E t T -> sub E T U -> has E t U
+  inductive Sub : Env -> Typ -> Typ -> Prop where
+    | bot : ∀ E T, Okt E -> Wft E T -> Sub E Typ.bot T
+    | top : ∀ E S, Okt E -> Wft E S -> Sub E S Typ.top
+    | reflSel : ∀ E t, Okt E -> Wft E (Typ.sel t) -> Sub E (Typ.sel t) (Typ.sel t)
+    | sel1 : ∀ E S U t, Has E t (Typ.mem S U) -> Sub E (Typ.sel t) U
+    | sel2 : ∀ E S U t, Has E t (Typ.mem S U) -> Sub E S (Typ.sel t)
+    | mem  : ∀ E S1 U1 S2 U2, Sub E S2 S1 -> Sub E U1 U2 -> Sub E (Typ.mem S1 U1) (Typ.mem S2 U2)
+    | all  : ∀ (L : Vars) E S1 S2 T1 T2,
+        Sub E T1 S1 -> (∀ x, x ∉ L -> Sub ((x,T1)::E) (S2 open_t_var x) (T2 open_t_var x)) ->
+        Sub E (Typ.all S1 S2) (Typ.all T1 T2)
+    | trans : ∀ E S T U, Sub E S T -> Sub E T U -> Sub E S U
+  
+  inductive Has : Env -> Trm -> Typ -> Prop where
+    | var  : ∀ E x T, Okt E -> bindsT x T E -> Has E (Trm.fvar x) T
+    | mem  : ∀ E T, Okt E -> Wft E T -> Has E (Trm.mem T) (Typ.mem T T)
+    | abs  : ∀ E V e T, Okt E -> Wfe E (Trm.abs V e) -> Wft E (Typ.all V T) ->
+        Has E (Trm.abs V e) (Typ.all V T)
+    | sub  : ∀ E t T U, Has E t T -> Sub E T U -> Has E t U
 end
 
--- [Coq L219-247] Typing
-inductive typing : env -> trm -> typ -> Prop where
-  | typing_var : (E : env) -> (x : Var) -> (T : typ) -> okt E -> binds x T E -> typing E (trm_fvar x) T
-  | typing_abs : (L : Vars) -> (E : env) -> (V : typ) -> (e1 : trm) -> (T1 : typ) ->
-      (∀ x, x ∉ L -> typing ((x, V) :: E) (open_e e1 (trm_fvar x)) (open_t T1 (trm_fvar x))) -> typing E (trm_abs V e1) (typ_all V T1)
-  | typing_mem : (E : env) -> (T1 : typ) -> okt E -> wft E T1 -> typing E (trm_mem T1) (typ_mem T1 T1)
-  | typing_app : (T1 : typ) -> (E : env) -> (e1 e2 : trm) -> (T2 : typ) -> typing E e1 (typ_all T1 T2) -> typing E e2 T1 -> wft E T2 -> typing E (trm_app e1 e2) T2
-  | typing_appvar : (T1 : typ) -> (E : env) -> (e1 e2 : trm) -> (T2 T2' M : typ) ->
-      typing E e1 (typ_all T1 T2) -> typing E e2 T1 -> has E e2 M ->
-      T2' = open_t T2 e2 -> wft E T2' -> typing E (trm_app e1 e2) T2'
-  | typing_sub : (S : typ) -> (E : env) -> (e : trm) -> (T : typ) -> typing E e S -> sub E S T -> typing E e T
+/-- Typing -/
+inductive Typing : Env -> Trm -> Typ -> Prop where
+  | var  : ∀ E x T, Okt E -> bindsT x T E -> Typing E (Trm.fvar x) T
+  | abs  : ∀ (L : Vars) E V e1 T1, (∀ x, x ∉ L -> Typing ((x,V)::E) (e1 open_e_var x) (T1 open_t_var x)) ->
+      Typing E (Trm.abs V e1) (Typ.all V T1)
+  | mem  : ∀ E T1, Okt E -> Wft E T1 -> Typing E (Trm.mem T1) (Typ.mem T1 T1)
+  | app  : ∀ T1 E e1 e2 T2, Typing E e1 (Typ.all T1 T2) -> Typing E e2 T1 -> Wft E T2 ->
+      Typing E (Trm.app e1 e2) T2
+  | appvar : ∀ T1 E e1 e2 T2 T2' M, Typing E e1 (Typ.all T1 T2) -> Typing E e2 T1 -> Has E e2 M ->
+      T2' = openT T2 e2 -> Wft E T2' -> Typing E (Trm.app e1 e2) T2'
+  | sub  : ∀ S E e T, Typing E e S -> Sub E S T -> Typing E e T
 
--- [Coq L251-263] Reduction (term)
-inductive red : trm -> trm -> Prop where
-  | red_app_1 : (e1 e1' e2 : trm) -> def_term e2 -> red e1 e1' -> red (trm_app e1 e2) (trm_app e1' e2)
-  | red_app_2 : (e1 e2 e2' : trm) -> value e1 -> red e2 e2' -> red (trm_app e1 e2) (trm_app e1 e2')
-  | red_abs : (V : typ) -> (e1 : trm) -> (v2 : trm) -> def_term (trm_abs V e1) -> value v2 -> red (trm_app (trm_abs V e1) v2) (open_e e1 v2)
+/-- Reduction -/
+inductive Red : Trm -> Trm -> Prop where
+  | app1 : ∀ e1 e1' e2, LcE e2 -> Red e1 e1' -> Red (Trm.app e1 e2) (Trm.app e1' e2)
+  | app2 : ∀ e1 e2 e2', Value e1 -> Red e2 e2' -> Red (Trm.app e1 e2) (Trm.app e1 e2')
+  | abs  : ∀ V e1 v2, LcE (Trm.abs V e1) -> Value v2 -> Red (Trm.app (Trm.abs V e1) v2) (openE e1 v2)
 
--- [Coq L267-275, 286-295] Meta goals
-@[simp] def preservation : Prop := ∀ (e e' : trm) (T : typ), typing [] e T -> red e e' -> typing [] e' T
-@[simp] def progress     : Prop := ∀ (e : trm) (T : typ), typing [] e T -> value e ∨ (∃ e', red e e')
+/-- Meta-properties (targets) -/
+notation "preservation" => ∀ (e e' : Trm) (T : Typ), Typing [] e T -> Red e e' -> Typing [] e' T
+notation "progress"     => ∀ (e : Trm) (T : Typ), Typing [] e T -> (Value e ∨ ∃ e', Red e e')
 
--- [Coq L286-304] Free variables (mutual)
+/-!
+### Free variables and substitutions (skeletal, to support theorem statements)
+We define fv sets and capture-avoiding substitutions only as needed for
+stating lemmas; we do not aim for full LibLN parity here.
+-/
+
 mutual
-  @[simp] def fv_t (T : typ) : Vars :=
+  def fvT (T : Typ) : Vars :=
     match T with
-    | typ_bot           => ∅
-    | typ_top           => ∅
-    | typ_sel t         => fv_e t
-    | typ_mem T1 T2     => (fv_t T1) ∪ (fv_t T2)
-    | typ_all T1 T2     => (fv_t T1) ∪ (fv_t T2)
+    | Typ.bot       => ∅
+    | Typ.top       => ∅
+    | Typ.sel t     => fvE t
+    | Typ.mem T1 T2 => (fvT T1) ∪ (fvT T2)
+    | Typ.all T1 T2 => (fvT T1) ∪ (fvT T2)
 
-  @[simp] def fv_e (e : trm) : Vars :=
+  def fvE (e : Trm) : Vars :=
     match e with
-    | trm_bvar _        => ∅
-    | trm_fvar x        => {x}
-    | trm_abs V e1      => (fv_t V) ∪ (fv_e e1)
-    | trm_mem T         => fv_t T
-    | trm_app e1 e2     => (fv_e e1) ∪ (fv_e e2)
+    | Trm.bvar _    => ∅
+    | Trm.fvar x    => {x}
+    | Trm.abs V e1  => (fvT V) ∪ (fvE e1)
+    | Trm.mem T     => fvT T
+    | Trm.app e1 e2 => (fvE e1) ∪ (fvE e2)
 end
 
--- [Coq L308-326] Substitution (mutual)
 mutual
-  @[simp] def subst_t (z : Var) (u : trm) (T : typ) : typ :=
+  def substT (z : Var) (u : Trm) (T : Typ) : Typ :=
     match T with
-    | typ_bot           => typ_bot
-    | typ_top           => typ_top
-    | typ_sel t         => typ_sel (subst_e z u t)
-    | typ_mem T1 T2     => typ_mem (subst_t z u T1) (subst_t z u T2)
-    | typ_all T1 T2     => typ_all (subst_t z u T1) (subst_t z u T2)
+    | Typ.bot       => Typ.bot
+    | Typ.top       => Typ.top
+    | Typ.sel t     => Typ.sel (substE z u t)
+    | Typ.mem T1 T2 => Typ.mem (substT z u T1) (substT z u T2)
+    | Typ.all T1 T2 => Typ.all (substT z u T1) (substT z u T2)
 
-  @[simp] def subst_e (z : Var) (u : trm) (e : trm) : trm :=
+  def substE (z : Var) (u : Trm) (e : Trm) : Trm :=
     match e with
-    | trm_bvar i        => trm_bvar i
-    | trm_fvar x        => if x = z then u else (trm_fvar x)
-    | trm_abs V e1      => trm_abs (subst_t z u V) (subst_e z u e1)
-    | trm_mem T1        => trm_mem (subst_t z u T1)
-    | trm_app e1 e2     => trm_app (subst_e z u e1) (subst_e z u e2)
+    | Trm.bvar i    => Trm.bvar i
+    | Trm.fvar x    => if x = z then u else Trm.fvar x
+    | Trm.abs V e1  => Trm.abs (substT z u V) (substE z u e1)
+    | Trm.mem T1    => Trm.mem (substT z u T1)
+    | Trm.app e1 e2 => Trm.app (substE z u e1) (substE z u e2)
 end
-
-/-- [Coq ~L1491-~L1601] Pseudo-subtyping on empty env (psub) -/ 
-inductive psub : typ -> typ -> Prop where
-  | psub_bot : (U : typ) -> wft [] U -> psub typ_bot U
-  | psub_top : (S : typ) -> wft [] S -> psub S typ_top
-  | psub_refl_sel : (t : trm) -> wft [] (typ_sel t) -> psub (typ_sel t) (typ_sel t)
-  | psub_sel1 : (U : typ) -> wft [] U -> psub (typ_sel (trm_mem U)) U
-  | psub_sel2 : (S : typ) -> wft [] S -> psub S (typ_sel (trm_mem S))
-  | psub_mem : (S1 U1 S2 U2 : typ) -> psub S2 S1 -> psub U1 U2 -> psub (typ_mem S1 U1) (typ_mem S2 U2)
-  | psub_all : (L : Vars) -> (S1 S2 T1 T2 : typ) ->
-      psub T1 S1 -> (∀ (x : Var), x ∉ L -> sub [(x, T1)] (open_t S2 (trm_fvar x)) (open_t T2 (trm_fvar x))) ->
-      psub (typ_all S1 S2) (typ_all T1 T2)
-  | psub_trans : (S T U : typ) -> psub S T -> psub T U -> psub S U
-
-/-- [Coq ~L1575-~L1601] Possible types for values -/ 
-inductive possible_types : Nat -> trm -> typ -> Prop where
-  | pt_top : (n : Nat) -> (v : trm) -> value v -> wfe [] v -> possible_types n v typ_top
-  | pt_mem : (n : Nat) -> (T S U : typ) -> psub S T -> psub T U -> possible_types n (trm_mem T) (typ_mem S U)
-  | pt_all : (L : Vars) -> (n : Nat) -> (V V' : typ) -> (e1 : trm) -> (T1 T1' : typ) ->
-      (∀ X, X ∉ L -> typing [(X, V)] (open_e e1 (trm_fvar X)) (open_t T1 (trm_fvar X))) ->
-      psub V' V -> (∀ X, X ∉ L -> sub [(X, V')] (open_t T1 (trm_fvar X)) (open_t T1' (trm_fvar X))) ->
-      possible_types (n + 1) (trm_abs V e1) (typ_all V' T1')
-  | pt_all_shallow : (V V' : typ) -> (e1 : trm) -> (T1' : typ) -> wfe [] (trm_abs V e1) -> wft [] (typ_all V' T1') ->
-      possible_types 0 (trm_abs V e1) (typ_all V' T1')
-  | pt_sel : (n : Nat) -> (v : trm) -> (S : typ) -> possible_types n v S -> possible_types n v (typ_sel (trm_mem S))
 
 end Lp2lc.Active.Dsubsup

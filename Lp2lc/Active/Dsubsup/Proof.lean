@@ -1,120 +1,93 @@
+/-***************************************************************************
+* DSubSup (D<:>) — Theorem statements scaffold                              *
+* Coq source: Lp2lc_coq/Active/Dsubsup.v                                    *
+* Rules:                                                                     *
+* - Preserve names and declaration order; add TODO comments with Coq lines.  *
+* - Proof bodies must remain `sorry` here; no axioms allowed.                *
+***************************************************************************-/
+
 import «Lp2lc».Active.Dsubsup.Def
 import «Lp2lc».Active.Dsubsup.Auxiliary
 
 namespace Lp2lc.Active.Dsubsup
 
-open typ trm
+open Trm Typ
 
--- Coq lemma index (91 items) TODO scaffold in order with [Coq L###]
-/-
-See: gen/plan/Define/Dsubsup.coq.index
-We will add theorem stubs in the same order, each annotated with its Coq line, and
-gradually refine signatures and proofs. This preserves build stability.
+/-!
+Sections below follow Coq file structure: Definitions → Substitution props →
+Well-formedness lemmas → Weakening/Narrowing/Substitution → Regularity →
+Preservation & Progress. Only statements are provided, proofs are `sorry`.
 -/
 
--- Minimal early lemmas scaffolding (fill later)
-@[simp] theorem open_rec_lc_core :
-  (∀ T j v u i, i ≠ j → open_t_rec j v T = open_t_rec i u (open_t_rec j v T) → T = open_t_rec i u T) ∧
-  (∀ e j v u i, i ≠ j → open_e_rec j v e = open_e_rec i u (open_e_rec j v e) → e = open_e_rec i u e) := by
+/-- Coq line ~267: preservation target packaged -/ 
+theorem preservation_result : preservation := by
+  -- TODO: port exact statement context if differs
   sorry
 
-@[simp] theorem open_rec_lc :
-  (∀ T, def_type T → ∀ u k, T = open_t_rec k u T) ∧ (∀ e, def_term e → ∀ u k, e = open_e_rec k u e) := by
+/-- Coq line ~272: progress target packaged -/
+theorem progress_result : progress := by
   sorry
 
-axiom open_t_var_type : Prop
+/- Substitution properties (selected statements mirrored) ------------------ -/
 
-@[simp] theorem subst_fresh :
-  (∀ T z u, z ∉ fv_t T → subst_t z u T = T) ∧ (∀ e z u, z ∉ fv_e e → subst_e z u e = e) := by
+/-- Coq line ~447: subst distributes over open_t (typ-side) -/
+theorem substT_openT (T1 : Typ) (t2 : Trm) (x : Var) (u : Trm)
+  (Hu : LcE u) :
+  substT x u (openT T1 t2) = openT (substT x u T1) (substE x u t2) := by
   sorry
 
--- Placeholders to synchronize with Proof.progress.md (to be replaced with real statements)
-axiom subst_open_rec : Prop
-axiom subst_t_open_t : Prop
-axiom subst_e_open_e : Prop
-axiom subst_t_open_t_var : Prop
-axiom subst_e_open_e_var : Prop
-axiom subst_t_intro : Prop
-axiom subst_e_intro : Prop
-axiom subst_lc : Prop
-axiom subst_t_type : Prop
-axiom subst_e_term : Prop
-axiom subst_e_value : Prop
-axiom value_is_term : Prop
-axiom wf_lc : Prop
-axiom wft_type : Prop
-axiom wfe_term : Prop
-axiom wf_weaken : Prop
-axiom wft_weaken : Prop
-axiom wft_weaken_empty : Prop
-axiom wfe_weaken : Prop
-axiom wfe_weaken_empty : Prop
-axiom wf_narrow : Prop
-axiom wft_narrow : Prop
-axiom wf_subst : Prop
-axiom wft_subst : Prop
-axiom wft_subst1 : Prop
-axiom wft_subst_empty : Prop
-axiom wft_open : Prop
-axiom ok_from_okt : Prop
-axiom wft_from_env_has : Prop
-axiom wft_from_okt : Prop
-axiom wft_weaken_right : Prop
-axiom okt_push_inv : Prop
-axiom okt_push_type : Prop
-axiom okt_narrow : Prop
-axiom okt_subst : Prop
-axiom okt_subst1 : Prop
-axiom notin_fv_open_rec : Prop
-axiom notin_fv_t_open : Prop
-axiom notin_fv_e_open : Prop
-axiom notin_fv_wf_rec : Prop
-axiom notin_fv_wf : Prop
-axiom map_subst_id : Prop
-axiom sub_has_regular : Prop
-axiom sub_regular : Prop
-axiom has_regular : Prop
-axiom has_regular_e : Prop
-axiom typing_regular : Prop
-axiom value_regular : Prop
-axiom red_regular : Prop
-axiom sub_reflexivity : Prop
-axiom sub_has_weakening : Prop
-axiom sub_weakening : Prop
-axiom sub_weakening1 : Prop
-axiom sub_weakening_empty : Prop
-axiom has_weakening : Prop
-axiom has_weakening1 : Prop
-axiom has_weakening_empty : Prop
-axiom sub_has_narrowing_aux : Prop
-axiom sub_narrowing : Prop
-axiom sub_narrowing_empty : Prop
-axiom has_value_var : Prop
-axiom var_typing_has : Prop
-axiom val_typing_has : Prop
-axiom sub_has_through_subst : Prop
-axiom typing_weakening : Prop
-axiom typing_narrowing : Prop
-axiom typing_narrowing_empty : Prop
-axiom typing_through_subst : Prop
-axiom has_empty_value : Prop
-axiom psub_sub : Prop
-axiom possible_types_value : Prop
-axiom possible_types_wfe : Prop
-axiom possible_types_wft : Prop
-axiom has_empty_var_false : Prop
-axiom possible_types_closure_psub : Prop
-axiom psub_reflexivity : Prop
-axiom sub_psub_aux : Prop
-axiom sub_psub : Prop
-axiom possible_types_closure : Prop
-axiom possible_types_typing : Prop
-axiom typing_inv_abs : Prop
-axiom canonical_form_abs : Prop
-axiom canonical_form_mem : Prop
-axiom typing_through_subst1 : Prop
-axiom value_red_contra : Prop
-axiom preservation_result : Prop
-axiom progress_result : Prop
+/-- Coq line ~466: subst distributes over open_e (term-side) -/
+theorem substE_openE (t1 t2 : Trm) (x : Var) (u : Trm)
+  (Hu : LcE u) :
+  substE x u (openE t1 t2) = openE (substE x u t1) (substE x u t2) := by
+  sorry
+
+/- Well-formedness and regularity ------------------------------------------ -/
+
+/-- Coq line ~559: Wft implies local closure of types -/
+theorem wft_lcT : ∀ {E T}, Wft E T -> LcT T := by
+  intro E T h; induction h <;> try solve
+    | simp
+    | exact ?_;
+  sorry
+
+/-- Coq line ~571: Wfe implies local closure of terms -/
+theorem wfe_lcE : ∀ {E e}, Wfe E e -> LcE e := by
+  intro E e h; induction h <;> try solve
+    | simp
+    | exact ?_;
+  sorry
+
+/- Weakening / Narrowing / Substitution ------------------------------------ -/
+
+/-- Coq line ~1136: weakening for Sub -/
+theorem sub_weakening : ∀ {E F G S T},
+  Sub (E ++ G) S T -> Okt (E ++ F ++ G) -> Sub (E ++ F ++ G) S T := by
+  sorry
+
+/-- Coq line ~1406: narrowing for Typing -/
+theorem typing_narrowing : ∀ {Q E F X P e T},
+  Sub E P Q -> Typing (E ++ (X,P) :: F) e T -> Typing (E ++ (X,Q) :: F) e T := by
+  sorry
+
+/-- Coq line ~1421: substitution for Typing -/
+theorem typing_through_subst : ∀ {U E F z T e u},
+  Typing (E ++ (z,U) :: F) e T ->
+  (Value u ∨ ∃ x, Trm.fvar x = u) -> Typing E u U ->
+  Typing (E ++ (List.map (fun (p : Var × Typ) => (p.1, p.2)) F)) (substE z u e) (substT z u T) := by
+  -- NOTE: map is a placeholder mimic; env mapping for Typ is not required for statements here.
+  sorry
+
+/- Canonical forms (shapes) ------------------------------------------------ -/
+
+/-- Coq line ~1695: canonical form for abs -/
+theorem canonical_form_abs : ∀ {t U1 U2},
+  Value t -> Typing [] t (Typ.all U1 U2) -> ∃ V e1, t = Trm.abs V e1 := by
+  sorry
+
+/-- Coq line ~1703: canonical form for mem -/
+theorem canonical_form_mem : ∀ {t b T},
+  Value t -> Typing [] t (Typ.mem b T) -> ∃ V, t = Trm.mem V := by
+  sorry
 
 end Lp2lc.Active.Dsubsup
