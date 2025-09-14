@@ -27,4 +27,9 @@ end Env
 -- Axiom: there is always a variable fresh from a finite set
 axiom var_fresh : (L : Vars) → ∃ X : Var, X ∉ L
 
+/-- Abstract well-formedness of environments.
+This polymorphic axiom mirrors LibEnv.ok at the signature level.
+Each module may instantiate `env` as a List (Var × bind) or similar. -/
+axiom ok {env : Sort u} : env → Prop
+
 end Lp2lc.Active
