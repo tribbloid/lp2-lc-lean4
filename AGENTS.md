@@ -11,6 +11,8 @@ The project depends on MathLib and AESOP.
 ## Coding Rules
 
 ### General
+- Only ask questions during planning stage. 
+- Do not ask questions like "what to do next", always follow the workflow by the numbers.
 - Build after every revision, build early and often, prioritize correctness over progress.
 - Eliminate compiler or LSP error as soon as possible.
 - Do not proceed to the next step if there is a pending compiling error.

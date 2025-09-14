@@ -22,8 +22,8 @@ For each Coq source file:
 For each pair of Coq source file and Lean module, execute the following tasks sequentially.
 
 #### 1. Enforce Code Structure
-- Comment out all theorems in `Def.lean`
-- Delete all axioms in `Proof.lean` and `Auxiliary.lean`
+- Delete all theorems in `Def.lean`, including their entries in `Def.progress.md`.
+- Delete all axioms in `Proof.lean` and `Auxiliary.lean`, including their entries in `Proof.progress.md`.
 
 #### 2. Report Definitions
 - Extract definitions, axioms, types from the Coq source.
@@ -38,8 +38,8 @@ For each pair of Coq source file and Lean module, execute the following tasks se
 #### 4. Checklist
 Check the following criteria, ensure that:
 
-[ ] Each Coq declaration is tracked by `Def.progress.md` and `Proof.progress.md`?
-[ ] Each Lean declaration is tracked by `Def.progress.md` and `Proof.progress.md`?
+[ ] Each Coq declaration is tracked by `Def.progress.md` and `Proof.progress.md`.
+[ ] Each Lean declaration is tracked by `Def.progress.md` and `Proof.progress.md`.
 
 If any of the above is unmet, go to previous step and fix it.
 

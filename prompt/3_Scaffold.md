@@ -25,11 +25,9 @@ Build the project to verify that your code is imported, compiled, and correct. D
 
 If a task is half-done, continue from where they left off.
 
-DO NOT delete theorem or progress report entry in any case.
-
 #### 1. Enforce Code Structure
-- Comment out all theorems in `Def.lean`
-- Delete all axioms in `Proof.lean` and `Auxiliary.lean`
+- Delete all theorems in `Def.lean`, including their entries in `Def.progress.md`.
+- Delete all axioms in `Proof.lean` and `Auxiliary.lean`, including their entries in `Proof.progress.md`.
 
 #### 2. Convert Definitions
 - Extract all definitions, axioms, types from Coq source.
@@ -49,7 +47,7 @@ Check the following criteria, ensure that:
 
 [ ] Each `Def.progress.md` entry is defined in `Def.lean` and the original Coq source.
 [ ] Each `Proof.progress.md` entry is defined `Proof.lean` and the original Coq source.
-[ ] `Proof.lean` should not contain axioms declarations.
+[ ] `Proof.lean` and `Auxiliary.lean` should not contain axioms declarations.
 
 If any of the above is unmet, go to previous step and fix it.
 
