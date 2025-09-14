@@ -7,6 +7,7 @@ import Std
 import Mathlib.Data.Finset.Basic
 import Aesop
 import «Lp2lc».Active.Shared
+open Lp2lc.Active
 
 namespace Lp2lc.Active.Fsub
 
@@ -141,10 +142,6 @@ inductive wft : env -> typ -> Prop where
       (∀ (X : Var), X ∉ L ->
         wft ((X, bind.bind_sub T1) :: E) (T2 open_tt_var X)) ->
       wft E (typ.typ_all T1 T2)
-
--- placeholder
--- line 200
-axiom ok : env -> Prop
 
 -- line 161
 inductive okt : env -> Prop where
