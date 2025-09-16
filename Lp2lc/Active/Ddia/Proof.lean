@@ -4,6 +4,7 @@
 *****************************************************************************-/
 
 import Aesop
+import Mathlib.Data.Finset.Basic
 import «Lp2lc».Active.Ddia.Def
 import «Lp2lc».Active.Ddia.Auxiliary
 
@@ -46,59 +47,16 @@ theorem progress_result : progress := by
 
 -- A few substitution lemmas (stubs)
 -- Coq line 574: Lemma subst_e_term
-mutual
-  theorem subst_t_type : ∀ {T z u}, def_type T → def_term u → def_type (subst_t z u T)
-  | _, z, u, hT, hu => by
-    classical
-    cases hT with
-    | type_bot => simpa [subst_t]
-    | type_top => simpa [subst_t]
-    | type_and h1 h2 =>
-        simpa [subst_t] using def_type.type_and (subst_t_type (T := _) h1 hu) (subst_t_type (T := _) h2 hu)
-    | type_or h1 h2 =>
-        simpa [subst_t] using def_type.type_or (subst_t_type (T := _) h1 hu) (subst_t_type (T := _) h2 hu)
-    | type_sel hte =>
-        have : def_term (subst_e z u e1) := subst_e_term (e1 := e1) (z := z) (e2 := u) hte hu
-        simpa [subst_t] using def_type.type_sel (e1 := subst_e z u e1) this
-    | type_mem h1 h2 =>
-        simpa [subst_t] using def_type.type_mem (subst_t_type (T := _) h1 hu) (subst_t_type (T := _) h2 hu)
-    | type_all L hV hBody =>
-        refine def_type.type_all (L ∪ {z}) (subst_t_type (T := _) hV hu) ?openGoal
-        intro x hx
-        have hx_ne : x ≠ z := by
-          intro h; subst h; simpa using (by have : x ∉ (L ∪ {z}) := hx; simpa using this)
-        have hOrig : def_type (open_t T2 (trm.trm_fvar x)) := hBody x (by
-          have : x ∉ (L ∪ {z}) := hx; 
-          -- from x ∉ L ∪ {z} derive x ∉ L
-          simpa [Finset.mem_union, Finset.mem_singleton, not_or] using this)
-        have hSub := subst_t_type (T := open_t T2 (trm.trm_fvar x)) hOrig hu
-        simpa [subst_t_open_t, subst_e, hx_ne] using hSub
+-- Substitution over terms preserves local closure of terms.
+theorem subst_e_term : ∀ {e1 z e2}, def_term e1 → def_term e2 → def_term (subst_e z e2 e1) := by
+  -- TODO: mutual induction over terms
+  intro _ _ _ _ _; sorry
 
-  theorem subst_e_term : ∀ {e1 z e2}, def_term e1 → def_term e2 → def_term (subst_e z e2 e1)
-  | _, z, e2, h, hu => by
-    classical
-    cases h with
-    | term_var =>
-        cases e1 <;> simp [subst_e] at *
-        · exact def_term.term_var
-        · by_cases h : v = z
-          · simpa [subst_e, h] using hu
-          · simpa [subst_e, h] using def_term.term_var
-    | term_abs L V e hV hBody =>
-        refine def_term.term_abs (L ∪ {z}) (subst_t_type (T := _) hV hu) ?openGoal
-        intro x hx
-        have hx_ne : x ≠ z := by
-          intro h; subst h; simpa using (by have : x ∉ (L ∪ {z}) := hx; simpa using this)
-        have hOrig : def_term (open_e e (trm.trm_fvar x)) := hBody x (by
-          have : x ∉ (L ∪ {z}) := hx; 
-          simpa [Finset.mem_union, Finset.mem_singleton, not_or] using this)
-        have hSub := subst_e_term (e1 := open_e e (trm.trm_fvar x)) (z := z) (e2 := e2) hOrig hu
-        simpa [subst_e_open_e, subst_e, hx_ne] using hSub
-    | term_mem hT =>
-        simpa [subst_e] using def_term.term_mem (subst_t_type (T := _) hT hu)
-    | term_app h1 h2 =>
-        simpa [subst_e] using def_term.term_app (subst_e_term (e1 := _) h1 hu) (subst_e_term (e1 := _) h2 hu)
-end
+-- Coq line 568: Lemma subst_t_type (adapted to Ddia: subst over types uses terms)
+-- Substitution over types preserves local closure of types.
+theorem subst_t_type : ∀ {T z u}, def_type T → def_term u → def_type (subst_t z u T) := by
+  -- TODO: mutual induction over types/terms
+  intro _ _ _ _ _; sorry
 
 -- Opening and substitution infrastructure (typed)
 -- Core open_rec lemma (type part)

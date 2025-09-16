@@ -2,7 +2,7 @@
 | ---|---|---|---|
 | open_tt_rec_type_core | open_tt_rec_type_core | no | opening/subst |
 | open_tt_rec_type | open_tt_rec_type | no | opening/subst |
-| subst_tt_fresh | subst_tt_fresh | no | substitution |
+| subst_tt_fresh | subst_tt_fresh | yes | substitution |
 | subst_tt_open_tt_rec | subst_tt_open_tt_rec | no | opening/subst |
 | subst_tt_open_tt | subst_tt_open_tt | no | opening/subst |
 | subst_tt_open_tt_var | subst_tt_open_tt_var | no | opening/subst |
@@ -10,14 +10,14 @@
 | open_te_rec_term_core | open_te_rec_term_core | no | opening/subst |
 | open_te_rec_type_core | open_te_rec_type_core | no | opening/subst |
 | open_te_rec_term | open_te_rec_term | no | opening/subst |
-| subst_te_fresh | subst_te_fresh | no | substitution |
+| subst_te_fresh | subst_te_fresh | yes | substitution |
 | subst_te_open_te | subst_te_open_te | no | opening/subst |
 | subst_te_open_te_var | subst_te_open_te_var | no | opening/subst |
 | subst_te_intro | subst_te_intro | no | substitution |
 | open_ee_rec_term_core | open_ee_rec_term_core | no | opening/subst |
 | open_ee_rec_type_core | open_ee_rec_type_core | no | opening/subst |
 | open_ee_rec_term | open_ee_rec_term | no | opening/subst |
-| subst_ee_fresh | subst_ee_fresh | no | substitution |
+| subst_ee_fresh | subst_ee_fresh | yes | substitution |
 | subst_ee_open_ee | subst_ee_open_ee | no | opening/subst |
 | subst_ee_open_ee_var | subst_ee_open_ee_var | no | opening/subst |
 | subst_ee_intro | subst_ee_intro | no | substitution |

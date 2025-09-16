@@ -9,10 +9,16 @@ namespace Lp2lc.Active.Dot
 -- Theorems scaffolded from Coq Dot.v, in original order. All proofs use sorry.
 
 -- [Coq: Dot.v line 391]
+/-- Freshness contradiction: x is never fresh in E ++ [(x, a)]. -/
 theorem fresh_push_eq_inv {A} (x : Var) (a : A) (E : List (Var × A)) :
-  ok E → False := by
-  -- TODO: This relies on LibEnv facts; placeholder
-  sorry
+  x ∉ Env.dom (E ++ [(x, a)]) → False := by
+  intro hx
+  classical
+  -- Expand the domain and show x is in dom (E ++ [(x,a)])
+  change x ∈ ((List.map (fun p : Var × A => p.fst) (E ++ [(x, a)])).toFinset) at *
+  have : x ∈ ((List.map (fun p : Var × A => p.fst) (E ++ [(x, a)])).toFinset) := by
+    simp [List.map_append]
+  exact hx this
 
 -- [Coq: Dot.v line 405]
 theorem weaken_rules : True := by
@@ -236,16 +242,25 @@ theorem lambda_not_rcd : True := by
   trivial
 
 -- [Coq: Dot.v line 1320]
-theorem open_dec_preserves_label : True := by
-  trivial
+/-- Opening a declaration preserves its label. -/
+theorem open_dec_preserves_label (D : dec) (x : Var) (i : Nat) :
+  label_of_dec D = label_of_dec (open_rec_dec i x D) := by
+  -- TODO: discharge by cases on D with simp on label_of_dec/open_rec_dec
+  sorry
 
 -- [Coq: Dot.v line 1326]
-theorem open_record_dec : True := by
-  trivial
+/-- Opening a record declaration yields a record declaration. -/
+theorem open_record_dec (D : dec) (x : Var) :
+  record_dec D → record_dec (open_dec x D) := by
+  -- TODO: straightforward by cases on record_dec
+  intro _; sorry
 
 -- [Coq: Dot.v line 1332]
-theorem open_record_typ : True := by
-  trivial
+/-- Opening a record type preserves its record shape and labels. -/
+theorem open_record_typ (T : typ) (x : Var) (ls : Finset label) :
+  record_typ T ls → record_typ (open_typ x T) ls := by
+  -- TODO: structural induction on record_typ
+  intro _; sorry
 
 -- [Coq: Dot.v line 1346]
 theorem open_eq_avar : True := by
@@ -268,16 +283,24 @@ theorem open_record_typ_rev : True := by
   trivial
 
 -- [Coq: Dot.v line 1451]
-theorem open_record_type : True := by
-  trivial
+/-- Opening preserves the record_type predicate. -/
+theorem open_record_type (T : typ) (x : Var) :
+  record_type T → record_type (open_typ x T) := by
+  -- TODO: follows from open_record_typ
+  intro _; sorry
 
 -- [Coq: Dot.v line 1458]
-theorem open_record_type_rev : True := by
-  trivial
+/-- Reverse: if open_typ x T is a record, then T is a record (under freshness in Coq proof; here captured structurally elsewhere). -/
+theorem open_record_type_rev (T : typ) (x : Var) :
+  record_type (open_typ x T) → record_type T := by
+  -- TODO: proved later once we have open_eq lemmas; keep placeholder for now
+  intro _; sorry
 
 -- [Coq: Dot.v line 1465]
-theorem label_same_typing : True := by
-  trivial
+/-- The label of a well-typed def matches the label of its derived declaration. -/
+theorem label_same_typing {G : ctx} {d : defn} {D : dec} :
+  ty_def G d D → label_of_def d = label_of_dec D := by
+  intro h; cases h <;> rfl
 
 -- [Coq: Dot.v line 1471]
 theorem record_defs_typing_rec : True := by
