@@ -16,9 +16,9 @@ All theorem/lemma statements to be scaffolded in Proof.lean (Proven? = no).
 | subst_e_open_e_var             | subst_e_open_e_var         | no      | substitution     |
 | subst_t_intro                  | subst_t_intro              | no      | substitution     |
 | subst_e_intro                  | subst_e_intro              | no      | substitution     |
-| subst_lc                       | subst_lc                   | no      | lc preservation  |
-| subst_t_type                   | subst_t_type               | no      | lc preservation  |
-| subst_e_term                   | subst_e_term               | no      | lc preservation  |
+|| subst_lc                       | subst_lc                   | no      | lc preservation  |
+|| subst_t_type                   | subst_t_type               | yes     | lc preservation  |
+|| subst_e_term                   | subst_e_term               | yes     | lc preservation  |
 | subst_e_value                  | subst_e_value              | no      | lc preservation  |
 | value_is_term                  | value_is_term              | yes     | regularity       |
 | wf_lc                          | wf_lc                      | yes     | regularity       |

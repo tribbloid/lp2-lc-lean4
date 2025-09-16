@@ -103,14 +103,63 @@ theorem progress_result : progress := by
 
 -- A few substitution lemmas (stubs)
 -- Coq line 574: Lemma subst_e_term
+-- Substitution over terms preserves local closure of terms.
 theorem subst_e_term : ∀ {e1 z e2}, def_term e1 → def_term e2 → def_term (subst_e z e2 e1) := by
-  -- TODO: mutual induction over terms
-  sorry
+  intro e1 z e2 h1 h2
+  induction h1 with
+  | term_var =>
+      -- replacing a free var keeps a term (either e2 or a var)
+      cases e1 <;> simp [subst_e] at *
+      · -- impossible: term_var is only for fvar
+        exact def_term.term_var
+      · -- fvar: substitution either yields e2 or same var
+        classical
+        by_cases h : v = z
+        · simpa [subst_e, h] using h2
+        · simpa [subst_e, h] using def_term.term_var
+  | term_abs L V e ih =>
+      -- structural: recurse on body; type part by type lemma
+      refine def_term.term_abs L ?hv ?hopen
+      · -- V remains a def_type under subst
+        exact subst_t_type (T := V) (z := z) (u := e2) (by cases h1_a; assumption) h2
+      · intro x hx
+        specialize ih x hx
+        -- open then subst equals subst then open
+        simpa [subst_e_open_e e (trm.trm_fvar x) z e2 h2] using ih
+  | term_mem hT =>
+      -- mem case: just map on the embedded type
+      simpa [subst_e] using (def_term.term_mem (subst_t_type (T := T) (z := z) (u := e2) (by cases hT; assumption) h2))
+  | term_app h₁ h₂ ih₁ ih₂ =>
+      simpa [subst_e] using def_term.term_app (ih₁) (ih₂)
 
 -- Coq line 568: Lemma subst_t_type (adapted to Ddia: subst over types uses terms)
+-- Substitution over types preserves local closure of types.
 theorem subst_t_type : ∀ {T z u}, def_type T → def_term u → def_type (subst_t z u T) := by
-  -- TODO: mutual induction over types/terms
-  sorry
+  intro T z u hT hu
+  induction hT with
+  | type_bot =>
+      simp [subst_t]
+  | type_top =>
+      simp [subst_t]
+  | type_and h1 h2 ih1 ih2 =>
+      simpa [subst_t] using def_type.type_and (ih1 hu) (ih2 hu)
+  | type_or h1 h2 ih1 ih2 =>
+      simpa [subst_t] using def_type.type_or (ih1 hu) (ih2 hu)
+  | type_sel hte =>
+      -- the embedded term remains a term under term-substitution
+      have : def_term (subst_e z u e1) := by
+        -- use term lemma on a trivially closed term e1 (def_term gives closure)
+        exact (subst_e_term (e1 := e1) (z := z) (e2 := u) hte hu)
+      simpa [subst_t] using def_type.type_sel (e1 := subst_e z u e1) this
+  | type_mem h1 h2 ih1 ih2 =>
+      simpa [subst_t] using def_type.type_mem (ih1 hu) (ih2 hu)
+  | type_all L h1 h2 ih1 ih2 =>
+      refine def_type.type_all L (ih1 hu) ?hbody
+      intro x hx
+      -- open then subst equals subst then open (use auxiliary equality on types)
+      have := ih2 x hx
+      -- rewrite goal with distribution lemma
+      simpa [subst_t_open_t T2 (trm.trm_fvar x) z u hu] using this
 
 -- Additional scaffolds listed in Proof.progress.md (placeholders)
 -- Opening / substitution infrastructure

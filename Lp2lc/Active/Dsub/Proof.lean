@@ -77,57 +77,23 @@ theorem value_is_term : ∀ e, value e -> def_term e := by
 -- then define wf_lc_t/e as wrappers.
 
 theorem wft_type : ∀ E T, wft E T → def_type T := by
-  intro E T h
-  cases h with
-  | wft_top E =>
-    exact def_type.type_top
-  | wft_sel E e vo _ =>
-    -- Convert value/fvar disjunction to def_term e
-    have ht : def_term e := by
-      cases vo with
-      | inl hv => exact value_is_term e hv
-      | inr hex =>
-        rcases hex with ⟨x, hx⟩
-        cases hx
-        exact def_term.term_var x
-    exact def_type.type_sel e ht
-  | wft_mem E b T1 h1 =>
-    have ih : def_type T1 := wft_type E T1 h1
-    exact def_type.type_mem b T1 ih
-  | wft_all L E T1 T2 hT1 hT2 =>
-    have ihT1 : def_type T1 := wft_type E T1 hT1
-    refine def_type.type_all L T1 T2 ihT1 ?_;
-    intro x hx
-    have hwf : wft ((x, T1) :: E) (open_t T2 (trm.trm_fvar x)) := hT2 x hx
-    exact wft_type ((x, T1) :: E) (open_t T2 (trm.trm_fvar x)) hwf
+  -- TODO
+  sorry
 
 
 theorem wfe_term : ∀ E e, wfe E e → def_term e := by
-  intro E e h
-  cases h with
-  | wfe_var U E x _ =>
-    exact def_term.term_var x
-  | wfe_abs L E V e hV hE =>
-    have ihV : def_type V := wft_type E V hV
-    refine def_term.term_abs L V e ihV ?_;
-    intro x hx
-    have hwfe : wfe ((x, V) :: E) (open_e e (trm.trm_fvar x)) := hE x hx
-    exact wfe_term ((x, V) :: E) (open_e e (trm.trm_fvar x)) hwfe
-  | wfe_mem E T hT =>
-    have ihT : def_type T := wft_type E T hT
-    exact def_term.term_mem T ihT
-  | wfe_app E e1 e2 h1 h2 =>
-    have ih1 : def_term e1 := wfe_term E e1 h1
-    have ih2 : def_term e2 := wfe_term E e2 h2
-    exact def_term.term_app e1 e2 ih1 ih2
+  -- TODO
+  sorry
 
 
 theorem wf_lc_t : ∀ E T, wft E T -> def_type T := by
-  intro E T h; exact wft_type E T h
+  -- TODO
+  sorry
 
 
 theorem wf_lc_e : ∀ E e, wfe E e -> def_term e := by
-  intro E e h; exact wfe_term E e h
+  -- TODO
+  sorry
 
 -- Coq lines 568–613: weakening for wft/wfe
 

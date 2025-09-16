@@ -14,12 +14,76 @@ open typ trm bind
 theorem open_tt_rec_type_core : ∀ T j V U i, i ≠ j →
   (open_tt_rec j V T) = open_tt_rec i U (open_tt_rec j V T) →
   T = open_tt_rec i U T := by
-  sorry -- Complex proof requiring careful case analysis
+  intro T
+  induction T generalizing j V U i with
+  | typ_top =>
+    intro j V U i hij h; simp [open_tt_rec]
+  | typ_bvar J =>
+    intro j V U i hij h
+    simp [open_tt_rec] at h ⊢
+    by_cases hj : j = J
+    · have hi : i ≠ J := by
+        intro hiEq
+        have : i = j := by
+          calc
+            i = J := hiEq
+            _ = j := by simpa using Eq.symm hj
+        exact hij this
+      simp [hj, hi]
+    · exact h
+  | typ_fvar X =>
+    intro j V U i hij h
+    simp [open_tt_rec] at h ⊢
+  | typ_arrow T1 T2 ih1 ih2 =>
+    intro j V U i hij h
+    simp [open_tt_rec] at h
+    have h1 : open_tt_rec j V T1 = open_tt_rec i U (open_tt_rec j V T1) := by
+      have := congrArg (fun t => match t with | typ.typ_arrow a b => a | _ => typ.typ_top) h
+      simpa [open_tt_rec] using this
+    have h2 : open_tt_rec j V T2 = open_tt_rec i U (open_tt_rec j V T2) := by
+      have := congrArg (fun t => match t with | typ.typ_arrow a b => b | _ => typ.typ_top) h
+      simpa [open_tt_rec] using this
+    have ih1' := ih1 j V U i hij h1
+    have ih2' := ih2 j V U i hij h2
+    simp [open_tt_rec, ih1', ih2']
+  | typ_all T1 T2 ih1 ih2 =>
+    intro j V U i hij h
+    simp [open_tt_rec] at h
+    have h1 : open_tt_rec j V T1 = open_tt_rec i U (open_tt_rec j V T1) := by
+      have := congrArg (fun t => match t with | typ.typ_all a b => a | _ => typ.typ_top) h
+      simpa [open_tt_rec] using this
+    have h2 : open_tt_rec (j + 1) V T2 = open_tt_rec (i + 1) U (open_tt_rec (j + 1) V T2) := by
+      have := congrArg (fun t => match t with | typ.typ_all a b => b | _ => typ.typ_top) h
+      simpa [open_tt_rec] using this
+    have hij' : i + 1 ≠ j + 1 := by
+      intro h'
+      exact hij (Nat.succ.inj h')
+    have ih1' := ih1 j V U i hij h1
+    have ih2' := ih2 (j + 1) V U (i + 1) hij' h2
+    simp [open_tt_rec, ih1', ih2']
 
 -- Coq line 438: Lemma open_tt_rec_type
 theorem open_tt_rec_type : ∀ T U,
   def_type T → ∀ k, T = open_tt_rec k U T := by
-  sorry -- Need cofinite quantification
+  intro T U hT
+  induction hT with
+  | type_top => intro k; simp [open_tt_rec]
+  | type_var X => intro k; simp [open_tt_rec]
+  | type_arrow T1 T2 _ _ ih1 ih2 =>
+    intro k; simp [open_tt_rec, ih1 k, ih2 k]
+  | type_all L T1 T2 h1 h2 ih1 ih2 =>
+    intro k
+    have hT1 := ih1 k
+    -- pick fresh X for cofinite reasoning
+    have ⟨X, Xfresh⟩ := Lp2lc.Active.var_fresh L
+    have hx := ih2 X Xfresh U (k + 1)
+    -- rewrite open in terms of open_tt_rec 0
+    have hx' : open_tt_rec 0 (typ.typ_fvar X) T2 =
+                open_tt_rec (k + 1) U (open_tt_rec 0 (typ.typ_fvar X) T2) := by
+      simpa [open_tt] using hx
+    have hT2 : T2 = open_tt_rec (k + 1) U T2 :=
+      open_tt_rec_type_core T2 0 (typ.typ_fvar X) U (k + 1) (by exact Nat.succ_ne_zero k) hx'
+    simp [open_tt_rec, hT1, hT2]
 
 -- Coq line 447: Lemma subst_tt_fresh
 theorem subst_tt_fresh : ∀ Z U T,
@@ -48,7 +112,17 @@ theorem subst_tt_fresh : ∀ Z U T,
 theorem subst_tt_open_tt_rec : ∀ T1 T2 X P n, def_type P →
   subst_tt X P (open_tt_rec n T2 T1) =
   open_tt_rec n (subst_tt X P T2) (subst_tt X P T1) := by
-  sorry -- Complex proof with dependency on open_tt_rec_type
+  intro T1 T2 X P n hP
+  revert n
+  induction T1 with
+  | typ_top => intro n; simp [open_tt_rec, subst_tt]
+  | typ_bvar J => intro n; simp [open_tt_rec, subst_tt]
+  | typ_fvar Y => intro n; simp [open_tt_rec, subst_tt]
+  | typ_arrow T1 T2 ih1 ih2 =>
+    intro n; simp [open_tt_rec, subst_tt, ih1 n, ih2 n]
+  | typ_all T1 T2 ih1 ih2 =>
+    intro n
+    simp [open_tt_rec, subst_tt, ih1 n, ih2 (n + 1)]
 
 -- Coq line 466: Lemma subst_tt_open_tt
 theorem subst_tt_open_tt : ∀ T1 T2 X P, def_type P →
@@ -127,18 +201,50 @@ theorem subst_te_fresh : ∀ X U e,
 theorem subst_te_open_te : ∀ e T X U, def_type U →
   subst_te X U (open_te e T) =
   open_te (subst_te X U e) (subst_tt X U T) := by
-  sorry -- Depends on subst_tt_open_tt_rec
+  intro e T X U hU
+  unfold open_te
+  -- Prove a generalized version over k
+  let rec go (e : trm) (k : Nat) :
+      subst_te X U (open_te_rec k T e) =
+      open_te_rec k (subst_tt X U T) (subst_te X U e) := by
+    cases e with
+    | trm_bvar i =>
+      simp [open_te_rec, subst_te]
+    | trm_fvar x =>
+      simp [open_te_rec, subst_te]
+    | trm_abs V e1 =>
+      simp [open_te_rec, subst_te, go e1 k, subst_tt_open_tt_rec V T X U k hU]
+    | trm_app e1 e2 =>
+      simp [open_te_rec, subst_te, go e1 k, go e2 k]
+    | trm_tabs V e1 =>
+      simp [open_te_rec, subst_te, subst_tt_open_tt_rec V T X U k hU, go e1 (k + 1)]
+    | trm_tapp e1 V =>
+      simp [open_te_rec, subst_te, subst_tt_open_tt_rec V T X U k hU, go e1 k]
+  simpa using go e 0
 
 -- Coq line 546: Lemma subst_te_open_te_var
 theorem subst_te_open_te_var : ∀ X Y U e, Y ≠ X → def_type U →
   open_te (subst_te X U e) (typ_fvar Y) = subst_te X U (open_te e (typ_fvar Y)) := by
-  sorry -- Complex proof requiring generalized version of subst_tt_open_tt_var
+  intro X Y U e hne hU
+  have hT : subst_tt X U (typ.typ_fvar Y) = typ.typ_fvar Y := by
+    classical
+    simp [subst_tt, hne]
+  have h := subst_te_open_te e (typ.typ_fvar Y) X U hU
+  simpa [hT] using h.symm
 
 -- Coq line 556: Lemma subst_te_intro
 theorem subst_te_intro : ∀ X U e,
   X ∉ fv_te e → def_type U →
   open_te e U = subst_te X U (e open_te_var X) := by
-  sorry -- Depends on subst_te_open_te
+  intro X U e hfresh hU
+  have h1 := subst_te_open_te e (typ.typ_fvar X) X U hU
+  have hT : subst_tt X U (typ.typ_fvar X) = U := by
+    classical
+    simp [subst_tt]
+  have h2 : subst_te X U e = e := subst_te_fresh X U e hfresh
+  calc
+    open_te e U = open_te (subst_te X U e) U := by simpa [h2]
+    _ = subst_te X U (open_te e (typ.typ_fvar X)) := by simpa [hT] using h1.symm
 
 -- Properties of term substitution in terms
 
