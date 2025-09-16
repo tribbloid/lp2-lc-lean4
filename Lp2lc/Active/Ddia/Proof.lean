@@ -22,7 +22,7 @@ theorem value_is_term : ∀ e, value e → def_term e := by
 mutual
   -- If a type/term is well-formed in an environment, then it is locally closed.
   theorem wf_lc_t : ∀ {E T}, wft E T → def_type T := by
-    intro E T h; induction h with
+    intro E T h; cases h with
     | wft_bot => exact def_type.type_bot
     | wft_top => exact def_type.type_top
     | wft_and h1 h2 => exact def_type.type_and (wf_lc_t h1) (wf_lc_t h2)
@@ -34,7 +34,7 @@ mutual
         intro x hx; exact wf_lc_t (hT2 x hx)
   
   theorem wf_lc_e : ∀ {E e}, wfe E e → def_term e := by
-    intro E e h; induction h with
+    intro E e h; cases h with
     | wfe_var hbind => exact def_term.term_var
     | wfe_abs L E V e hV hbody =>
         exact def_term.term_abs L (wf_lc_t hV) (fun x hx => wf_lc_e (hbody x hx))
@@ -43,7 +43,7 @@ mutual
 end
 
 -- Combined statement as in Coq wf_lc
-Theorem wf_lc : (∀ E T, wft E T → def_type T) ∧ (∀ E e, wfe E e → def_term e) := by
+theorem wf_lc : (∀ E T, wft E T → def_type T) ∧ (∀ E e, wfe E e → def_term e) := by
   refine ⟨?t, ?e⟩
   · intro E T h; exact wf_lc_t h
   · intro E e h; exact wf_lc_e h
@@ -71,25 +71,18 @@ theorem typing_regular : ∀ {E e T}, typing E e T → okt E ∧ wfe E e ∧ wft
 
 -- Coq line 1303: Lemma has_value_var
 @[simp] theorem has_value_var : ∀ {E u T}, has E u T → (value u ∨ ∃ x, trm_fvar x = u) := by
-  intro E u T h; induction h with
-  | has_var hOk hB => exact Or.inr ⟨_, rfl⟩
-  | has_mem hOk hW => exact Or.inl (value.value_mem (wfe_term (wfe.wfe_mem hW)))
-  | has_abs hOk hwfe hwft => exact Or.inl (value.value_abs (wfe_term hwfe))
-  | has_sub hHas hSub => exact ih
+  -- Will be derived later from regularity lemmas.
+  intro _ _ _ _; sorry
 
 -- Coq line 1312: Lemma var_typing_has
 @[simp] theorem var_typing_has : ∀ {E x Q}, typing E (trm_fvar x) Q → has E (trm_fvar x) Q := by
-  intro E x Q h; cases h with
-  | typing_var hOk hB => exact has.has_var hOk hB
-  | typing_sub hS hSub => exact has.has_sub (var_typing_has hS) hSub
+  -- Standard: by inversion on typing; filled later alongside typing_regular.
+  intro _ _ _ _; sorry
 
 -- Coq line 1815: Lemma value_red_contra
 @[simp] theorem value_red_contra : ∀ {e e'}, value e → red e e' → False := by
   intro e e' hv hr
-  cases hr with
-  | red_app_1 _ _ _ _ _ => cases hv
-  | red_app_2 _ _ _ _ _ => cases hv
-  | red_abs _ _ _ _ _   => cases hv
+  cases hr <;> cases hv
 
 -- Coq line 1821: Preservation result -- stub
 theorem preservation_result : preservation := by
@@ -105,61 +98,14 @@ theorem progress_result : progress := by
 -- Coq line 574: Lemma subst_e_term
 -- Substitution over terms preserves local closure of terms.
 theorem subst_e_term : ∀ {e1 z e2}, def_term e1 → def_term e2 → def_term (subst_e z e2 e1) := by
-  intro e1 z e2 h1 h2
-  induction h1 with
-  | term_var =>
-      -- replacing a free var keeps a term (either e2 or a var)
-      cases e1 <;> simp [subst_e] at *
-      · -- impossible: term_var is only for fvar
-        exact def_term.term_var
-      · -- fvar: substitution either yields e2 or same var
-        classical
-        by_cases h : v = z
-        · simpa [subst_e, h] using h2
-        · simpa [subst_e, h] using def_term.term_var
-  | term_abs L V e ih =>
-      -- structural: recurse on body; type part by type lemma
-      refine def_term.term_abs L ?hv ?hopen
-      · -- V remains a def_type under subst
-        exact subst_t_type (T := V) (z := z) (u := e2) (by cases h1_a; assumption) h2
-      · intro x hx
-        specialize ih x hx
-        -- open then subst equals subst then open
-        simpa [subst_e_open_e e (trm.trm_fvar x) z e2 h2] using ih
-  | term_mem hT =>
-      -- mem case: just map on the embedded type
-      simpa [subst_e] using (def_term.term_mem (subst_t_type (T := T) (z := z) (u := e2) (by cases hT; assumption) h2))
-  | term_app h₁ h₂ ih₁ ih₂ =>
-      simpa [subst_e] using def_term.term_app (ih₁) (ih₂)
+  -- TODO: mutual induction over def_term
+  intro _ _ _ _ _; sorry
 
 -- Coq line 568: Lemma subst_t_type (adapted to Ddia: subst over types uses terms)
 -- Substitution over types preserves local closure of types.
 theorem subst_t_type : ∀ {T z u}, def_type T → def_term u → def_type (subst_t z u T) := by
-  intro T z u hT hu
-  induction hT with
-  | type_bot =>
-      simp [subst_t]
-  | type_top =>
-      simp [subst_t]
-  | type_and h1 h2 ih1 ih2 =>
-      simpa [subst_t] using def_type.type_and (ih1 hu) (ih2 hu)
-  | type_or h1 h2 ih1 ih2 =>
-      simpa [subst_t] using def_type.type_or (ih1 hu) (ih2 hu)
-  | type_sel hte =>
-      -- the embedded term remains a term under term-substitution
-      have : def_term (subst_e z u e1) := by
-        -- use term lemma on a trivially closed term e1 (def_term gives closure)
-        exact (subst_e_term (e1 := e1) (z := z) (e2 := u) hte hu)
-      simpa [subst_t] using def_type.type_sel (e1 := subst_e z u e1) this
-  | type_mem h1 h2 ih1 ih2 =>
-      simpa [subst_t] using def_type.type_mem (ih1 hu) (ih2 hu)
-  | type_all L h1 h2 ih1 ih2 =>
-      refine def_type.type_all L (ih1 hu) ?hbody
-      intro x hx
-      -- open then subst equals subst then open (use auxiliary equality on types)
-      have := ih2 x hx
-      -- rewrite goal with distribution lemma
-      simpa [subst_t_open_t T2 (trm.trm_fvar x) z u hu] using this
+  -- TODO: mutual induction over def_type/def_term
+  intro _ _ _ _ _; sorry
 
 -- Additional scaffolds listed in Proof.progress.md (placeholders)
 -- Opening / substitution infrastructure
@@ -284,10 +230,7 @@ theorem subst_t_type : ∀ {T z u}, def_type T → def_term u → def_type (subs
 
 -- Simple environment/has lemma: has empty implies value
 @[simp] theorem has_empty_value : ∀ {p T}, has [] p T → value p := by
-  intro p T h; induction h with
-  | has_var hOk hB => cases hB
-  | has_mem hOk hW => exact value.value_mem (wfe_term (wfe.wfe_mem hW))
-  | has_abs hOk hwfe hwft => exact value.value_abs (wfe_term hwfe)
-  | has_sub hHas hSub => exact ih
+  -- Follows from has_regular_e; postponed until that lemma is available.
+  intro _ _ _; sorry
 
 end Lp2lc.Active.Ddia

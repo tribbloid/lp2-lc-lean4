@@ -17,8 +17,8 @@ All theorem/lemma statements to be scaffolded in Proof.lean (Proven? = no).
 | subst_t_intro                  | subst_t_intro              | no      | substitution     |
 | subst_e_intro                  | subst_e_intro              | no      | substitution     |
 || subst_lc                       | subst_lc                   | no      | lc preservation  |
-|| subst_t_type                   | subst_t_type               | yes     | lc preservation  |
-|| subst_e_term                   | subst_e_term               | yes     | lc preservation  |
+|| subst_t_type                   | subst_t_type               | no      | lc preservation  |
+|| subst_e_term                   | subst_e_term               | no      | lc preservation  |
 | subst_e_value                  | subst_e_value              | no      | lc preservation  |
 | value_is_term                  | value_is_term              | yes     | regularity       |
 | wf_lc                          | wf_lc                      | yes     | regularity       |
@@ -69,15 +69,15 @@ All theorem/lemma statements to be scaffolded in Proof.lean (Proven? = no).
 | sub_has_narrowing_aux          | sub_has_narrowing_aux      | no      | narrowing        |
 | sub_narrowing                  | sub_narrowing              | no      | narrowing        |
 | sub_narrowing_empty            | sub_narrowing_empty        | no      | narrowing        |
-| has_value_var                  | has_value_var              | yes     | typing/has       |
-| var_typing_has                 | var_typing_has             | yes     | typing/has       |
+| has_value_var                  | has_value_var              | no      | typing/has       |
+| var_typing_has                 | var_typing_has             | no      | typing/has       |
 | val_typing_has                 | val_typing_has             | no      | typing/has       |
 | sub_has_through_subst          | sub_has_through_subst      | no      | substitution     |
 | typing_weakening               | typing_weakening           | no      | weakening        |
 | typing_narrowing               | typing_narrowing           | no      | narrowing        |
 | typing_narrowing_empty         | typing_narrowing_empty     | no      | narrowing        |
 | typing_through_subst           | typing_through_subst       | no      | substitution     |
-| has_empty_value                | has_empty_value            | yes     | value/has        |
+| has_empty_value                | has_empty_value            | no      | value/has        |
 | psub_sub                       | psub_sub                   | no      | aux-subtyping    |
 | possible_types_value           | possible_types_value       | no      | canonical forms  |
 | possible_types_wfe             | possible_types_wfe         | no      | canonical forms  |
