@@ -19,28 +19,42 @@ theorem value_is_term : ∀ e, value e → def_term e := by
   intro e h; cases h <;> aesop
 
 /- Coq lines 608–624: wf_lc and corollaries -/
-mutual
-  -- If a type/term is well-formed in an environment, then it is locally closed.
-  theorem wf_lc_t : ∀ {E T}, wft E T → def_type T := by
-    intro E T h; cases h with
-    | wft_bot => exact def_type.type_bot
-    | wft_top => exact def_type.type_top
-    | wft_and h1 h2 => exact def_type.type_and (wf_lc_t h1) (wf_lc_t h2)
-    | wft_or  h1 h2 => exact def_type.type_or  (wf_lc_t h1) (wf_lc_t h2)
-    | wft_sel hv he  => exact def_type.type_sel (wf_lc_e he)
-    | wft_mem h1 h2  => exact def_type.type_mem (wf_lc_t h1) (wf_lc_t h2)
-    | wft_all L hT1 hT2 =>
-        refine def_type.type_all L (wf_lc_t hT1) ?body
-        intro x hx; exact wf_lc_t (hT2 x hx)
-  
-  theorem wf_lc_e : ∀ {E e}, wfe E e → def_term e := by
-    intro E e h; cases h with
-    | wfe_var hbind => exact def_term.term_var
-    | wfe_abs L E V e hV hbody =>
-        exact def_term.term_abs L (wf_lc_t hV) (fun x hx => wf_lc_e (hbody x hx))
-    | wfe_mem _ T hT => exact def_term.term_mem (wf_lc_t hT)
-    | wfe_app h1 h2  => exact def_term.term_app (wf_lc_e h1) (wf_lc_e h2)
-end
+-- Non-mutual derivation to avoid mutual-recursion termination issues.
+-- We define the term-closure first via recursion over wfe, then use it for types.
+
+-- Term: wfe E e -> def_term e
+private theorem wf_lc_e_aux : ∀ {E e}, wfe E e → def_term e
+| E, e, h => by
+  cases h with
+  | wfe_var _ =>
+      exact def_term.term_var
+  | wfe_abs L E V e hV hbody =>
+      exact def_term.term_abs L (by
+        -- recurse on type part separately via wf_lc_t_aux defined below
+        have := (wf_lc_t_aux hV); exact this
+      ) (fun x hx => wf_lc_e_aux (hbody x hx))
+  | wfe_mem _ T hT =>
+      exact def_term.term_mem (by have := (wf_lc_t_aux hT); exact this)
+  | wfe_app h1 h2 =>
+      exact def_term.term_app (wf_lc_e_aux h1) (wf_lc_e_aux h2)
+
+-- Type: wft E T -> def_type T
+private theorem wf_lc_t_aux : ∀ {E T}, wft E T → def_type T
+| E, T, h => by
+  cases h with
+  | wft_bot => exact def_type.type_bot
+  | wft_top => exact def_type.type_top
+  | wft_and h1 h2 => exact def_type.type_and (wf_lc_t_aux h1) (wf_lc_t_aux h2)
+  | wft_or  h1 h2 =>  exact def_type.type_or  (wf_lc_t_aux h1) (wf_lc_t_aux h2)
+  | wft_sel hv he  => exact def_type.type_sel (wf_lc_e_aux he)
+  | wft_mem h1 h2  => exact def_type.type_mem (wf_lc_t_aux h1) (wf_lc_t_aux h2)
+  | wft_all L hT1 hT2 =>
+      refine def_type.type_all L (wf_lc_t_aux hT1) ?body
+      intro x hx; exact wf_lc_t_aux (hT2 x hx)
+
+-- Expose public wrappers with the intended names
+@[simp] theorem wf_lc_t : ∀ {E T}, wft E T → def_type T := fun {_ _ h} => wf_lc_t_aux h
+@[simp] theorem wf_lc_e : ∀ {E e}, wfe E e → def_term e := fun {_ _ h} => wf_lc_e_aux h
 
 -- Combined statement as in Coq wf_lc
 theorem wf_lc : (∀ E T, wft E T → def_type T) ∧ (∀ E e, wfe E e → def_term e) := by
