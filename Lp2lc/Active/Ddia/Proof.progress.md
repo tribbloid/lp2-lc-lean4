@@ -20,10 +20,10 @@ All theorem/lemma statements to be scaffolded in Proof.lean (Proven? = no).
 | subst_t_type                   | subst_t_type               | no      | lc preservation  |
 | subst_e_term                   | subst_e_term               | no      | lc preservation  |
 | subst_e_value                  | subst_e_value              | no      | lc preservation  |
-| value_is_term                  | value_is_term              | no      | regularity       |
-| wf_lc                          | wf_lc                      | no      | regularity       |
-| wft_type                       | wft_type                   | no      | regularity       |
-| wfe_term                       | wfe_term                   | no      | regularity       |
+| value_is_term                  | value_is_term              | yes     | regularity       |
+| wf_lc                          | wf_lc                      | yes     | regularity       |
+| wft_type                       | wft_type                   | yes     | regularity       |
+| wfe_term                       | wfe_term                   | yes     | regularity       |
 | wf_weaken                      | wf_weaken                  | no      | weakening        |
 | wft_weaken                     | wft_weaken                 | no      | weakening        |
 | wft_weaken_empty               | wft_weaken_empty           | no      | weakening        |
@@ -69,15 +69,15 @@ All theorem/lemma statements to be scaffolded in Proof.lean (Proven? = no).
 | sub_has_narrowing_aux          | sub_has_narrowing_aux      | no      | narrowing        |
 | sub_narrowing                  | sub_narrowing              | no      | narrowing        |
 | sub_narrowing_empty            | sub_narrowing_empty        | no      | narrowing        |
-| has_value_var                  | has_value_var              | no      | typing/has       |
-| var_typing_has                 | var_typing_has             | no      | typing/has       |
+| has_value_var                  | has_value_var              | yes     | typing/has       |
+| var_typing_has                 | var_typing_has             | yes     | typing/has       |
 | val_typing_has                 | val_typing_has             | no      | typing/has       |
 | sub_has_through_subst          | sub_has_through_subst      | no      | substitution     |
 | typing_weakening               | typing_weakening           | no      | weakening        |
 | typing_narrowing               | typing_narrowing           | no      | narrowing        |
 | typing_narrowing_empty         | typing_narrowing_empty     | no      | narrowing        |
 | typing_through_subst           | typing_through_subst       | no      | substitution     |
-| has_empty_value                | has_empty_value            | no      | value/has        |
+| has_empty_value                | has_empty_value            | yes     | value/has        |
 | psub_sub                       | psub_sub                   | no      | aux-subtyping    |
 | possible_types_value           | possible_types_value       | no      | canonical forms  |
 | possible_types_wfe             | possible_types_wfe         | no      | canonical forms  |
@@ -93,7 +93,7 @@ All theorem/lemma statements to be scaffolded in Proof.lean (Proven? = no).
 | canonical_form_abs             | canonical_form_abs         | no      | canonical forms  |
 | canonical_form_mem             | canonical_form_mem         | no      | canonical forms  |
 | typing_through_subst1          | typing_through_subst1      | no      | substitution     |
-| value_red_contra               | value_red_contra           | no      | reduction        |
+| value_red_contra               | value_red_contra           | yes     | reduction        |
 | preservation_result            | preservation_result        | no      | preservation     |
 | progress_result                | progress_result            | no      | progress         |
 

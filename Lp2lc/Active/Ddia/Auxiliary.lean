@@ -72,6 +72,49 @@ attribute [aesop safe] red.red_app_1
 attribute [aesop safe] red.red_app_2
 attribute [aesop safe] red.red_abs
 
+/-
+Auxiliary equalities: substitution distributes over opening (wrappers).
+These mirror Coq's `subst_t_open_t` and `subst_e_open_e` and are used to
+prove binder cases in substitution-preserves-locally-closed lemmas.
+-/
+mutual
+  theorem subst_t_open_t (T : typ) (t2 : trm) (z : Var) (u : trm) (hu : def_term u) :
+      subst_t z u (open_t T t2) =
+      open_t (subst_t z u T) (subst_e z u t2) := by
+    induction T with
+    | typ_bot =>
+        simp [open_t, open_t_rec, subst_t]
+    | typ_top =>
+        simp [open_t, open_t_rec, subst_t]
+    | typ_and T1 T2 ih1 ih2 =>
+        simp [open_t, open_t_rec, subst_t, ih1 t2 z u hu, ih2 t2 z u hu]
+    | typ_or T1 T2 ih1 ih2 =>
+        simp [open_t, open_t_rec, subst_t, ih1 t2 z u hu, ih2 t2 z u hu]
+    | typ_sel t =>
+        -- open_t touches the embedded term via open_e_rec
+        simp [open_t, open_t_rec, subst_t, subst_e_open_e t t2 z u hu]
+    | typ_mem T1 T2 ih1 ih2 =>
+        simp [open_t, open_t_rec, subst_t, ih1 t2 z u hu, ih2 t2 z u hu]
+    | typ_all T1 T2 ih1 ih2 =>
+        simp [open_t, open_t_rec, subst_t, ih1 t2 z u hu, ih2 t2 z u hu]
+
+  theorem subst_e_open_e (t1 : trm) (t2 : trm) (z : Var) (u : trm) (hu : def_term u) :
+      subst_e z u (open_e t1 t2) =
+      open_e (subst_e z u t1) (subst_e z u t2) := by
+    induction t1 with
+    | trm_bvar _ =>
+        simp [open_e, open_e_rec, subst_e]
+    | trm_fvar _ =>
+        simp [open_e, open_e_rec, subst_e]
+    | trm_abs V e1 ih =>
+        -- open distributes structurally; use the type counterpart for V
+        simp [open_e, open_e_rec, subst_e, open_t, open_t_rec, subst_t_open_t V t2 z u hu, ih]
+    | trm_mem T =>
+        simp [open_e, open_e_rec, subst_e, open_t, open_t_rec, subst_t_open_t T t2 z u hu]
+    | trm_app e1 e2 ih1 ih2 =>
+        simp [open_e, open_e_rec, subst_e, ih1, ih2]
+end
+
 /- Placeholder for tactic macros mirroring Coq Ltac (optional later). -/
 -- TODO: add tactic macros like `apply_fresh` if needed.
 

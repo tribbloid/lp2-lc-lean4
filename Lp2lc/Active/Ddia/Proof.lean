@@ -18,28 +18,85 @@ open typ trm def_type def_term wft wfe value sub has typing red
 theorem value_is_term : ∀ e, value e → def_term e := by
   intro e h; cases h <;> aesop
 
+/- Coq lines 608–624: wf_lc and corollaries -/
+mutual
+  -- If a type/term is well-formed in an environment, then it is locally closed.
+  theorem wf_lc_t : ∀ {E T}, wft E T → def_type T := by
+    intro E T h; induction h with
+    | wft_bot => exact def_type.type_bot
+    | wft_top => exact def_type.type_top
+    | wft_and h1 h2 => exact def_type.type_and (wf_lc_t h1) (wf_lc_t h2)
+    | wft_or  h1 h2 => exact def_type.type_or  (wf_lc_t h1) (wf_lc_t h2)
+    | wft_sel hv he  => exact def_type.type_sel (wf_lc_e he)
+    | wft_mem h1 h2  => exact def_type.type_mem (wf_lc_t h1) (wf_lc_t h2)
+    | wft_all L hT1 hT2 =>
+        refine def_type.type_all L (wf_lc_t hT1) ?body
+        intro x hx; exact wf_lc_t (hT2 x hx)
+  
+  theorem wf_lc_e : ∀ {E e}, wfe E e → def_term e := by
+    intro E e h; induction h with
+    | wfe_var hbind => exact def_term.term_var
+    | wfe_abs L E V e hV hbody =>
+        exact def_term.term_abs L (wf_lc_t hV) (fun x hx => wf_lc_e (hbody x hx))
+    | wfe_mem _ T hT => exact def_term.term_mem (wf_lc_t hT)
+    | wfe_app h1 h2  => exact def_term.term_app (wf_lc_e h1) (wf_lc_e h2)
+end
+
+-- Combined statement as in Coq wf_lc
+Theorem wf_lc : (∀ E T, wft E T → def_type T) ∧ (∀ E e, wfe E e → def_term e) := by
+  refine ⟨?t, ?e⟩
+  · intro E T h; exact wf_lc_t h
+  · intro E e h; exact wf_lc_e h
+
 -- Coq line 614: Lemma wft_type
-theorem wft_type : ∀ {E T}, wft E T → def_type T := by
-  -- TODO: will be proved using mutual recursion with wfe_term and regularity lemmas
-  intro _ _ _; sorry
+@[simp] theorem wft_type : ∀ {E T}, wft E T → def_type T := by
+  intro _ _ h; exact wf_lc_t h
+
+-- Coq line 620: Lemma wfe_term
+@[simp] theorem wfe_term : ∀ {E e}, wfe E e → def_term e := by
+  intro _ _ h; exact wf_lc_e h
 
 -- Coq line 1116: Lemma sub_reflexivity
+-- (stub; will be discharged later)
 theorem sub_reflexivity : ∀ {E T}, okt E → wft E T → sub E T T := by
   intro E T hOk hW; 
   -- TODO: structural induction over hW, cofinite in all-case
   sorry
 
--- Coq line 1024: Lemma typing_regular
+-- Coq line 1024: Lemma typing_regular -- stub
+-- Will be proved after regularity lemmas are established.
 theorem typing_regular : ∀ {E e T}, typing E e T → okt E ∧ wfe E e ∧ wft E T := by
   -- TODO: structural cases on typing
   sorry
 
--- Coq line 1821: Preservation result
+-- Coq line 1303: Lemma has_value_var
+@[simp] theorem has_value_var : ∀ {E u T}, has E u T → (value u ∨ ∃ x, trm_fvar x = u) := by
+  intro E u T h; induction h with
+  | has_var hOk hB => exact Or.inr ⟨_, rfl⟩
+  | has_mem hOk hW => exact Or.inl (value.value_mem (wfe_term (wfe.wfe_mem hW)))
+  | has_abs hOk hwfe hwft => exact Or.inl (value.value_abs (wfe_term hwfe))
+  | has_sub hHas hSub => exact ih
+
+-- Coq line 1312: Lemma var_typing_has
+@[simp] theorem var_typing_has : ∀ {E x Q}, typing E (trm_fvar x) Q → has E (trm_fvar x) Q := by
+  intro E x Q h; cases h with
+  | typing_var hOk hB => exact has.has_var hOk hB
+  | typing_sub hS hSub => exact has.has_sub (var_typing_has hS) hSub
+
+-- Coq line 1815: Lemma value_red_contra
+@[simp] theorem value_red_contra : ∀ {e e'}, value e → red e e' → False := by
+  intro e e' hv hr
+  cases hr with
+  | red_app_1 _ _ _ _ _ => cases hv
+  | red_app_2 _ _ _ _ _ => cases hv
+  | red_abs _ _ _ _ _   => cases hv
+
+-- Coq line 1821: Preservation result -- stub
 theorem preservation_result : preservation := by
   -- TODO: standard preservation using inversion and substitution lemmas
   sorry
 
--- Coq line 1864: Progress result
+-- Coq line 1864: Progress result -- stub
 theorem progress_result : progress := by
   -- TODO: standard progress via canonical forms and inversion
   sorry
@@ -95,8 +152,7 @@ theorem subst_t_type : ∀ {T z u}, def_type T → def_term u → def_type (subs
   sorry
 
 -- Regularity scaffolds and helpers
-@[simp] theorem wf_lc_true : True := by sorry
-@[simp] theorem wfe_term_true : True := by sorry
+-- Replaced by actual wf_lc/wfe_term above
 
 -- Weakening / narrowing / substitution for wf/wfe
 @[simp] theorem wf_weaken_true : True := by sorry
@@ -150,8 +206,7 @@ theorem subst_t_type : ∀ {T z u}, def_type T → def_term u → def_type (subs
 @[simp] theorem sub_narrowing_empty_true : True := by sorry
 
 -- Has/Typing bridges and substitution-through-subtyping
-@[simp] theorem has_value_var_true : True := by sorry
-@[simp] theorem var_typing_has_true : True := by sorry
+-- Replace two of these with actual lemmas above
 @[simp] theorem val_typing_has_true : True := by sorry
 @[simp] theorem sub_has_through_subst_true : True := by sorry
 
@@ -177,6 +232,13 @@ theorem subst_t_type : ∀ {T z u}, def_type T → def_term u → def_type (subs
 @[simp] theorem canonical_form_abs_true : True := by sorry
 @[simp] theorem canonical_form_mem_true : True := by sorry
 @[simp] theorem typing_through_subst1_true : True := by sorry
-@[simp] theorem value_red_contra_true : True := by sorry
+
+-- Simple environment/has lemma: has empty implies value
+@[simp] theorem has_empty_value : ∀ {p T}, has [] p T → value p := by
+  intro p T h; induction h with
+  | has_var hOk hB => cases hB
+  | has_mem hOk hW => exact value.value_mem (wfe_term (wfe.wfe_mem hW))
+  | has_abs hOk hwfe hwft => exact value.value_abs (wfe_term hwfe)
+  | has_sub hHas hSub => exact ih
 
 end Lp2lc.Active.Ddia

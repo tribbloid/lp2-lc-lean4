@@ -11,11 +11,11 @@ Track all lemmas and theorems from Coq Lp2lc_coq/Active/Dsub.v. Maintain source 
 | open_t_var_type | open_t_var_type | no | local closure |
 | subst_fresh (type) | subst_fresh_t | no | substitution |
 | subst_fresh (term) | subst_fresh_e | no | substitution |
-| value_is_term | value_is_term | no | regularity |
-| wf_lc (type part) | wf_lc_t | no | regularity |
-| wf_lc (term part) | wf_lc_e | no | regularity |
-| wft_type | wft_type | no | regularity |
-| wfe_term | wfe_term | no | regularity |
+| value_is_term | value_is_term | yes | regularity |
+| wf_lc (type part) | wf_lc_t | yes | regularity |
+| wf_lc (term part) | wf_lc_e | yes | regularity |
+| wft_type | wft_type | yes | regularity |
+| wfe_term | wfe_term | yes | regularity |
 | wft_weaken | wft_weaken | no | structural |
 | wfe_weaken | wfe_weaken | no | structural |
 | ok_from_okt | ok_from_okt | no | env |
@@ -25,7 +25,7 @@ Track all lemmas and theorems from Coq Lp2lc_coq/Active/Dsub.v. Maintain source 
 | has_regular | has_regular | no | regularity |
 | has_regular_e | has_regular_e | no | regularity |
 | typing_regular | typing_regular | no | regularity |
-| value_regular | value_regular | no | regularity |
+| value_regular | value_regular | yes | regularity |
 | red_regular | red_regular | no | regularity |
 | sub_reflexivity | sub_reflexivity | no | sub |
 | sub_weakening | sub_weakening | no | sub |

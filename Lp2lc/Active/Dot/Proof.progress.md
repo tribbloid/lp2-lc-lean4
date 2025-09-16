@@ -3,7 +3,7 @@
 
 | Coq theorem name | Lean theorem name | Proven? | Category |
 | --- | --- | --- | --- |
-| fresh_push_eq_inv | fresh_push_eq_inv | no | infrastructure |
+| fresh_push_eq_inv | fresh_push_eq_inv | yes | infrastructure |
 | weaken_rules | weaken_rules | no | weakening |
 | weaken_ty_trm | weaken_ty_trm | no | weakening |
 | weaken_subtyp | weaken_subtyp | no | weakening |
