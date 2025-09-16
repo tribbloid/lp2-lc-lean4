@@ -46,52 +46,136 @@ theorem progress_result : progress := by
 
 -- A few substitution lemmas (stubs)
 -- Coq line 574: Lemma subst_e_term
-theorem subst_e_term : ∀ {e1 z e2}, def_term e1 → def_term e2 → def_term (subst_e z e2 e1) := by
-  -- TODO: mutual induction over terms
+mutual
+  theorem subst_t_type : ∀ {T z u}, def_type T → def_term u → def_type (subst_t z u T)
+  | _, z, u, hT, hu => by
+    classical
+    cases hT with
+    | type_bot => simpa [subst_t]
+    | type_top => simpa [subst_t]
+    | type_and h1 h2 =>
+        simpa [subst_t] using def_type.type_and (subst_t_type (T := _) h1 hu) (subst_t_type (T := _) h2 hu)
+    | type_or h1 h2 =>
+        simpa [subst_t] using def_type.type_or (subst_t_type (T := _) h1 hu) (subst_t_type (T := _) h2 hu)
+    | type_sel hte =>
+        have : def_term (subst_e z u e1) := subst_e_term (e1 := e1) (z := z) (e2 := u) hte hu
+        simpa [subst_t] using def_type.type_sel (e1 := subst_e z u e1) this
+    | type_mem h1 h2 =>
+        simpa [subst_t] using def_type.type_mem (subst_t_type (T := _) h1 hu) (subst_t_type (T := _) h2 hu)
+    | type_all L hV hBody =>
+        refine def_type.type_all (L ∪ {z}) (subst_t_type (T := _) hV hu) ?openGoal
+        intro x hx
+        have hx_ne : x ≠ z := by
+          intro h; subst h; simpa using (by have : x ∉ (L ∪ {z}) := hx; simpa using this)
+        have hOrig : def_type (open_t T2 (trm.trm_fvar x)) := hBody x (by
+          have : x ∉ (L ∪ {z}) := hx; 
+          -- from x ∉ L ∪ {z} derive x ∉ L
+          simpa [Finset.mem_union, Finset.mem_singleton, not_or] using this)
+        have hSub := subst_t_type (T := open_t T2 (trm.trm_fvar x)) hOrig hu
+        simpa [subst_t_open_t, subst_e, hx_ne] using hSub
+
+  theorem subst_e_term : ∀ {e1 z e2}, def_term e1 → def_term e2 → def_term (subst_e z e2 e1)
+  | _, z, e2, h, hu => by
+    classical
+    cases h with
+    | term_var =>
+        cases e1 <;> simp [subst_e] at *
+        · exact def_term.term_var
+        · by_cases h : v = z
+          · simpa [subst_e, h] using hu
+          · simpa [subst_e, h] using def_term.term_var
+    | term_abs L V e hV hBody =>
+        refine def_term.term_abs (L ∪ {z}) (subst_t_type (T := _) hV hu) ?openGoal
+        intro x hx
+        have hx_ne : x ≠ z := by
+          intro h; subst h; simpa using (by have : x ∉ (L ∪ {z}) := hx; simpa using this)
+        have hOrig : def_term (open_e e (trm.trm_fvar x)) := hBody x (by
+          have : x ∉ (L ∪ {z}) := hx; 
+          simpa [Finset.mem_union, Finset.mem_singleton, not_or] using this)
+        have hSub := subst_e_term (e1 := open_e e (trm.trm_fvar x)) (z := z) (e2 := e2) hOrig hu
+        simpa [subst_e_open_e, subst_e, hx_ne] using hSub
+    | term_mem hT =>
+        simpa [subst_e] using def_term.term_mem (subst_t_type (T := _) hT hu)
+    | term_app h1 h2 =>
+        simpa [subst_e] using def_term.term_app (subst_e_term (e1 := _) h1 hu) (subst_e_term (e1 := _) h2 hu)
+end
+
+-- Opening and substitution infrastructure (typed)
+-- Core open_rec lemma (type part)
+theorem open_rec_lc_core_t : ∀ (T : typ) (j : Nat) (v u : trm) (i : Nat),
+  i ≠ j → open_t_rec j v T = open_t_rec i u (open_t_rec j v T) → T = open_t_rec i u T := by
   sorry
 
--- Coq line 568: Lemma subst_t_type (adapted to Ddia: subst over types uses terms)
-theorem subst_t_type : ∀ {T z u}, def_type T → def_term u → def_type (subst_t z u T) := by
-  -- TODO: mutual induction over types/terms
+-- Core open_rec lemma (term part)
+theorem open_rec_lc_core_e : ∀ (e : trm) (j : Nat) (v u : trm) (i : Nat),
+  i ≠ j → open_e_rec j v e = open_e_rec i u (open_e_rec j v e) → e = open_e_rec i u e := by
   sorry
 
--- Additional scaffolds listed in Proof.progress.md (placeholders)
--- Opening / substitution infrastructure
-@[simp] theorem open_rec_lc_core_true : True := by
-  -- placeholder for: open_rec_lc_core
+-- Opening preserves equality for locally closed objects
+theorem open_rec_lc_t : ∀ (T : typ), def_type T → ∀ (u : trm) (k : Nat), T = open_t_rec k u T := by
   sorry
-@[simp] theorem open_rec_lc_true : True := by
-  -- placeholder for: open_rec_lc
+
+theorem open_rec_lc_e : ∀ (e : trm), def_term e → ∀ (u : trm) (k : Nat), e = open_e_rec k u e := by
   sorry
-@[simp] theorem open_t_var_type_true : True := by
-  -- placeholder for: open_t_var_type
+
+-- Opening with a fresh variable does nothing on types
+theorem open_t_var_type : ∀ (x : Var) (T : typ), def_type T → open_t T (trm_fvar x) = T := by
   sorry
-@[simp] theorem subst_fresh_true : True := by
-  -- placeholder for: subst_fresh
+
+-- Substitution for a fresh name is identity
+
+theorem subst_fresh_t : ∀ (T : typ) (z : Var) (u : trm), z ∉ fv_t T → subst_t z u T = T := by
   sorry
-@[simp] theorem subst_open_rec_true : True := by
-  -- placeholder for: subst_open_rec
+
+theorem subst_fresh_e : ∀ (e : trm) (z : Var) (u : trm), z ∉ fv_e e → subst_e z u e = e := by
   sorry
-@[simp] theorem subst_t_open_t_true : True := by
-  -- placeholder for: subst_t_open_t
+
+-- Substitution distributes over open_rec
+
+theorem subst_open_rec_t : ∀ (T1 : typ) (t2 : trm) (x : Var) (u : trm) (n : Nat), def_term u →
+  subst_t x u (open_t_rec n t2 T1) = open_t_rec n (subst_e x u t2) (subst_t x u T1) := by
   sorry
-@[simp] theorem subst_e_open_e_true : True := by
-  -- placeholder for: subst_e_open_e
+
+theorem subst_open_rec_e : ∀ (t1 t2 : trm) (x : Var) (u : trm) (n : Nat), def_term u →
+  subst_e x u (open_e_rec n t2 t1) = open_e_rec n (subst_e x u t2) (subst_e x u t1) := by
   sorry
-@[simp] theorem subst_t_open_t_var_true : True := by
-  -- placeholder for: subst_t_open_t_var
+
+-- Substitution distributes over open (wrappers)
+
+theorem subst_t_open_t : ∀ (T1 : typ) (t2 : trm) (x : Var) (u : trm), def_term u →
+  subst_t x u (open_t T1 t2) = open_t (subst_t x u T1) (subst_e x u t2) := by
   sorry
-@[simp] theorem subst_e_open_e_var_true : True := by
-  -- placeholder for: subst_e_open_e_var
+
+theorem subst_e_open_e : ∀ (t1 t2 : trm) (x : Var) (u : trm), def_term u →
+  subst_e x u (open_e t1 t2) = open_e (subst_e x u t1) (subst_e x u t2) := by
   sorry
-@[simp] theorem subst_t_intro_true : True := by
-  -- placeholder for: subst_t_intro
+
+-- Substitution and open_var commute when names are distinct
+
+theorem subst_t_open_t_var : ∀ (x y : Var) (u : trm) (T : typ), y ≠ x → def_term u →
+  open_t (subst_t x u T) (trm_fvar y) = subst_t x u (open_t T (trm_fvar y)) := by
   sorry
-@[simp] theorem subst_e_intro_true : True := by
-  -- placeholder for: subst_e_intro
+
+theorem subst_e_open_e_var : ∀ (x y : Var) (u : trm) (e : trm), y ≠ x → def_term u →
+  open_e (subst_e x u e) (trm_fvar y) = subst_e x u (open_e e (trm_fvar y)) := by
   sorry
-@[simp] theorem subst_lc_true : True := by
-  -- placeholder for: subst_lc
+
+-- Substitution intro lemmas
+
+theorem subst_t_intro : ∀ (x : Var) (T2 : typ) (u : trm), x ∉ fv_t T2 → def_term u →
+  open_t T2 u = subst_t x u (open_t T2 (trm_fvar x)) := by
+  sorry
+
+theorem subst_e_intro : ∀ (x : Var) (t2 : trm) (u : trm), x ∉ fv_e t2 → def_term u →
+  open_e t2 u = subst_e x u (open_e t2 (trm_fvar x)) := by
+  sorry
+
+-- Substitutions preserve local closure
+
+theorem subst_lc_t : ∀ (T : typ), def_type T → ∀ (z : Var) (u : trm), def_term u → def_type (subst_t z u T) := by
+  sorry
+
+theorem subst_lc_e : ∀ (e : trm), def_term e → ∀ (z : Var) (u : trm), def_term u → def_term (subst_e z u e) := by
   sorry
 
 -- Regularity scaffolds and helpers
