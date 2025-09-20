@@ -250,60 +250,31 @@ theorem progress_result : progress := by
 -- Additional scaffolds from Dsub.v to complete coverage
 
 -- Coq lines 434–445: subst_open_rec (split)
-mutual
-  theorem subst_open_rec_t : ∀ T1 t2 x u n, def_term u →
-    subst_t x u (open_t_rec n t2 T1) =
-    open_t_rec n (subst_e x u t2) (subst_t x u T1) := by
-    intro T1 t2 x u n hu
-    induction T1 generalizing n with
-    | typ_top =>
-        simp [open_t_rec, subst_t]
-    | typ_sel t ih =>
-        -- Delegate to term lemma for the embedded term
-        simpa [open_t_rec, subst_t] using
-          (congrArg typ.typ_sel (subst_open_rec_e (t1 := t) (t2 := t2) (x := x) (u := u) (n := n) hu))
-    | typ_mem b T ih =>
-        simp [open_t_rec, subst_t, ih n]
-    | typ_all T1 T2 ih1 ih2 =>
-        simp [open_t_rec, subst_t, ih1 n, ih2 (n+1)]
 
-  theorem subst_open_rec_e : ∀ t1 t2 x u n, def_term u →
-    subst_e x u (open_e_rec n t2 t1) =
-    open_e_rec n (subst_e x u t2) (subst_e x u t1) := by
-    intro t1 t2 x u n hu
-    classical
-    induction t1 generalizing n with
-    | trm_bvar i =>
-        simp [open_e_rec, subst_e]
-    | trm_fvar y =>
-        simp [open_e_rec, subst_e]
-    | trm_abs V e1 ih =>
-        have hV := subst_open_rec_t (T1 := V) (t2 := t2) (x := x) (u := u) (n := n) hu
-        have hE := ih (n+1)
-        simpa [open_e_rec, subst_e, hV, hE]
-    | trm_mem T ih =>
-        have hT := subst_open_rec_t (T1 := T) (t2 := t2) (x := x) (u := u) (n := n) hu
-        simpa [open_e_rec, subst_e, hT]
-    | trm_app e1 e2 ih1 ih2 =>
-        have h1 := ih1 n
-        have h2 := ih2 n
-        simpa [open_e_rec, subst_e, h1, h2]
-end
+theorem subst_open_rec_t : ∀ T1 t2 x u n, def_term u →
+  subst_t x u (open_t_rec n t2 T1) =
+  open_t_rec n (subst_e x u t2) (subst_t x u T1) := by
+  -- TODO
+  sorry
+
+ theorem subst_open_rec_e : ∀ t1 t2 x u n, def_term u →
+  subst_e x u (open_e_rec n t2 t1) =
+  open_e_rec n (subst_e x u t2) (subst_e x u t1) := by
+  -- TODO
+  sorry
 
 -- Coq lines 447–459
  theorem subst_t_open_t : ∀ T1 t2 x u, def_term u →
    subst_t x u (open_t T1 t2) =
    open_t (subst_t x u T1) (subst_e x u t2) := by
-   intro T1 t2 x u hu
-   simpa [open_t] using
-     (subst_open_rec_t (T1 := T1) (t2 := t2) (x := x) (u := u) (n := 0) hu)
+   -- TODO
+   sorry
  
  theorem subst_e_open_e : ∀ t1 t2 x u, def_term u →
    subst_e x u (open_e t1 t2) =
    open_e (subst_e x u t1) (subst_e x u t2) := by
-   intro t1 t2 x u hu
-   simpa [open_e] using
-     (subst_open_rec_e (t1 := t1) (t2 := t2) (x := x) (u := u) (n := 0) hu)
+   -- TODO
+   sorry
 
 -- Coq lines 461–475
 theorem subst_t_open_t_var : ∀ (x y : Var) (u : trm) (T : typ), y ≠ x → def_term u →

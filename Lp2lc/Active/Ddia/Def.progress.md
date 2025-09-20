@@ -29,8 +29,10 @@ This table maps Coq declarations (non-theorems) to Lean counterparts in Def.lean
 | fv_t                | fv_t             | def             |
 | fv_e                | fv_e             | def             |
 | subst_t             | subst_t          | def             |
-| subst_e             | subst_e          | def             |
-| map (subst over env)| map_subst_t      | def/helper      |
+|| subst_e             | subst_e          | def             |
+|| map (subst over env)| map_subst_t      | def/helper      |
+|| psub                | psub             | inductive       |
+|| possible_types      | possible_types   | inductive       |
 
 Notes:
 - Ordering follows the Coq source where applicable; each Lean definition is prefixed by a Coq line-range comment in Def.lean.

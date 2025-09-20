@@ -4,7 +4,7 @@
 * Notes:                                                                   *
 * - Keep this file restricted to core syntax, operations, and judgments.   *
 * - No theorems here; theorem statements reside in Proof.lean.             *
-* - No axioms allowed here.                                                *
+* - No axioms allowed here beyond abstract predicates (ok, lc, wf, etc.). *
 ***************************************************************************-/
 
 import Std
@@ -20,8 +20,9 @@ open Std
 abbrev Var := Lp2lc.Active.Var
 abbrev Vars := Lp2lc.Active.Vars
 
--- Environment is abstract here; reuse the shared `ok` predicate
+-- Environment as list of (Var × Typ); we reuse the shared `ok` predicate.
 -- use shared ok from Lp2lc.Active.Shared
+-- NOTE: Env depends on Typ, so we declare it after Typ below.
 
 /-!
 ## Language (mirroring Coq inductives)
@@ -32,9 +33,8 @@ Coq (Dsubsup.v) summary:
 - p   ::= x | v
 - v   ::= { Type = T } | lambda x:T.t
 
-We encode a minimal skeleton sufficient to state theorems. Details of LibLN
-and locally nameless infra are not reimplemented here; we keep shapes faithful
-and provide open/subst as total functions to support statement formation.
+We encode a skeleton faithful to the Coq shapes sufficient to state theorems.
+Locally nameless operations are provided (open/subst/fv) to support statements.
 -/
 
 mutual
@@ -44,7 +44,7 @@ mutual
     | abs  : Typ -> Trm -> Trm
     | mem  : Typ -> Trm
     | app  : Trm -> Trm -> Trm
-    deriving Repr, BEq
+    deriving Repr, BEq, DecidableEq
 
   /-- Types depend on terms in `sel` and second arg of `all` -/
   inductive Typ where
@@ -53,15 +53,37 @@ mutual
     | sel   : Trm -> Typ
     | mem   : Typ -> Typ -> Typ
     | all   : Typ -> Typ -> Typ
-    deriving Repr, BEq
+    deriving Repr, BEq, DecidableEq
 end
 
-/-- opening (locally nameless style). For scaffold only: identity operations. -/
-def openT (T : Typ) (_ : Trm) : Typ := T
-def openE (t : Trm) (_ : Trm) : Trm := t
+/-! ### Opening (locally nameless style)
+We define de Bruijn opening at recursion depth k, then wrappers at depth 0. -/
+mutual
+  def openTRec (k : Nat) (f : Trm) (T : Typ) : Typ :=
+    match T with
+    | Typ.bot           => Typ.bot
+    | Typ.top           => Typ.top
+    | Typ.sel t         => Typ.sel (openERec k f t)
+    | Typ.mem T1 T2     => Typ.mem (openTRec k f T1) (openTRec k f T2)
+    | Typ.all T1 T2     => Typ.all (openTRec k f T1) (openTRec (k+1) f T2)
+
+  def openERec (k : Nat) (f : Trm) (e : Trm) : Trm :=
+    match e with
+    | Trm.bvar i        => if k = i then f else Trm.bvar i
+    | Trm.fvar x        => Trm.fvar x
+    | Trm.abs V e1      => Trm.abs (openTRec k f V) (openERec (k+1) f e1)
+    | Trm.mem T         => Trm.mem (openTRec k f T)
+    | Trm.app e1 e2     => Trm.app (openERec k f e1) (openERec k f e2)
+end
+
+def openT (T : Typ) (f : Trm) : Typ := openTRec 0 f T
+def openE (t : Trm) (u : Trm) : Trm := openERec 0 u t
 
 notation:67 T " open_t_var " x => openT T (Trm.fvar x)
 notation:67 t " open_e_var " x => openE t (Trm.fvar x)
+
+/-- Now that Typ is defined, declare the environment alias. -/
+abbrev Env := List (Var × Typ)
 
 /-- Local closure predicates (skeletal) -/
 axiom LcT : Typ -> Prop
@@ -72,10 +94,7 @@ inductive Value : Trm -> Prop where
   | abs  : ∀ V e1, LcE (Trm.abs V e1) -> Value (Trm.abs V e1)
   | mem  : ∀ V,   LcE (Trm.mem V)     -> Value (Trm.mem V)
 
-/-- Environment as list of (Var × Typ) akin to Coq env typ. -/
-abbrev Env := List (Var × Typ)
-
-/-- Lookup-based binding predicate, following the style in Fsub. -/
+/-- Lookup-based binding predicate for environments. -/
 @[simp] def bindsT (x : Var) (T : Typ) (E : Env) : Prop := E.lookup x = some T
 
 /-- Well-formed type/term in environment (skeletal to state theorems) -/
@@ -115,17 +134,76 @@ def progress     : Prop := ∀ (e : Trm) (T : Typ), Typing [] e T -> (Value e �
 
 /-!
 ### Free variables and substitutions (skeletal, to support theorem statements)
-We define fv sets and capture-avoiding substitutions only as needed for
-stating lemmas; we do not aim for full LibLN parity here.
--/
+We define fv sets and capture-avoiding substitutions to mirror Coq structure. -/
 
-def fvT (_ : Typ) : Vars := ∅
-def fvE (e : Trm) : Vars :=
-  match e with
-  | Trm.fvar x => {x}
-  | _ => ∅
+mutual
+  def fvT (T : Typ) : Vars :=
+    match T with
+    | Typ.bot           => ∅
+    | Typ.top           => ∅
+    | Typ.sel t         => fvE t
+    | Typ.mem T1 T2     => (fvT T1) ∪ (fvT T2)
+    | Typ.all T1 T2     => (fvT T1) ∪ (fvT T2)
 
-def substT (_ : Var) (_ : Trm) (T : Typ) : Typ := T
-def substE (_ : Var) (_ : Trm) (e : Trm) : Trm := e
+  def fvE (e : Trm) : Vars :=
+    match e with
+    | Trm.bvar _        => ∅
+    | Trm.fvar x        => {x}
+    | Trm.abs V e1      => (fvT V) ∪ (fvE e1)
+    | Trm.mem T1        => fvT T1
+    | Trm.app e1 e2     => (fvE e1) ∪ (fvE e2)
+end
+
+mutual
+  def substT (z : Var) (u : Trm) (T : Typ) : Typ :=
+    match T with
+    | Typ.bot           => Typ.bot
+    | Typ.top           => Typ.top
+    | Typ.sel t         => Typ.sel (substE z u t)
+    | Typ.mem T1 T2     => Typ.mem (substT z u T1) (substT z u T2)
+    | Typ.all T1 T2     => Typ.all (substT z u T1) (substT z u T2)
+
+  def substE (z : Var) (u : Trm) (e : Trm) : Trm :=
+    match e with
+    | Trm.bvar i        => Trm.bvar i
+    | Trm.fvar x        => by
+        classical
+        exact (if h : x = z then (by simpa [h] using u) else Trm.fvar x)
+    | Trm.abs V e1      => Trm.abs (substT z u V) (substE z u e1)
+    | Trm.mem T1        => Trm.mem (substT z u T1)
+    | Trm.app e1 e2     => Trm.app (substE z u e1) (substE z u e2)
+end
+
+/-- Map a term-substitution on types across an environment. -/
+def mapSubst (Z : Var) (u : Trm) (E : Env) : Env :=
+  Env.mapSecond (fun T => substT Z u T) E
+
+/- Additional inductives that appear in Coq within the proofs ---------------- -/
+
+/-- Pseudo-subtyping under empty environment (used in canonical forms). -/
+inductive PSub : Typ -> Typ -> Prop :=
+  | bot  : ∀ U, Wft [] U -> PSub Typ.bot U
+  | top  : ∀ S, Wft [] S -> PSub S Typ.top
+  | refl_sel : ∀ t, Wft [] (Typ.sel t) -> PSub (Typ.sel t) (Typ.sel t)
+  | sel1 : ∀ U, Wft [] U -> PSub (Typ.sel (Trm.mem U)) U
+  | sel2 : ∀ S, Wft [] S -> PSub S (Typ.sel (Trm.mem S))
+  | mem  : ∀ S1 U1 S2 U2, PSub S2 S1 -> PSub U1 U2 -> PSub (Typ.mem S1 U1) (Typ.mem S2 U2)
+  | all  : ∀ (L : Vars) S1 S2 T1 T2,
+      PSub T1 S1 -> (∀ x, x ∉ L -> Sub ((x, T1)::[]) (S2 open_t_var x) (T2 open_t_var x)) ->
+      PSub (Typ.all S1 S2) (Typ.all T1 T2)
+  | trans : ∀ S T U, PSub S T -> PSub T U -> PSub S U
+
+/-- Possible types for values (indexed by a fuel n). -/
+inductive PossibleTypes : Nat -> Trm -> Typ -> Prop :=
+  | top : ∀ n v, Value v -> Wfe [] v -> PossibleTypes n v Typ.top
+  | mem : ∀ n T S U, PSub S T -> PSub T U -> PossibleTypes n (Trm.mem T) (Typ.mem S U)
+  | all : ∀ (L : Vars) n V V' e1 T1 T1',
+      (∀ X, X ∉ L -> Typing ((X, V)::[]) (e1 open_e_var X) (T1 open_t_var X)) ->
+      PSub V' V ->
+      (∀ X, X ∉ L -> Sub ((X, V')::[]) (T1 open_t_var X) (T1' open_t_var X)) ->
+      PossibleTypes (Nat.succ n) (Trm.abs V e1) (Typ.all V' T1')
+  | all_shallow : ∀ V V' e1 T1', Wfe [] (Trm.abs V e1) -> Wft [] (Typ.all V' T1') ->
+      PossibleTypes 0 (Trm.abs V e1) (Typ.all V' T1')
+  | sel : ∀ n v S, PossibleTypes n v S -> PossibleTypes n v (Typ.sel (Trm.mem S))
 
 end Lp2lc.Active.Dsubsup

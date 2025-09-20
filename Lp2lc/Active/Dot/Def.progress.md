@@ -11,7 +11,7 @@
 | dec | dec | inductive |
 | trm | trm | inductive |
 | val | val | inductive |
-| def | def | inductive |
+| def | defn | inductive |
 | defs | defs | inductive |
 | ctx | ctx | alias |
 | sto | sto | alias |
@@ -34,6 +34,15 @@
 | open_val | open_val | def |
 | open_def | open_def | def |
 | open_defs | open_defs | def |
+| subst_fvar | subst_fvar | def |
+| subst_avar | subst_avar | def |
+| subst_typ | subst_typ | Fixpoint/def |
+| subst_dec | subst_dec | Fixpoint/def |
+| subst_trm | subst_trm | Fixpoint/def |
+| subst_val | subst_val | Fixpoint/def |
+| subst_def | subst_def | Fixpoint/def |
+| subst_defs | subst_defs | Fixpoint/def |
+| subst_ctx | subst_ctx | def |
 | fv_avar | fv_avar | def |
 | fv_typ | fv_typ | Fixpoint/def |
 | fv_dec | fv_dec | Fixpoint/def |

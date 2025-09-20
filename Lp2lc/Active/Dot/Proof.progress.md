@@ -45,8 +45,8 @@
 | subst_idempotent_trm_val_def_defs | subst_idempotent_trm_val_def_defs | no | substitution |
 | subst_typ_idempotent | subst_typ_idempotent | no | substitution |
 | subst_trm_idempotent | subst_trm_idempotent | no | substitution |
-| subst_label_of_dec | subst_label_of_dec | no | labels |
-| subst_label_of_def | subst_label_of_def | no | labels |
+| subst_label_of_dec | subst_label_of_dec | yes | labels |
+| subst_label_of_def | subst_label_of_def | yes | labels |
 | subst_defs_hasnt | subst_defs_hasnt | no | defs |
 | subst_rules | subst_rules | no | substitution |
 | subst_ty_trm | subst_ty_trm | no | substitution |
@@ -66,7 +66,11 @@
 | open_record_typ_rev | open_record_typ_rev | no | opening |
 | open_record_type | open_record_type | no | records |
 | open_record_type_rev | open_record_type_rev | no | records |
-| label_same_typing | label_same_typing | no | typing |
+| label_same_typing | label_same_typing | yes | typing |
+| has_member_rules_inv | has_member_rules_inv | no | member |
+| has_member_inv | has_member_inv | no | member |
+| val_new_typing | val_new_typing | no | typing |
+| rcd_typ_eq_bounds | rcd_typ_eq_bounds | no | records |
 | record_defs_typing_rec | record_defs_typing_rec | no | records |
 | record_defs_typing | record_defs_typing | no | records |
 | record_new_typing | record_new_typing | no | records |

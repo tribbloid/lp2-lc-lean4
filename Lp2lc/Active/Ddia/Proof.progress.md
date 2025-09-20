@@ -21,9 +21,9 @@ All theorem/lemma statements to be scaffolded in Proof.lean (Proven? = no).
 || subst_e_term                   | subst_e_term               | no      | lc preservation  |
 | subst_e_value                  | subst_e_value              | no      | lc preservation  |
 | value_is_term                  | value_is_term              | yes     | regularity       |
-| wf_lc                          | wf_lc                      | yes     | regularity       |
-| wft_type                       | wft_type                   | yes     | regularity       |
-| wfe_term                       | wfe_term                   | yes     | regularity       |
+|| wf_lc                          | wf_lc                      | no      | regularity       |
+|| wft_type                       | wft_type                   | no      | regularity       |
+|| wfe_term                       | wfe_term                   | no      | regularity       |
 | wf_weaken                      | wf_weaken                  | no      | weakening        |
 | wft_weaken                     | wft_weaken                 | no      | weakening        |
 | wft_weaken_empty               | wft_weaken_empty           | no      | weakening        |
@@ -93,7 +93,7 @@ All theorem/lemma statements to be scaffolded in Proof.lean (Proven? = no).
 | canonical_form_abs             | canonical_form_abs         | no      | canonical forms  |
 | canonical_form_mem             | canonical_form_mem         | no      | canonical forms  |
 | typing_through_subst1          | typing_through_subst1      | no      | substitution     |
-| value_red_contra               | value_red_contra           | yes     | reduction        |
+|| value_red_contra               | value_red_contra           | no      | reduction        |
 | preservation_result            | preservation_result        | no      | preservation     |
 | progress_result                | progress_result            | no      | progress         |
 

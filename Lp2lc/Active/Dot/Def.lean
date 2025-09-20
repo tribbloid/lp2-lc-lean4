@@ -182,6 +182,69 @@ abbrev open_def  (u : Var) (d : defn) := open_rec_def 0 u d
 -- [Coq: Dot.v line 134]
 abbrev open_defs (u : Var) (l : defs) := open_rec_defs 0 u l
 
+-- Substitution operations
+-- [Coq: Dot.v lines 653-697]
+namespace Subst
+  -- [Coq: Dot.v line 761]
+  def subst_fvar (x y z : Var) : Var := if z = x then y else z
+
+  -- [Coq: Dot.v line 653]
+  def subst_avar (z u : Var) (a : avar) : avar :=
+    match a with
+    | avar.avar_b i => avar.avar_b i
+    | avar.avar_f x => avar.avar_f (if x = z then u else x)
+
+  mutual
+    -- [Coq: Dot.v lines 659-666]
+    partial def subst_typ (z u : Var) (T : typ) : typ :=
+      match T with
+      | typ.typ_rcd D      => typ.typ_rcd (subst_dec z u D)
+      | typ.typ_and T1 T2  => typ.typ_and (subst_typ z u T1) (subst_typ z u T2)
+      | typ.typ_sel x L    => typ.typ_sel (subst_avar z u x) L
+      | typ.typ_bnd T      => typ.typ_bnd (subst_typ z u T)
+      | typ.typ_all T U    => typ.typ_all (subst_typ z u T) (subst_typ z u U)
+
+    -- [Coq: Dot.v lines 667-671]
+    partial def subst_dec (z u : Var) (D : dec) : dec :=
+      match D with
+      | dec.dec_typ L T U => dec.dec_typ L (subst_typ z u T) (subst_typ z u U)
+      | dec.dec_trm L U   => dec.dec_trm L (subst_typ z u U)
+
+    -- [Coq: Dot.v lines 673-680]
+    partial def subst_trm (z u : Var) (t : trm) : trm :=
+      match t with
+      | trm.trm_var x        => trm.trm_var (subst_avar z u x)
+      | trm.trm_val v        => trm.trm_val (subst_val z u v)
+      | trm.trm_sel x1 L     => trm.trm_sel (subst_avar z u x1) L
+      | trm.trm_app x1 x2    => trm.trm_app (subst_avar z u x1) (subst_avar z u x2)
+      | trm.trm_let t1 t2    => trm.trm_let (subst_trm z u t1) (subst_trm z u t2)
+
+    -- [Coq: Dot.v lines 681-695]
+    partial def subst_val (z u : Var) (v : val) : val :=
+      match v with
+      | val.val_new T ds     => val.val_new (subst_typ z u T) (subst_defs z u ds)
+      | val.val_lambda T t   => val.val_lambda (subst_typ z u T) (subst_trm z u t)
+
+    -- [Coq: Dot.v lines 686-690]
+    partial def subst_def (z u : Var) (d : defn) : defn :=
+      match d with
+      | defn.def_typ L T => defn.def_typ L (subst_typ z u T)
+      | defn.def_trm L t => defn.def_trm L (subst_trm z u t)
+
+    -- [Coq: Dot.v lines 691-695]
+    partial def subst_defs (z u : Var) (ds : defs) : defs :=
+      match ds with
+      | defs.defs_nil        => defs.defs_nil
+      | defs.defs_cons rest d => defs.defs_cons (subst_defs z u rest) (subst_def z u d)
+  end
+
+  -- [Coq: Dot.v line 697]
+  def subst_ctx (z u : Var) (G : ctx) : ctx :=
+    G.map (fun p => (p.1, subst_typ z u p.2))
+end Subst
+
+open Subst
+
 -- Free variables (Vars is Finset Var)
 -- [Coq: Dot.v line 139]
 def fv_avar (a : avar) : Vars :=

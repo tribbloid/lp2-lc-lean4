@@ -14,12 +14,12 @@ open typ trm bind
 theorem open_tt_rec_type_core : ∀ T j V U i, i ≠ j →
   (open_tt_rec j V T) = open_tt_rec i U (open_tt_rec j V T) →
   T = open_tt_rec i U T := by
-  sorry -- TODO
+  sorry -- TODO: prove by structural induction on T and injecting through constructors after rewriting with open_tt_rec
 
 -- Coq line 438: Lemma open_tt_rec_type
 theorem open_tt_rec_type : ∀ T U,
   def_type T → ∀ k, T = open_tt_rec k U T := by
-  sorry -- TODO
+  sorry -- TODO: prove by induction on def_type using cofinite quantification for the all-case
 
 -- Coq line 447: Lemma subst_tt_fresh
 theorem subst_tt_fresh : ∀ Z U T,
@@ -48,7 +48,7 @@ theorem subst_tt_fresh : ∀ Z U T,
 theorem subst_tt_open_tt_rec : ∀ T1 T2 X P n, def_type P →
   subst_tt X P (open_tt_rec n T2 T1) =
   open_tt_rec n (subst_tt X P T2) (subst_tt X P T1) := by
-  sorry -- TODO
+  sorry -- TODO: requires open_tt_rec_type to handle the case when T1 is a free variable matching X, using def_type P to simplify opening of P
 
 -- Coq line 466: Lemma subst_tt_open_tt
 theorem subst_tt_open_tt : ∀ T1 T2 X P, def_type P →
