@@ -378,7 +378,10 @@ theorem safety
   (G : ctx) (s : sto) (t : trm) (T : typ) :
   wf_sto G s →
   ty_trm ty_general sub_general G t T →
-  normal_form t ∨ ∃ t' s', red t s t' s' ∧ ∃ G', ty_trm ty_general sub_general G' t' T ∧ wf_sto G' s' := by
+  normal_form t ∨ ∃ t' s',
+   red t s t' s' ∧ ∃ G',
+    ty_trm ty_general sub_general G' t' T ∧ wf_sto G' s'
+     := by
   intro _ _; sorry
 
 end Lp2lc.Active.Dot
