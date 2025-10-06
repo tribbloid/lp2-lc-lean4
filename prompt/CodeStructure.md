@@ -16,8 +16,11 @@
         - Coq theorem name
         - Lean theorem name
         - If the Lean theorem is discharged and proven (yes/no)
-        - Category
-    6. `question.md`: questions and answers to clarify all ambiguity and choices in implementation.
+        - Category (use full name instead of abbreviation or acronym)
+    6. `Glossary.md`: contains a list of all lemma and theorems, each annotated with a short
+       explanation about their purpose.
+- The directory also contains a subdirectory `notes` which contains memorandum that summarises requirements and
+  specifications of the proof, every question you asked and their answeres should be recorded in this directory.
 - Each directory/module (including their parents `Lp2lc` and `Lp2lc/Active`) should be accompanied by a module
   aggregator lean file with imports
 - In addition, types and axioms shared between modules should be in `Lp2lc/Active/Shared.lean`, these include:
