@@ -4,3 +4,4 @@ import «Lp2lc».Active.Dsub
 import «Lp2lc».Active.Dsubsup
 import «Lp2lc».Active.Ddia
 import «Lp2lc».Active.Dot
+import «Lp2lc».Active.Dot_top_bot
