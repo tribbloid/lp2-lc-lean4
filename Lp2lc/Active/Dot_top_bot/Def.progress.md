@@ -43,11 +43,13 @@ Columns:
 | record_dec | `record_dec` | Records |
 | record_typ | `record_typ` | Records |
 | record_type | `record_type` | Records |
+| record_sub | `record_sub` | Records |
 | has_member | `has_member` | Member queries |
 | has_member_rules | `has_member_rules` | Member queries |
 | possible_types | `possible_types` | Possible types |
 | record_has | `record_has` | Records |
 | normal_form | `normal_form` | Normal forms |
+| subenv | `subenv` (in Auxiliary.lean) | Environment relations |
 
 Notes:
 - `def` in Coq is renamed to `defn` in Lean to avoid keyword conflict; all uses updated consistently.

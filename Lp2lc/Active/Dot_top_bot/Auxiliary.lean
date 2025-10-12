@@ -31,14 +31,17 @@ attribute [aesop safe] subtyp.subtyp_and11 subtyp.subtyp_and12 subtyp.subtyp_and
 attribute [aesop safe] subtyp.subtyp_typ subtyp.subtyp_sel2 subtyp.subtyp_sel1
 attribute [aesop safe] subtyp.subtyp_sel2_tight subtyp.subtyp_sel1_tight subtyp.subtyp_all
 
-attribute [aesop safe] wf_sto.wf_sto_empty wf_sto.wf_sto_push
 
 attribute [aesop safe] record_dec.rd_typ record_dec.rd_trm
 attribute [aesop safe] record_typ.rt_one record_typ.rt_cons
 
--- has_member families
-attribute [aesop safe] has_member.has_any
-attribute [aesop safe] has_member_rules.has_refl has_member_rules.has_and1 has_member_rules.has_and2
-attribute [aesop safe] has_member_rules.has_bnd has_member_rules.has_sel
+  attribute [aesop safe] has_member.has_any
+  attribute [aesop safe] has_member_rules.has_refl has_member_rules.has_and1 has_member_rules.has_and2
+  attribute [aesop safe] has_member_rules.has_bnd has_member_rules.has_sel
 
-end Lp2lc.Active.Dot_top_bot
+-- Environment relation used by narrowing (Coq: subenv)
+  def subenv (G1 G2 : ctx) : Prop :=
+    ∀ (x : Var) (T2 : typ),
+      Env.binds x T2 G2 →
+        Env.binds x T2 G1 ∨
+        ∃ T1 : typ, Env.binds x T1 G1 ∧ subtyp tymode.ty_general submode.sub_general G1 T1 T2

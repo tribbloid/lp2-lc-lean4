@@ -38,3 +38,13 @@ lean
 *.glob
 *.aux
 **.lia.cache
+
+# Scala example files
+**/example/build
+**/example/out
+**/example/target
+
+example/.bloop
+example/.metals
+example/.gradle
+example/.idea

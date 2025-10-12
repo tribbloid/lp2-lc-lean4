@@ -458,6 +458,14 @@ inductive record_typ : typ → Finset label → Prop where
 -- A simple notion of record types
 def record_type (T : typ) : Prop := ∃ ls, record_typ T ls
 
+  -- Record-sub (subset; adapted)
+  inductive record_sub : typ → typ → Prop where
+    | rs_refl : ∀ T, record_sub T T
+    | rs_dropl : ∀ T T' D, record_sub T T' → record_sub (typ.typ_and T (typ.typ_rcd D)) (typ.typ_rcd D)
+    | rs_drop : ∀ T T' D, record_sub T T' → record_sub (typ.typ_and T (typ.typ_rcd D)) T'
+    | rs_pick : ∀ T T' D, record_sub T T' → record_sub (typ.typ_and T (typ.typ_rcd D)) (typ.typ_and T' (typ.typ_rcd D))
+
+
 -- Has-member family (subset; adapted from Dot)
 mutual
   inductive has_member : ctx → Var → typ → typ_label → typ → typ → Prop where
@@ -479,10 +487,13 @@ mutual
         ty_trm ty_precise sub_general G (trm.trm_var (avar.avar_f y)) (typ.typ_rcd (dec.dec_typ B T' T')) →
         has_member G x T' A S U →
         has_member_rules G x (typ.typ_sel (avar.avar_f y) B) A S U
+    | has_bot : ∀ (G : ctx) (x : Var) (A : typ_label) (S U : typ),
+        has_member_rules G x typ.typ_bot A S U
 end
 
 -- Possible types (subset; adapted)
 inductive possible_types : ctx → Var → val → typ → Prop where
+  | pt_top : ∀ (G : ctx) (x : Var) (v : val), possible_types G x v typ.typ_top
   | pt_new : ∀ (G : ctx) (x : Var) (T : typ) (ds : defs),
       possible_types G x (val.val_new T ds) (open_typ x T)
   | pt_rcd_trm : ∀ (G : ctx) (x : Var) (T : typ) (ds : defs) (a : trm_label) (t : trm) (T' : typ),
