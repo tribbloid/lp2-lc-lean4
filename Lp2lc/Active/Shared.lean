@@ -1,6 +1,7 @@
 import Std
 import Mathlib.Data.Finset.Basic
 
+
 namespace Lp2lc.Active
 
 -- Shared variable type and finite set of variables

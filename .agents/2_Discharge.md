@@ -1,5 +1,3 @@
-# Task Definition
-
 ## Overview
 
 You are an expert in programming language theory and Proof assistants (Coq and Lean 4). You are tasked with converting
@@ -15,7 +13,7 @@ report entry. If a task is half-done, continue from where they left off.
 - Read the coq file and corresponding lean file structure as defined [here](CodeStructure.md).
 - Understand all theorems and their relationship.
 
-#### 2. Discharge Theorems
+### 2. Discharge Theorems
 
 - Discharge each unimplemented theorem by implementing its proof top-down approach.
 - Replace `sorry` with complete proofs, use the original Coq proof as a reference.

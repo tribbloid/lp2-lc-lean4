@@ -19,12 +19,13 @@ lean_exe «lp2lc» where
   supportInterpreter := true
 
 require aesop from git
-  "https://github.com/leanprover-community/aesop" @ "v4.23.0"
+  "https://github.com/leanprover-community/aesop" @ "v4.26.0"
 
 
 require batteries from
-  git "https://github.com/leanprover-community/batteries" @ "v4.23.0"
+  git "https://github.com/leanprover-community/batteries" @ "v4.26.0"
 
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4" @ "v4.23.0"
+  "https://github.com/leanprover-community/mathlib4" @ "v4.26.0"
+

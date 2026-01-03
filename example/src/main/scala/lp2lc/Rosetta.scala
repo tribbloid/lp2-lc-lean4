@@ -18,11 +18,11 @@ object Rosetta {
     type P1 = 2 + 2 =:= 4
 
     // instance / inhabitant / example
-    lazy val v1: T1 = "hello"
-    //    def v2: T1 = "hello" TODO: this is impure, equivalent to an IO monad in Lean4
+    inline def v1: T1 = "hello" // equivalent to def in Lean 4, which are eagerly evaluated
+    //    def v2: T1 = "hello" // NOT equivalent to def in Lean 4, TODO: this is impure, equivalent to an IO monad in Lean4
 
     // proving automatically
-    val p1: P1 = implicitly[P1]
+    val p1: P1 = summon[P1]
 
     {
       // type definition pending or left as an exercise
@@ -71,8 +71,8 @@ object Rosetta {
         def fn1(v: A | B): C1 = ???
 
         object C1 {
-          implicit def fn1: A => C1 = ???
-          implicit def fn2: B => C1 = ???
+          given fn1: (A => C1) = ???
+          given fn2: (B => C1) = ???
         }
 
         sealed trait C2
@@ -111,9 +111,10 @@ object Rosetta {
 
       type A2
 
-      implicit class A2View(a: A2) {
-        type D
-      }
+      // Note: extensions cannot have type members in Scala 3.7+
+      // extension (a: A2) {
+      //   type D
+      // }
 
       type B
 
@@ -163,11 +164,11 @@ object Rosetta {
             type For = A
             lazy val get: B = ???
           }
-          implicit def _1[A]: Evidence[A] = new Evidence[A]
+          given [A] => Evidence[A] = new Evidence[A]
         }
 
         def fn2[T](
-            implicit
+            using
             evidence: TypeCls { type For = T }
         ): B = evidence.get
       }
@@ -180,18 +181,18 @@ object Rosetta {
         type A2
 
         object TypeCls {
-          implicit object _1 extends TypeCls {
+          given _1: TypeCls = new TypeCls {
             type For = A1
             lazy val get: B = ???
           }
-          implicit object _2 extends TypeCls {
+          given _2: TypeCls = new TypeCls {
             type For = A2
             lazy val get: B = ???
           }
         }
 
         def fn1[T](
-            implicit
+            using
             evidence: TypeCls { type For = T }
         ): B = evidence.get
       }

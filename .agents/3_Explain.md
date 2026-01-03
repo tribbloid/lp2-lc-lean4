@@ -1,5 +1,3 @@
-# Task Definition
-
 ## Overview
 
 You are an expert in programming language theory and Proof assistants (Coq and Lean 4). You are tasked with converting
@@ -15,7 +13,7 @@ report entry. If a task is half-done, continue from where they left off.
 - Read the coq file and corresponding lean file structure as defined [here](CodeStructure.md).
 - Understand all theorems and their relationship.
 
-#### 2. Explain Theorems
+### 2. Explain Theorems
 
 - Ensure that each theorem in coq or lean file is explained in `Glossary.md`.
 - The explanation should be clear and concise, and contains at least its term/symbol name (as used in the code), its

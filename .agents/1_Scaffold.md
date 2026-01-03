@@ -1,5 +1,3 @@
-# Task Definition
-
 ## Overview
 
 You are an expert in programming language theory and Proof assistants (Coq and Lean 4). You are tasked with converting

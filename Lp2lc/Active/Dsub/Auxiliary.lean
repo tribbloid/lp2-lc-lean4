@@ -6,6 +6,7 @@ No axioms or proofs should be introduced here.
 
 import Std
 import Mathlib.Data.Finset.Basic
+
 import Aesop
 import «Lp2lc».Active.Shared
 import «Lp2lc».Active.Dsub.Def

@@ -17,6 +17,6 @@ Notes
 - Do not import other `Active` submodules here to keep modules independent.
 - Successful proofs may later be migrated to the project’s preferred location per user rule, but statement ownership remains here.
 - All theorem statements are maintained in declaration order relative to the Coq source.
-- See `prompt/CodeStructure.md` and `prompt/ConversionRules.md` for conventions.
+- See `.agents/CodeStructure.md` and `.agents/ConversionRules.md` for conventions.
 - See `Lp2lc/Active/Dsubsup/Proof.progress.md` and `.../Def.progress.md` for coverage.
 -/

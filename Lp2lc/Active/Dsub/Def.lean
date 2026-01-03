@@ -7,11 +7,12 @@ T ::= Top | p.Type | { Type = T } | { Type <: T } | (z: T) -> T^z
 Coq source: Lp2lc_coq/Active/Dsub.v
 - This file ports definitions and inductives only (no axioms, no proofs).
 - Every ported declaration is preceded by a comment with the original Coq line number.
-- Followed conventions in prompt/CodeStructure.md and prompt/ConversionRules.md.
+- Followed conventions in .agents/CodeStructure.md and agents/ConversionRules.md.
 -/
 
 import Std
 import Mathlib.Data.Finset.Basic
+
 import Aesop
 import «Lp2lc».Active.Shared
 

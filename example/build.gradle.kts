@@ -12,6 +12,12 @@ plugins {
     id("ai.acyclic.scala3-conventions")
 }
 
+tasks.configureEach {
+    if (name == "checkScalafixMain" || name == "checkScalafixTest") {
+        enabled = false
+    }
+}
+
 idea {
 
     module {

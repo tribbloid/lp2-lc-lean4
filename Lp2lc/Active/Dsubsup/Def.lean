@@ -9,6 +9,7 @@
 
 import Std
 import Mathlib.Data.Finset.Basic
+
 import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Dsubsup
