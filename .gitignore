@@ -40,11 +40,13 @@ lean
 **.lia.cache
 
 # Scala example files
-**/example/build
-**/example/out
-**/example/target
+**/build
+**/out
+**/target
 
-example/.bloop
-example/.metals
-example/.gradle
-example/.idea
+**/.bloop
+**/.metals
+**/.gradle
+**/.idea
+
+
