@@ -28,13 +28,17 @@ The project depends on MathLib and AESOP.
 - Do not add markdown files on your own.
 - Do not change build file unless asked to.
 
-### Lean Prover Convention
+### Structure
+
+See @.agent/CodeStructure.md
+
+### Lean Code Convention
 
 #### Naming
 
 - When creating a new Lean file, do not include `.` in the file name.
 - Use snake_case for definitions and functions.
-- Use PascalCase for types and structures.
+- Use PascalCase for types and structures, first letter capitalized.
 
 #### Modules
 
@@ -42,12 +46,15 @@ The project depends on MathLib and AESOP.
 - Use quoted module names: `import «Lp2lc».module`.
 - Group imports logically (Lean core, external deps, local modules).
 
-## Quality Checks
+#### Conversion
+
+See @.agent/ConversionRules.md
+
+#### Quality Checks
 
 - Lean files build successfully with `lake build`.
 - [ ] All files compile without errors.
 - [ ] No unused variable warnings.
-- [ ] All theorems proven or marked with TODO.
 
 ## Key Commands
 

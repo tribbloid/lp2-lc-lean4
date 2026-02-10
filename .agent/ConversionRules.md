@@ -1,7 +1,3 @@
-### General Rules
-
-see [this](../AGENTS.md)
-
 ### Conversion Rules
 
 - Preserve original names (add `def_` prefix only if required by Lean syntax) and orders.
