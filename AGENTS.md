@@ -3,26 +3,26 @@
 **lp2-lc-lean4** is a Lean 4 project to proof the soundness of various type theories. The project contains formal proofs
 and definitions converted from Coq 8.4 to Lean 4.
 
-The project depends on MathLib and AESOP.
-
-[//]: # (## Planning Rules)
-
-[//]: # (- Always save your plan and TODO list as a new markdown file in `plans` directory.)
-
-[//]: # (TODO: useless, how to save plan?)
+The project depends on MathLib and AESOP
 
 ## Coding Rules
 
 ### General
 
+#### Do
+
 - Only ask questions during planning stage.
-- Do not ask questions like "what to do next", always follow the workflow by the numbers.
 - Build after every revision, build early and often, prioritize correctness over progress.
 - Eliminate compiler or LSP error as soon as possible.
+- Theorem types must be concrete, do not use "True"/"False" as theorem type.
+- Tool scripts not part of the core project should be placed in `.agent/script` directory.
+
+#### Don't
+
+- Do not ask questions like "what to do next", always follow the workflow by the numbers.
 - Do not proceed to the next step if there is a pending compiling error.
 - Do not create new branch in git.
 - Do not write duplicated or redundant implementation.
-- Theorem types must be concrete, do not use "True"/"False" as theorem type.
 - Do not remove comments.
 - Do not write comments to explain intention.
 - Do not add markdown files on your own.
