@@ -3,7 +3,7 @@ import «Lp2lc».Active.FsubL_alt.Auxiliary
 
 namespace Lp2lc.Active.FsubL_alt
 
-open typ trm bind
+open Typ Trm Bind
 
 -- Properties of type substitution in type
 
@@ -15,7 +15,7 @@ open typ trm bind
 
 -- Coq line 472: Lemma open_tt_rec_type
 @[simp] theorem open_tt_rec_type : ∀ T U,
-  def_type T → ∀ k, T = open_tt_rec k U T := by
+  DefType T → ∀ k, T = open_tt_rec k U T := by
   sorry -- TODO
 
 -- Coq line 481: Lemma subst_tt_fresh
@@ -24,25 +24,25 @@ open typ trm bind
   sorry -- TODO
 
 -- Coq line 490: Lemma subst_tt_open_tt_rec
-@[simp] theorem subst_tt_open_tt_rec : ∀ T1 T2 X P n, def_type P →
+@[simp] theorem subst_tt_open_tt_rec : ∀ T1 T2 X P n, DefType P →
   subst_tt X P (open_tt_rec n T2 T1) =
   open_tt_rec n (subst_tt X P T2) (subst_tt X P T1) := by
   sorry -- TODO
 
 -- Coq line 500: Lemma subst_tt_open_tt
-@[simp] theorem subst_tt_open_tt : ∀ T1 T2 X P, def_type P →
+@[simp] theorem subst_tt_open_tt : ∀ T1 T2 X P, DefType P →
   subst_tt X P (open_tt T1 T2) =
   open_tt (subst_tt X P T1) (subst_tt X P T2) := by
   sorry -- TODO
 
 -- Coq line 509: Lemma subst_tt_open_tt_var
-@[simp] theorem subst_tt_open_tt_var : ∀ X Y U T, Y ≠ X → def_type U →
+@[simp] theorem subst_tt_open_tt_var : ∀ X Y U T, Y ≠ X → DefType U →
   open_tt (subst_tt X U T) (typ_fvar Y) = subst_tt X U (open_tt T (typ_fvar Y)) := by
   sorry -- TODO
 
 -- Coq line 519: Lemma subst_tt_intro
 @[simp] theorem subst_tt_intro : ∀ X T2 U,
-  X ∉ fv_tt T2 → def_type U →
+  X ∉ fv_tt T2 → DefType U →
   open_tt T2 U = subst_tt X U (T2 open_tt_var X) := by
   sorry -- TODO
 
@@ -62,7 +62,7 @@ open typ trm bind
 
 -- Coq line 547: Lemma open_te_rec_term
 @[simp] theorem open_te_rec_term : ∀ e U,
-  def_term e → ∀ k, e = open_te_rec k U e := by
+  DefTerm e → ∀ k, e = open_te_rec k U e := by
   sorry -- TODO
 
 -- Coq line 560: Lemma subst_te_fresh
@@ -71,19 +71,19 @@ open typ trm bind
   sorry -- TODO
 
 -- Coq line 568: Lemma subst_te_open_te
-@[simp] theorem subst_te_open_te : ∀ e T X U, def_type U →
+@[simp] theorem subst_te_open_te : ∀ e T X U, DefType U →
   subst_te X U (open_te e T) =
   open_te (subst_te X U e) (subst_tt X U T) := by
   sorry -- TODO
 
 -- Coq line 579: Lemma subst_te_open_te_var
-@[simp] theorem subst_te_open_te_var : ∀ X Y U e, Y ≠ X → def_type U →
+@[simp] theorem subst_te_open_te_var : ∀ X Y U e, Y ≠ X → DefType U →
   open_te (subst_te X U e) (typ_fvar Y) = subst_te X U (open_te e (typ_fvar Y)) := by
   sorry -- TODO
 
 -- Coq line 589: Lemma subst_te_intro
 @[simp] theorem subst_te_intro : ∀ X U e,
-  X ∉ fv_te e → def_type U →
+  X ∉ fv_te e → DefType U →
   open_te e U = subst_te X U (e open_te_var X) := by
   sorry -- TODO
 
@@ -103,7 +103,7 @@ open typ trm bind
 
 -- Coq line 616: Lemma open_ee_rec_term
 @[simp] theorem open_ee_rec_term : ∀ u e,
-  def_term e → ∀ k, e = open_ee_rec k u e := by
+  DefTerm e → ∀ k, e = open_ee_rec k u e := by
   sorry -- TODO
 
 -- Coq line 628: Lemma subst_ee_fresh
@@ -112,20 +112,20 @@ open typ trm bind
   sorry -- TODO
 
 -- Coq line 637: Lemma subst_ee_open_ee
-@[simp] theorem subst_ee_open_ee : ∀ t1 t2 u x, def_term u →
+@[simp] theorem subst_ee_open_ee : ∀ t1 t2 u x, DefTerm u →
   subst_ee x u (open_ee t1 t2) =
   open_ee (subst_ee x u t1) (subst_ee x u t2) := by
   sorry -- TODO
 
 -- Coq line 649: Lemma subst_ee_open_ee_var
-@[simp] theorem subst_ee_open_ee_var : ∀ x y u e, y ≠ x → def_term u →
+@[simp] theorem subst_ee_open_ee_var : ∀ x y u e, y ≠ x → DefTerm u →
   open_ee (subst_ee x u e) (trm_fvar y) =
   subst_ee x u (open_ee e (trm_fvar y)) := by
   sorry -- TODO
 
 -- Coq line 659: Lemma subst_ee_intro
 @[simp] theorem subst_ee_intro : ∀ x e u,
-  x ∉ fv_ee e → def_term u →
+  x ∉ fv_ee e → DefTerm u →
   open_ee e u = subst_ee x u (open_ee e (trm_fvar x)) := by
   sorry -- TODO
 
@@ -135,7 +135,7 @@ open typ trm bind
   sorry -- TODO
 
 -- Coq line 680: Lemma subst_ee_open_te_var
-@[simp] theorem subst_ee_open_te_var : ∀ z u e V, def_term u →
+@[simp] theorem subst_ee_open_te_var : ∀ z u e V, DefTerm u →
   open_te (subst_ee z u e) V = subst_ee z u (open_te e V) := by
   sorry -- TODO
 
@@ -143,66 +143,66 @@ open typ trm bind
 
 -- Coq line 690: Lemma subst_tt_type
 @[simp] theorem subst_tt_type : ∀ T Z P,
-  def_type T → def_type P → def_type (subst_tt Z P T) := by
+  DefType T → DefType P → DefType (subst_tt Z P T) := by
   sorry -- TODO
 
 -- Coq line 698: Lemma subst_te_term
 @[simp] theorem subst_te_term : ∀ e Z P,
-  def_term e → def_type P → def_term (subst_te Z P e) := by
+  DefTerm e → DefType P → DefTerm (subst_te Z P e) := by
   sorry -- TODO
 
 -- Coq line 706: Lemma subst_ee_term
 @[simp] theorem subst_ee_term : ∀ e1 Z e2,
-  def_term e1 → def_term e2 → def_term (subst_ee Z e2 e1) := by
+  DefTerm e1 → DefTerm e2 → DefTerm (subst_ee Z e2 e1) := by
   sorry -- TODO
 
 -- Properties of well-formedness of a type in an environment
 
 -- Coq line 723: Lemma wft_type
 @[simp] theorem wft_type : ∀ E T,
-  wft E T → def_type T := by
+  Wft E T → DefType T := by
   sorry -- TODO
 
 -- Coq line 731: Lemma wft_weaken
 @[simp] theorem wft_weaken : ∀ G T E F,
-  wft (E ++ G) T →
+  Wft (E ++ G) T →
   ok (E ++ F ++ G) →
-  wft (E ++ F ++ G) T := by
+  Wft (E ++ F ++ G) T := by
   sorry -- TODO
 
 -- Coq line 744: Lemma wft_weaken_empty
 @[simp] theorem wft_weaken_empty : ∀ T F,
-  wft [] T →
+  Wft [] T →
   ok F →
-  wft F T := by
+  Wft F T := by
   sorry -- TODO
 
 -- Coq line 756: Lemma wft_narrow
 @[simp] theorem wft_narrow : ∀ V0 V1 F U0 U1 T E X,
-  wft (E ++ [(X, bind_sub V0 V1)] ++ F) T →
+  Wft (E ++ [(X, bind_sub V0 V1)] ++ F) T →
   ok (E ++ [(X, bind_sub U0 U1)] ++ F) →
-  wft (E ++ [(X, bind_sub U0 U1)] ++ F) T := by
+  Wft (E ++ [(X, bind_sub U0 U1)] ++ F) T := by
   sorry -- TODO
 
 -- Coq line 773: Lemma wft_strengthen
 @[simp] theorem wft_strengthen : ∀ E F x U T,
-  wft (E ++ [(x, bind_typ U)] ++ F) T → wft (E ++ F) T := by
+  Wft (E ++ [(x, bind_typ U)] ++ F) T → Wft (E ++ F) T := by
   sorry -- TODO
 
 -- Coq line 790: Lemma wft_subst_tb
 @[simp] theorem wft_subst_tb : ∀ F Q0 Q1 E Z P T,
-  wft (E ++ [(Z, bind_sub Q0 Q1)] ++ F) T →
-  wft E P →
+  Wft (E ++ [(Z, bind_sub Q0 Q1)] ++ F) T →
+  Wft E P →
   ok (E ++ map_subst_tb Z P F) →
-  wft (E ++ map_subst_tb Z P F) (subst_tt Z P T) := by
+  Wft (E ++ map_subst_tb Z P F) (subst_tt Z P T) := by
   sorry -- TODO
 
 -- Coq line 828: Lemma wft_open
 @[simp] theorem wft_open : ∀ E U T0 T1 T2,
   ok E →
-  wft E (typ_all T0 T1 T2) →
-  wft E U →
-  wft E (open_tt T2 U) := by
+  Wft E (typ_all T0 T1 T2) →
+  Wft E U →
+  Wft E (open_tt T2 U) := by
   sorry -- TODO
 
 -- Relations between well-formed environment and types well-formed in environments
@@ -215,34 +215,34 @@ open typ trm bind
 
 -- Coq line 847: Lemma ok_from_okt
 @[simp] theorem ok_from_okt : ∀ E,
-  okt E → ok E := by
+  Okt E → ok E := by
   sorry -- TODO
 
 -- Coq line 857: Lemma wft_from_env_has_sub
 @[simp] theorem wft_from_env_has_sub : ∀ x U0 U1 E,
-  okt E → binds x (bind_sub U0 U1) E → wft E U0 ∧ wft E U1 := by
+  Okt E → binds x (bind_sub U0 U1) E → Wft E U0 ∧ Wft E U1 := by
   sorry -- TODO
 
 -- Coq line 876: Lemma wft_from_env_has_typ
 @[simp] theorem wft_from_env_has_typ : ∀ x U E,
-  okt E → binds x (bind_typ U) E → wft E U := by
+  Okt E → binds x (bind_typ U) E → Wft E U := by
   sorry -- TODO
 
 -- Coq line 895: Lemma wft_from_okt_typ
 @[simp] theorem wft_from_okt_typ : ∀ x T E,
-  okt ((x, bind_typ T) :: E) → wft E T := by
+  Okt ((x, bind_typ T) :: E) → Wft E T := by
   sorry -- TODO
 
 -- Coq line 904: Lemma wft_from_okt_sub
 @[simp] theorem wft_from_okt_sub : ∀ x T0 T1 E,
-  okt ((x, bind_sub T0 T1) :: E) → wft E T0 ∧ wft E T1 := by
+  Okt ((x, bind_sub T0 T1) :: E) → Wft E T0 ∧ Wft E T1 := by
   sorry -- TODO
 
 -- Coq line 915: Lemma wft_weaken_right
 @[simp] theorem wft_weaken_right : ∀ T E F,
-  wft E T →
+  Wft E T →
   ok (E ++ F) →
-  wft (E ++ F) T := by
+  Wft (E ++ F) T := by
   sorry -- TODO
 
 -- Environment regularity and automation
@@ -255,174 +255,174 @@ open typ trm bind
 
 -- Coq line 1051: Lemma notin_fv_wf
 @[simp] theorem notin_fv_wf : ∀ E X T,
-  wft E T → X ∉ dom E → X ∉ fv_tt T := by
+  Wft E T → X ∉ dom E → X ∉ fv_tt T := by
   sorry -- TODO
 
 -- Coq line 1062: Lemma map_subst_tb_id
 @[simp] theorem map_subst_tb_id : ∀ G Z P,
-  okt G → Z ∉ dom G → G = map_subst_tb Z P G := by
+  Okt G → Z ∉ dom G → G = map_subst_tb Z P G := by
   sorry -- TODO
 
 -- Regularity
 
 -- Coq line 1079: Lemma sub_regular
 @[simp] theorem sub_regular : ∀ E S T,
-  sub E S T → okt E ∧ wft E S ∧ wft E T := by
+  Sub E S T → Okt E ∧ Wft E S ∧ Wft E T := by
   sorry -- TODO
 
 -- Coq line 1098: Lemma typing_regular
 @[simp] theorem typing_regular : ∀ E e T,
-  typing E e T → okt E ∧ def_term e ∧ wft E T := by
+  Typing E e T → Okt E ∧ DefTerm e ∧ Wft E T := by
   sorry -- TODO
 
 -- Coq line 1141: Lemma value_regular
 @[simp] theorem value_regular : ∀ t,
-  value t → def_term t := by
+  Value t → DefTerm t := by
   sorry -- TODO
 
 -- Coq line 1149: Lemma red_regular
 @[simp] theorem red_regular : ∀ t t',
-  red t t' → def_term t ∧ def_term t' := by
+  Red t t' → DefTerm t ∧ DefTerm t' := by
   sorry -- TODO
 
 -- Subtyping properties
 
 -- Coq line 1201: Lemma sub_reflexivity
 @[simp] theorem sub_reflexivity : ∀ E T,
-  okt E →
-  wft E T →
-  sub E T T := by
+  Okt E →
+  Wft E T →
+  Sub E T T := by
   sorry -- TODO
 
 -- Coq line 1214: Lemma sub_weakening
 @[simp] theorem sub_weakening : ∀ E F G S T,
-  sub (E ++ G) S T →
-  okt (E ++ F ++ G) →
-  sub (E ++ F ++ G) S T := by
+  Sub (E ++ G) S T →
+  Okt (E ++ F ++ G) →
+  Sub (E ++ F ++ G) S T := by
   sorry -- TODO
 
 -- Coq line 1230: Lemma sub_weakening_empty
 @[simp] theorem sub_weakening_empty : ∀ F G S T,
-  sub G S T →
-  okt (F ++ G) →
-  sub (F ++ G) S T := by
+  Sub G S T →
+  Okt (F ++ G) →
+  Sub (F ++ G) S T := by
   sorry -- TODO
 
 -- Coq line 1247: Lemma sub_narrowing_aux
 @[simp] theorem sub_narrowing_aux : ∀ Q0 Q1 F E Z P0 P1 S T,
-  sub (E ++ [(Z, bind_sub Q0 Q1)] ++ F) S T →
-  sub E Q0 P0 →
-  sub E P1 Q1 →
-  sub (E ++ [(Z, bind_sub P0 P1)] ++ F) S T := by
+  Sub (E ++ [(Z, bind_sub Q0 Q1)] ++ F) S T →
+  Sub E Q0 P0 →
+  Sub E P1 Q1 →
+  Sub (E ++ [(Z, bind_sub P0 P1)] ++ F) S T := by
   sorry -- TODO
 
 -- Coq line 1284: Lemma sub_narrowing
 @[simp] theorem sub_narrowing : ∀ Q0 Q1 E F Z P0 P1 S T,
-  sub E Q0 P0 →
-  sub E P1 Q1 →
-  sub (E ++ [(Z, bind_sub Q0 Q1)] ++ F) S T →
-  sub (E ++ [(Z, bind_sub P0 P1)] ++ F) S T := by
+  Sub E Q0 P0 →
+  Sub E P1 Q1 →
+  Sub (E ++ [(Z, bind_sub Q0 Q1)] ++ F) S T →
+  Sub (E ++ [(Z, bind_sub P0 P1)] ++ F) S T := by
   sorry -- TODO
 
 -- Coq line 1294: Lemma sub_narrowing_empty
 @[simp] theorem sub_narrowing_empty : ∀ Q0 Q1 Z P0 P1 S T,
-  sub [] Q0 P0 →
-  sub [] P1 Q1 →
-  sub ([(Z, bind_sub Q0 Q1)]) S T →
-  sub ([(Z, bind_sub P0 P1)]) S T := by
+  Sub [] Q0 P0 →
+  Sub [] P1 Q1 →
+  Sub ([(Z, bind_sub Q0 Q1)]) S T →
+  Sub ([(Z, bind_sub P0 P1)]) S T := by
   sorry -- TODO
 
 -- Coq line 1312: Lemma sub_through_subst_tt
 @[simp] theorem sub_through_subst_tt : ∀ Q0 Q1 E F Z S T P,
-  sub (E ++ [(Z, bind_sub Q0 Q1)] ++ F) S T →
-  sub E Q0 P →
-  sub E P Q1 →
-  sub (E ++ map_subst_tb Z P F) (subst_tt Z P S) (subst_tt Z P T) := by
+  Sub (E ++ [(Z, bind_sub Q0 Q1)] ++ F) S T →
+  Sub E Q0 P →
+  Sub E P Q1 →
+  Sub (E ++ map_subst_tb Z P F) (subst_tt Z P S) (subst_tt Z P T) := by
   sorry -- TODO
 
 -- Typing properties
 
 -- Coq line 1372: Lemma typing_weakening
 @[simp] theorem typing_weakening : ∀ E F G e T,
-  typing (E ++ G) e T →
-  okt (E ++ F ++ G) →
-  typing (E ++ F ++ G) e T := by
+  Typing (E ++ G) e T →
+  Okt (E ++ F ++ G) →
+  Typing (E ++ F ++ G) e T := by
   sorry -- TODO
 
 -- Coq line 1396: Lemma sub_strengthening
 @[simp] theorem sub_strengthening : ∀ x U E F S T,
-  sub (E ++ [(x, bind_typ U)] ++ F) S T →
-  sub (E ++ F) S T := by
+  Sub (E ++ [(x, bind_typ U)] ++ F) S T →
+  Sub (E ++ F) S T := by
   sorry -- TODO
 
 -- Coq line 1415: Lemma typing_narrowing
 @[simp] theorem typing_narrowing : ∀ Q0 Q1 E F X P0 P1 e T,
-  sub E Q0 P0 →
-  sub E P1 Q1 →
-  sub E P0 P1 →
-  typing (E ++ [(X, bind_sub Q0 Q1)] ++ F) e T →
-  typing (E ++ [(X, bind_sub P0 P1)] ++ F) e T := by
+  Sub E Q0 P0 →
+  Sub E P1 Q1 →
+  Sub E P0 P1 →
+  Typing (E ++ [(X, bind_sub Q0 Q1)] ++ F) e T →
+  Typing (E ++ [(X, bind_sub P0 P1)] ++ F) e T := by
   sorry -- TODO
 
 -- Coq line 1432: Lemma typing_narrowing_empty
 @[simp] theorem typing_narrowing_empty : ∀ Q0 Q1 X P0 P1 e T,
-  sub [] Q0 P0 →
-  sub [] P1 Q1 →
-  sub [] P0 P1 →
-  typing ([(X, bind_sub Q0 Q1)]) e T →
-  typing ([(X, bind_sub P0 P1)]) e T := by
+  Sub [] Q0 P0 →
+  Sub [] P1 Q1 →
+  Sub [] P0 P1 →
+  Typing ([(X, bind_sub Q0 Q1)]) e T →
+  Typing ([(X, bind_sub P0 P1)]) e T := by
   sorry -- TODO
 
 -- Coq line 1449: Lemma typing_through_subst_ee
 @[simp] theorem typing_through_subst_ee : ∀ U E F x T e u,
-  typing (E ++ [(x, bind_typ U)] ++ F) e T →
-  typing E u U →
-  typing (E ++ F) (subst_ee x u e) T := by
+  Typing (E ++ [(x, bind_typ U)] ++ F) e T →
+  Typing E u U →
+  Typing (E ++ F) (subst_ee x u e) T := by
   sorry -- TODO
 
 -- Coq line 1472: Lemma typing_through_subst_te
 @[simp] theorem typing_through_subst_te : ∀ Q0 Q1 E F Z e T P,
-  typing (E ++ [(Z, bind_sub Q0 Q1)] ++ F) e T →
-  sub E Q0 P →
-  sub E P Q1 →
-  typing (E ++ map_subst_tb Z P F) (subst_te Z P e) (subst_tt Z P T) := by
+  Typing (E ++ [(Z, bind_sub Q0 Q1)] ++ F) e T →
+  Sub E Q0 P →
+  Sub E P Q1 →
+  Typing (E ++ map_subst_tb Z P F) (subst_te Z P e) (subst_tt Z P T) := by
   sorry -- TODO
 
 -- Preservation and possible types
 
--- Coq line 1512: Inductive possible_types and derived lemmas
+-- Coq line 1512: Inductive PossibleTypes and derived lemmas
 @[simp] theorem possible_types_value : ∀ p T,
-  possible_types p T →
-  value p := by
+  PossibleTypes p T →
+  Value p := by
   sorry -- TODO
 
 @[simp] theorem possible_types_closure : ∀ v T U,
-  possible_types v T →
-  sub [] T U →
-  possible_types v U := by
+  PossibleTypes v T →
+  Sub [] T U →
+  PossibleTypes v U := by
   sorry -- TODO
 
 @[simp] theorem possible_types_typing : ∀ v T,
-  typing [] v T → value v →
-  possible_types v T := by
+  Typing [] v T → Value v →
+  PossibleTypes v T := by
   sorry -- TODO
 
 -- Inversion lemmas
 
 @[simp] theorem typing_inv_abs : ∀ S1 e1 T,
-  typing [] (trm_abs S1 e1) T →
-  ∀ U1 U2, sub [] T (typ_arrow U1 U2) →
-     sub [] U1 S1 ∧ ∃ S2, ∃ L : Vars, ∀ x, x ∉ L →
-     typing ([(x, bind_typ S1)]) (open_ee e1 (trm_fvar x)) S2 ∧ sub [] S2 U2 := by
+  Typing [] (trm_abs S1 e1) T →
+  ∀ U1 U2, Sub [] T (typ_arrow U1 U2) →
+     Sub [] U1 S1 ∧ ∃ S2, ∃ L : Vars, ∀ x, x ∉ L →
+     Typing ([(x, bind_typ S1)]) (open_ee e1 (trm_fvar x)) S2 ∧ Sub [] S2 U2 := by
   sorry -- TODO
 
 @[simp] theorem typing_inv_tabs : ∀ S10 S11 e1 T,
-  typing [] (trm_tabs S10 S11 e1) T →
-  ∀ U10 U11 U2, sub [] T (typ_all U10 U11 U2) → sub [] U10 U11 →
-     sub [] S10 U10 ∧ sub [] U11 S11 ∧
+  Typing [] (trm_tabs S10 S11 e1) T →
+  ∀ U10 U11 U2, Sub [] T (typ_all U10 U11 U2) → Sub [] U10 U11 →
+     Sub [] S10 U10 ∧ Sub [] U11 S11 ∧
      ∃ S2, ∃ L : Vars, ∀ X, X ∉ L →
-     typing ([(X, bind_sub U10 U11)]) (open_te e1 (typ_fvar X)) (open_tt S2 (typ_fvar X)) ∧
-     sub ([(X, bind_sub U10 U11)]) (open_tt S2 (typ_fvar X)) (open_tt U2 (typ_fvar X)) := by
+     Typing ([(X, bind_sub U10 U11)]) (open_te e1 (typ_fvar X)) (open_tt S2 (typ_fvar X)) ∧
+     Sub ([(X, bind_sub U10 U11)]) (open_tt S2 (typ_fvar X)) (open_tt U2 (typ_fvar X)) := by
   sorry -- TODO
 
 -- Coq line 1624: Preservation result
@@ -433,18 +433,18 @@ open typ trm bind
 
 -- Coq line 1660: value_not_bot
 @[simp] theorem value_not_bot : ∀ t T,
-  value t → typing [] t T → T ≠ typ_bot := by
+  Value t → Typing [] t T → T ≠ typ_bot := by
   sorry -- TODO
 
 -- Coq line 1668: canonical_form_abs
 @[simp] theorem canonical_form_abs : ∀ t U1 U2,
-  value t → typing [] t (typ_arrow U1 U2) →
+  Value t → Typing [] t (typ_arrow U1 U2) →
   ∃ V, ∃ e1, t = trm_abs V e1 := by
   sorry -- TODO
 
 -- Coq line 1678: canonical_form_tabs
 @[simp] theorem canonical_form_tabs : ∀ t U0 U1 U2,
-  value t → typing [] t (typ_all U0 U1 U2) →
+  Value t → Typing [] t (typ_all U0 U1 U2) →
   ∃ V0 V1, ∃ e1, t = trm_tabs V0 V1 e1 := by
   sorry -- TODO
 

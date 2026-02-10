@@ -13,58 +13,58 @@ import «Lp2lc».Active.Dsub.Def
 
 namespace Lp2lc.Active.Dsub
 
-open def_type def_term wft wfe okt value sub has typing red typ trm
+open DefType DefTerm Wft Wfe Okt Value Sub Has Typing Red Typ Trm
 
 -- Aesop hints for constructor-style goals
-attribute [aesop safe] def_type.type_top
-attribute [aesop safe] def_type.type_sel
-attribute [aesop safe] def_type.type_mem
-attribute [aesop safe] def_type.type_all
+attribute [aesop safe] DefType.type_top
+attribute [aesop safe] DefType.type_sel
+attribute [aesop safe] DefType.type_mem
+attribute [aesop safe] DefType.type_all
 
-attribute [aesop safe] def_term.term_var
-attribute [aesop safe] def_term.term_abs
-attribute [aesop safe] def_term.term_mem
-attribute [aesop safe] def_term.term_app
+attribute [aesop safe] DefTerm.term_var
+attribute [aesop safe] DefTerm.term_abs
+attribute [aesop safe] DefTerm.term_mem
+attribute [aesop safe] DefTerm.term_app
 
-attribute [aesop safe] value.value_abs
-attribute [aesop safe] value.value_mem
+attribute [aesop safe] Value.value_abs
+attribute [aesop safe] Value.value_mem
 
-attribute [aesop safe] wft.wft_top
-attribute [aesop safe] wft.wft_sel
-attribute [aesop safe] wft.wft_mem
-attribute [aesop safe] wft.wft_all
+attribute [aesop safe] Wft.wft_top
+attribute [aesop safe] Wft.wft_sel
+attribute [aesop safe] Wft.wft_mem
+attribute [aesop safe] Wft.wft_all
 
-attribute [aesop safe] wfe.wfe_var
-attribute [aesop safe] wfe.wfe_abs
-attribute [aesop safe] wfe.wfe_mem
-attribute [aesop safe] wfe.wfe_app
+attribute [aesop safe] Wfe.wfe_var
+attribute [aesop safe] Wfe.wfe_abs
+attribute [aesop safe] Wfe.wfe_mem
+attribute [aesop safe] Wfe.wfe_app
 
-attribute [aesop safe] okt.okt_empty
-attribute [aesop safe] okt.okt_push
+attribute [aesop safe] Okt.okt_empty
+attribute [aesop safe] Okt.okt_push
 
-attribute [aesop safe] sub.sub_top
-attribute [aesop safe] sub.sub_refl_sel
-attribute [aesop safe] sub.sub_sel1
-attribute [aesop safe] sub.sub_sel2
-attribute [aesop safe] sub.sub_mem_false
-attribute [aesop safe] sub.sub_mem_true
-attribute [aesop safe] sub.sub_all
-attribute [aesop safe] sub.sub_trans
+attribute [aesop safe] Sub.sub_top
+attribute [aesop safe] Sub.sub_refl_sel
+attribute [aesop safe] Sub.sub_sel1
+attribute [aesop safe] Sub.sub_sel2
+attribute [aesop safe] Sub.sub_mem_false
+attribute [aesop safe] Sub.sub_mem_true
+attribute [aesop safe] Sub.sub_all
+attribute [aesop safe] Sub.sub_trans
 
-attribute [aesop safe] has.has_var
-attribute [aesop safe] has.has_mem
-attribute [aesop safe] has.has_abs
-attribute [aesop safe] has.has_sub
+attribute [aesop safe] Has.has_var
+attribute [aesop safe] Has.has_mem
+attribute [aesop safe] Has.has_abs
+attribute [aesop safe] Has.has_sub
 
-attribute [aesop safe] typing.typing_var
-attribute [aesop safe] typing.typing_abs
-attribute [aesop safe] typing.typing_mem
-attribute [aesop safe] typing.typing_app
-attribute [aesop safe] typing.typing_appvar
-attribute [aesop safe] typing.typing_sub
+attribute [aesop safe] Typing.typing_var
+attribute [aesop safe] Typing.typing_abs
+attribute [aesop safe] Typing.typing_mem
+attribute [aesop safe] Typing.typing_app
+attribute [aesop safe] Typing.typing_appvar
+attribute [aesop safe] Typing.typing_sub
 
-attribute [aesop safe] red.red_app_1
-attribute [aesop safe] red.red_app_2
-attribute [aesop safe] red.red_abs
+attribute [aesop safe] Red.red_app_1
+attribute [aesop safe] Red.red_app_2
+attribute [aesop safe] Red.red_abs
 
 end Lp2lc.Active.Dsub

@@ -29,8 +29,8 @@ abbrev Vars := Lp2lc.Active.Vars
 ## Language (mirroring Coq inductives)
 
 Coq (Dsubsup.v) summary:
-- typ ::= Bot | Top | sel p | {Type : S..U} | (z : T) -> T^z
-- trm ::= p | t t
+- Typ ::= Bot | Top | sel p | {Type : S..U} | (z : T) -> T^z
+- Trm ::= p | t t
 - p   ::= x | v
 - v   ::= { Type = T } | lambda x:T.t
 
@@ -102,12 +102,12 @@ inductive Value : Trm -> Prop where
 axiom Wft : Env -> Typ -> Prop
 axiom Wfe : Env -> Trm -> Prop
 
-/-- Well-formed environment (okt in Coq) -/
+/-- Well-formed environment (Okt in Coq) -/
 inductive Okt : Env -> Prop where
   | nil  : Okt []
   | push : ∀ E x T, Okt E -> Wft E T -> (E.lookup x = none) -> Okt ((x,T)::E)
 
-/-- Subtyping and has-judgment (skeletal for statements) -/
+/-- Subtyping and Has-judgment (skeletal for statements) -/
 axiom Sub : Env -> Typ -> Typ -> Prop
 axiom Has : Env -> Trm -> Typ -> Prop
 
@@ -121,7 +121,7 @@ inductive Typing : Env -> Trm -> Typ -> Prop where
       Typing E (Trm.app e1 e2) T2
   | appvar : ∀ T1 E e1 e2 T2 T2' M, Typing E e1 (Typ.all T1 T2) -> Typing E e2 T1 -> Has E e2 M ->
       T2' = openT T2 e2 -> Wft E T2' -> Typing E (Trm.app e1 e2) T2'
-  | sub  : ∀ S E e T, Typing E e S -> Sub E S T -> Typing E e T
+  | Sub  : ∀ S E e T, Typing E e S -> Sub E S T -> Typing E e T
 
 /-- Reduction -/
 inductive Red : Trm -> Trm -> Prop where

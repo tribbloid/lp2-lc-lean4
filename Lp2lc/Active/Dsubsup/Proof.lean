@@ -120,11 +120,11 @@ theorem substT_type : ∀ (T : Typ) (z : Var) (u : Trm), LcT T -> LcE u -> LcT (
 theorem substE_term : ∀ (e1 : Trm) (z : Var) (e2 : Trm), LcE e1 -> LcE e2 -> LcE (substE z e2 e1) := by
   intro e1 z e2 he1 he2; exact subst_lc_E e1 he1 z e2 he2
 
-/-- Coq line ~531: substitution preserves value-hood -/
+/-- Coq line ~531: substitution preserves Value-hood -/
 theorem substE_value : ∀ (e1 : Trm) (z : Var) (e2 : Trm), Value e1 -> LcE e2 -> Value (substE z e2 e1) := by
   sorry
 
-/-- Coq line ~547: value implies term -/
+/-- Coq line ~547: Value implies term -/
 theorem value_is_term : ∀ (e : Trm), Value e -> LcE e := by
   sorry
 
@@ -158,7 +158,7 @@ theorem sub_reflexivity : ∀ {E T}, Okt E -> Wft E T -> Sub E T T := by
   ∧ (∀ {E0 p T}, Has E0 p T -> ∀ {E F G}, E0 = E ++ G -> Okt (E ++ F ++ G) -> Has (E ++ F ++ G) p T) := by
   sorry
 
-/-- Coq lines ~1116-1134: sub weakening (packaged) -/ 
+/-- Coq lines ~1116-1134: Sub weakening (packaged) -/ 
 theorem sub_weakening : ∀ {E F G S T},
   Sub (E ++ G) S T -> Okt (E ++ F ++ G) -> Sub (E ++ F ++ G) S T := by
   intro _ _ _ _ _ _; sorry
@@ -190,7 +190,7 @@ theorem has_weakening_empty : ∀ {E p T},
 
 /-- Coq lines ~1219–1248: sub_has_narrowing_aux (packaged)
 Ltac (Coq) used here (for reference only):
-- Hint Constructors sub has : core
+- Hint Constructors Sub Has : core
 - apply_fresh sub_all as Y; apply_ih_bind H0
 - tests EQ: (x = z)
 - lets M: (@okt_narrow Q)
@@ -398,7 +398,7 @@ theorem wft_weaken_right : ∀ {T E F}, Wft E T -> ok (E ++ F) -> Wft (E ++ F) T
 
 /- Regularity of relations -------------------------------------------------- -/
 
-/-- Coq lines ~975-987: sub_has_regular (sub-branch) -/ 
+/-- Coq lines ~975-987: sub_has_regular (Sub-branch) -/ 
 theorem sub_regular : ∀ {E S T}, Sub E S T -> Okt E ∧ Wft E S ∧ Wft E T := by
   intro _ _ _ _; sorry
 
@@ -455,7 +455,7 @@ theorem val_typing_has : ∀ {E u Q}, Value u -> Typing E u Q -> Has E u Q := by
 theorem psub_sub : ∀ {S T}, PSub S T -> Sub [] S T := by
   intro _ _ _; sorry
 
-/-- Coq lines ~1529-1541: possible_types_value/wfe/wft (first two here) -/
+/-- Coq lines ~1529-1541: possible_types_value/Wfe/Wft (first two here) -/
 theorem possible_types_value : ∀ {n : Nat} {p : Trm} {T : Typ}, PossibleTypes n p T -> Value p := by
   intro _ _ _ _; sorry
 
