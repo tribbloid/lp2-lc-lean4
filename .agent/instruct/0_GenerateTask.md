@@ -8,4 +8,4 @@
 - [ ] For each Coq source: Reify the [prompt template](_Template.md) into a concrete prompts and save it
   into `.agent/instruct/<index_number>_<coq_source>.md`
   - Index number should starts from 1.
-- [ ] Finally, make sure that all file references in each generated markdown file under `.agent/instruct` are valid
+- [ ] Finally, scan and fix all broken links in each generated markdown file under `.agent/instruct`, make sure that all file references are valid. Create empty file if needed.
