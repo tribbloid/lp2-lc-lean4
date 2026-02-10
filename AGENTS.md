@@ -30,7 +30,7 @@ The project depends on MathLib and AESOP.
 
 ### Structure
 
-See @.agent/CodeStructure.md
+See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 
 ### Lean Code Convention
 
@@ -48,7 +48,7 @@ See @.agent/CodeStructure.md
 
 #### Conversion
 
-See @.agent/ConversionRules.md
+See [.agent/ConversionRules.md](.agent/ConversionRules.md)
 
 #### Quality Checks
 

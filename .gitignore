@@ -49,4 +49,4 @@ lean
 **/.gradle
 **/.idea
 
-
+.DS_Store
