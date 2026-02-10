@@ -6,7 +6,7 @@ You are in a very safe, sandboxed environment. You can use gradle & lake to comp
 
 ## Tasks (continue from where they left off, mark as complete when done)
 
-- [ ] Explain/Demo Scala language features defined as types in @Lp2lc_coq/Active/Dsub.v using rule in ../Demo.md, write Scala code into ../../example/src/main/scala/lp2lc/example/Dsub.scala
-- [ ] Explain theorems in @Lp2lc_coq/Active/Dsub.v using rule in ../Explain.md, write Scala code & comment into ../../example/src/main/scala/lp2lc/example/Dsub_theorem.scala
-- [ ] Convert types & propositions in @Lp2lc_coq/Active/Dsub.v into @Lp2lc/Active/Dsub.lean using rule in ../Scaffold.md,
-- [ ] Discharge theorems in @Lp2lc_coq/Active/Dsub.lean using rule in ../Discharge.md,
+- [ ] Explain/Demo Scala language features defined as types in [Dsub.v](../../Lp2lc_coq/Active/Dsub.v) using rule in [Demo.md](../Demo.md), write Scala code into [Dsub.scala](../../example/src/main/scala/lp2lc/example/Dsub.scala)
+- [ ] Explain theorems in [Dsub.v](../../Lp2lc_coq/Active/Dsub.v) using rule in [Explain.md](../Explain.md), write Scala code & comment into [Dsub_theorem.scala](../../example/src/main/scala/lp2lc/example/Dsub_theorem.scala)
+- [ ] Convert types & propositions in [Dsub.v](../../Lp2lc_coq/Active/Dsub.v) into [Dsub.lean](../../Lp2lc/Active/Dsub.lean) using rule in [Scaffold.md](../Scaffold.md),
+- [ ] Discharge theorems in [Dsub.lean](../../Lp2lc/Active/Dsub.lean) using rule in [Discharge.md](../Discharge.md),

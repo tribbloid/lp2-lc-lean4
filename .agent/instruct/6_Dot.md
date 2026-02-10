@@ -6,7 +6,7 @@ You are in a very safe, sandboxed environment. You can use gradle & lake to comp
 
 ## Tasks (continue from where they left off, mark as complete when done)
 
-- [ ] Explain/Demo Scala language features defined as types in @Lp2lc_coq/Active/Dot.v using rule in ../Demo.md, write Scala code into ../../example/src/main/scala/lp2lc/example/Dot.scala
-- [ ] Explain theorems in @Lp2lc_coq/Active/Dot.v using rule in ../Explain.md, write Scala code & comment into ../../example/src/main/scala/lp2lc/example/Dot_theorem.scala
-- [ ] Convert types & propositions in @Lp2lc_coq/Active/Dot.v into @Lp2lc/Active/Dot.lean using rule in ../Scaffold.md,
-- [ ] Discharge theorems in @Lp2lc_coq/Active/Dot.lean using rule in ../Discharge.md,
+- [ ] Explain/Demo Scala language features defined as types in [Dot.v](../../Lp2lc_coq/Active/Dot.v) using rule in [Demo.md](../Demo.md), write Scala code into [Dot.scala](../../example/src/main/scala/lp2lc/example/Dot.scala)
+- [ ] Explain theorems in [Dot.v](../../Lp2lc_coq/Active/Dot.v) using rule in [Explain.md](../Explain.md), write Scala code & comment into [Dot_theorem.scala](../../example/src/main/scala/lp2lc/example/Dot_theorem.scala)
+- [ ] Convert types & propositions in [Dot.v](../../Lp2lc_coq/Active/Dot.v) into [Dot.lean](../../Lp2lc/Active/Dot.lean) using rule in [Scaffold.md](../Scaffold.md),
+- [ ] Discharge theorems in [Dot.lean](../../Lp2lc/Active/Dot.lean) using rule in [Discharge.md](../Discharge.md),
