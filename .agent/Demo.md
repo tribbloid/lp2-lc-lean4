@@ -10,14 +10,13 @@
 - e.g. Coq type `Inductive typ` should become:
 
 ```Scala
+
 /**
  * <short explanation> -- <Coq line number>
  * 
- * including cases:
+ * cases:
  * 
- * - typ_top
- * - type_fvar
- * ...
+ * typ_top / type_fvar / ...
  */
 object `typ` {
 }
@@ -30,28 +29,40 @@ object `typ` {
 - e.g. Coq type `Inductive typ` should be explained as:
 
 ```scala
+
 object `typ` {
 
-  // typ_top
-  (_: Any) // typ_top
-
-  // typ_fvar
-  trait Var
-  
-  // typ_all
+  // typ_top: top type
   {
-    trait T0
-    trait ForAll[T1 <: T0]
+    type _ = Any
   }
-}
 
-{ /* Coq definition name - Coq line number */
-  
-  // (using `Inductive typ` as an example)
-  (_: Any) // typ_top
-  
-  trait SomeName // type_fvar
-  // ... (each inductive cases should have its own example)
+  // typ_bvar: new unbounded type with DeBrujin index
+  {
+    trait _1
+  }
+
+  // typ_fvar: new unbounded type with name
+  {
+    trait TypeName
+  }
+
+  // typ_arrow: function type
+  {
+    type In1
+    type In2
+    
+    type _ = In1 => In2
+  }
+
+  // typ_all: upper bound / ForAll
+  {
+    type In1
+    type In2
+    
+    type _ = In2 & In1
+    type _ = In2 {given ev: this.type <:< In1}
+  }
 }
 ```
 
