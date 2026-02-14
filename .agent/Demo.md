@@ -10,6 +10,12 @@
 - e.g. Coq type `Inductive typ` should become:
   ```Scala
   
+  Preamble {
+    type In1 // first input argument
+    type In2 // second input argument
+    type In3 // ...
+  }
+  
   /**
    * <short explanation> -- <Coq line number>
    * 
@@ -17,7 +23,7 @@
    * 
    * typ_top / type_fvar / ...
    */
-  object `typ` {
+  object `typ` extends Preamble {
   }
   
   ... (convert all Coq type definitions into Scala objects)
@@ -31,7 +37,7 @@
 - e.g. Coq type `Inductive typ` should be explained as:
   ```scala
   
-  object `typ` {
+  object `typ` extends Preamble {
   
     // typ_top: top type
     {
@@ -49,20 +55,13 @@
     }
   
     // typ_arrow: function type
-    {
-      type In1
-      type In2
-      
+    { 
       type _ = In1 => In2
     }
   
-    // typ_all: upper bound / ForAll
+    // typ_all: ForAll / type upper bound
     {
-      type In1
-      type In2
-      
       type _ = In2 & In1
-      type _ = In2 {given ev: this.type <:< In1}
     }
   }
   ...
