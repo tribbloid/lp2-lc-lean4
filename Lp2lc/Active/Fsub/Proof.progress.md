@@ -23,7 +23,7 @@
 | subst_ee_intro | subst_ee_intro | yes | substitution |
 | subst_te_open_ee_var | subst_te_open_ee_var | yes | opening/subst |
 | subst_ee_open_te_var | subst_ee_open_te_var | yes | opening/subst |
-| subst_tt_type | subst_tt_type | no | substitution |
+| subst_tt_type | subst_tt_type | yes | substitution |
 | subst_te_term | subst_te_term | no | substitution |
 | subst_ee_term | subst_ee_term | no | substitution |
 | wft_type | wft_type | yes | wf |

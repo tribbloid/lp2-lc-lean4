@@ -635,7 +635,36 @@ theorem subst_ee_open_te_var : ∀ z u e V, DefTerm u →
 -- Coq line 657: Lemma subst_tt_type
 theorem subst_tt_type : ∀ T Z P,
   DefType T → DefType P → DefType (subst_tt Z P T) := by
-  sorry -- Complex proof with substitution under binders
+  intro T Z P hT hP
+  induction hT generalizing Z P with
+  | type_top =>
+      exact DefType.type_top
+  | type_var X =>
+      by_cases hXZ : X = Z
+      · subst hXZ
+        simpa [subst_tt] using hP
+      · simpa [subst_tt, hXZ] using (DefType.type_var X)
+  | type_arrow T1 T2 hT1 hT2 ih1 ih2 =>
+      exact DefType.type_arrow (subst_tt Z P T1) (subst_tt Z P T2) (ih1 Z P hP) (ih2 Z P hP)
+  | type_all L T1 T2 hT1 hT2 ih1 ih2 =>
+      apply DefType.type_all (insert Z L) (subst_tt Z P T1) (subst_tt Z P T2)
+      · exact ih1 Z P hP
+      · intro X hX
+        have hXL : X ∉ L := by
+          intro hXL'
+          apply hX
+          simp [Finset.mem_insert, hXL']
+        have hXZ : X ≠ Z := by
+          intro hXZ'
+          apply hX
+          simp [Finset.mem_insert, hXZ']
+        have hBody : DefType (subst_tt Z P (T2 open_tt_var X)) :=
+          ih2 X hXL Z P hP
+        have hopen : open_tt (subst_tt Z P T2) (typ_fvar X) =
+            subst_tt Z P (open_tt T2 (typ_fvar X)) :=
+          subst_tt_open_tt_var Z X P T2 hXZ hP
+        rw [hopen]
+        exact hBody
 
 -- Coq line 665: Lemma subst_te_term
 theorem subst_te_term : ∀ e Z P,
