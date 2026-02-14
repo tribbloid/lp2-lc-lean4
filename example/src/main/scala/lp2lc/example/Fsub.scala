@@ -38,13 +38,11 @@ object Fsub {
       trait TypeName
     }
 
-    // typ_arrow: function type
-    {
+    { // typ_arrow: function type
       type Out = In1 => In2
     }
 
-    // typ_all: ForAll / upper bound type
-    {
+    { // typ_all: ForAll / upper bound type
       type Out = In1 & In2
     }
   }
