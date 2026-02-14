@@ -27,3 +27,4 @@
 | subst_ee | subst_ee | def |
 | subst_tb | subst_tb | def |
 | map_subst_tb | map_subst_tb | def |
+| transitivity_on | transitivity_on | def |
