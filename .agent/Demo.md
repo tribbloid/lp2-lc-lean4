@@ -31,9 +31,10 @@
 
 ## Writing Scala Examples
 
-- In each Scala object, explain the Scala language feature defined by Coq cases
+- In each Scala object, explain the Scala language feature defined by its Coq type definition
 - search https://www.cis.upenn.edu/~plclub/popl08-tutorial/code/coqdoc and other coq documents for symbols you don't
   know
+- `Preamble.In1`/`In2/.. in Scala should refer to the first/second/.. input argument of the Coq type definition
 - e.g. Coq type `Inductive typ` should be explained as:
   ```scala
   
@@ -41,12 +42,12 @@
   
     // typ_top: top type
     {
-      type _ = Any
+      type Out = Any
     }
   
     // typ_bvar: new unbounded type with DeBrujin index
     {
-      trait _1
+      type Out = trait _1
     }
   
     // typ_fvar: new unbounded type with name
@@ -56,12 +57,12 @@
   
     // typ_arrow: function type
     { 
-      type _ = In1 => In2
+      type Out = In1 => In2
     }
   
-    // typ_all: ForAll / type upper bound
+    // typ_all: ForAll / upper bound type
     {
-      type _ = In2 & In1
+      type Out = In1 & In2
     }
   }
   ...
