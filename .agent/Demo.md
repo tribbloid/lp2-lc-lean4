@@ -20,6 +20,8 @@
  */
 object `typ` {
 }
+
+... (convert all Coq type definitions into Scala objects)
 ```
 
 ## Writing Scala Examples
@@ -64,6 +66,8 @@ object `typ` {
     type _ = In2 {given ev: this.type <:< In1}
   }
 }
+
+...
 ```
 
 ## Verify
