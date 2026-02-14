@@ -11,9 +11,9 @@
 
 ## Writing Scala Examples
 
-- In each Scala object, explain the Scala language feature defined in Coq.
+- In each Scala object, demo the Scala language feature defined by its Coq type definition.
 - Follow existing format and pattern.
-- Do not translate Coq directly into Scala.
+- You are writing demo for an existing language, not writing compiler.
 - Search https://www.cis.upenn.edu/~plclub/popl08-tutorial/code/coqdoc and other coq documents for symbols you don't
   know.
 
