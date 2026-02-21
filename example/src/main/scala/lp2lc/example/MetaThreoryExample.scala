@@ -9,15 +9,13 @@ trait MetaThreoryExample {
     // ...
   }
 
-}
-object MetaThreoryExample extends MetaThreoryExample {
+  private object `coq_name` extends Preamble {
 
-  object `coq_name` extends Preamble {
-
-    { // {{ case }}: {{ short explanation of feature }}
-      // {{ demo in Scala code }}
+    { // {{ case }}: {{ short explanation of language feature / inference rule }}
+      // {{ demo in Scala code, inference result should always be "Out" (for type) or "out" (for term) }}
       type Out = Any
     }
   }
 
 }
+object MetaThreoryExample extends MetaThreoryExample {}
