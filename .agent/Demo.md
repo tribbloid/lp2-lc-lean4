@@ -12,7 +12,11 @@
 ## Write Scala Examples
 
 - In each Scala object, demo the Scala language feature defined by its Coq type definition.
-- Follow existing format and pattern.
+- Follow existing format and pattern, including example
+  in [MetaThreoryExample.scala](../example/src/main/scala/lp2lc/example/MetaThreoryExample.scala).
+- Do not use language or type system feature not defined in Coq, e.g. Demo for System FSub should not
+  use
+  higher-kinded type / type constructor.
 - You are writing demo for an existing language, not writing compiler.
 - Search https://www.cis.upenn.edu/~plclub/popl08-tutorial/code/coqdoc and other coq documents for symbols you don't
   know.
