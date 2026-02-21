@@ -4,12 +4,12 @@
 
 ## Locate Coq proof file
 
-## List Coq types as Scala objects
+## Write Scala Scaffold
 
-- Convert each Coq type definition into an empty Scala sub object.
-- Do not break existing format.
+- Convert each type inference rule in Coq into an empty Scala object.
+- Follow existing format and pattern.
 
-## Writing Scala Examples
+## Write Scala Examples
 
 - In each Scala object, demo the Scala language feature defined by its Coq type definition.
 - Follow existing format and pattern.
