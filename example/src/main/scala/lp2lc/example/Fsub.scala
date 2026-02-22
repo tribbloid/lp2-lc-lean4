@@ -45,13 +45,14 @@ object Fsub extends MetaThreoryExample {
       val freeVar: In1 = ???
     }
 
-    // TODO: abstraction & application can use the same block, like this:
+    // TODO: abstraction & application should use the same block, like trm_abs:
+    //  this should be applied to all the following demos
     { // trm_abs: lambda abstraction (fun x:V => e1)
-      val abs = (x: In1) => x
+      val absOut = (x: In1) => x
 
       // trm_app: function application
       val x: In1 = ???
-      val app: In1 = abs(x)
+      val appOut: In1 = absOut(x)
     }
 
     { // trm_tabs: type abstraction (fun X <: V => e1)

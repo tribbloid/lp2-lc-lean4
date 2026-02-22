@@ -12,7 +12,7 @@ trait MetaThreoryExample {
   private object `coq_name` extends Preamble {
 
     { // {{ case }}: {{ short explanation of language feature / inference rule }}
-      // {{ demo in Scala code, inference result should always be "Out" (for type) or "out" (for term) }}
+      // {{ demo in Scala code, inference result should always have "Out"/"out" suffix }}
       type Out = Any
     }
   }
