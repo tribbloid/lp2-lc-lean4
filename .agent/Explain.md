@@ -2,17 +2,26 @@
 
 ## Locate Coq proof file
 
-## Explain Theorems
+## Write Scala Scaffold
+
+- Convert each theorem/proof in Coq into an empty Scala object.
+- Follow existing format and pattern.
+
+## Explain Theorems in Scala
+
+- explain the effect of each proof on Scala compiler behaviour.
+- Follow existing format and pattern.
 
 - For each theorem in the proof file, explain it in Scala code in the following format:
+
 ```scala
 object `<theorem name>` {
   /**
    * full name: ...
-   * 
+   *
    * purpose: ...
    */
-  
+
   // Scala example that can be successfully compiled, if necessary.
 }
 ```
@@ -22,7 +31,7 @@ object `<theorem name>` {
   full name, and its meaning/purpose.
 - If the subject is a primary conclusive theorem and not a lemma, you should also explain why it entails the soundness
   of the type system.
-- Doublecheck that:
 
 ## Verify
+
     -[ ] All theorems in coq file are explained
