@@ -2,6 +2,10 @@ package lp2lc.example
 
 object Fsub extends MetaThreoryExample {
 
+  /** CAUTION: pre-types are not types! Compilers should check if they are valid
+    * or defective.
+    */
+
   /** Pre-types -- 17
     */
   object `typ` extends Preamble {
@@ -45,8 +49,6 @@ object Fsub extends MetaThreoryExample {
       val freeVar: In1 = ???
     }
 
-    // TODO: abstraction & application should use the same block, like trm_abs:
-    //  this should be applied to all the following demos
     { // trm_abs: lambda abstraction (fun x:V => e1)
       val absOut = (x: In1) => x
 
@@ -56,12 +58,10 @@ object Fsub extends MetaThreoryExample {
     }
 
     { // trm_tabs: type abstraction (fun X <: V => e1)
-      def out[X <: In1](x: X): X = x
-    }
+      def tabsOut[X <: In1](x: X): X = x
 
-    { // trm_tapp: type application
-      def poly[X <: In1](x: X): X = x
-      val out: In1 = poly[In1](???)
+      // trm_tapp: type application
+      val tappOut: In1 => In1 = tabsOut[In1]
     }
   }
 
@@ -102,24 +102,19 @@ object Fsub extends MetaThreoryExample {
 
     { // term_abs: lambda with well-formed param type is a term
       trait V
-      val out: V => V = (x: V) => x
-    }
+      val absOut: V => V = (x: V) => x
 
-    { // term_app: application of two terms is a term
-      val e1: In1 => In2 = ???
-      val e2: In1 = ???
-      val out: In2 = e1(e2)
+      // term_app: application of two terms is a term
+      val e2: V = ???
+      val appOut: V = absOut(e2)
     }
 
     { // term_tabs: type abstraction with well-formed bound is a term
       trait V
-      def out[X <: V](x: X): X = x
-    }
+      def tabsOut[X <: V](x: X): X = x
 
-    { // term_tapp: type application of a term to a well-formed type is a term
-      trait V
-      def e1[X <: V](x: X): X = x
-      val out: V = e1[V](???)
+      // term_tapp: type application of a term to a well-formed type is a term
+      val tappOut: V = tabsOut[V](???)
     }
   }
 
@@ -233,29 +228,22 @@ object Fsub extends MetaThreoryExample {
     }
 
     { // typing_abs: lambda abstraction typing
-      trait V
-      trait T1
-      val out: V => T1 = (x: V) => (??? : T1)
-    }
-
-    { // typing_app: function application typing
       trait T1
       trait T2
-      val e1: T1 => T2 = ???
+      val absOut: T1 => T2 = (x: T1) => (??? : T2)
+
+      // typing_app: function application typing
       val e2: T1 = ???
-      val out: T2 = e1(e2)
+      val appOut: T2 = absOut(e2)
     }
 
     { // typing_tabs: type abstraction typing
-      trait V
-      def out[X <: V](x: X): X = x
-    }
-
-    { // typing_tapp: type application typing, instantiation with subtype
       trait T1
+      def tabsOut[X <: T1](x: X): X = x
+
+      // typing_tapp: type application typing, instantiation with subtype
       trait T extends T1
-      def e1[X <: T1](x: X): X = x
-      val out: T = e1[T](???)
+      val tappOut: T = tabsOut[T](???)
     }
 
     { // typing_sub: subsumption (if e : S and S <: T then e : T)
