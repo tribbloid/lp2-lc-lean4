@@ -45,9 +45,6 @@ def fv : Trm → Finset Var
 
 --We can always pick a fresh variable for a given term out of a fixed set.
 end Trm
-end Lp2lc.Active.STLC
-
-namespace Lp2lc.Active.STLC
 
 /-
 In order to make typing judgments, we need the notion of context.

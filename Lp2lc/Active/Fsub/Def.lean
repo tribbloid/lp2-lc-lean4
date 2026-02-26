@@ -2,9 +2,7 @@
 * Preservation and Progress for System-F with Subtyping - Definitions      *
 * Brian Aydemir & Arthur Charguéraud, March 2007                           *
 ***************************************************************************-/
-
-import Std
-import Mathlib.Data.Finset.Basic
+import Mathlib.Tactic
 
 import Aesop
 import «Lp2lc».Active.Shared
@@ -114,25 +112,18 @@ inductive DefTerm : Trm -> Prop where
 
 -- line 123
 inductive Bind : Type where
-  | bind_sub : Typ -> Bind
-  | bind_typ : Typ -> Bind
+  | bind_sub : Typ -> Bind -- subtyping asumption
+  | bind_typ : Typ -> Bind --typing assumption
 
 -- line 133
-abbrev Env := List (Var × Bind)
-
--- line 134
-def dom (E : Env) : Vars := Env.domOf E
-
--- from LibLN
--- line 145
-def binds (x : Var) (b : Bind) (E : Env) : Prop := E.lookup x = some b
+notation "Env" => List (Var × Bind)
 
 -- line 140
 inductive Wft : Env -> Typ -> Prop where
   | wft_top : (E : Env) ->
       Wft E Typ.typ_top
   | wft_var : (U : Typ) -> (E : Env) -> (X : Var) ->
-      binds X (Bind.bind_sub U) E ->
+      Env.bindsOf X (Bind.bind_sub U) E ->
       Wft E (Typ.typ_fvar X)
   | wft_arrow : (E : Env) -> (T1 T2 : Typ) ->
       Wft E T1 ->
@@ -164,7 +155,7 @@ inductive Sub : Env -> Typ -> Typ -> Prop where
       Wft E (Typ.typ_fvar X) ->
       Sub E (Typ.typ_fvar X) (Typ.typ_fvar X)
   | sub_trans_tvar : (U : Typ) -> (E : Env) -> (T : Typ) -> (X : Var) ->
-      binds X (Bind.bind_sub U) E ->
+      Env.bindsOf X (Bind.bind_sub U) E ->
       Sub E U T ->
       Sub E (Typ.typ_fvar X) T
   | sub_arrow : (E : Env) -> (S1 S2 T1 T2 : Typ) ->
@@ -181,7 +172,7 @@ inductive Sub : Env -> Typ -> Typ -> Prop where
 inductive Typing : Env -> Trm -> Typ -> Prop where
   | typing_var : (E : Env) -> (x : Var) -> (T : Typ) ->
       Okt E ->
-      binds x (Bind.bind_typ T) E ->
+      Env.bindsOf x (Bind.bind_typ T) E ->
       Typing E (Trm.trm_fvar x) T
   | typing_abs : (L : Vars) -> (E : Env) -> (V : Typ) -> (e1 : Trm) -> (T1 : Typ) ->
       (∀ (x : Var), x ∉ L ->
