@@ -1,4 +1,5 @@
 import Mathlib.Tactic
+import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.STLC
 
@@ -11,7 +12,7 @@ deriving DecidableEq, Repr
 -- Defining (pre)terms by recursion --
 inductive Trm : Type
 | bvar : Nat → Trm
-| fvar : Nat → Trm
+| fvar : Var → Trm
 | abs : Typ → Trm → Trm
 | app : Trm → Trm → Trm
 deriving DecidableEq, Repr
@@ -27,7 +28,7 @@ notation t1 " @ " t2 => app t1 t2
 
 -- Defining free variable substitution by induction on terms --
 @[simp]
-def subst (x : Nat) (a : Trm) : Trm → Trm
+def subst (x : Var) (a : Trm) : Trm → Trm
 | bvar i => bvar i
 | fvar y => if y = x then a else (fvar y)
 | abs T u => abs T (subst x a u)
@@ -36,7 +37,7 @@ def subst (x : Nat) (a : Trm) : Trm → Trm
 notation  "["x" // "u"] "t => subst x u t
 
 -- Set of free variables --
-def fv : Trm → Finset Nat
+def fv : Trm → Finset Var
 | bvar _ => {}
 | fvar y => {y}
 | abs _ t => fv t
@@ -54,28 +55,28 @@ The definition is designed to talk about "(x : T)"-like assumptions.
 -/
 open List
 
-notation "context" => List (Nat × Typ)
+notation "context" => List (Var × Typ)
 
 @[simp]
-def context_terms : context → (Finset Nat)
+def context_terms : context → (Finset Var)
 | [] => ∅
 | ((x, _) :: Γ') => {x} ∪ (context_terms Γ')
 
 @[simp]
-def in_context (x : Nat) : context → Prop
+def in_context (x : Var) : context → Prop
 | [] => False
 | (b :: m) => (x = b.1) ∨ (in_context x m)
 
 inductive valid_ctx : context → Prop where
 | valid_nil : valid_ctx []
-| valid_cons (Γ : context) (x : Nat) (T : Typ) :
+| valid_cons (Γ : context) (x : Var) (T : Typ) :
     (valid_ctx Γ) → (¬ (in_context x Γ)) → valid_ctx ((x, T) :: Γ)
 
 open valid_ctx
 
 --Properties of valid contexts
 @[simp]
-def get (x : Nat) : context → Option Typ
+def get (x : Var) : context → Option Typ
 | [] => none
 | (y , S) :: Γ' => if x = y then some S else get x Γ'
 
@@ -107,7 +108,7 @@ notation " {" k " ~> " u "} " t => opening k u t
 def open₀ t u := opening 0 u t
 
 @[simp]
-def closing (k x : Nat) : Trm → Trm
+def closing (k : Nat) (x : Var) : Trm → Trm
 | bvar i => bvar i
 | fvar i => if x = i then (bvar k) else (fvar i)
 | abs T t => abs T (closing (k + 1) x t)
@@ -119,16 +120,16 @@ notation " { " k " <~ " x " } " t => closing k x t
 def close₀ u x := closing 0 x u
 
 inductive lc : Trm → Prop
-| lc_var : ∀ x : Nat, lc (fvar x)
-| lc_abs : ∀ t : Trm, ∀ T : Typ, ∀ L : Finset Nat,
-   (∀ x : Nat, x ∉ L → lc (open₀ t ($ x))) → lc (abs T t)
+| lc_var : ∀ x : Var, lc (fvar x)
+| lc_abs : ∀ t : Trm, ∀ T : Typ, ∀ L : Finset Var,
+   (∀ x : Var, x ∉ L → lc (open₀ t ($ x))) → lc (abs T t)
 | lc_app : ∀ t1 t2 : Trm, lc t1 → lc t2 → lc (app t1 t2)
 
 open lc
 
 /-The predicate “body t” asserts that t describes
 the body of a locally closed abstraction.-/
-def body t := ∃ (L : Finset Nat), ∀ x, x ∉ L → lc (open₀ t ($ x))
+def body t := ∃ (L : Finset Var), ∀ x, x ∉ L → lc (open₀ t ($ x))
 
 end Trm
 end Lp2lc.Active.STLC
@@ -147,19 +148,19 @@ inductive beta_red : Trm → Trm → Prop
 | br_beta : ∀ t1 t2 T, lc (abs T t1) → lc t2 → beta_red (app (abs T t1) t2) (open₀ t1 t2)
 | br_app1 : ∀ t1 t1' t2, lc t2 → beta_red t1 t1' → beta_red (app t1 t2) (app t1' t2)
 | br_app2 : ∀ t1 t2 t2', lc t1 → beta_red t2 t2' → beta_red (app t1 t2) (app t1 t2')
-| br_abs : ∀ t1 t1' T (L : Finset Nat),
+| br_abs : ∀ t1 t1' T (L : Finset Var),
     (∀ x, x ∉ L → beta_red (open₀ t1 ($ x)) (open₀ t1' ($ x))) → beta_red (abs T t1) (abs T t1')
 
 open beta_red
 
 inductive para : Trm → Trm → Prop
 | para_var : ∀ x, para ($ x) ($ x)
-| para_red : ∀ t1 t1' t2 t2' T (L : Finset Nat),
+| para_red : ∀ t1 t1' t2 t2' T (L : Finset Var),
     (∀ x, x ∉ L → para (open₀ t1 ($ x)) (open₀ t1' ($ x))) →
     para t2 t2' →
     para (app (abs T t1) t2) (open₀ t1' t2')
 | para_app : ∀ t1 t1' t2 t2', para t1 t1' → para t2 t2' → para (app t1 t2) (app t1' t2')
-| para_abs : ∀ t1 t1' T (L : Finset Nat) ,
+| para_abs : ∀ t1 t1' T (L : Finset Var) ,
     (∀ x, x ∉ L → para (open₀ t1 ($ x)) (open₀ t1' ($ x))) →
     para (abs T t1) (abs T t1')
 
@@ -187,9 +188,9 @@ open List
 
 --Typing judgment
 inductive typing : context → Trm → Typ → Prop
-| typ_var (Γ : context) (x : Nat) (T : Typ) : (valid_ctx Γ) → (binds x T Γ) → (typing Γ ($ x) T)
-| typ_abs (L : Finset Nat) (Γ : context) (t : Trm) (T1 T2 : Typ) :
-        ((x : Nat) → x ∉ L → (typing ((x, T1) :: Γ) (open₀ t ($ x)) T2)) → (typing Γ (abs T1 t) (typ_arrow T1 T2))
+| typ_var (Γ : context) (x : Var) (T : Typ) : (valid_ctx Γ) → (binds x T Γ) → (typing Γ ($ x) T)
+| typ_abs (L : Finset Var) (Γ : context) (t : Trm) (T1 T2 : Typ) :
+        ((x : Var) → x ∉ L → (typing ((x, T1) :: Γ) (open₀ t ($ x)) T2)) → (typing Γ (abs T1 t) (typ_arrow T1 T2))
 | typ_app (Γ : context) (t₁ t₂ : Trm) (T1 T2 : Typ) :
         (typing Γ t₁ (typ_arrow T1 T2)) → (typing Γ t₂ T1) → typing Γ (app t₁ t₂) T2
 

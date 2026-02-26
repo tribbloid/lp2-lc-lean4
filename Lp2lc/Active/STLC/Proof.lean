@@ -7,17 +7,11 @@ namespace Lp2lc.Active.STLC
 namespace Trm
 
 -- Notations --
-lemma pick_fresh (t : Trm) (L : Finset Nat) : ∃ (x : Nat), x ∉ (L ∪ fv t) := by
-  let s : Finset Nat := L ∪ fv t
-  let m : Nat := s.sup (fun n : Nat => n)
-  refine ⟨m + 1, ?_⟩
-  intro hx
-  have hs : m + 1 ≤ m := by
-    exact Finset.le_sup (f := fun n : Nat => n) hx
-  exact Nat.not_succ_le_self _ hs
+lemma pick_fresh (t : Trm) (L : Finset Var) : ∃ (x : Var), x ∉ (L ∪ fv t) := by
+  simpa using (var_fresh (L ∪ fv t))
 
 -- If a variable does not appear free in a term, then substituting for it has no effect --
-lemma subst_fresh (t u : Trm) (y : Nat) (h : y ∉ (fv t)) : ([y // u] t) = t := by
+lemma subst_fresh (t u : Trm) (y : Var) (h : y ∉ (fv t)) : ([y // u] t) = t := by
   induction t
   case bvar i =>
     rfl
@@ -47,7 +41,7 @@ The definition is designed to talk about "(x : T)"-like assumptions.
 -/
 open List
 
-lemma context_terms_iff_in_list (x : Nat) (Γ : context) :
+lemma context_terms_iff_in_list (x : Var) (Γ : context) :
     (x ∈ context_terms Γ) ↔ in_context x Γ := by
   induction Γ
   case nil =>
@@ -61,7 +55,7 @@ lemma not_context_terms_to_not_in_context x Γ :
   rw [context_terms_iff_in_list]
   simp
 
-lemma in_context_append_neg (x : Nat) (Γ Δ : context) :
+lemma in_context_append_neg (x : Var) (Γ Δ : context) :
     ¬ (in_context x (Γ ++ Δ)) → ¬ (in_context x Γ) ∧ ¬ (in_context x Δ) := by
   intro H
   induction Γ
@@ -72,7 +66,7 @@ lemma in_context_append_neg (x : Nat) (Γ Δ : context) :
     simp [in_context] at H f ⊢
     exact ⟨⟨H.1, (f (H.2)).1⟩, (f (H.2)).2⟩
 
-lemma in_context_append_neg' (x : Nat) (Γ Δ : context) :
+lemma in_context_append_neg' (x : Var) (Γ Δ : context) :
     ¬ (in_context x Γ) ∧ ¬ (in_context x Δ) → ¬ (in_context x (Γ ++ Δ)) := by
   rintro ⟨H1, H2⟩
   induction Γ
@@ -87,7 +81,7 @@ lemma in_context_append_neg' (x : Nat) (Γ Δ : context) :
 open valid_ctx
 
 --Properties of valid contexts
-lemma valid_push (Γ : context) (x : Nat) (T : Typ) :
+lemma valid_push (Γ : context) (x : Var) (T : Typ) :
     valid_ctx Γ → ¬ (in_context x Γ) → valid_ctx ([(x, T)] ++ Γ) := by
   simp only [singleton_append]
   exact (valid_cons Γ x T)
@@ -118,7 +112,7 @@ lemma valid_remove_mid (Γ Δ Ψ : context) :
       exact (in_context_append_neg _ _ _ p').1
       exact (in_context_append_neg _ _ _ (in_context_append_neg _ _ _ p').2).2
 
-lemma valid_remove_mid_cons (x : Nat) (T : Typ) (Γ Δ : context) :
+lemma valid_remove_mid_cons (x : Var) (T : Typ) (Γ Δ : context) :
     valid_ctx (Δ ++ (x, T) :: Γ)
     → valid_ctx (Δ ++ Γ) := by
   intro H
@@ -126,7 +120,7 @@ lemma valid_remove_mid_cons (x : Nat) (T : Typ) (Γ Δ : context) :
   apply valid_remove_mid
   exact H
 
-lemma valid_remove_cons (x : Nat) (T : Typ) (Γ : context) :
+lemma valid_remove_cons (x : Var) (T : Typ) (Γ : context) :
     valid_ctx ((x, T) :: Γ)
     → valid_ctx (Γ) := by
   intro H
@@ -136,16 +130,16 @@ lemma valid_remove_cons (x : Nat) (T : Typ) (Γ : context) :
   exact H
 
 --Extracting (x : T) from a context
-lemma binds_singleton (x : Nat) (T : Typ) : binds x T [(x, T)] := by
+lemma binds_singleton (x : Var) (T : Typ) : binds x T [(x, T)] := by
   simp only [binds]
   simp only [get]
   simp only [ite_true]
 
-lemma binds_singleton_tail (x : Nat) (T : Typ) (Γ : context) :
+lemma binds_singleton_tail (x : Var) (T : Typ) (Γ : context) :
     binds x T ([(x, T)] ++ Γ) := by
   simp [binds, get, append_eq, nil_append, ite_true]
 
-lemma binds_tail (x : Nat) (T : Typ) (Γ Δ : context) :
+lemma binds_tail (x : Var) (T : Typ) (Γ Δ : context) :
     binds x T Γ → (¬ (in_context x Δ)) → binds x T (Δ ++ Γ) := by
   intro bx nx
   simp [binds] at bx ⊢
@@ -159,7 +153,7 @@ lemma binds_tail (x : Nat) (T : Typ) (Γ Δ : context) :
     rw [if_neg nx.1]
     apply (f' nx.2)
 
-lemma binds_head (x : Nat) (T : Typ) (Γ Δ : context) :
+lemma binds_head (x : Var) (T : Typ) (Γ Δ : context) :
     binds x T Γ → binds x T (Γ ++ Δ) := by
   induction Γ
   case nil =>
@@ -178,7 +172,7 @@ lemma binds_head (x : Nat) (T : Typ) (Γ Δ : context) :
       exact (f H)
 
 --Case analysis on binds
-lemma binds_concat_inv' (x : Nat) (T : Typ) (Γ Δ : context) :
+lemma binds_concat_inv' (x : Var) (T : Typ) (Γ Δ : context) :
     binds x T (Γ ++ Δ)
     → ((in_context x Γ) ∨ ¬(binds x T Δ))
     → (binds x T Γ) := by
@@ -207,7 +201,7 @@ lemma binds_concat_inv' (x : Nat) (T : Typ) (Γ Δ : context) :
         right
         exact h2
 
-lemma binds_concat_inv (x : Nat) (T : Typ) (Γ Δ : context) :
+lemma binds_concat_inv (x : Var) (T : Typ) (Γ Δ : context) :
     binds x T (Γ ++ Δ)
     → ((¬ (in_context x Γ)) ∧ (binds x T Δ)) ∨ (binds x T Γ) := by
   intro bxT
@@ -217,7 +211,7 @@ lemma binds_concat_inv (x : Nat) (T : Typ) (Γ Δ : context) :
   push_neg at H
   exact Iff.mpr or_iff_not_imp_left H
 
-lemma binds_singleton_inv (x y : Nat) (X Y : Typ) :
+lemma binds_singleton_inv (x y : Var) (X Y : Typ) :
     binds x X [(y,Y)] → (x = y) ∧ (X = Y) := by
   simp only [binds, get]
   intro H
@@ -226,7 +220,7 @@ lemma binds_singleton_inv (x y : Nat) (X Y : Typ) :
     exact ⟨hxy, H.symm⟩
   . simp [if_neg hxy] at H
 
-lemma binds_mid (x : Nat) (T : Typ) (Δ Γ : context) :
+lemma binds_mid (x : Var) (T : Typ) (Δ Γ : context) :
     valid_ctx (Γ ++ [(x,T)] ++ Δ)
     → binds x T (Γ ++ [(x,T)] ++ Δ) := by
   induction Γ
@@ -247,7 +241,7 @@ lemma binds_mid (x : Nat) (T : Typ) (Δ Γ : context) :
       . simp [if_neg hxy]
         exact (f H')
 
-lemma binds_mid_eq (x : Nat) (T S : Typ) (Γ Δ : context) :
+lemma binds_mid_eq (x : Var) (T S : Typ) (Γ Δ : context) :
     binds x T (Δ ++ [(x,S)] ++ Γ)
     → valid_ctx (Δ ++ [(x,S)] ++ Γ) →  T = S := by
   induction Δ
@@ -268,7 +262,7 @@ lemma binds_mid_eq (x : Nat) (T S : Typ) (Γ Δ : context) :
       . simp [if_neg hxy] at p
         exact (f p H')
 
-lemma binds_mid_eq_cons (x : Nat) (T S : Typ) (Γ Δ : context) :
+lemma binds_mid_eq_cons (x : Var) (T S : Typ) (Γ Δ : context) :
     binds x T (Δ ++ (x,S) :: Γ)
     → valid_ctx (Δ ++ (x,S) :: Γ) → T = S := by
   intro p H
@@ -276,7 +270,7 @@ lemma binds_mid_eq_cons (x : Nat) (T S : Typ) (Γ Δ : context) :
   exact (binds_mid_eq x T S Γ Δ p H)
 
 --Additional properties of binds
-lemma binds_in_context (x : Nat) (T : Typ) (Γ : context) :
+lemma binds_in_context (x : Var) (T : Typ) (Γ : context) :
     binds x T Γ → in_context x Γ := by
   induction Γ
   case nil =>
@@ -291,12 +285,12 @@ lemma binds_in_context (x : Nat) (T : Typ) (Γ : context) :
       intro p
       exact (Or.inr (f p))
 
-lemma binds_fresh (x : Nat) (T : Typ) (Γ : context) :
+lemma binds_fresh (x : Var) (T : Typ) (Γ : context) :
     ¬ in_context x Γ → ¬ binds x T Γ := by
   intro hxin hb
   exact hxin (binds_in_context x T Γ hb)
 
-lemma binds_concat_ok (x : Nat) (T : Typ) (Γ Δ : context) :
+lemma binds_concat_ok (x : Var) (T : Typ) (Γ Δ : context) :
     binds x T Γ -> valid_ctx (Δ ++ Γ) -> binds x T (Δ ++ Γ) := by
   induction Δ
   case nil =>
@@ -317,7 +311,7 @@ lemma binds_concat_ok (x : Nat) (T : Typ) (Γ Δ : context) :
       . simp [if_neg hxy]
         exact (f p H')
 
-lemma binds_weaken (x : Nat) (T : Typ) (Γ Δ Ψ: context) :
+lemma binds_weaken (x : Var) (T : Typ) (Γ Δ Ψ: context) :
     binds x T (Ψ ++ Γ)
     → valid_ctx (Ψ ++ Δ ++ Γ)
     → binds x T (Ψ ++ Δ ++ Γ) := by
@@ -336,11 +330,11 @@ lemma binds_weaken (x : Nat) (T : Typ) (Γ Δ Ψ: context) :
       . simp [if_neg hxy] at p ⊢
         exact (f p H')
 
-lemma binds_weaken_at_head (x : Nat) (T : Typ) (Γ Δ : context) :
+lemma binds_weaken_at_head (x : Var) (T : Typ) (Γ Δ : context) :
     binds x T Δ → valid_ctx (Γ ++ Δ)
     → binds x T (Γ ++ Δ) := (binds_weaken x T Δ Γ [])
 
-lemma binds_remove_mid (x y : Nat) (T S : Typ) (Γ Δ : context) :
+lemma binds_remove_mid (x y : Var) (T S : Typ) (Γ Δ : context) :
     binds x T (Γ ++ ([(y,S)] ++ Δ))
     → x ≠ y → binds x T (Γ ++ Δ) := by
   intro p H
@@ -352,7 +346,7 @@ lemma binds_remove_mid (x y : Nat) (T S : Typ) (Γ Δ : context) :
     exact t11
   . apply (binds_head _ _ _ _ t2)
 
-lemma binds_remove_mid_cons  (x y : Nat) (T S : Typ) (Γ Δ : context) :
+lemma binds_remove_mid_cons  (x y : Var) (T S : Typ) (Γ Δ : context) :
     binds x T (Δ ++ (y, S) :: Γ)
     → x ≠ y → binds x T (Δ ++ Γ) := by
   intro H p
@@ -390,7 +384,7 @@ lemma open_var_fv (t u: Trm) :
   case app t1 t2 ht1 ht2 =>
     simp [opening, fv]
     intro k
-    apply (@Finset.Subset.trans Nat _ ((fv t1 ∪ fv u) ∪ (fv t2 ∪ fv u)) _)
+    apply (@Finset.Subset.trans Var _ ((fv t1 ∪ fv u) ∪ (fv t2 ∪ fv u)) _)
     exact Finset.union_subset_union (ht1 k) (ht2 k)
     simp [Finset.union_assoc]
     refine Finset.union_subset_union_right ?_
@@ -429,7 +423,7 @@ lemma opening_lc_lemma (t u v : Trm) :
    exact (hu2 i j neqij h.2)
 
 ----------------------------------------------------------------------
-lemma close_var_fv (t : Trm) (x : Nat) :
+lemma close_var_fv (t : Trm) (x : Var) :
     (k : Nat) → fv (closing k x t) = (fv t) \ {x} := by
   induction t
   case bvar _ =>
@@ -477,7 +471,7 @@ lemma lc_abs_iff_body : ∀ t T, lc (abs T t) ↔ body t := by
 /-The following lemmas show that opening and closing
 are inverses of each other on variables.-/
 --1) Close(Open)=Id
-lemma close_open (x : Nat) (t : Trm) :
+lemma close_open (x : Var) (t : Trm) :
     x ∉ fv t → (k : Nat) → closing k x (opening k ($ x) t) = t := by
   intro hx
   induction t
@@ -505,11 +499,11 @@ lemma close_open (x : Nat) (t : Trm) :
     exact (fun p => ⟨hu1 hx.1 p, hu2 hx.2 p⟩)
 
 --special case of close_open at j=0
-lemma close_open_var (x : Nat) (t : Trm) :
+lemma close_open_var (x : Var) (t : Trm) :
     x ∉ fv t → close₀ (open₀ t ($ x)) x = t := fun hx => close_open x t hx 0
 
 --Using this fact, we can show open₀ is injective on terms.
-lemma open₀_injective (x : Nat) (t1 t2 : Trm) :
+lemma open₀_injective (x : Var) (t1 t2 : Trm) :
     x ∉ fv t1 → x ∉ fv t2 → open₀ t1 ($ x) = open₀ t2 ($ x) → t1 = t2 := by
   intro hx1 hx2 eq
   rw [← close_open_var x t1 hx1]
@@ -519,7 +513,7 @@ lemma open₀_injective (x : Nat) (t1 t2 : Trm) :
 ----------------------------------------------------------------------
 --2) Open(Close)=Id
 --First, we need a lemma.
-lemma open_close_lemma (x y z : Nat) (t : Trm) : x ≠ y → y ∉ fv t
+lemma open_close_lemma (x y z : Var) (t : Trm) : x ≠ y → y ∉ fv t
     → ((i j : Nat) → i ≠ j → ({ i ~> ($ y)} ({j ~> ($ z)} ({j <~ x} t)))
       = ({j ~> ($ z)} ({j <~ x} ({i ~> ($ y)} t))) ):= by
   intro neqxy hy
@@ -569,7 +563,7 @@ lemma open_close_lemma (x y z : Nat) (t : Trm) : x ≠ y → y ∉ fv t
     simp [fv] at hy
     exact ⟨hu1 hy.1 i j neqij, hu2 hy.2 i j neqij⟩
 
-lemma open_close (x : Nat) (t : Trm) :
+lemma open_close (x : Var) (t : Trm) :
     lc t → (k : Nat) → opening k ($ x) (closing k x t) = t := by
   intro lct
   induction lct
@@ -603,13 +597,13 @@ lemma open_close (x : Nat) (t : Trm) :
     exact ⟨hu1 j, hu2 j⟩
 
 --special case of open_close at j=0
-lemma open_close_var (x : Nat) (t : Trm) :
+lemma open_close_var (x : Var) (t : Trm) :
     lc t → open₀ (close₀ t x) ($ x) = t := by
   intro lct
   exact (open_close x t lct 0)
 
 --Using this fact, we can show closing is injective on terms.
-lemma closing_injective (x i : Nat) (t1 t2 : Trm) :
+lemma closing_injective (x : Var) (i : Nat) (t1 t2 : Trm) :
     lc t1 → lc t2 → closing i x t1 = closing i x t2 → t1 = t2 := by
   intro lct1 lct2 eq
   rw [← open_close x t1 lct1 i]
@@ -628,10 +622,9 @@ lemma opening_lc (t u : Trm) : lc t → (k : Nat) → (t = {k ~> u} t) := by
     intro i
     simp [open₀] at hv
     rw [opening]
-    have ⟨x, hx0⟩ := pick_fresh ($ 0) L
+    have ⟨x, hx0⟩ := pick_fresh u L
     have hx : x ∉ L := by
-      simp [fv] at hx0
-      exact hx0.2
+      exact (Finset.notMem_union.mp hx0).1
     have h : v = { i + 1 ~> u } v := by
       apply (opening_lc_lemma v ($ x) u (i + 1) 0)
       exact Nat.succ_ne_zero i
@@ -648,7 +641,7 @@ lemma open₀_lc (t u : Trm) : lc t → (t = open₀ t u) := by
   apply (opening_lc t u lce 0)
 
 --Free variable substitution distributes over index substitution.
-lemma subst_open_rec (t1 t2 u : Trm) : (i j : Nat) → lc u
+lemma subst_open_rec (t1 t2 u : Trm) : (i : Var) → (j : Nat) → lc u
     → ([i // u] ({j ~> t2} t1)) = ({j ~> [i // u] t2} ([i // u] t1)) := by
   induction t1
   case bvar k =>
@@ -681,7 +674,7 @@ lemma subst_open_rec (t1 t2 u : Trm) : (i j : Nat) → lc u
 
 --The lemma above is most often used with k = 0 and e2 as some fresh variable.
 --Therefore, it simplifies matters to define the following useful corollary.
-lemma subst_open_var (t u : Trm) : lc u → (i j : Nat) → i ≠ j
+lemma subst_open_var (t u : Trm) : lc u → (i j : Var) → i ≠ j
     → (open₀ ([i // u] t) ($ j)) = ([i // u] (open₀ t ($ j))) := by
   intro lcu i j neqij
   simp [open₀]
@@ -692,7 +685,7 @@ lemma subst_open_var (t u : Trm) : lc u → (i j : Nat) → i ≠ j
 
 --When we open a term, we can instead open the term with a fresh variable and
 --then substitute for that variable.
-lemma subst_intro (t u : Trm) : lc u → (x : Nat) → x ∉ (fv t)
+lemma subst_intro (t u : Trm) : lc u → (x : Var) → x ∉ (fv t)
     → (open₀ t u) = ([x // u] (open₀ t ($ x))) := by
   intro lcu x hx
   simp [open₀]
@@ -702,7 +695,7 @@ lemma subst_intro (t u : Trm) : lc u → (x : Nat) → x ∉ (fv t)
   exact hx
   rfl
 
-lemma subst_lc (t u : Trm) : (x : Nat) → lc t → lc u → lc ([x // u] t) := by
+lemma subst_lc (t u : Trm) : (x : Var) → lc t → lc u → lc ([x // u] t) := by
   intro x lct lcu
   induction lct
   case lc_var y =>
@@ -1002,7 +995,7 @@ lemma para_subst_all t1 t2 s1 s2 :
     exact (para_regular _ _ s1ps2).2
     exact (para_regular _ _ s1ps2).1
 
-lemma para_open_out t t' u u' (L : Finset Nat) :
+lemma para_open_out t t' u u' (L : Finset Var) :
     (∀ x, x ∉ L → para (open₀ t ($ x)) (open₀ u ($ x)))
     → para t' u' → para (open₀ t t') (open₀ u u') := by
   intro f tpu'
@@ -1118,7 +1111,7 @@ lemma multi_red_abs_intro t1 t2 T x :
   exact hx1
   exact hx2
 
-lemma multi_red_abs t1 t2 T (L : Finset Nat):
+lemma multi_red_abs t1 t2 T (L : Finset Var):
     (∀ x, x ∉ L → multi_red (open₀ t1 ($ x)) (open₀ t2 ($ x)))
     → multi_red (λT, t1) (λT, t2) := by
   intro f
@@ -1441,7 +1434,7 @@ lemma typing_weakening (Γ Δ : context) (t : Trm) (T : Typ) :
   exact H
   exact p
 
-lemma typing_weakening_head (Γ : context) (t : Trm) (T S : Typ) (x : Nat):
+lemma typing_weakening_head (Γ : context) (t : Trm) (T S : Typ) (x : Var):
     ¬ (in_context x Γ) → typing Γ t T
     → typing ((x , S) :: Γ) t T := by
   intro notxl typt
@@ -1944,7 +1937,7 @@ namespace Trm
 
 -- Defining substitutions over contexts --
 @[simp]
-def multi_subst (L : Finset ℕ) (f : L → Trm) : Trm → Trm
+def multi_subst (L : Finset Var) (f : L → Trm) : Trm → Trm
 | bvar i => bvar i
 | fvar y => if h : (y ∈ L) then (f ⟨y, h⟩) else (fvar y)
 | abs T u => abs T (multi_subst L f u)
@@ -2397,11 +2390,10 @@ theorem SC_lambda A1 A2 t : lc (λA1, t)
         intro t'' bred
         cases bred
         next lct' lcu =>
-          let ⟨z, hz⟩ := pick_fresh t {0}
+          let ⟨z, hz⟩ := pick_fresh t ∅
           simp at hz
-          push_neg at hz
-          rw [subst_intro _ _ Hu.1 z hz.2]
-          apply (F u z hz.2 Hu.2)
+          rw [subst_intro _ _ Hu.1 z hz]
+          apply (F u z hz Hu.2)
         next t1' t'bt1' lcu =>
           cases t'bt1'
           next t'' L a =>
