@@ -734,9 +734,9 @@ theorem wft_open : ∀ E U T1 T2,
 -- Relations between well-formed environment and types well-formed in environments
 
 -- Helper lemma: binds is preserved by weakening
-theorem binds_weaken : ∀ x b E F G,
-  binds x b (E ++ G) →
-  binds x b (E ++ F ++ G) := by
+theorem binds_weaken : ∀ (x : Var) (b : Bind) (E F G : Env),
+  (E ++ G).lookup x = some b →
+  (E ++ F ++ G).lookup x = some b := by
   sorry -- Complex list induction
 
 -- Coq line 795: Lemma ok_from_okt
@@ -746,12 +746,12 @@ theorem ok_from_okt : ∀ E,
 
 -- Coq line 805: Lemma wft_from_env_has_sub
 theorem wft_from_env_has_sub : ∀ x U E,
-  Okt E → binds x (bind_sub U) E → Wft E U := by
+  Okt E → E.lookup x = some (bind_sub U) → Wft E U := by
   sorry -- Requires weakening lemma
 
 -- Coq line 824: Lemma wft_from_env_has_typ
 theorem wft_from_env_has_typ : ∀ x U E,
-  Okt E → binds x (bind_typ U) E → Wft E U := by
+  Okt E → E.lookup x = some (bind_typ U) → Wft E U := by
   sorry -- Requires weakening lemma
 
 -- Coq line 843: Lemma wft_from_okt_typ
@@ -847,12 +847,12 @@ theorem notin_fv_tt_open : ∀ Y X T,
 
 -- Coq line 989: Lemma notin_fv_wf
 theorem notin_fv_wf : ∀ E X T,
-  Wft E T → X ∉ dom E → X ∉ fv_tt T := by
+  Wft E T → X ∉ Env.domOf E → X ∉ fv_tt T := by
   sorry
 
 -- Coq line 999: Lemma map_subst_tb_id
 theorem map_subst_tb_id : ∀ G Z P,
-  Okt G → Z ∉ dom G → G = map_subst_tb Z P G := by
+  Okt G → Z ∉ Env.domOf G → G = map_subst_tb Z P G := by
   sorry -- Need properties of subst_tt when variable not free
 
 -- Regularity of relations
