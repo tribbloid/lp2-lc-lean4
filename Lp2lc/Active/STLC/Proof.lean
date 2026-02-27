@@ -1349,13 +1349,8 @@ lemma multi_red_iff_multi_para : ∀ t1 t2, (multi_red t1 t2) ↔ (multi_para t1
 
 
 
-open Typ
-open Trm
-open List
-
 --Typing judgment
 open typing
-open lc
 
 --Typing judgments only allow valid contexts.
 lemma typing_valid_ctx  Γ t T : typing Γ t T → valid_ctx Γ := by
@@ -1636,11 +1631,6 @@ lemma preservation_multi_red E t T :
 
 
 
-open Typ
-open Trm
-open typing
-open lc
-
 lemma value_regular (t : Trm) : value t → lc t := by
   intro valt
   induction valt
@@ -1747,15 +1737,6 @@ lemma progress e T : typing [] e T → (value e) ∨ (∃ e', eval e e') := by
       exact hs3
 
 
-
-open Typ
-open Trm
-open typing
-open lc
-open beta_red
-open para
-open multi_red
-open multi_para
 
 lemma para_diamond t t1 :
     para t t1 → ∀ t2, para t t2
@@ -1903,12 +1884,6 @@ theorem beta_red_confluence :
   exact (multi_para_diamond t t1 t2 ⟨trt1 , trt2⟩)
 
 
-
-open Typ
-open Trm
-open beta_red
-open multi_red
-open lc
 
 namespace Trm
 
@@ -2111,11 +2086,6 @@ lemma multi_subst_lc t Γ : lc t
 
 end Trm
 
-
-open Typ
-open Trm
-open lc
-open typing
 
 namespace Trm
 
@@ -2485,11 +2455,6 @@ theorem strong_normalization t T : typing [] t T → SN t := by
 
 end Trm
 
-
-open Typ
-open Trm
-open typing
-open lc
 
 theorem typing_unique :
     ∀ t, lc t → ∀ Γ T1 T2,

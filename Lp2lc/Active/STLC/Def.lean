@@ -139,7 +139,6 @@ namespace Trm
 
 end Trm
 
-open Typ
 open Trm
 
 /- # Different Forms of β-reductions -/
@@ -175,22 +174,16 @@ inductive multi_para : Trm → Trm → Prop
 | m_para_head : ∀ (t1 : Trm) (t2 : Trm) (t3 : Trm), (multi_para t1 t2) → para t2 t3 → multi_para t1 t3
 
 
-open Typ
-open Trm
-
 --Typing judgment
 inductive typing : Env → Trm → Typ → Prop
 | typ_var (Γ : Env) (x : Var) (T : Typ) : (valid_ctx Γ) → (binds x T Γ) → (typing Γ ($ x) T)
 | typ_abs (L : Finset Var) (Γ : Env) (t : Trm) (T1 T2 : Typ) :
-        ((x : Var) → x ∉ L → (typing ((x, Bind.bind_typ T1) :: Γ) (open₀ t ($ x)) T2)) → (typing Γ (abs T1 t) (typ_arrow T1 T2))
+        ((x : Var) → x ∉ L → (typing ((x, Bind.bind_typ T1) :: Γ) (open₀ t ($ x)) T2)) → (typing Γ (abs T1 t) (Typ.typ_arrow T1 T2))
 | typ_app (Γ : Env) (t₁ t₂ : Trm) (T1 T2 : Typ) :
-        (typing Γ t₁ (typ_arrow T1 T2)) → (typing Γ t₂ T1) → typing Γ (app t₁ t₂) T2
+        (typing Γ t₁ (Typ.typ_arrow T1 T2)) → (typing Γ t₂ T1) → typing Γ (app t₁ t₂) T2
 
 
 --Typing judgments only allow valid contexts.
-
-open Typ
-open Trm
 
 inductive value : Trm → Prop
 | value_abs : ∀ (e : Trm) (T : Typ), lc (abs T e) → value (abs T e)
