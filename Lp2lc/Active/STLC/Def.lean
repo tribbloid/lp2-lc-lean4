@@ -50,9 +50,12 @@ end Trm
 In order to make typing judgments, we need the notion of context.
 The definition is designed to talk about "(x : T)"-like assumptions.
 -/
-open List
 
-notation "context" => List (Var × Typ)
+-- line 123
+inductive Bind : Type where
+  | bind_typ : Typ -> Bind --typing assumption
+
+notation "context" => List (Var × Bind)
 
 @[simp]
 def context_terms : context → (Finset Var)
