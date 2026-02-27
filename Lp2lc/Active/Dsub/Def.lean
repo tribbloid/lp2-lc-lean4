@@ -18,8 +18,6 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Dsub
 
-open Lp2lc.Active
-
 -- Basic aliases
 abbrev Vars := Finset Var
 

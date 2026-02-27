@@ -9,8 +9,6 @@ import Mathlib.Data.Finset.Basic
 import Aesop
 import «Lp2lc».Active.Shared
 
-open Lp2lc.Active
-
 namespace Lp2lc.Active.Ddia
 
 /- Coq lines 23–41: Pre-types and pre-terms (mutual) -/

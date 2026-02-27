@@ -11,8 +11,6 @@ import «Lp2lc».Active.Dsubsup.Auxiliary
 
 namespace Lp2lc.Active.Dsubsup
 
-open Trm Typ
-
 /-!
 Sections below follow Coq file structure: Definitions → Substitution props →
 Well-formedness lemmas → Weakening/Narrowing/Substitution → Regularity →

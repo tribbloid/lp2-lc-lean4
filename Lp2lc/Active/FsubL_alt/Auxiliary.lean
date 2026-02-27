@@ -3,8 +3,6 @@ import «Lp2lc».Active.FsubL_alt.Def
 
 namespace Lp2lc.Active.FsubL_alt
 
-open DefType DefTerm Wft Okt Value Red Typ Trm Bind
-
 -- Aesop hints to mimic Coq `Hint Constructors`
 -- These make constructor-style goals easier to solve during later proof work.
 attribute [aesop safe] DefType.type_top

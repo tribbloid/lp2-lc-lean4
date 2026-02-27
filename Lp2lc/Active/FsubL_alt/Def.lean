@@ -11,8 +11,6 @@ increasing Coq line-number comments.
 Do NOT place theorems here. This file contains only data types and definitions.
 -/
 
-open Lp2lc.Active
-
 namespace Lp2lc.Active.FsubL_alt
 
 -- line 30
@@ -134,8 +132,6 @@ deriving instance Repr, DecidableEq for Bind
 abbrev Env := List (Var × Bind)
 
 -- line 153 (dom/binds helpers)
-open Lp2lc.Active
-
 def dom (E : Env) : Vars := Env.domOf E
 
 -- from LibLN

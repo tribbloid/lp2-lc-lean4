@@ -7,8 +7,6 @@ import «Lp2lc».Active.Ddia.Def
 
 namespace Lp2lc.Active.Ddia
 
-open DefType DefTerm Wft Wfe Okt Value Red Typing Typ Trm
-
 /- Aesop hints to mimic Coq `Hint Constructors` (no axioms). -/
 attribute [aesop safe] DefType.type_bot
 attribute [aesop safe] DefType.type_top

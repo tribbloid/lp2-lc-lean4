@@ -5,8 +5,6 @@ import «Lp2lc».Active.Dot.Def
 
 namespace Lp2lc.Active.Dot
 
-open Aesop
-
 -- Register constructors to emulate Coq Hint Constructors
 attribute [aesop safe] Label.label_typ Label.label_trm
 attribute [aesop safe] Avar.avar_b Avar.avar_f

@@ -14,9 +14,6 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Dsubsup
 
-open Lp2lc.Active
-open Std
-
 /-- Abstract variable type shared across modules -/
 abbrev Var := Lp2lc.Active.Var
 abbrev Vars := Lp2lc.Active.Vars

@@ -244,8 +244,6 @@ namespace Subst
     G.map (fun p => (p.1, subst_typ z u p.2))
 end Subst
 
-open Subst
-
 -- Free variables (Vars is Finset Var)
 -- [Coq: Dot.v line 139]
 def fv_avar (a : Avar) : Vars :=

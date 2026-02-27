@@ -13,8 +13,6 @@ import «Lp2lc».Active.Dsub.Def
 
 namespace Lp2lc.Active.Dsub
 
-open DefType DefTerm Wft Wfe Okt Value Sub Has Typing Red Typ Trm
-
 -- Aesop hints for constructor-style goals
 attribute [aesop safe] DefType.type_top
 attribute [aesop safe] DefType.type_sel

@@ -6,8 +6,6 @@ import Mathlib.Tactic
 
 import Aesop
 import «Lp2lc».Active.Shared
-open Lp2lc.Active
-
 namespace Lp2lc.Active.Fsub
 
 -- Var and Vars are provided by Shared
