@@ -47,7 +47,7 @@ def fv : Trm → Finset Var
 end Trm
 
 /-
-In order to make typing judgments, we need the notion of context.
+In order to make typing judgments, we need the notion of Env.
 The definition is designed to talk about "(x : T)"-like assumptions.
 -/
 
@@ -55,33 +55,41 @@ The definition is designed to talk about "(x : T)"-like assumptions.
 inductive Bind : Type where
   | bind_typ : Typ -> Bind --typing assumption
 
-notation "context" => List (Var × Bind)
+notation "Env" => List (Var × Bind)
 
 @[simp]
-def context_terms : context → (Finset Var)
+def Bind.unbox_typ : Bind → Typ
+| Bind.bind_typ T => T
+
+@[simp]
+def context_terms : Env → (Finset Var)
 | [] => ∅
 | ((x, _) :: Γ') => {x} ∪ (context_terms Γ')
 
 @[simp]
-def in_context (x : Var) : context → Prop
+def in_context (x : Var) : Env → Prop
 | [] => False
 | (b :: m) => (x = b.1) ∨ (in_context x m)
 
-inductive valid_ctx : context → Prop where
+inductive valid_ctx : Env → Prop where
 | valid_nil : valid_ctx []
-| valid_cons (Γ : context) (x : Var) (T : Typ) :
-    (valid_ctx Γ) → (¬ (in_context x Γ)) → valid_ctx ((x, T) :: Γ)
+| valid_cons (Γ : Env) (x : Var) (T : Typ) :
+    (valid_ctx Γ) → (¬ (in_context x Γ)) → valid_ctx ((x, Bind.bind_typ T) :: Γ)
 
 open valid_ctx
 
 --Properties of valid contexts
 @[simp]
-def get (x : Var) : context → Option Typ
+def get (x : Var) : Env → Option Typ
 | [] => none
-| (y , S) :: Γ' => if x = y then some S else get x Γ'
+| (y , S) :: Γ' =>
+    if x = y then
+      some (Bind.unbox_typ S)
+    else
+      get x Γ'
 
 @[simp]
-def binds x T (Γ : context) := (get x Γ = some T)
+def binds x T (Γ : Env) := (get x Γ = some T)
 
 --Properties of binds
 end Lp2lc.Active.STLC
@@ -187,11 +195,11 @@ open Trm
 open List
 
 --Typing judgment
-inductive typing : context → Trm → Typ → Prop
-| typ_var (Γ : context) (x : Var) (T : Typ) : (valid_ctx Γ) → (binds x T Γ) → (typing Γ ($ x) T)
-| typ_abs (L : Finset Var) (Γ : context) (t : Trm) (T1 T2 : Typ) :
-        ((x : Var) → x ∉ L → (typing ((x, T1) :: Γ) (open₀ t ($ x)) T2)) → (typing Γ (abs T1 t) (typ_arrow T1 T2))
-| typ_app (Γ : context) (t₁ t₂ : Trm) (T1 T2 : Typ) :
+inductive typing : Env → Trm → Typ → Prop
+| typ_var (Γ : Env) (x : Var) (T : Typ) : (valid_ctx Γ) → (binds x T Γ) → (typing Γ ($ x) T)
+| typ_abs (L : Finset Var) (Γ : Env) (t : Trm) (T1 T2 : Typ) :
+        ((x : Var) → x ∉ L → (typing ((x, Bind.bind_typ T1) :: Γ) (open₀ t ($ x)) T2)) → (typing Γ (abs T1 t) (typ_arrow T1 T2))
+| typ_app (Γ : Env) (t₁ t₂ : Trm) (T1 T2 : Typ) :
         (typing Γ t₁ (typ_arrow T1 T2)) → (typing Γ t₂ T1) → typing Γ (app t₁ t₂) T2
 
 open typing
