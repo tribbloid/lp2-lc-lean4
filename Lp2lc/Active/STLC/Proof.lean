@@ -31,9 +31,7 @@ lemma subst_fresh (t u : Trm) (y : Var) (h : y ∉ (fv t)) : ([y // u] t) = t :=
     exact ⟨(h1 h.1), (h2 h.2)⟩
 
 end Trm
-end Lp2lc.Active.STLC
 
-namespace Lp2lc.Active.STLC
 
 /-
 In order to make typing judgments, we need the notion of Env.
@@ -78,13 +76,12 @@ lemma in_context_append_neg' (x : Var) (Γ Δ : Env) :
     exact ⟨H1.1, f H1.2⟩
 
 -- We can only bind variable once per Env --
-open valid_ctx
 
 --Properties of valid contexts
 lemma valid_push (Γ : Env) (x : Var) (T : Typ) :
     valid_ctx Γ → ¬ (in_context x Γ) → valid_ctx ((([(x, Bind.bind_typ T)] : Env) ++ Γ)) := by
   simp only [singleton_append]
-  exact (valid_cons Γ x T)
+  exact (valid_ctx.valid_cons Γ x T)
 
 lemma valid_remove_mid (Γ Δ Ψ : Env) :
     valid_ctx (Ψ ++ Δ ++ Γ) -> valid_ctx (Ψ ++ Γ) := by
@@ -105,7 +102,7 @@ lemma valid_remove_mid (Γ Δ Ψ : Env) :
     cases H
     next x S p p' =>
       simp only [cons_append, append_assoc] at f p ⊢
-      apply valid_cons
+      apply valid_ctx.valid_cons
       exact (f p)
       apply in_context_append_neg'
       constructor
@@ -354,9 +351,7 @@ lemma binds_remove_mid_cons  (x y : Var) (T S : Typ) (Γ Δ : Env) :
   rwa [append_cons, append_assoc] at H
   exact p
 
-end Lp2lc.Active.STLC
 
-namespace Lp2lc.Active.STLC
 
 namespace Trm
 
@@ -785,13 +780,10 @@ lemma open_close_subst t x y :
     exact ⟨f1 k, f2 k⟩
 
 end Trm
-end Lp2lc.Active.STLC
 
-namespace Lp2lc.Active.STLC
 
 open Typ
 open Trm
-open valid_ctx
 open lc
 
 /- # Different Forms of β-reductions -/
@@ -1355,9 +1347,7 @@ lemma multi_red_iff_multi_para : ∀ t1 t2, (multi_red t1 t2) ↔ (multi_para t1
   . exact (multi_red_to_multi_para t1 t2)
   . exact (multi_para_to_multi_red t1 t2)
 
-end Lp2lc.Active.STLC
 
-namespace Lp2lc.Active.STLC
 
 open Typ
 open Trm
@@ -1365,7 +1355,6 @@ open List
 
 --Typing judgment
 open typing
-open valid_ctx
 open lc
 
 --Typing judgments only allow valid contexts.
@@ -1403,7 +1392,7 @@ lemma typing_weakening_strengthened' (Γ Δ Ψ' : Env) (t : Trm) (T : Typ) :
     simp at hx
     apply (fT2 x hx.1 ((x, Bind.bind_typ T1) :: φ))
     simp [p]
-    apply valid_cons
+    apply valid_ctx.valid_cons
     exact f
     simp [append_cons]
     intro q
@@ -1645,17 +1634,12 @@ lemma preservation_multi_red E t T :
   next t2 t3 _ t2bt3 ih =>
       apply (preservation_beta_red _ _ _ ih _ t2bt3)
 
-end Lp2lc.Active.STLC
 
-namespace Lp2lc.Active.STLC
 
 open Typ
 open Trm
-open valid_ctx
 open typing
 open lc
-
-open value
 
 lemma value_regular (t : Trm) : value t → lc t := by
   intro valt
@@ -1664,7 +1648,6 @@ lemma value_regular (t : Trm) : value t → lc t := by
     exact lcu
 
 --call by value
-open eval
 
 lemma eval_regular (e1 e2 : Trm) : eval e1 e2 → lc e1 ∧ lc e2  := by
   intro ev12
@@ -1734,7 +1717,7 @@ lemma progress e T : typing [] e T → (value e) ∨ (∃ e', eval e e') := by
     simp [p.symm] at bx
   case typ_abs L Δ s S1 S2 f _ =>
     left
-    apply value_abs
+    apply value.value_abs
     apply lc_abs s S1 L
     intro x hx
     exact (typing_regular _ _ _ (f x hx))
@@ -1747,30 +1730,26 @@ lemma progress e T : typing [] e T → (value e) ∨ (∃ e', eval e e') := by
       . cases val1
         next s3 T lcs3 =>
           use (open₀ s3 s2)
-          apply eval_beta
+          apply eval.eval_beta
           exact lcs3
           exact val2
       . simp [val2] at h2
         rcases h2 with ⟨s3 , hs3⟩
         use (s1 @ s3)
-        apply eval_app2
+        apply eval.eval_app2
         exact (value_regular _ val1)
         exact hs3
     . simp [val1] at h1
       rcases h1 with ⟨s3 , hs3⟩
       use (s3 @ s2)
-      apply eval_app1
+      apply eval.eval_app1
       exact (typing_regular _ _ _ g)
       exact hs3
 
-end Lp2lc.Active.STLC
 
-
-namespace Lp2lc.Active.STLC
 
 open Typ
 open Trm
-open valid_ctx
 open typing
 open lc
 open beta_red
@@ -1923,9 +1902,7 @@ theorem beta_red_confluence :
   simp [multi_red_iff_multi_para] at trt1 trt2 ⊢
   exact (multi_para_diamond t t1 t2 ⟨trt1 , trt2⟩)
 
-end Lp2lc.Active.STLC
 
-namespace Lp2lc.Active.STLC
 
 open Typ
 open Trm
@@ -2133,9 +2110,7 @@ lemma multi_subst_lc t Γ : lc t
     apply (lc_app _ _ hu1 hu2)
 
 end Trm
-end Lp2lc.Active.STLC
 
-namespace Lp2lc.Active.STLC
 
 open Typ
 open Trm
@@ -2509,15 +2484,11 @@ theorem strong_normalization t T : typing [] t T → SN t := by
   exact (fun y hy => SC_var _ _)
 
 end Trm
-end Lp2lc.Active.STLC
 
-namespace Lp2lc.Active.STLC
 
 open Typ
 open Trm
-open List
 open typing
-open valid_ctx
 open lc
 
 theorem typing_unique :

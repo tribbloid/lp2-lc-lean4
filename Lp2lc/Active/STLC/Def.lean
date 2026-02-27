@@ -76,7 +76,6 @@ inductive valid_ctx : Env → Prop where
 | valid_cons (Γ : Env) (x : Var) (T : Typ) :
     (valid_ctx Γ) → (¬ (in_context x Γ)) → valid_ctx ((x, Bind.bind_typ T) :: Γ)
 
-open valid_ctx
 
 --Properties of valid contexts
 @[simp]
@@ -133,21 +132,15 @@ namespace Trm
        (∀ x : Var, x ∉ L → lc (open₀ t ($ x))) → lc (abs T t)
     | lc_app : ∀ t1 t2 : Trm, lc t1 → lc t2 → lc (app t1 t2)
 
-    open lc
 
     /-The predicate “body t” asserts that t describes
     the body of a locally closed abstraction.-/
     def body (t : Trm) : Prop := ∃ (L : Finset Var), ∀ x : Var, x ∉ L → lc (open₀ t ($ x))
 
 end Trm
-end Lp2lc.Active.STLC
-
-namespace Lp2lc.Active.STLC
 
 open Typ
 open Trm
-open valid_ctx
-open lc
 
 /- # Different Forms of β-reductions -/
 
@@ -159,7 +152,6 @@ inductive beta_red : Trm → Trm → Prop
 | br_abs : ∀ (t1 : Trm) (t1' : Trm) (T : Typ) (L : Finset Var),
     (∀ x : Var, x ∉ L → beta_red (open₀ t1 ($ x)) (open₀ t1' ($ x))) → beta_red (abs T t1) (abs T t1')
 
-open beta_red
 
 inductive para : Trm → Trm → Prop
 | para_var : ∀ (x : Var), para ($ x) ($ x)
@@ -172,27 +164,19 @@ inductive para : Trm → Trm → Prop
     (∀ x : Var, x ∉ L → para (open₀ t1 ($ x)) (open₀ t1' ($ x))) →
     para (abs T t1) (abs T t1')
 
-open para
 
 inductive multi_red : Trm → Trm → Prop
 | mr_refl : ∀ (t : Trm), lc t → multi_red t t
 | mr_head : ∀ (t1 : Trm) (t2 : Trm) (t3 : Trm), (multi_red t1 t2) → beta_red t2 t3 → multi_red t1 t3
 
-open multi_red
 
 inductive multi_para : Trm → Trm → Prop
 | m_para_refl : ∀ (t : Trm), lc t → multi_para t t
 | m_para_head : ∀ (t1 : Trm) (t2 : Trm) (t3 : Trm), (multi_para t1 t2) → para t2 t3 → multi_para t1 t3
 
-open multi_para
-
-end Lp2lc.Active.STLC
-
-namespace Lp2lc.Active.STLC
 
 open Typ
 open Trm
-open List
 
 --Typing judgment
 inductive typing : Env → Trm → Typ → Prop
@@ -202,31 +186,20 @@ inductive typing : Env → Trm → Typ → Prop
 | typ_app (Γ : Env) (t₁ t₂ : Trm) (T1 T2 : Typ) :
         (typing Γ t₁ (typ_arrow T1 T2)) → (typing Γ t₂ T1) → typing Γ (app t₁ t₂) T2
 
-open typing
-open valid_ctx
-open lc
 
 --Typing judgments only allow valid contexts.
-end Lp2lc.Active.STLC
-
-namespace Lp2lc.Active.STLC
 
 open Typ
 open Trm
-open valid_ctx
-open typing
-open lc
 
 inductive value : Trm → Prop
 | value_abs : ∀ (e : Trm) (T : Typ), lc (abs T e) → value (abs T e)
 
-open value
 
 inductive eval : Trm → Trm → Prop
 | eval_beta : ∀ (e1 : Trm) (e2 : Trm) (T : Typ), lc (abs T e1) → value e2 → eval (app (abs T e1) e2) (open₀ e1 e2)
 | eval_app1 : ∀ (e1 : Trm) (e1' : Trm) (e2 : Trm), lc e2 → eval e1 e1' → eval (app e1 e2) (app e1' e2)
 | eval_app2 : ∀ (e1 : Trm) (e2 : Trm) (e2' : Trm), lc e1 → eval e2 e2' → eval (app e1 e2) (app e1 e2')
 
-open eval
 
 end Lp2lc.Active.STLC
