@@ -125,46 +125,6 @@ def fv_te : Trm -> Finset Var
   | Trm.tabs t => fv_te t
   | Trm.tapp t T => fv_te t ∪ Typ.fv T
 
-end Trm
-
-inductive Bind : Type where
-  | bind_tvar : Bind
-  | bind_typ : Typ -> Bind
-deriving DecidableEq, Repr
-
-notation "Env" => List (Var × Bind)
-
-@[simp]
-def context_terms : Env -> Finset Var
-  | [] => ∅
-  | (x, _) :: Gamma' => {x} ∪ context_terms Gamma'
-
-@[simp]
-def in_context (x : Var) (Gamma : Env) : Prop := x ∈ context_terms Gamma
-
-inductive valid_ctx : Env -> Prop where
-  | valid_nil : valid_ctx []
-  | valid_tvar (Gamma : Env) (X : Var) :
-      valid_ctx Gamma -> ¬ in_context X Gamma -> valid_ctx ((X, Bind.bind_tvar) :: Gamma)
-  | valid_typ (Gamma : Env) (x : Var) (T : Typ) :
-      valid_ctx Gamma -> Typ.lc T -> ¬ in_context x Gamma -> valid_ctx ((x, Bind.bind_typ T) :: Gamma)
-
-@[simp]
-def get_typ (x : Var) : Env -> Option Typ
-  | [] => none
-  | (y, b) :: Gamma' =>
-      if x = y then
-        match b with
-        | Bind.bind_typ T => some T
-        | Bind.bind_tvar => none
-      else
-        get_typ x Gamma'
-
-@[simp]
-def binds (x : Var) (T : Typ) (Gamma : Env) : Prop := get_typ x Gamma = some T
-
-namespace Trm
-
 @[simp]
 def opening_ee (k : Nat) (u : Trm) : Trm -> Trm
   | Trm.bvar i => Ops.open_bvar Trm.bvar k i u
@@ -226,6 +186,42 @@ def body_te (t : Trm) : Prop :=
   exists L : Finset Var, forall X : Var, X ∉ L -> lc (open_te0 t (Typ.fvar X))
 
 end Trm
+
+inductive Bind : Type where
+  | bind_tvar : Bind
+  | bind_typ : Typ -> Bind
+deriving DecidableEq, Repr
+
+notation "Env" => List (Var × Bind)
+
+@[simp]
+def context_terms : Env -> Finset Var
+  | [] => ∅
+  | (x, _) :: Gamma' => {x} ∪ context_terms Gamma'
+
+@[simp]
+def in_context (x : Var) (Gamma : Env) : Prop := x ∈ context_terms Gamma
+
+inductive valid_ctx : Env -> Prop where
+  | valid_nil : valid_ctx []
+  | valid_tvar (Gamma : Env) (X : Var) :
+      valid_ctx Gamma -> ¬ in_context X Gamma -> valid_ctx ((X, Bind.bind_tvar) :: Gamma)
+  | valid_typ (Gamma : Env) (x : Var) (T : Typ) :
+      valid_ctx Gamma -> Typ.lc T -> ¬ in_context x Gamma -> valid_ctx ((x, Bind.bind_typ T) :: Gamma)
+
+@[simp]
+def get_typ (x : Var) : Env -> Option Typ
+  | [] => none
+  | (y, b) :: Gamma' =>
+      if x = y then
+        match b with
+        | Bind.bind_typ T => some T
+        | Bind.bind_tvar => none
+      else
+        get_typ x Gamma'
+
+@[simp]
+def binds (x : Var) (T : Typ) (Gamma : Env) : Prop := get_typ x Gamma = some T
 
 open Trm
 
