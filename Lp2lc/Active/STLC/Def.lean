@@ -85,31 +85,41 @@ end Trm
 inductive Bind : Type where
   | bind_typ : Typ -> Bind --typing assumption
 
+
+namespace Bind
+section
+variable (b : Bind)
+
 @[simp]
-def Bind.unbox_typ : Bind → Typ
-| Bind.bind_typ T => T
+def unbox_typ : Typ :=
+  match b with
+  | Bind.bind_typ T => T
+
+end
+end Bind
 
 /-
 In order to make typing judgments, we need the notion of Env.
 The definition is designed to talk about "(x : T)"-like assumptions.
 -/
-notation "Env" => List (Var × Bind)
+abbrev Env := List (Var × Bind)
+
+namespace Env
 
 @[simp]
-def context_terms : Env → (Finset Var)
+def context_terms : Env → Finset Var
 | [] => ∅
-| ((x, _) :: Γ') => {x} ∪ (context_terms Γ')
+| ((x, _) :: Γ') => {x} ∪ (Env.context_terms Γ')
 
 @[simp]
 def in_context (x : Var) : Env → Prop
 | [] => False
-| (b :: m) => (x = b.1) ∨ (in_context x m)
+| (b :: m) => (x = b.1) ∨ (Env.in_context x m)
 
 inductive valid_ctx : Env → Prop where
-| valid_nil : valid_ctx []
+| valid_nil : Env.valid_ctx []
 | valid_cons (Γ : Env) (x : Var) (T : Typ) :
-    (valid_ctx Γ) → (¬ (in_context x Γ)) → valid_ctx ((x, Bind.bind_typ T) :: Γ)
-
+    (Env.valid_ctx Γ) → (¬ (Env.in_context x Γ)) → Env.valid_ctx ((x, Bind.bind_typ T) :: Γ)
 
 --Properties of valid contexts
 @[simp]
@@ -119,10 +129,13 @@ def get (x : Var) : Env → Option Typ
     if x = y then
       some (Bind.unbox_typ S)
     else
-      get x Γ'
+      Env.get x Γ'
 
+-- proof/refute if x inhabits T
 @[simp]
-def binds (x : Var) (T : Typ) (Γ : Env) : Prop := (get x Γ = some T)
+def binds (x : Var) (T : Typ) (Γ : Env) : Prop := (Env.get x Γ = some T)
+
+end Env
 
 open Trm
 
@@ -161,7 +174,7 @@ inductive multi_para : Trm → Trm → Prop
 
 --Typing judgment
 inductive typing : Env → Trm → Typ → Prop
-| typ_var (Γ : Env) (x : Var) (T : Typ) : (valid_ctx Γ) → (binds x T Γ) → (typing Γ ($ x) T)
+| typ_var (Γ : Env) (x : Var) (T : Typ) : (Env.valid_ctx Γ) → (Env.binds x T Γ) → (typing Γ ($ x) T)
 | typ_abs (L : Finset Var) (Γ : Env) (t : Trm) (T1 T2 : Typ) :
         ((x : Var) → x ∉ L → (typing ((x, Bind.bind_typ T1) :: Γ) (open₀ t ($ x)) T2)) → (typing Γ (abs T1 t) (Typ.typ_arrow T1 T2))
 | typ_app (Γ : Env) (t₁ t₂ : Trm) (T1 T2 : Typ) :
