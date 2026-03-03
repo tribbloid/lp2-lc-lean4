@@ -107,9 +107,9 @@ abbrev Env := List (Var × Bind)
 namespace Env
 
 @[simp]
-def context_terms : Env → Finset Var
+def terms : Env → Finset Var
 | [] => ∅
-| ((x, _) :: Γ') => {x} ∪ (Env.context_terms Γ')
+| ((x, _) :: Γ') => {x} ∪ (Env.terms Γ')
 
 @[simp]
 def in_context (x : Var) : Env → Prop

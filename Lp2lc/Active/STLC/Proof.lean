@@ -40,16 +40,16 @@ The definition is designed to talk about "(x : T)"-like assumptions.
 open List
 
 lemma context_terms_iff_in_list (x : Var) (Γ : Env) :
-    (x ∈ Env.context_terms Γ) ↔ Env.in_context x Γ := by
+    (x ∈ Env.terms Γ) ↔ Env.in_context x Γ := by
   induction Γ
   case nil =>
-    simp only [Env.context_terms, Finset.notMem_empty, Env.in_context]
+    simp only [Env.terms, Finset.notMem_empty, Env.in_context]
   case cons b Γ' f =>
-    simp only [Env.context_terms, Finset.mem_union, Finset.mem_singleton, Env.in_context]
+    simp only [Env.terms, Finset.mem_union, Finset.mem_singleton, Env.in_context]
     rw [f]
 
 lemma not_context_terms_to_not_in_context x Γ :
-    ¬ (x ∈ Env.context_terms Γ) →  ¬ Env.in_context x Γ := by
+    ¬ (x ∈ Env.terms Γ) →  ¬ Env.in_context x Γ := by
   rw [context_terms_iff_in_list]
   simp
 
@@ -1382,7 +1382,7 @@ lemma typing_weakening_strengthened' (Γ Δ Ψ' : Env) (t : Trm) (T : Typ) :
     exact (binds_weaken _ _ _ _ _ fT' f)
   case typ_abs L φ' s T1 T2 _ fT2 =>
     intro φ p f
-    apply typ_abs (L ∪ Env.context_terms (φ ++ Δ ++ Γ))
+    apply typ_abs (L ∪ Env.terms (φ ++ Δ ++ Γ))
     intro x hx
     simp at hx
     apply (fT2 x hx.1 ((x, Bind.bind_typ T1) :: φ))
@@ -1487,7 +1487,7 @@ lemma typing_subst_strengthened' Γ Δ' t u S T z :
   case typ_abs L ψ s S1 S2 h h' =>
     intro Δ p _ f
     simp only [subst]
-    apply typ_abs (L ∪ Env.context_terms (Δ ++ Γ) ∪ {z}) (Δ ++ Γ) ([z // u] s) S1 S2
+    apply typ_abs (L ∪ Env.terms (Δ ++ Γ) ∪ {z}) (Δ ++ Γ) ([z // u] s) S1 S2
     intro x hx
     have hxz : x ≠ z := by
       intro q
@@ -1571,7 +1571,7 @@ lemma typing_abs_intro (Γ : Env) (x : Var) (t : Trm) (T1 T2 : Typ) :
     → typing ((x, Bind.bind_typ T1) :: Γ) (open₀ t ($ x)) T2
     → typing Γ (abs T1 t) (T1 -> T2) := by
   intro hx fx R
-  apply typ_abs (fv t ∪ Env.context_terms Γ)
+  apply typ_abs (fv t ∪ Env.terms Γ)
   intro y hy
   simp at hy
   apply (typing_rename _ _ _ _ _ _ hx fx)
@@ -1897,18 +1897,18 @@ def multi_subst (L : Finset Var) (f : L → Trm) : Trm → Trm
 
 --context_type takes a term in a Env and outputs its type
 @[simp]
-def context_type Γ (x : Env.context_terms Γ) : Typ :=
+def context_type Γ (x : Env.terms Γ) : Typ :=
   match Γ, x with
-  | [], ⟨_, h⟩ => by simp [Env.context_terms] at h
+  | [], ⟨_, h⟩ => by simp [Env.terms] at h
   | (x, Bind.bind_typ T) :: Γ, ⟨x', h⟩ =>
     if ha : x' = x then
       T
     else
-      context_type Γ ⟨x', by simpa [Env.context_terms, ha] using h⟩
+      context_type Γ ⟨x', by simpa [Env.terms, ha] using h⟩
 
 --substitution over the empty Env does nothing
-lemma multi_subst_over_emp t (f : Env.context_terms [] → Trm) :
-    (multi_subst (Env.context_terms []) f t) = t := by
+lemma multi_subst_over_emp t (f : Env.terms [] → Trm) :
+    (multi_subst (Env.terms []) f t) = t := by
   induction t
   case bvar i =>
     simp
@@ -1923,8 +1923,8 @@ lemma multi_subst_over_emp t (f : Env.context_terms [] → Trm) :
 
 --substitution over [(x,T)] is the same as usual (single) substitution
 lemma multi_subst_at_singleton t x T :
-    (f : Env.context_terms (([(x, Bind.bind_typ T)] : Env)) → Trm)
-    → (multi_subst (Env.context_terms (([(x, Bind.bind_typ T)] : Env))) f t)
+    (f : Env.terms (([(x, Bind.bind_typ T)] : Env)) → Trm)
+    → (multi_subst (Env.terms (([(x, Bind.bind_typ T)] : Env))) f t)
       = ([x // (f ⟨x, by simp⟩)] t) := by
   intro f
   induction t
@@ -1945,8 +1945,8 @@ lemma multi_subst_at_singleton t x T :
 --if we have a function of terms of a Env, say f,
 --for a term u and variable x, we can extend the f with mapping x → u
 @[simp]
-def add_term Γ (f : Env.context_terms Γ → Trm)
-    (u : Trm) y T (x : Env.context_terms ((y, Bind.bind_typ T) :: Γ)) : Trm := by
+def add_term Γ (f : Env.terms Γ → Trm)
+    (u : Trm) y T (x : Env.terms ((y, Bind.bind_typ T) :: Γ)) : Trm := by
   rcases x with ⟨x' , h⟩
   by_cases p : x' = y
   . exact u
@@ -1955,15 +1955,15 @@ def add_term Γ (f : Env.context_terms Γ → Trm)
 
 --If y does not appear in t, then substitution over a Env (y,T) ++ Γ
 --is the same as substitution over Γ
-lemma multi_subst_fresh Γ t u y T (h : y ∉ (fv t)) (f : Env.context_terms Γ → Trm) :
-    (multi_subst (Env.context_terms ((y, Bind.bind_typ T) :: Γ)) (add_term Γ f u y T) t)
-     = (multi_subst (Env.context_terms Γ) f t) := by
+lemma multi_subst_fresh Γ t u y T (h : y ∉ (fv t)) (f : Env.terms Γ → Trm) :
+    (multi_subst (Env.terms ((y, Bind.bind_typ T) :: Γ)) (add_term Γ f u y T) t)
+     = (multi_subst (Env.terms Γ) f t) := by
   induction t
   case bvar i =>
     rfl
   case fvar x =>
     simp [fv] at h
-    simp only [multi_subst, Env.context_terms, Finset.mem_union, Finset.mem_singleton, add_term]
+    simp only [multi_subst, Env.terms, Finset.mem_union, Finset.mem_singleton, add_term]
     have p : x ≠ y := fun q => h q.symm
     simp [p]
   case abs T u hu =>
@@ -1978,10 +1978,10 @@ lemma multi_subst_fresh Γ t u y T (h : y ∉ (fv t)) (f : Env.context_terms Γ 
 
 
 --substitution over a Env distributes over opening
-lemma multi_subst_open_lemma_1 t1 t2 Γ : (f : Env.context_terms Γ → Trm)
-   → (∀ x (h : x ∈ Env.context_terms Γ), lc (f ⟨x,h⟩)) → (j : ℕ)
-   → (multi_subst (Env.context_terms Γ) f ({j ~> t2} t1))
-     = ({j ~> multi_subst (Env.context_terms Γ) f t2} (multi_subst (Env.context_terms Γ) f t1)) := by
+lemma multi_subst_open_lemma_1 t1 t2 Γ : (f : Env.terms Γ → Trm)
+   → (∀ x (h : x ∈ Env.terms Γ), lc (f ⟨x,h⟩)) → (j : ℕ)
+   → (multi_subst (Env.terms Γ) f ({j ~> t2} t1))
+     = ({j ~> multi_subst (Env.terms Γ) f t2} (multi_subst (Env.terms Γ) f t1)) := by
   induction t1
   case bvar k =>
     simp
@@ -1992,7 +1992,7 @@ lemma multi_subst_open_lemma_1 t1 t2 Γ : (f : Env.context_terms Γ → Trm)
       <;> exact hjy
   case fvar y =>
    intro f lcf j
-   by_cases hy : (y ∈ Env.context_terms Γ)
+   by_cases hy : (y ∈ Env.terms Γ)
    . simp [opening, multi_subst, hy]
      exact (opening_lc (f ⟨y, hy⟩) _ (lcf y hy) _)
    . simp [opening, multi_subst, hy]
@@ -2007,10 +2007,10 @@ lemma multi_subst_open_lemma_1 t1 t2 Γ : (f : Env.context_terms Γ → Trm)
 
 --special case of previous fact at j=0
 lemma multi_subst_open_lemma_2 Γ t u y T : lc u → y ∉ fv t
-    → (f : Env.context_terms Γ → Trm)
-    → (∀ x (h : x ∈ Env.context_terms Γ), lc (f ⟨x,h⟩))
-    → (multi_subst (Env.context_terms ((y, Bind.bind_typ T) :: Γ)) (add_term Γ f u y T) (open₀ t ($ y)))
-      = (open₀ (multi_subst (Env.context_terms Γ) f t) u) := by
+    → (f : Env.terms Γ → Trm)
+    → (∀ x (h : x ∈ Env.terms Γ), lc (f ⟨x,h⟩))
+    → (multi_subst (Env.terms ((y, Bind.bind_typ T) :: Γ)) (add_term Γ f u y T) (open₀ t ($ y)))
+      = (open₀ (multi_subst (Env.terms Γ) f t) u) := by
   intro lcu hy f lcf
   rw [open₀ , multi_subst_open_lemma_1, multi_subst, ← open₀]
   rw [multi_subst_fresh Γ t u y T hy f]
@@ -2024,18 +2024,18 @@ lemma multi_subst_open_lemma_2 Γ t u y T : lc u → y ∉ fv t
 
 --When we open a term, we can instead open the term with a fresh variable and
 --then multi-substitute for that variable.
-lemma multi_subst_open Γ t y : y ∉ Env.context_terms Γ
-    → (f : Env.context_terms Γ → Trm)
-    → (∀ x (h : x ∈ Env.context_terms Γ), lc (f ⟨x,h⟩))
-    → (multi_subst (Env.context_terms Γ) f (open₀ t ($ y)))
-      = (open₀ (multi_subst (Env.context_terms Γ) f t) ($ y)) := by
+lemma multi_subst_open Γ t y : y ∉ Env.terms Γ
+    → (f : Env.terms Γ → Trm)
+    → (∀ x (h : x ∈ Env.terms Γ), lc (f ⟨x,h⟩))
+    → (multi_subst (Env.terms Γ) f (open₀ t ($ y)))
+      = (open₀ (multi_subst (Env.terms Γ) f t) ($ y)) := by
   intro hy f lcf
   rw [open₀ , multi_subst_open_lemma_1, multi_subst, ← open₀]
   simp [hy]
   apply lcf
 
 --if (x,T) appears in Env Γ, then the Env map sends Γ x to T
-lemma context_type_eq_bind Γ (x : Env.context_terms Γ) T :
+lemma context_type_eq_bind Γ (x : Env.terms Γ) T :
     Env.valid_ctx Γ → Env.binds x T Γ → context_type Γ x = T := by
   induction Γ
   case nil =>
@@ -2046,7 +2046,7 @@ lemma context_type_eq_bind Γ (x : Env.context_terms Γ) T :
     cases b with
     | bind_typ S =>
     intro vld bnd
-    simp only [context_type, Env.context_terms]
+    simp only [context_type, Env.terms]
     by_cases p : y = ↑x
     . simp [p] at bnd ⊢
       apply bnd
@@ -2061,21 +2061,21 @@ lemma context_type_eq_bind Γ (x : Env.context_terms Γ) T :
 --if a term is locally closed, and there is list of locally closed terms, then
 --substition with these terms is also locally closed.
 lemma multi_subst_lc t Γ : lc t
-    → (f : Env.context_terms Γ → Trm)
-    → (∀ x (h : x ∈ Env.context_terms Γ), lc (f ⟨x,h⟩))
-    → lc ((multi_subst (Env.context_terms Γ) f t)) := by
+    → (f : Env.terms Γ → Trm)
+    → (∀ x (h : x ∈ Env.terms Γ), lc (f ⟨x,h⟩))
+    → lc ((multi_subst (Env.terms Γ) f t)) := by
   intro lct f lcf
   induction lct
   case lc_var y =>
     rw [multi_subst]
-    by_cases hxy : y ∈ Env.context_terms Γ
+    by_cases hxy : y ∈ Env.terms Γ
     . simp [if_pos, hxy]
       exact (lcf y hxy)
     . simp [if_neg, hxy]
       exact (lc_var y)
   case lc_abs u T L a hu =>
     simp
-    apply lc_abs _ _ (L ∪ (Env.context_terms Γ))
+    apply lc_abs _ _ (L ∪ (Env.terms Γ))
     intro x hx
     simp at hx
     rw [← multi_subst_open Γ u x hx.2 f lcf]
@@ -2390,15 +2390,15 @@ theorem SC_lambda_term A1 A2 t : lc (λ A1,t)
 -- Suppose (x1:A1, x2:A2, ..., xn:An) ⊢ t : A. Then for any strongly computable ui:Ai,
 -- we have ([x1//u1, x2//u2, ..., xn//un] t) is strongly computable.
 lemma SC_subst t A : typing Γ t A
-    → (f : (Env.context_terms Γ) → Trm)
-    → (∀ x (h : x ∈ (Env.context_terms Γ)), (f ⟨x, h⟩) ∈ SC (context_type Γ ⟨x, h⟩))
-    → (multi_subst (Env.context_terms Γ) f t) ∈ SC A := by
+    → (f : (Env.terms Γ) → Trm)
+    → (∀ x (h : x ∈ (Env.terms Γ)), (f ⟨x, h⟩) ∈ SC (context_type Γ ⟨x, h⟩))
+    → (multi_subst (Env.terms Γ) f t) ∈ SC A := by
   intro typt
   induction typt
   case typ_var Δ y T vld bnd =>
     intro f Hf
     simp only [multi_subst]
-    by_cases h : y ∈ Env.context_terms Δ
+    by_cases h : y ∈ Env.terms Δ
     . simp [h, ← context_type_eq_bind Δ ⟨y, h⟩ T vld bnd]
       apply (Hf y h)
     . simp [h]
@@ -2412,7 +2412,7 @@ lemma SC_subst t A : typing Γ t A
     intros u1 scu1
     let ⟨x, hx⟩ := pick_fresh u L
     simp at hx
-    have this : (∀ y (s : y ∈ (Env.context_terms ((x, Bind.bind_typ T1) :: Δ))),
+    have this : (∀ y (s : y ∈ (Env.terms ((x, Bind.bind_typ T1) :: Δ))),
         ((add_term Δ f u1 x T1) ⟨y, s⟩) ∈ SC (context_type ((x, Bind.bind_typ T1) :: Δ) ⟨y, s⟩)) := by
       intro y s
       by_cases p : y = x
@@ -2429,7 +2429,7 @@ lemma SC_subst t A : typing Γ t A
     intro f Hf
     cases (ih1 f Hf)
     next L R =>
-      apply R (multi_subst (Env.context_terms Δ) f t2)
+      apply R (multi_subst (Env.terms Δ) f t2)
       constructor
       . apply multi_subst_lc
         apply (typing_regular _ _ _ typt2)
@@ -2443,8 +2443,8 @@ theorem strong_normalization t T : typing [] t T → SN t := by
   apply CR1 T t
   let ⟨x, hx⟩ := pick_fresh t ∅
   simp at hx
-  let f : Env.context_terms (([(x, Bind.bind_typ T)] : Env)) → Trm := fun _ => ($ x)
-  have this : multi_subst (Env.context_terms (([(x, Bind.bind_typ T)] : Env))) f t = t := by
+  let f : Env.terms (([(x, Bind.bind_typ T)] : Env)) → Trm := fun _ => ($ x)
+  have this : multi_subst (Env.terms (([(x, Bind.bind_typ T)] : Env))) f t = t := by
     rw [multi_subst_at_singleton]
     rw [subst_fresh _ _ _ hx]
   rw [← this]
@@ -2509,7 +2509,7 @@ theorem typing_decidable :
         next _ ih =>
           simp [h] at ih
   case lc_abs u T L a ih =>
-    have ⟨x,hx⟩ := pick_fresh u (L ∪ Env.context_terms Γ)
+    have ⟨x,hx⟩ := pick_fresh u (L ∪ Env.terms Γ)
     simp at hx
     cases H : (ih x hx.1 ((x, Bind.bind_typ T) :: Γ)
         (valid_push Γ x T vld (not_context_terms_to_not_in_context _ _ hx.2.1)))
@@ -2517,7 +2517,7 @@ theorem typing_decidable :
       rcases pos with ⟨S, p⟩
       left
       use (T -> S)
-      apply (typ_abs (fv u ∪ Env.context_terms Γ) Γ)
+      apply (typ_abs (fv u ∪ Env.terms Γ) Γ)
       intro y hy
       simp at hy
       apply typing_rename _ _ _ _ _ _
@@ -2528,7 +2528,7 @@ theorem typing_decidable :
       rintro ⟨S,p⟩
       cases p
       next L' S' h =>
-        have ⟨z,hz⟩ := pick_fresh u (L' ∪ Env.context_terms Γ)
+        have ⟨z,hz⟩ := pick_fresh u (L' ∪ Env.terms Γ)
         simp at hz
         apply neg
         use S'
