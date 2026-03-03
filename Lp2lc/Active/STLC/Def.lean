@@ -124,22 +124,6 @@ def get (x : Var) : Env → Option Typ
 @[simp]
 def binds (x : Var) (T : Typ) (Γ : Env) : Prop := (get x Γ = some T)
 
-class StldDirectDef(preTyp preTrm bind : Type) where
-  env : Type
-  trm_subst : Var → Trm → Trm → Trm
-  trm_fv : Trm → Finset Var
-  bind_unbox_typ : Bind → Typ
-  env_context_terms : Env → Finset Var
-  env_in_context : Var → Env → Prop
-  env_get : Var → Env → Option Typ
-  env_binds : Var → Typ → Env → Prop
-  trm_opening : Nat → Trm → Trm → Trm
-  trm_open0 : Trm → Trm → Trm
-  trm_closing : Nat → Var → Trm → Trm
-  trm_close0 : Trm → Var → Trm
-  trm_body : Trm → Prop
-
-
 open Trm
 
 /- # Different Forms of β-reductions -/
