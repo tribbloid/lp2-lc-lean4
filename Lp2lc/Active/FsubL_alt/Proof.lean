@@ -434,7 +434,11 @@ open Typ Trm Bind
 -- Coq line 1660: value_not_bot
 @[simp] theorem value_not_bot : ∀ t T,
   Value t → Typing [] t T → T ≠ typ_bot := by
-  sorry -- TODO
+  intro t T hv hty hT
+  subst hT
+  have hpt : PossibleTypes t typ_bot := by
+    exact possible_types_typing t typ_bot hty hv
+  cases hpt
 
 -- Coq line 1668: canonical_form_abs
 @[simp] theorem canonical_form_abs : ∀ t U1 U2,

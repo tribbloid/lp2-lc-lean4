@@ -2213,7 +2213,7 @@ def SC : Typ → Set Trm
 lemma SC_regular A t : t ∈ (SC A) → lc t := by
   intro H
   induction A
-  case typ_base =>
+  case typ_all =>
     exact H.1
   case typ_arrow t1 t2 _ _ =>
     exact H.1
@@ -2231,7 +2231,7 @@ def neutral : Trm → Prop
 theorem CR2 : ∀ A t, (∀ t', t ∈ SC A → multi_red t t' → t' ∈ SC A) := by
   intro A
   induction A
-  case typ_base =>
+  case typ_all =>
     intro t t' sct tmt'
     exact ⟨(multi_red_regular _ _ tmt').2, (multi_red_preserves_SN _ _ sct.2 tmt')⟩
   case typ_arrow A1 A2 _ ih2 =>
@@ -2250,7 +2250,7 @@ theorem CR_1_3 : ∀ A t,
     (lc t → neutral t → (∀ t', beta_red t t' → t' ∈ SC A) → t ∈ SC A) := by --CR3
   intro A
   induction A
-  case typ_base =>
+  case typ_all =>
     intro t
     constructor
     . exact (fun sct => sct.2) --CR1 base case
@@ -2296,7 +2296,7 @@ def CR3 A t := (CR_1_3 A t).2
 -- Free variables are always strongly computable.
 lemma SC_var A x : ($ x) ∈ SC A := by
   induction A
-  case typ_base =>
+  case typ_all =>
     constructor
     . apply lc_var x
     . apply SN.sn

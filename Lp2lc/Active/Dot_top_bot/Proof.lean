@@ -550,24 +550,39 @@ theorem has_member_rules_inv (G : Ctx) (x : Var) (T : Typ) (A : TypLabel) (S U :
   (T = Typ.typ_rcd (Dec.dec_typ A S U)) ∨
   (∃ T1 T2, T = Typ.typ_and T1 T2 ∧ (HasMember G x T1 A S U ∨ HasMember G x T2 A S U)) ∨
   (∃ T', T = Typ.typ_bnd T' ∧ HasMember G x (open_typ x T') A S U) ∨
-  (∃ y B T', T = Typ.typ_sel (Avar.avar_f y) B ∧
-     TyTrm ty_precise sub_general G (Trm.trm_var (Avar.avar_f y)) (Typ.typ_rcd (Dec.dec_typ B T' T')) ∧
+  (∃ y B T' m1 m2, T = Typ.typ_sel (Avar.avar_f y) B ∧
+     TyTrm m1 m2 G (Trm.trm_var (Avar.avar_f y)) (Typ.typ_rcd (Dec.dec_typ B T' T')) ∧
      HasMember G x T' A S U) ∨
   (T = Typ.typ_bot) := by
-  -- TODO
-  sorry
+  intro proofOfBottom
+  cases proofOfBottom with
+  | has_refl _ _ _ _ _ =>
+      exact Or.inl rfl
+  | has_and1 _ _ T1 T2 _ _ _ proofOfBottom =>
+      exact Or.inr (Or.inl ⟨T1, T2, rfl, Or.inl proofOfBottom⟩)
+  | has_and2 _ _ T1 T2 _ _ _ proofOfBottom =>
+      exact Or.inr (Or.inl ⟨T1, T2, rfl, Or.inr proofOfBottom⟩)
+  | has_bnd _ _ T' _ _ _ proofOfBottom =>
+      exact Or.inr (Or.inr (Or.inl ⟨T', rfl, proofOfBottom⟩))
+  | has_sel _ _ y B T' _ _ _ proofOfTyping proofOfBottom =>
+      refine Or.inr (Or.inr (Or.inr (Or.inl ?_)))
+      exact ⟨y, B, T', _, _, rfl, proofOfTyping, proofOfBottom⟩
+  | has_bot _ _ _ _ _ =>
+      exact Or.inr (Or.inr (Or.inr (Or.inr rfl)))
 
 theorem has_member_inv (G : Ctx) (x : Var) (T : Typ) (A : TypLabel) (S U : Typ) :
   HasMember G x T A S U →
   (T = Typ.typ_rcd (Dec.dec_typ A S U)) ∨
   (∃ T1 T2, T = Typ.typ_and T1 T2 ∧ (HasMember G x T1 A S U ∨ HasMember G x T2 A S U)) ∨
   (∃ T', T = Typ.typ_bnd T' ∧ HasMember G x (open_typ x T') A S U) ∨
-  (∃ y B T', T = Typ.typ_sel (Avar.avar_f y) B ∧
-     TyTrm ty_precise sub_general G (Trm.trm_var (Avar.avar_f y)) (Typ.typ_rcd (Dec.dec_typ B T' T')) ∧
+  (∃ y B T' m1 m2, T = Typ.typ_sel (Avar.avar_f y) B ∧
+     TyTrm m1 m2 G (Trm.trm_var (Avar.avar_f y)) (Typ.typ_rcd (Dec.dec_typ B T' T')) ∧
      HasMember G x T' A S U) ∨
   (T = Typ.typ_bot) := by
-  -- TODO
-  sorry
+  intro proofOfBottom
+  cases proofOfBottom with
+  | has_any G x T A S U _ proofOfBottom =>
+      exact has_member_rules_inv G x T A S U proofOfBottom
 
 theorem has_member_covariance (G : Ctx) (s : Sto) (T1 T2 : Typ) (x : Var)
     (A : TypLabel) (S2 U2 : Typ) :

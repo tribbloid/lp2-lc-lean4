@@ -5,7 +5,7 @@ namespace Lp2lc.Active.STLC
 
 -- Basic types --
 inductive Typ : Type
-| typ_all : Typ -- base type
+| typ_all : Typ -- all-inclusive base type
 | typ_arrow : Typ → Typ → Typ
 deriving DecidableEq, Repr
 
