@@ -19,39 +19,69 @@ deriving DecidableEq, Repr
 
 namespace Trm
 
-    -- Notations --
-    notation t1 " -> " t2 => Typ.typ_arrow t1 t2
-    notation "€" i => bvar i
-    notation "$" x => fvar x
-    notation "λ " T "," t => abs T t
-    notation t1 " @ " t2 => app t1 t2
+-- Notations --
+notation t1 " -> " t2 => Typ.typ_arrow t1 t2
+notation "€" i => bvar i
+notation "$" x => fvar x
+notation "λ " T "," t => abs T t
+notation t1 " @ " t2 => app t1 t2
 
-    -- Defining free variable substitution by induction on terms --
-    @[simp]
-    def subst (x : Var) (a : Trm) : Trm → Trm
-    | bvar i => bvar i
-    | fvar y => if y = x then a else (fvar y)
-    | abs T u => abs T (subst x a u)
-    | app u1 u2 => app (subst x a u1) (subst x a u2)
+-- Defining free variable substitution by induction on terms --
+@[simp]
+def subst (x : Var) (a : Trm) : Trm → Trm
+| bvar i => bvar i
+| fvar y => if y = x then a else (fvar y)
+| abs T u => abs T (subst x a u)
+| app u1 u2 => app (subst x a u1) (subst x a u2)
 
-    notation  "["x" // "u"] "t => subst x u t
+notation  "["x" // "u"] "t => subst x u t
 
-    -- Set of free variables --
-    def fv : Trm → Finset Var
-    | bvar _ => {}
-    | fvar y => {y}
-    | abs _ t => fv t
-    | app t1 t2 => (fv t1) ∪ (fv t2)
+-- Set of free variables --
+def fv : Trm → Finset Var
+| bvar _ => {}
+| fvar y => {y}
+| abs _ t => fv t
+| app t1 t2 => (fv t1) ∪ (fv t2)
 
 --We can always pick a fresh variable for a given term out of a fixed set.
+
+@[simp]
+def opening (k : Nat) (u : Trm) : Trm → Trm
+| bvar i => if k = i then u else (bvar i)
+| fvar x => fvar x
+| abs T t => abs T (opening (k + 1) u t)
+| app t1 t2 => app (opening k u t1) (opening k u t2)
+
+notation " {" k " ~> " u "} " t => opening k u t
+
+--Opening at index zero
+def open₀ (t : Trm) (u : Trm) : Trm := opening 0 u t
+
+@[simp]
+def closing (k : Nat) (x : Var) : Trm → Trm
+| bvar i => bvar i
+| fvar i => if x = i then (bvar k) else (fvar i)
+| abs T t => abs T (closing (k + 1) x t)
+| app t1 t2 => app (closing k x t1) (closing k x t2)
+
+notation " { " k " <~ " x " } " t => closing k x t
+
+--Closing at index zero
+def close₀ (u : Trm) (x : Var) : Trm := closing 0 x u
+
+inductive lc : Trm → Prop
+| lc_var : ∀ x : Var, lc (fvar x)
+| lc_abs : ∀ t : Trm, ∀ T : Typ, ∀ L : Finset Var,
+    (∀ x : Var, x ∉ L → lc (open₀ t ($ x))) → lc (abs T t)
+| lc_app : ∀ t1 t2 : Trm, lc t1 → lc t2 → lc (app t1 t2)
+
+
+/-The predicate “body t” asserts that t describes
+the body of a locally closed abstraction.-/
+def body (t : Trm) : Prop := ∃ (L : Finset Var), ∀ x : Var, x ∉ L → lc (open₀ t ($ x))
+
 end Trm
 
-/-
-In order to make typing judgments, we need the notion of Env.
-The definition is designed to talk about "(x : T)"-like assumptions.
--/
-
--- line 123
 inductive Bind : Type where
   | bind_typ : Typ -> Bind --typing assumption
 
@@ -59,6 +89,10 @@ inductive Bind : Type where
 def Bind.unbox_typ : Bind → Typ
 | Bind.bind_typ T => T
 
+/-
+In order to make typing judgments, we need the notion of Env.
+The definition is designed to talk about "(x : T)"-like assumptions.
+-/
 notation "Env" => List (Var × Bind)
 
 @[simp]
@@ -90,54 +124,21 @@ def get (x : Var) : Env → Option Typ
 @[simp]
 def binds (x : Var) (T : Typ) (Γ : Env) : Prop := (get x Γ = some T)
 
---Properties of binds
--- end Lp2lc.Active.STLC
---
--- namespace Lp2lc.Active.STLC
+class StldDirectDef(preTyp preTrm bind : Type) where
+  env : Type
+  trm_subst : Var → Trm → Trm → Trm
+  trm_fv : Trm → Finset Var
+  bind_unbox_typ : Bind → Typ
+  env_context_terms : Env → Finset Var
+  env_in_context : Var → Env → Prop
+  env_get : Var → Env → Option Typ
+  env_binds : Var → Typ → Env → Prop
+  trm_opening : Nat → Trm → Trm → Trm
+  trm_open0 : Trm → Trm → Trm
+  trm_closing : Nat → Var → Trm → Trm
+  trm_close0 : Trm → Var → Trm
+  trm_body : Trm → Prop
 
-namespace Trm
-
-    /- Variable opening turns some bound variables into free variables.
-    It is used to investigate the body of an abstraction.
-    Variable closing turns some free variables into bound variables.
-    It is used to build an abstraction given a representation of its body. -/
-
-    @[simp]
-    def opening (k : Nat) (u : Trm) : Trm → Trm
-    | bvar i => if k = i then u else (bvar i)
-    | fvar x => fvar x
-    | abs T t => abs T (opening (k + 1) u t)
-    | app t1 t2 => app (opening k u t1) (opening k u t2)
-
-    notation " {" k " ~> " u "} " t => opening k u t
-
-    --Opening at index zero
-    def open₀ (t : Trm) (u : Trm) : Trm := opening 0 u t
-
-    @[simp]
-    def closing (k : Nat) (x : Var) : Trm → Trm
-    | bvar i => bvar i
-    | fvar i => if x = i then (bvar k) else (fvar i)
-    | abs T t => abs T (closing (k + 1) x t)
-    | app t1 t2 => app (closing k x t1) (closing k x t2)
-
-    notation " { " k " <~ " x " } " t => closing k x t
-
-    --Closing at index zero
-    def close₀ (u : Trm) (x : Var) : Trm := closing 0 x u
-
-    inductive lc : Trm → Prop
-    | lc_var : ∀ x : Var, lc (fvar x)
-    | lc_abs : ∀ t : Trm, ∀ T : Typ, ∀ L : Finset Var,
-       (∀ x : Var, x ∉ L → lc (open₀ t ($ x))) → lc (abs T t)
-    | lc_app : ∀ t1 t2 : Trm, lc t1 → lc t2 → lc (app t1 t2)
-
-
-    /-The predicate “body t” asserts that t describes
-    the body of a locally closed abstraction.-/
-    def body (t : Trm) : Prop := ∃ (L : Finset Var), ∀ x : Var, x ∉ L → lc (open₀ t ($ x))
-
-end Trm
 
 open Trm
 
