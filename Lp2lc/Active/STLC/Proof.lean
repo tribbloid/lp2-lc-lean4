@@ -2205,7 +2205,7 @@ lemma normal_is_unique (t : Trm) :
 -- The definition is valid for locally closed terms.
 @[simp]
 def SC : Typ → Set Trm
-  | typ_base => {t | (lc t) ∧ SN t}
+  | typ_all => {t | (lc t) ∧ SN t}
   | typ_arrow t1 t2 =>
     {t | (lc t) ∧ (∀ u, ((lc u) ∧ (u ∈ SC t1)) → (t @ u) ∈ SC t2)}
 
@@ -2543,7 +2543,7 @@ theorem typing_decidable :
       next pos2 =>
         rcases pos2 with ⟨S,p2⟩
         match T with
-        | typ_base =>
+        | typ_all =>
           right
           rintro ⟨T, P⟩
           cases P
