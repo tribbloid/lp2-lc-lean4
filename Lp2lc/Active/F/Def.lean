@@ -15,3 +15,6 @@ inductive Trm : Type where
   | tabs : Trm -> Trm
   | tapp : Trm -> Typ -> Trm
 deriving DecidableEq, Repr
+
+inductive Bind: Type where
+  | stlc: STLC.Bind -> Bind
