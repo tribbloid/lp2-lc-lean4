@@ -106,11 +106,18 @@ abbrev Env := List (Var × Bind)
 
 namespace Env
 
+section
+variable (Γ : Env)
+
+end
+
+-- TODO: move into section above, type should be Finset Var
 @[simp]
 def terms : Env → Finset Var
 | [] => ∅
 | ((x, _) :: Γ') => {x} ∪ (Env.terms Γ')
 
+-- TODO: move into section above, type should be Prop
 @[simp]
 def in_context (x : Var) : Env → Prop
 | [] => False
