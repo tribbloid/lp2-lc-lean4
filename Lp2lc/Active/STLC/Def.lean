@@ -87,15 +87,11 @@ inductive Bind : Type where
 
 
 namespace Bind
-section
-variable (b : Bind)
 
 @[simp]
-def unbox_typ : Typ :=
-  match b with
-  | Bind.bind_typ T => T
+def unbox_typ : Bind → Typ
+| Bind.bind_typ T => T
 
-end
 end Bind
 
 /-
@@ -106,18 +102,13 @@ abbrev Env := List (Var × Bind)
 
 namespace Env
 
-section
-variable (Γ : Env)
-
-end
-
 -- TODO: move into section above, type should be Finset Var
 @[simp]
 def terms : Env → Finset Var
 | [] => ∅
 | ((x, _) :: Γ') => {x} ∪ (Env.terms Γ')
 
--- TODO: move into section above, type should be Prop
+-- TODO: move into section above, type should be
 @[simp]
 def in_context (x : Var) : Env → Prop
 | [] => False
