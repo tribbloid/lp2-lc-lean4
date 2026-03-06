@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "lp2-lc-lean4-metals": {
+      "url": "http://localhost:64678/mcp",
+      "type": "http"
+    }
+  }
+}

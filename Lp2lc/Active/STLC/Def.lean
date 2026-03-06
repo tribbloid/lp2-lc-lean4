@@ -3,16 +3,11 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.STLC
 
-section FixPoint
-variable (Peer: Type)
-
 -- Basic types --
-inductive TypLike : Type
-| all : TypLike -- all-inclusive base type
-| arrow : Peer → Peer → TypLike
+inductive TypLike (Peer: Type) : Type
+| all : TypLike Peer -- all-inclusive base type
+| arrow : Peer → Peer → TypLike Peer
 deriving DecidableEq, Repr
-
-end FixPoint
 
 inductive Typ : Type
 | self : TypLike Typ → Typ
