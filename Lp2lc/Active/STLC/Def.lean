@@ -7,11 +7,11 @@ namespace Lp2lc.Active.STLC
 inductive TypLike (Peer: Type) : Type
 | all : TypLike Peer -- all-inclusive base type
 | arrow : Peer → Peer → TypLike Peer
-deriving DecidableEq, Repr
+deriving  Repr
 
 inductive Typ : Type
 | self : TypLike Typ → Typ
-deriving DecidableEq, Repr
+deriving  Repr
 
 -- Defining (pre)terms by recursion --
 inductive Trm : Type
@@ -19,7 +19,7 @@ inductive Trm : Type
 | fvar : Var → Trm
 | abs : Typ → Trm → Trm
 | app : Trm → Trm → Trm
-deriving DecidableEq, Repr
+deriving  Repr
 
 namespace Trm
 
