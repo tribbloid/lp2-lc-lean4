@@ -10,29 +10,16 @@ section FixPoint
 variable (Peer: Type)
 
 -- Basic types --
-inductive STLCTypLike : Type
-| all : STLCTypLike -- all-inclusive base type
-| arrow : Peer → Peer → STLCTypLike
-
-inductive FTypLike: Type
-| bvar : Nat -> FTypLike
-| fvar : Var -> FTypLike
-| others : STLCTypLike Peer -> FTypLike
+inductive TypLike : Type
+| all : TypLike -- all-inclusive base type
+| arrow : Peer → Peer → TypLike
 
 end FixPoint
 
+inductive TypNew : Type
+| self : TypLike TypNew → TypNew
+
 end Shorten
-
-inductive STLCTyp : Type
-| all : STLCTyp
-| arrow : STLCTyp → STLCTyp → STLCTyp
-deriving DecidableEq, Repr
-
-inductive FTyp : Type
-| bvar : Nat → FTyp
-| fvar : Var → FTyp
-| all : FTyp
-| arrow : FTyp → FTyp → FTyp
 
 -- Basic types --
 inductive Typ : Type
