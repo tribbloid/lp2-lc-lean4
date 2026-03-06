@@ -3,9 +3,6 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.STLC
 
-
-namespace Shorten
-
 section FixPoint
 variable (Peer: Type)
 
@@ -18,8 +15,6 @@ end FixPoint
 
 inductive TypNew : Type
 | self : TypLike TypNew → TypNew
-
-end Shorten
 
 -- Basic types --
 inductive Typ : Type
