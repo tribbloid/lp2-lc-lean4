@@ -13,6 +13,29 @@ inductive Typ : Type
 | self : TypLike Typ → Typ
 deriving  Repr
 
+namespace Typ
+
+@[match_pattern, simp]
+abbrev typ_all : Typ := .self .all
+
+@[match_pattern, simp]
+abbrev typ_arrow (T1 T2 : Typ) : Typ := .self (.arrow T1 T2)
+
+@[elab_as_elim]
+def rec_like {motive : Typ → Sort _}
+    (typ_all : motive Typ.typ_all)
+    (typ_arrow : ∀ T1 T2, motive T1 → motive T2 → motive (Typ.typ_arrow T1 T2)) :
+    ∀ T, motive T
+  | .self .all => typ_all
+  | .self (.arrow T1 T2) => typ_arrow T1 T2 (rec_like typ_all typ_arrow T1) (rec_like typ_all typ_arrow T2)
+termination_by T => sizeOf T
+decreasing_by
+  all_goals
+    simp_wf
+    omega
+
+end Typ
+
 -- Defining (pre)terms by recursion --
 inductive Trm : Type
 | bvar : Nat → Trm
