@@ -10,16 +10,12 @@ variable (Peer: Type)
 inductive TypLike : Type
 | all : TypLike -- all-inclusive base type
 | arrow : Peer → Peer → TypLike
+deriving DecidableEq, Repr
 
 end FixPoint
 
-inductive TypNew : Type
-| self : TypLike TypNew → TypNew
-
--- Basic types --
 inductive Typ : Type
-| typ_all : Typ -- all-inclusive base type
-| typ_arrow : Typ → Typ → Typ
+| self : TypLike Typ → Typ
 deriving DecidableEq, Repr
 
 -- Defining (pre)terms by recursion --
