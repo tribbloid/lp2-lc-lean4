@@ -1,7 +1,7 @@
-import «Lp2lc».Active.STLC.Def
+import «Lp2lc».Active.STLCv1.Def
 
 
-namespace Lp2lc.Active.STLC
+namespace Lp2lc.Active.STLCv1
 
 -- Basic types --
 namespace Trm
@@ -2597,4 +2597,4 @@ theorem typechecking_decidable t T Γ :
     simp at neg
     exact neg T
 
-end Lp2lc.Active.STLC
+end Lp2lc.Active.STLCv1

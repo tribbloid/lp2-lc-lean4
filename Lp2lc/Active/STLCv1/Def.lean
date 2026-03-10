@@ -1,7 +1,7 @@
 import Mathlib.Tactic
 import «Lp2lc».Active.Shared
 
-namespace Lp2lc.Active.STLC
+namespace Lp2lc.Active.STLCv1
 
 -- Basic types --
 inductive TypLike (Peer: Type) : Type
@@ -218,4 +218,4 @@ inductive eval : Trm → Trm → Prop
 | eval_app2 : ∀ (e1 : Trm) (e2 : Trm) (e2' : Trm), lc e1 → eval e2 e2' → eval (app e1 e2) (app e1 e2')
 
 
-end Lp2lc.Active.STLC
+end Lp2lc.Active.STLCv1
