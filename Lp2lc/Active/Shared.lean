@@ -11,6 +11,26 @@ structure Var where
 
 abbrev Vars := Finset Var
 
+namespace AnySys
+
+inductive Typ {X: Type} : Type
+-- | _unknown: X -> Typ
+| all : Typ
+deriving Repr
+
+
+-- Defining (pre)terms by recursion --
+inductive Trm {X: Type} : Type
+-- | _unknown: X -> TrmLike
+| bvar : Nat → Trm
+| fvar : Var → Trm
+deriving Repr
+
+-- class Sys (X: Type)
+-- instance : Sys Typ where
+
+end AnySys
+
 -- Generic environment helpers over lists of (Var × α)
 namespace Env
   /-- Domain (set of variables) of an environment represented as a list of (Var × α) -/
@@ -34,3 +54,17 @@ Each module may instantiate `Env` as a List (Var × Bind) or similar. -/
 axiom ok {Env : Sort u} : Env → Prop
 
 end Lp2lc.Active
+
+
+-----
+
+
+namespace Exp
+
+inductive TypLike (X: Type) : Type
+| _unknown: X -> TypLike X
+| all : TypLike X -- all-inclusive base type
+| arrow : X -> X -> TypLike X
+deriving Repr
+
+end Exp
