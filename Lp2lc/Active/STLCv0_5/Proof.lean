@@ -79,7 +79,7 @@ lemma in_context_append_neg' (x : Var) (Γ Δ : Env) :
 
 --Properties of valid contexts
 lemma valid_push (Γ : Env) (x : Var) (T : Typ) :
-    Env.valid_ctx Γ → ¬ (Env.in_context x Γ) → Env.valid_ctx ((([(x, T)] : Env) ++ Γ)) := by
+    Env.valid_ctx Γ → ¬ (Env.in_context x Γ) → Env.valid_ctx ((([(x, Bind.bind_typ T)] : Env) ++ Γ)) := by
   simp only [singleton_append]
   exact (Env.valid_ctx.valid_cons Γ x T)
 
@@ -110,15 +110,15 @@ lemma valid_remove_mid (Γ Δ Ψ : Env) :
       exact (in_context_append_neg _ _ _ (in_context_append_neg _ _ _ p').2).2
 
 lemma valid_remove_mid_cons (x : Var) (T : Typ) (Γ Δ : Env) :
-    Env.valid_ctx (Δ ++ (x, T ) :: Γ)
+    Env.valid_ctx (Δ ++ (x, Bind.bind_typ T ) :: Γ)
     → Env.valid_ctx (Δ ++ Γ) := by
   intro H
-  simp only [append_cons Δ (x, T ) Γ] at H
+  simp only [append_cons Δ (x, Bind.bind_typ T ) Γ] at H
   apply valid_remove_mid
   exact H
 
 lemma valid_remove_cons (x : Var) (T : Typ) (Γ : Env) :
-    Env.valid_ctx ((x, T ) :: Γ)
+    Env.valid_ctx ((x, Bind.bind_typ T ) :: Γ)
     → Env.valid_ctx (Γ) := by
   intro H
   rw [← nil_append Γ]
@@ -127,13 +127,13 @@ lemma valid_remove_cons (x : Var) (T : Typ) (Γ : Env) :
   exact H
 
 --Extracting (x : T) from a Env
-lemma binds_singleton (x : Var) (T : Typ) : Env.binds x T (([(x, T)] : Env)) := by
+lemma binds_singleton (x : Var) (T : Typ) : Env.binds x T (([(x, Bind.bind_typ T)] : Env)) := by
   simp only [Env.binds]
   simp only [Env.get]
-  simp only [ite_true]
+  simp only [ite_true, Bind.unbox_typ]
 
 lemma binds_singleton_tail (x : Var) (T : Typ) (Γ : Env) :
-    Env.binds x T ((([(x, T)] : Env) ++ Γ)) := by
+    Env.binds x T ((([(x, Bind.bind_typ T)] : Env) ++ Γ)) := by
   simp [Env.binds, Env.get, append_eq, nil_append, ite_true]
 
 lemma binds_tail (x : Var) (T : Typ) (Γ Δ : Env) :
@@ -209,7 +209,7 @@ lemma binds_concat_inv (x : Var) (T : Typ) (Γ Δ : Env) :
   exact Iff.mpr or_iff_not_imp_left H
 
 lemma binds_singleton_inv (x y : Var) (X Y : Typ) :
-    Env.binds x X (([(y, Y)] : Env)) → (x = y) ∧ (X = Y) := by
+    Env.binds x X (([(y, Bind.bind_typ Y)] : Env)) → (x = y) ∧ (X = Y) := by
   simp only [Env.binds, Env.get]
   intro H
   by_cases hxy : x = y
@@ -218,11 +218,11 @@ lemma binds_singleton_inv (x y : Var) (X Y : Typ) :
   . simp [if_neg hxy] at H
 
 lemma binds_mid (x : Var) (T : Typ) (Δ Γ : Env) :
-    Env.valid_ctx (Γ ++ (([(x, T)] : Env)) ++ Δ)
-    → Env.binds x T (Γ ++ (([(x, T)] : Env)) ++ Δ) := by
+    Env.valid_ctx (Γ ++ (([(x, Bind.bind_typ T)] : Env)) ++ Δ)
+    → Env.binds x T (Γ ++ (([(x, Bind.bind_typ T)] : Env)) ++ Δ) := by
   induction Γ
   case nil =>
-    simp only [nil_append, singleton_append, Env.binds, Env.get, append_eq, ite_true, implies_true]
+    simp only [nil_append, singleton_append, Env.binds, Env.get, append_eq, ite_true, implies_true, Bind.unbox_typ]
   case cons b Γ' f =>
     intro H
     cases H
@@ -239,8 +239,8 @@ lemma binds_mid (x : Var) (T : Typ) (Δ Γ : Env) :
         exact (f H')
 
 lemma binds_mid_eq (x : Var) (T S : Typ) (Γ Δ : Env) :
-    Env.binds x T (Δ ++ (([(x, S)] : Env)) ++ Γ)
-    → Env.valid_ctx (Δ ++ (([(x, S)] : Env)) ++ Γ) →  T = S := by
+    Env.binds x T (Δ ++ (([(x, Bind.bind_typ S)] : Env)) ++ Γ)
+    → Env.valid_ctx (Δ ++ (([(x, Bind.bind_typ S)] : Env)) ++ Γ) →  T = S := by
   induction Δ
   case nil =>
     simp only [Env.binds, Env.get, append_eq, nil_append, ite_true, Option.some.injEq, singleton_append]
@@ -260,10 +260,10 @@ lemma binds_mid_eq (x : Var) (T S : Typ) (Γ Δ : Env) :
         exact (f p H')
 
 lemma binds_mid_eq_cons (x : Var) (T S : Typ) (Γ Δ : Env) :
-    Env.binds x T (Δ ++ (x, S ) :: Γ)
-    → Env.valid_ctx (Δ ++ (x, S ) :: Γ) → T = S := by
+    Env.binds x T (Δ ++ (x, Bind.bind_typ S ) :: Γ)
+    → Env.valid_ctx (Δ ++ (x, Bind.bind_typ S ) :: Γ) → T = S := by
   intro p H
-  simp only [append_cons Δ (x, S ) Γ] at p H
+  simp only [append_cons Δ (x, Bind.bind_typ S ) Γ] at p H
   exact (binds_mid_eq x T S Γ Δ p H)
 
 --Additional properties of Env.binds
@@ -332,10 +332,10 @@ lemma binds_weaken_at_head (x : Var) (T : Typ) (Γ Δ : Env) :
     → Env.binds x T (Γ ++ Δ) := (binds_weaken x T Δ Γ [])
 
 lemma binds_remove_mid (x y : Var) (T S : Typ) (Γ Δ : Env) :
-    Env.binds x T (Γ ++ ((([(y, S)] : Env)) ++ Δ))
+    Env.binds x T (Γ ++ ((([(y, Bind.bind_typ S)] : Env)) ++ Δ))
     → x ≠ y → Env.binds x T (Γ ++ Δ) := by
   intro p H
-  have t := (binds_concat_inv x T Γ ((([(y, S)] : Env)) ++ Δ) p)
+  have t := (binds_concat_inv x T Γ ((([(y, Bind.bind_typ S)] : Env)) ++ Δ) p)
   rcases t with ⟨t11, t12⟩ | t2
   . apply (binds_tail x T Δ Γ)
     simp [if_neg H] at t12
@@ -344,7 +344,7 @@ lemma binds_remove_mid (x y : Var) (T S : Typ) (Γ Δ : Env) :
   . apply (binds_head _ _ _ _ t2)
 
 lemma binds_remove_mid_cons  (x y : Var) (T S : Typ) (Γ Δ : Env) :
-    Env.binds x T (Δ ++ (y, S ) :: Γ)
+    Env.binds x T (Δ ++ (y, Bind.bind_typ S ) :: Γ)
     → x ≠ y → Env.binds x T (Δ ++ Γ) := by
   intro H p
   apply (binds_remove_mid x y T S Δ Γ)
@@ -1385,7 +1385,7 @@ lemma typing_weakening_strengthened' (Γ Δ Ψ' : Env) (t : Trm) (T : Typ) :
     apply typ_abs (L ∪ Env.terms (φ ++ Δ ++ Γ))
     intro x hx
     simp at hx
-    apply (fT2 x hx.1 ((x, T1) :: φ))
+    apply (fT2 x hx.1 ((x, Bind.bind_typ T1) :: φ))
     simp [p]
     apply Env.valid_ctx.valid_cons
     exact f
@@ -1420,9 +1420,9 @@ lemma typing_weakening (Γ Δ : Env) (t : Trm) (T : Typ) :
 
 lemma typing_weakening_head (Γ : Env) (t : Trm) (T S : Typ) (x : Var):
     ¬ (Env.in_context x Γ) → typing Γ t T
-    → typing ((x, S ) :: Γ) t T := by
+    → typing ((x, Bind.bind_typ S ) :: Γ) t T := by
   intro notxl typt
-  rw [← nil_append ((x, S ) :: Γ), append_cons, nil_append]
+  rw [← nil_append ((x, Bind.bind_typ S ) :: Γ), append_cons, nil_append]
   apply typing_weakening _ _ _ _ typt
   apply valid_push
   apply (typing_valid_ctx _ _ _ typt)
@@ -1430,8 +1430,8 @@ lemma typing_weakening_head (Γ : Env) (t : Trm) (T S : Typ) (x : Var):
 
 --Substitution Rule
 lemma typing_subst_var_case (Γ Δ : Env) (u : Trm) (S T : Typ) (z x : Var) :
-    Env.binds x T (Δ ++ (z, S ) :: Γ)
-    → Env.valid_ctx (Δ ++ (z, S ) :: Γ)
+    Env.binds x T (Δ ++ (z, Bind.bind_typ S ) :: Γ)
+    → Env.valid_ctx (Δ ++ (z, Bind.bind_typ S ) :: Γ)
     → typing Γ u S → typing (Δ ++ Γ) ([z // u] ($ x)) T := by
   intro b v t
   simp only [subst]
@@ -1471,8 +1471,8 @@ lemma typing_regular (t : Trm) (T : Typ) (Γ : Env) :
     exact f2
 
 lemma typing_subst_strengthened' Γ Δ' t u S T z :
-    typing Δ' t T → ((φ : Env) → Δ' = (φ ++ (z, S ) :: Γ)
-    → typing (φ ++ (z, S ) :: Γ) t T
+    typing Δ' t T → ((φ : Env) → Δ' = (φ ++ (z, Bind.bind_typ S ) :: Γ)
+    → typing (φ ++ (z, Bind.bind_typ S ) :: Γ) t T
     → typing Γ u S → typing (φ ++ Γ) ([z // u] t) T ) := by
   intro H
   induction H
@@ -1498,7 +1498,7 @@ lemma typing_subst_strengthened' Γ Δ' t u S T z :
       apply hx
       simp [q]
     rw [subst_open_var s u (typing_regular _ _ _ f) z x (fun q => hxz q.symm)]
-    rw [← nil_append ((x, S1 ) :: (Δ ++ Γ)), append_cons, nil_append, ← append_assoc]
+    rw [← nil_append ((x, Bind.bind_typ S1 ) :: (Δ ++ Γ)), append_cons, nil_append, ← append_assoc]
     apply (h' x hxL)
     simp [p]
     rw [append_assoc, ← p]
@@ -1516,7 +1516,7 @@ lemma typing_subst_strengthened' Γ Δ' t u S T z :
     exact f
 
 lemma typing_subst_strengthened (Γ Δ : Env) (t u : Trm) (S T : Typ) (z : Var) :
-    typing (Δ ++ (z, S ) :: Γ) t T →
+    typing (Δ ++ (z, Bind.bind_typ S ) :: Γ) t T →
     typing Γ u S →
     typing (Δ ++ Γ) ([z // u] t) T := by
   intro H p
@@ -1527,11 +1527,11 @@ lemma typing_subst_strengthened (Γ Δ : Env) (t u : Trm) (S T : Typ) (z : Var) 
   exact p
 
 lemma typing_subst (Γ : Env) (t u : Trm) (S T : Typ) (z : Var) :
-    typing ((z, S ) :: Γ) t T →
+    typing ((z, Bind.bind_typ S ) :: Γ) t T →
     typing Γ u S →
     typing Γ ([z // u] t) T := by
   intro H p
-  rw [← nil_append ((z, S ) :: Γ)] at H
+  rw [← nil_append ((z, Bind.bind_typ S ) :: Γ)] at H
   rw [← nil_append Γ]
   apply typing_subst_strengthened
   exact H
@@ -1541,8 +1541,8 @@ lemma typing_subst (Γ : Env) (t u : Trm) (S T : Typ) (z : Var) :
 lemma typing_rename (Γ : Env) (x y : Var) (t : Trm) (T1 T2 : Typ) :
     x ∉ fv t →  ¬ (Env.in_context x Γ)
     → y ∉ fv t →  ¬ (Env.in_context y Γ)
-    → typing ((x, T1) :: Γ) (open₀ t ($ x)) T2
-    → typing ((y, T1) :: Γ) (open₀ t ($ y)) T2 := by
+    → typing ((x, Bind.bind_typ T1) :: Γ) (open₀ t ($ x)) T2
+    → typing ((y, Bind.bind_typ T1) :: Γ) (open₀ t ($ y)) T2 := by
   intro hx fx _ fy R
   by_cases hxy : x = y
   . rwa [hxy] at R
@@ -1552,11 +1552,11 @@ lemma typing_rename (Γ : Env) (x y : Var) (t : Trm) (T1 T2 : Typ) :
       exact R
     have p := subst_intro t ($ y) (lc_var y) x hx
     rw [p]
-    apply typing_subst ((y, T1) :: Γ) (open₀ t ($ x)) ($ y) T1 T2
-    have q : ((x, T1 ) :: (y, T1 ) :: Γ) = ((([(x, T1)] : Env) ++ (([(y, T1)] : Env))) ++ Γ) := by
+    apply typing_subst ((y, Bind.bind_typ T1) :: Γ) (open₀ t ($ x)) ($ y) T1 T2
+    have q : ((x, Bind.bind_typ T1 ) :: (y, Bind.bind_typ T1 ) :: Γ) = ((([(x, Bind.bind_typ T1)] : Env) ++ (([(y, Bind.bind_typ T1)] : Env))) ++ Γ) := by
       simp
     rw [q]
-    apply (typing_weakening_strengthened Γ (([(y, T1)] : Env)) (([(x, T1)] : Env)))
+    apply (typing_weakening_strengthened Γ (([(y, Bind.bind_typ T1)] : Env)) (([(x, Bind.bind_typ T1)] : Env)))
     simp [R]
     apply (valid_push _ _ _ (valid_push _ _ _ ok_ctx fy))
     simp
@@ -1568,7 +1568,7 @@ lemma typing_rename (Γ : Env) (x y : Var) (t : Trm) (T1 T2 : Typ) :
 
 lemma typing_abs_intro (Γ : Env) (x : Var) (t : Trm) (T1 T2 : Typ) :
     x ∉ fv t →  ¬ (Env.in_context x Γ)
-    → typing ((x, T1) :: Γ) (open₀ t ($ x)) T2
+    → typing ((x, Bind.bind_typ T1) :: Γ) (open₀ t ($ x)) T2
     → typing Γ (abs T1 t) (T1 -> T2) := by
   intro hx fx R
   apply typ_abs (fv t ∪ Env.terms Γ)
@@ -1900,7 +1900,7 @@ def multi_subst (L : Finset Var) (f : L → Trm) : Trm → Trm
 def context_type Γ (x : Env.terms Γ) : Typ :=
   match Γ, x with
   | [], ⟨_, h⟩ => by simp [Env.terms] at h
-  | (x, T) :: Γ, ⟨x', h⟩ =>
+  | (x, Bind.bind_typ T) :: Γ, ⟨x', h⟩ =>
     if ha : x' = x then
       T
     else
@@ -1923,8 +1923,8 @@ lemma multi_subst_over_emp t (f : Env.terms [] → Trm) :
 
 --substitution over [(x,T)] is the same as usual (single) substitution
 lemma multi_subst_at_singleton t x T :
-    (f : Env.terms (([(x, T)] : Env)) → Trm)
-    → (multi_subst (Env.terms (([(x, T)] : Env))) f t)
+    (f : Env.terms (([(x, Bind.bind_typ T)] : Env)) → Trm)
+    → (multi_subst (Env.terms (([(x, Bind.bind_typ T)] : Env))) f t)
       = ([x // (f ⟨x, by simp⟩)] t) := by
   intro f
   induction t
@@ -1946,7 +1946,7 @@ lemma multi_subst_at_singleton t x T :
 --for a term u and variable x, we can extend the f with mapping x → u
 @[simp]
 def add_term Γ (f : Env.terms Γ → Trm)
-    (u : Trm) y T (x : Env.terms ((y, T) :: Γ)) : Trm := by
+    (u : Trm) y T (x : Env.terms ((y, Bind.bind_typ T) :: Γ)) : Trm := by
   rcases x with ⟨x' , h⟩
   by_cases p : x' = y
   . exact u
@@ -1956,7 +1956,7 @@ def add_term Γ (f : Env.terms Γ → Trm)
 --If y does not appear in t, then substitution over a Env (y,T) ++ Γ
 --is the same as substitution over Γ
 lemma multi_subst_fresh Γ t u y T (h : y ∉ (fv t)) (f : Env.terms Γ → Trm) :
-    (multi_subst (Env.terms ((y, T) :: Γ)) (add_term Γ f u y T) t)
+    (multi_subst (Env.terms ((y, Bind.bind_typ T) :: Γ)) (add_term Γ f u y T) t)
      = (multi_subst (Env.terms Γ) f t) := by
   induction t
   case bvar i =>
@@ -2009,7 +2009,7 @@ lemma multi_subst_open_lemma_1 t1 t2 Γ : (f : Env.terms Γ → Trm)
 lemma multi_subst_open_lemma_2 Γ t u y T : lc u → y ∉ fv t
     → (f : Env.terms Γ → Trm)
     → (∀ x (h : x ∈ Env.terms Γ), lc (f ⟨x,h⟩))
-    → (multi_subst (Env.terms ((y, T) :: Γ)) (add_term Γ f u y T) (open₀ t ($ y)))
+    → (multi_subst (Env.terms ((y, Bind.bind_typ T) :: Γ)) (add_term Γ f u y T) (open₀ t ($ y)))
       = (open₀ (multi_subst (Env.terms Γ) f t) u) := by
   intro lcu hy f lcf
   rw [open₀ , multi_subst_open_lemma_1, multi_subst, ← open₀]
@@ -2042,7 +2042,9 @@ lemma context_type_eq_bind Γ (x : Env.terms Γ) T :
     intro _ bnd
     cases bnd
   case cons h Γ' ih =>
-    rcases h with ⟨y, S⟩
+    rcases h with ⟨y, b⟩
+    cases b with
+    | bind_typ S =>
     intro vld bnd
     simp only [context_type, Env.terms]
     by_cases p : y = ↑x
@@ -2410,8 +2412,8 @@ lemma SC_subst t A : typing Γ t A
     intros u1 scu1
     let ⟨x, hx⟩ := pick_fresh u L
     simp at hx
-    have this : (∀ y (s : y ∈ (Env.terms ((x, T1) :: Δ))),
-        ((add_term Δ f u1 x T1) ⟨y, s⟩) ∈ SC (context_type ((x, T1) :: Δ) ⟨y, s⟩)) := by
+    have this : (∀ y (s : y ∈ (Env.terms ((x, Bind.bind_typ T1) :: Δ))),
+        ((add_term Δ f u1 x T1) ⟨y, s⟩) ∈ SC (context_type ((x, Bind.bind_typ T1) :: Δ) ⟨y, s⟩)) := by
       intro y s
       by_cases p : y = x
       . simp [p, scu1]
@@ -2441,13 +2443,13 @@ theorem strong_normalization t T : typing [] t T → SN t := by
   apply CR1 T t
   let ⟨x, hx⟩ := pick_fresh t ∅
   simp at hx
-  let f : Env.terms (([(x, T)] : Env)) → Trm := fun _ => ($ x)
-  have this : multi_subst (Env.terms (([(x, T)] : Env))) f t = t := by
+  let f : Env.terms (([(x, Bind.bind_typ T)] : Env)) → Trm := fun _ => ($ x)
+  have this : multi_subst (Env.terms (([(x, Bind.bind_typ T)] : Env))) f t = t := by
     rw [multi_subst_at_singleton]
     rw [subst_fresh _ _ _ hx]
   rw [← this]
   apply SC_subst
-  apply typing_weakening [] (([(x, T)] : Env)) _ _ typt
+  apply typing_weakening [] (([(x, Bind.bind_typ T)] : Env)) _ _ typt
   apply valid_push _ _ _ (Env.valid_ctx.valid_nil) (by simp)
   exact (fun y hy => SC_var _ _)
 
@@ -2477,7 +2479,7 @@ theorem typing_unique :
       next L2 U2 h2 =>
         have ⟨x,hx⟩ := pick_fresh u (L ∪ L1 ∪ L2)
         simp at hx ⊢
-        apply ih x hx.1 ((x, T) :: Γ) U1 U2 (h1 x hx.2.1) (h2 x hx.2.2.1)
+        apply ih x hx.1 ((x, Bind.bind_typ T) :: Γ) U1 U2 (h1 x hx.2.1) (h2 x hx.2.2.1)
   case lc_app t1 t2 lct1 lct2 ih1 ih2 =>
     intro Γ T1 T2 ty1 ty2
     cases ty1
@@ -2509,7 +2511,7 @@ theorem typing_decidable :
   case lc_abs u T L a ih =>
     have ⟨x,hx⟩ := pick_fresh u (L ∪ Env.terms Γ)
     simp at hx
-    cases H : (ih x hx.1 ((x, T) :: Γ)
+    cases H : (ih x hx.1 ((x, Bind.bind_typ T) :: Γ)
         (valid_push Γ x T vld (not_context_terms_to_not_in_context _ _ hx.2.1)))
     next pos =>
       rcases pos with ⟨S, p⟩

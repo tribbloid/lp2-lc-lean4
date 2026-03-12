@@ -82,11 +82,27 @@ def body (t : Trm) : Prop := ∃ (L : Finset Var), ∀ x : Var, x ∉ L → lc (
 
 end Trm
 
+inductive Bind : Type where
+  | bind_typ : Typ -> Bind --typing assumption
+
+
+namespace Bind
+section
+variable (b : Bind)
+
+@[simp]
+def unbox_typ : Typ :=
+  match b with
+  | Bind.bind_typ T => T
+
+end
+end Bind
+
 /-
 In order to make typing judgments, we need the notion of Env.
 The definition is designed to talk about "(x : T)"-like assumptions.
 -/
-abbrev Env := List (Var × Typ)
+abbrev Env := List (Var × Bind)
 
 namespace Env
 
@@ -103,7 +119,7 @@ def in_context (x : Var) : Env → Prop
 inductive valid_ctx : Env → Prop where
 | valid_nil : Env.valid_ctx []
 | valid_cons (Γ : Env) (x : Var) (T : Typ) :
-    (Env.valid_ctx Γ) → (¬ (Env.in_context x Γ)) → Env.valid_ctx ((x, T) :: Γ)
+    (Env.valid_ctx Γ) → (¬ (Env.in_context x Γ)) → Env.valid_ctx ((x, Bind.bind_typ T) :: Γ)
 
 --Properties of valid contexts
 @[simp]
@@ -111,7 +127,7 @@ def get (x : Var) : Env → Option Typ
 | [] => none
 | (y , S) :: Γ' =>
     if x = y then
-      some S
+      some (Bind.unbox_typ S)
     else
       Env.get x Γ'
 
@@ -160,7 +176,7 @@ inductive multi_para : Trm → Trm → Prop
 inductive typing : Env → Trm → Typ → Prop
 | typ_var (Γ : Env) (x : Var) (T : Typ) : (Env.valid_ctx Γ) → (Env.binds x T Γ) → (typing Γ ($ x) T)
 | typ_abs (L : Finset Var) (Γ : Env) (t : Trm) (T1 T2 : Typ) :
-        ((x : Var) → x ∉ L → (typing ((x, T1) :: Γ) (open₀ t ($ x)) T2)) → (typing Γ (abs T1 t) (Typ.typ_arrow T1 T2))
+        ((x : Var) → x ∉ L → (typing ((x, Bind.bind_typ T1) :: Γ) (open₀ t ($ x)) T2)) → (typing Γ (abs T1 t) (Typ.typ_arrow T1 T2))
 | typ_app (Γ : Env) (t₁ t₂ : Trm) (T1 T2 : Typ) :
         (typing Γ t₁ (Typ.typ_arrow T1 T2)) → (typing Γ t₂ T1) → typing Γ (app t₁ t₂) T2
 
