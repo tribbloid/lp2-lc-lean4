@@ -19,9 +19,9 @@ inductive Trm {X: Type} : Type
 | abs : Typ → Trm → Trm
 | app : Trm → Trm → Trm
 deriving DecidableEq, Repr
-end mutual
+end
 
-abbrev known_typ {X: Type} : Type := { T : Typ (X := X) // ∀ x : X, T ≠ _unknown x }
+abbrev known_typ {X: Type} : Type := { T : Typ (X := X) // ∀ x : X, T ≠ Typ._unknown x }
 
 
 end Lp2lc.Active.STLC
