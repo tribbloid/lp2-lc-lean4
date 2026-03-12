@@ -4,37 +4,10 @@ import «Lp2lc».Active.Shared
 namespace Lp2lc.Active.STLC
 
 -- Basic types --
-inductive TypLike (Peer: Type) : Type
-| all : TypLike Peer -- all-inclusive base type
-| arrow : Peer → Peer → TypLike Peer
-deriving  Repr
-
 inductive Typ : Type
-| self : TypLike Typ → Typ
-deriving  Repr
-
-namespace Typ
-
-@[match_pattern, simp]
-abbrev typ_all : Typ := .self .all
-
-@[match_pattern, simp]
-abbrev typ_arrow (T1 T2 : Typ) : Typ := .self (.arrow T1 T2)
-
-@[elab_as_elim]
-def rec_like {motive : Typ → Sort _}
-    (typ_all : motive Typ.typ_all)
-    (typ_arrow : ∀ T1 T2, motive T1 → motive T2 → motive (Typ.typ_arrow T1 T2)) :
-    ∀ T, motive T
-  | .self .all => typ_all
-  | .self (.arrow T1 T2) => typ_arrow T1 T2 (rec_like typ_all typ_arrow T1) (rec_like typ_all typ_arrow T2)
-termination_by T => sizeOf T
-decreasing_by
-  all_goals
-    simp_wf
-    omega
-
-end Typ
+| typ_all : Typ -- all-inclusive base type
+| typ_arrow : Typ → Typ → Typ
+deriving DecidableEq, Repr
 
 -- Defining (pre)terms by recursion --
 inductive Trm : Type
@@ -42,7 +15,7 @@ inductive Trm : Type
 | fvar : Var → Trm
 | abs : Typ → Trm → Trm
 | app : Trm → Trm → Trm
-deriving  Repr
+deriving DecidableEq, Repr
 
 namespace Trm
 
@@ -114,11 +87,15 @@ inductive Bind : Type where
 
 
 namespace Bind
+section
+variable (b : Bind)
 
 @[simp]
-def unbox_typ : Bind → Typ
-| Bind.bind_typ T => T
+def unbox_typ : Typ :=
+  match b with
+  | Bind.bind_typ T => T
 
+end
 end Bind
 
 /-
@@ -129,13 +106,11 @@ abbrev Env := List (Var × Bind)
 
 namespace Env
 
--- TODO: move into section above, type should be Finset Var
 @[simp]
 def terms : Env → Finset Var
 | [] => ∅
 | ((x, _) :: Γ') => {x} ∪ (Env.terms Γ')
 
--- TODO: move into section above, type should be
 @[simp]
 def in_context (x : Var) : Env → Prop
 | [] => False

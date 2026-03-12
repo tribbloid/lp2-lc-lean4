@@ -1,5 +1,4 @@
 import «Lp2lc».Active.STLC
-import «Lp2lc».Active.STLCv2
 import «Lp2lc».Active.F
 import «Lp2lc».Active.Fsub
 import «Lp2lc».Active.FsubL_alt

@@ -2212,7 +2212,7 @@ def SC : Typ → Set Trm
 -- By definition, strongly computable terms are locally closed.
 lemma SC_regular A t : t ∈ (SC A) → lc t := by
   intro H
-  induction A using Typ.rec_like
+  induction A
   case typ_all =>
     exact H.1
   case typ_arrow t1 t2 _ _ =>
@@ -2230,7 +2230,7 @@ def neutral : Trm → Prop
 -- is also strongly computable.
 theorem CR2 : ∀ A t, (∀ t', t ∈ SC A → multi_red t t' → t' ∈ SC A) := by
   intro A
-  induction A using Typ.rec_like
+  induction A
   case typ_all =>
     intro t t' sct tmt'
     exact ⟨(multi_red_regular _ _ tmt').2, (multi_red_preserves_SN _ _ sct.2 tmt')⟩
@@ -2249,7 +2249,7 @@ theorem CR_1_3 : ∀ A t,
     (t ∈ SC A → SN t) ∧ --CR1
     (lc t → neutral t → (∀ t', beta_red t t' → t' ∈ SC A) → t ∈ SC A) := by --CR3
   intro A
-  induction A using Typ.rec_like
+  induction A
   case typ_all =>
     intro t
     constructor
@@ -2295,7 +2295,7 @@ def CR3 A t := (CR_1_3 A t).2
 
 -- Free variables are always strongly computable.
 lemma SC_var A x : ($ x) ∈ SC A := by
-  induction A using Typ.rec_like
+  induction A
   case typ_all =>
     constructor
     . apply lc_var x
