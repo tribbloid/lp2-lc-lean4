@@ -15,23 +15,36 @@ namespace STLC
 
 -- class Sys (X: Type) extends AnySys.Sys X
 
-inductive Typ {X: Type} : Type
-| wraps : AnySys.Typ -> Typ
-| arrow : X -> X -> Typ
-deriving Repr
-
-inductive Trm {X: Type}: Type
-| wraps : AnySys.Trm -> Trm
-| abs : Typ -> Trm -> Trm
-| app : Trm -> Trm -> Trm
-deriving Repr
-
 mutual
+-- variable (X: Type)
+
+inductive Typ0: Type
+| backbone : AnySys.Typ -> Typ
+| arrow : Typ -> Typ -> Typ
+deriving Repr
+
+inductive TypeExt {dd: Type}
+| base: (Typ0 -> (dd: Type) -> TypeExt
+| others: dd: Type -> TypeExt
+deriving Repr
+
+-- inductive Typ {X: Type}: Type
+-- | _unknown : X -> Typ
+-- | backbone : AnySys.Typ -> Typ
+-- | arrow : Typ -> Typ -> Typ
+-- deriving Repr
+
+end
+
+-- inductive TT : Type
+
+-- STLC rule only
+-- example : Typ (X := TT):= Typ.arrow
+--   (Typ.backbone AnySys.Typ.all)
+--   (Typ.backbone AnySys.Typ.all)
+
+-- SLOP: log the exact type of the previous example at compile-time
 
 end STLC
-
--- namespace F
-
--- end F
 
 end Lp2lc.Active

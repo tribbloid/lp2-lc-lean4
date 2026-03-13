@@ -13,18 +13,22 @@ abbrev Vars := Finset Var
 
 namespace AnySys
 
-inductive Typ {X: Type} : Type
+mutual
+-- variable (X: Type)
+
+inductive Typ : Type
 -- | _unknown: X -> Typ
 | all : Typ
 deriving Repr
 
-
 -- Defining (pre)terms by recursion --
-inductive Trm {X: Type} : Type
+inductive Trm : Type
 -- | _unknown: X -> TrmLike
 | bvar : Nat → Trm
 | fvar : Var → Trm
 deriving Repr
+
+end
 
 -- class Sys (X: Type)
 -- instance : Sys Typ where
