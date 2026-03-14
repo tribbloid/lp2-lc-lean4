@@ -7,6 +7,7 @@ namespace Lp2lc.Active
 
 namespace F
 
+/-
 mutual
 -- variable (X: Type)
 
@@ -36,7 +37,8 @@ mutual
 --   STLC.Typ._unknown (Typ.bvar 1)
 
 -- SLOP: log the exact type of the previous example at compile-time
+-/
 
 end F
 
-namespace Lp2lc.Active
+end Lp2lc.Active

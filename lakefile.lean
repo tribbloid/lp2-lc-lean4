@@ -10,6 +10,9 @@ lean_lib «Lp2lc» where
 lean_lib «Spike» where
   -- add library configuration options here
 
+lean_lib «LeanCompiler» where
+  -- add library configuration options here
+
 @[default_target]
 lean_exe «lp2lc» where
   root := `Main
@@ -28,4 +31,3 @@ require batteries from
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4" @ "v4.28.0"
-

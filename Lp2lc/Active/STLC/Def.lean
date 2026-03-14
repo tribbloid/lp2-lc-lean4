@@ -1,3 +1,6 @@
+import «Lp2lc».Active.STLCv0.Def
+
+/- 
 import Mathlib.Tactic
 import «Lp2lc».Active.Shared
 
@@ -18,7 +21,7 @@ namespace STLC
 mutual
 -- variable (X: Type)
 
-inductive Typ0: Type
+inductive Typ: Type
 | backbone : AnySys.Typ -> Typ
 | arrow : Typ -> Typ -> Typ
 deriving Repr
@@ -48,3 +51,4 @@ end
 end STLC
 
 end Lp2lc.Active
+-/
