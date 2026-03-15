@@ -1,6 +1,5 @@
 import «Lp2lc».Active.STLCv0.Def
 
-/- 
 import Mathlib.Tactic
 import «Lp2lc».Active.Shared
 
@@ -26,10 +25,6 @@ inductive Typ: Type
 | arrow : Typ -> Typ -> Typ
 deriving Repr
 
-inductive TypeExt {dd: Type}
-| base: (Typ0 -> (dd: Type) -> TypeExt
-| others: dd: Type -> TypeExt
-deriving Repr
 
 -- inductive Typ {X: Type}: Type
 -- | _unknown : X -> Typ
@@ -51,4 +46,3 @@ end
 end STLC
 
 end Lp2lc.Active
--/

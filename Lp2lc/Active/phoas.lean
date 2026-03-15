@@ -31,8 +31,8 @@ Recall that the term `a.denote` is sugar for `denote a` where `denote` is the fu
 We call it the "dot notation".
 -/
 @[reducible] def Ty.denote : Ty → Type
-  | nat    => Nat
-  | fn a b => a.denote → b.denote
+  | Ty.nat => Nat
+  | Ty.fn a b => Ty.denote a → Ty.denote b
 
 /-!
 With HOAS, each object language binding construct is represented with a function of
@@ -44,10 +44,10 @@ declaration by a type family `rep` standing for a "representation of variables."
 -/
 inductive Term' (rep : Ty → Type) : Ty → Type
   | var   : rep ty → Term' rep ty
-  | const : Nat → Term' rep .nat
-  | plus  : Term' rep .nat → Term' rep .nat → Term' rep .nat
-  | lam   : (rep dom → Term' rep ran) → Term' rep (.fn dom ran)
-  | app   : Term' rep (.fn dom ran) → Term' rep dom → Term' rep ran
+  | const : Nat → Term' rep Ty.nat
+  | plus  : Term' rep Ty.nat → Term' rep Ty.nat → Term' rep Ty.nat
+  | lam   : (rep dom → Term' rep ran) → Term' rep (Ty.fn dom ran)
+  | app   : Term' rep (Ty.fn dom ran) → Term' rep dom → Term' rep ran
   | let   : Term' rep ty₁ → (rep ty₁ → Term' rep ty₂) → Term' rep ty₂
 
 /-!
@@ -61,8 +61,6 @@ We write the final type of a closed term using polymorphic quantification over a
 choices of `rep` type family
 -/
 
-open Ty (nat fn)
-
 namespace FirstTry
 
 def Term (ty : Ty) := (rep : Ty → Type) → Term' rep ty
@@ -71,11 +69,11 @@ def Term (ty : Ty) := (rep : Ty → Type) → Term' rep ty
 In the next two example, note how each is written as a function over a `rep` choice,
 such that the specific choice has no impact on the structure of the term.
 -/
-def add : Term (fn nat (fn nat nat)) := fun _rep =>
-  .lam fun x => .lam fun y => .plus (.var x) (.var y)
+def add : Term (Ty.fn Ty.nat (Ty.fn Ty.nat Ty.nat)) := fun _rep =>
+  Term'.lam (fun x => Term'.lam (fun y => Term'.plus (Term'.var x) (Term'.var y)))
 
-def three_the_hard_way : Term nat := fun rep =>
-  .app (.app (add rep) (.const 1)) (.const 2)
+def three_the_hard_way : Term Ty.nat := fun rep =>
+  Term'.app (Term'.app (add rep) (Term'.const 1)) (Term'.const 2)
 
 end FirstTry
 
@@ -88,11 +86,11 @@ we can completely hide `rep` in these examples.
 
 def Term (ty : Ty) := {rep : Ty → Type} → Term' rep ty
 
-def add : Term (fn nat (fn nat nat)) :=
-  .lam fun x => .lam fun y => .plus (.var x) (.var y)
+def add : Term (Ty.fn Ty.nat (Ty.fn Ty.nat Ty.nat)) :=
+  Term'.lam (fun x => Term'.lam (fun y => Term'.plus (Term'.var x) (Term'.var y)))
 
-def three_the_hard_way : Term nat :=
-  .app (.app add (.const 1)) (.const 2)
+def three_the_hard_way : Term Ty.nat :=
+  Term'.app (Term'.app add (Term'.const 1)) (Term'.const 2)
 
 /-!
 It may not be at all obvious that the PHOAS representation admits the crucial computable
@@ -106,12 +104,12 @@ pass beneath. For our current choice of `Unit` data, we always pass `()`.
 -/
 
 def countVars : Term' (fun _ => Unit) ty → Nat
-  | .var _    => 1
-  | .const _  => 0
-  | .plus a b => countVars a + countVars b
-  | .app f a  => countVars f + countVars a
-  | .lam b    => countVars (b ())
-  | .let a b  => countVars a + countVars (b ())
+  | Term'.var _    => 1
+  | Term'.const _  => 0
+  | Term'.plus a b => countVars a + countVars b
+  | Term'.app f a  => countVars f + countVars a
+  | Term'.lam b    => countVars (b ())
+  | Term'.let a b  => countVars a + countVars (b ())
 
 /-! We can now easily prove that `add` has two variables by using reflexivity -/
 
@@ -127,14 +125,14 @@ We also use the string interpolation available in Lean. For example, `s!"x_{i}"`
 -/
 def pretty (e : Term' (fun _ => String) ty) (i : Nat := 1) : String :=
   match e with
-  | .var s     => s
-  | .const n   => toString n
-  | .app f a   => s!"({pretty f i} {pretty a i})"
-  | .plus a b  => s!"({pretty a i} + {pretty b i})"
-  | .lam f     =>
+  | Term'.var s     => s
+  | Term'.const n   => toString n
+  | Term'.app f a   => s!"({pretty f i} {pretty a i})"
+  | Term'.plus a b  => s!"({pretty a i} + {pretty b i})"
+  | Term'.lam f     =>
     let x := s!"x_{i}"
     s!"(fun {x} => {pretty (f x) (i+1)})"
-  | .let a b  =>
+  | Term'.let a b  =>
     let x := s!"x_{i}"
     s!"(let {x} := {pretty a i}; => {pretty (b x) (i+1)}"
 
@@ -150,12 +148,12 @@ new variables are added, but they are only tagged with their own term equivalent
 that this function squash is parameterized over a specific `rep` choice.
 -/
 def squash : Term' (Term' rep) ty → Term' rep ty
- | .var e    => e
- | .const n  => .const n
- | .plus a b => .plus (squash a) (squash b)
- | .lam f    => .lam fun x => squash (f (.var x))
- | .app f a  => .app (squash f) (squash a)
- | .let a b  => .let (squash a) fun x => squash (b (.var x))
+ | Term'.var e    => e
+ | Term'.const n  => Term'.const n
+ | Term'.plus a b => Term'.plus (squash a) (squash b)
+ | Term'.lam f    => Term'.lam (fun x => squash (f (Term'.var x)))
+ | Term'.app f a  => Term'.app (squash f) (squash a)
+ | Term'.let a b  => Term'.let (squash a) (fun x => squash (b (Term'.var x)))
 
 /-!
 To define the final substitution function over terms with single free variables, we define
@@ -180,7 +178,7 @@ We can view `Term1` as a term with hole. In the following example,
 the hole `_` is instantiated by `subst` with `three_the_hard_way`
 -/
 
-#eval pretty <| subst (fun x => .plus (.var x) (.const 5)) three_the_hard_way
+#eval pretty <| subst (fun x => Term'.plus (Term'.var x) (Term'.const 5)) three_the_hard_way
 
 /-!
 One further development, which may seem surprising at first,
@@ -190,13 +188,13 @@ when we tag variables with their denotations.
 The attribute `[simp]` instructs Lean to always try to unfold `denote` applications when one applies
 the `simp` tactic. We also say this is a hint for the Lean term simplifier.
 -/
-@[simp] def denote : Term' Ty.denote ty → ty.denote
-  | .var x    => x
-  | .const n  => n
-  | .plus a b => denote a + denote b
-  | .app f a  => denote f (denote a)
-  | .lam f    => fun x => denote (f x)
-  | .let a b  => denote (b (denote a))
+@[simp] def denote : Term' Ty.denote ty → Ty.denote ty
+  | Term'.var x    => x
+  | Term'.const n  => n
+  | Term'.plus a b => denote a + denote b
+  | Term'.app f a  => denote f (denote a)
+  | Term'.lam f    => fun x => denote (f x)
+  | Term'.let a b  => denote (b (denote a))
 
 example : denote three_the_hard_way = 3 :=
   rfl
@@ -212,15 +210,15 @@ We now define the constant folding optimization that traverses a term if replace
 `plus (const m) (const n)` with `const (n+m)`.
 -/
 @[simp] def constFold : Term' rep ty → Term' rep ty
-  | .var x    => .var x
-  | .const n  => .const n
-  | .app f a  => .app (constFold f) (constFold a)
-  | .lam f    => .lam fun x => constFold (f x)
-  | .let a b  => .let (constFold a) fun x => constFold (b x)
-  | .plus a b =>
+  | Term'.var x    => Term'.var x
+  | Term'.const n  => Term'.const n
+  | Term'.app f a  => Term'.app (constFold f) (constFold a)
+  | Term'.lam f    => Term'.lam (fun x => constFold (f x))
+  | Term'.let a b  => Term'.let (constFold a) (fun x => constFold (b x))
+  | Term'.plus a b =>
     match constFold a, constFold b with
-    | .const n, .const m => .const (n+m)
-    | a',       b'       => .plus a' b'
+    | Term'.const n, Term'.const m => Term'.const (n + m)
+    | a', b' => Term'.plus a' b'
 
 /-!
 The correctness of the `constFold` is proved using induction, case-analysis, and the term simplifier.
