@@ -11,29 +11,6 @@ structure Var where
 
 abbrev Vars := Finset Var
 
-namespace AnySys
-
-mutual
--- variable (X: Type)
-
-inductive Typ : Type
--- | _unknown: X -> Typ
-| all : Typ
-deriving Repr
-
--- Defining (pre)terms by recursion --
-inductive Trm : Type
--- | _unknown: X -> TrmLike
-| bvar : Nat → Trm
-| fvar : Var → Trm
-deriving Repr
-
-end
-
--- class Sys (X: Type)
--- instance : Sys Typ where
-
-end AnySys
 
 -- Generic environment helpers over lists of (Var × α)
 namespace Env

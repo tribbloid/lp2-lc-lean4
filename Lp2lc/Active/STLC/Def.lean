@@ -13,17 +13,31 @@ namespace Lp2lc.Active
 -- the problem is that theorems are defined for types (including wrapper), not rules
 -- Basic (pre)types --
 
+namespace LC -- lambda calculus, untyped
+
+inductive _Typ (TT: Type): Type
+| others: TT -> _Typ TT
+| all : _Typ TT
+
+def closed {TT : Type}: (_Typ TT) -> Prop
+| .others _ => False
+| .all => True
+
+def Typ (TT: Type) :=
+  {t : _Typ TT // closed t}
+
+end LC
+
 namespace STLC
 
 -- class Sys (X: Type) extends AnySys.Sys X
 
-mutual
+-- mutual
 -- variable (X: Type)
 
-inductive Typ: Type
-| backbone : AnySys.Typ -> Typ
-| arrow : Typ -> Typ -> Typ
-deriving Repr
+-- inductive Typ: Type
+-- | backbone : AnySys.Typ -> Typ
+-- | arrow : Typ -> Typ -> Typ
 
 
 -- inductive Typ {X: Type}: Type
@@ -32,7 +46,7 @@ deriving Repr
 -- | arrow : Typ -> Typ -> Typ
 -- deriving Repr
 
-end
+-- end
 
 -- inductive TT : Type
 
