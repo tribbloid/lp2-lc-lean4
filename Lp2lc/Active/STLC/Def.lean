@@ -19,43 +19,42 @@ inductive _Typ (TT: Type): Type
 | others: TT -> _Typ TT
 | all : _Typ TT
 
-def closed {TT : Type}: (_Typ TT) -> Prop
-| .others _ => False
-| .all => True
+-- def Typ (TT: Type) :=
+--   {t : _Typ TT // t = .all}
 
-def Typ (TT: Type) :=
-  {t : _Typ TT // closed t}
+def Typ (TT: Type): Type :=
+  {t : _Typ TT // ∀ x, t ≠ .others x}
 
 end LC
 
 namespace STLC
 
--- class Sys (X: Type) extends AnySys.Sys X
+inductive _Typ (TT: Type): Type
+| others: TT -> _Typ TT
+| base: LC._Typ TT -> _Typ TT
+| arrow : (_Typ TT) -> (_Typ TT) -> (_Typ TT)
 
--- mutual
--- variable (X: Type)
+def Typ (TT: Type): Type :=
+  {t : _Typ TT //
+    match t with
+    | .others _ => False
+    | .base _ => True
+    | .arrow _ _ => True
+  }
 
--- inductive Typ: Type
--- | backbone : AnySys.Typ -> Typ
--- | arrow : Typ -> Typ -> Typ
+def t0 := LC._Typ.all Int
+#check t0
+
+def examples (D: Type) :=
+
+  let t0 := LC._Typ.all
+
+  let t1: LC.Typ D := LC._Typ.all D
+  let t2: LC.Typ D := LC._Typ.all D
+
+  sorry
 
 
--- inductive Typ {X: Type}: Type
--- | _unknown : X -> Typ
--- | backbone : AnySys.Typ -> Typ
--- | arrow : Typ -> Typ -> Typ
--- deriving Repr
-
--- end
-
--- inductive TT : Type
-
--- STLC rule only
--- example : Typ (X := TT):= Typ.arrow
---   (Typ.backbone AnySys.Typ.all)
---   (Typ.backbone AnySys.Typ.all)
-
--- SLOP: log the exact type of the previous example at compile-time
 
 end STLC
 
