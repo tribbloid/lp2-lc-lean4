@@ -15,47 +15,82 @@ namespace Lp2lc.Active
 
 namespace LC -- lambda calculus, untyped
 
-inductive _Typ (TT: Type): Type
-| others: TT -> _Typ TT
-| all : _Typ TT
-
--- def Typ (TT: Type) :=
---   {t : _Typ TT // t = .all}
-
-def Typ (TT: Type): Type :=
-  {t : _Typ TT // ∀ x, t ≠ .others x}
+inductive Typ (F: Type): Type -- F stands for "fixed-point"
+| leaks: F -> Typ F -- AKA wildcard, others, unknown, can be any type symbol
+| all : Typ F
+deriving Repr
 
 end LC
 
 namespace STLC
 
-inductive _Typ (TT: Type): Type
-| others: TT -> _Typ TT
-| base: LC._Typ TT -> _Typ TT
-| arrow : (_Typ TT) -> (_Typ TT) -> (_Typ TT)
+inductive Typ (F: Type): Type
+| backbone: LC.Typ F -> Typ F
+| arrow : Typ F -> (Typ F) -> (Typ F)
+deriving Repr
+-- together they can write any type expression, e.g.
 
-def Typ (TT: Type): Type :=
-  {t : _Typ TT //
-    match t with
-    | .others _ => False
-    | .base _ => True
-    | .arrow _ _ => True
-  }
+namespace Example
 
-def t0 := LC._Typ.all Int
-#check t0
+  structure RealTyp where -- so this is the actual bottleneck?
+    self: Typ RealTyp
 
-def examples (D: Type) :=
+  -- real expressions of RealTyp in STLC
+  example :=
+    let k1 :=  (.all : LC.Typ RealTyp) -- LC
+    let k2 := -- STLC(LC)
+      let k1View := .backbone k1
+      Typ.arrow k1View k1View
+    let k3 := LC.Typ.leaks (RealTyp.mk k2) -- LC(STLC(LC))
+    Unit
 
-  let t0 := LC._Typ.all
+  -- more generic STLC expressions in any type system that uses STLC as backbone
+  -- namely, mk ensures that Typ F always has a representation in F
+  -- the reverse (F -> Typ F) is not true (e.g. for System F)
 
-  let t1: LC.Typ D := LC._Typ.all D
-  let t2: LC.Typ D := LC._Typ.all D
+  -- consequently, generic, extendable inductive proof need stronger conditions
+  -- see Example in SysF for what these conditions look like
+  example (F: Type) (mk: Typ F -> F) :=
+    let k1 :=  (.all : LC.Typ (F)) -- LC
+    let k2 := -- STLC(LC)
+      let k1View := .backbone k1
+      Typ.arrow k1View k1View
+    let k3 := LC.Typ.leaks (mk k2) -- LC(STLC(LC))
+    Unit
 
-  sorry
-
-
+end Example
 
 end STLC
+
+namespace SysF
+
+inductive Typ (F: Type): Type
+| backbone: STLC.Typ F -> Typ F
+| bvar : Nat -> Typ F -- binded type variable by De-Bruijn index
+| fvar : Var -> Typ F -- free type variable by name
+deriving Repr
+
+namespace Example
+
+def SomeBullshitConjecture: Prop := sorry
+
+def stlcProof0(F: Type)(unmk: F -> STLC.Typ F): STLC.Typ F -> SomeBullshitConjecture := sorry
+
+-- assuuming you have a generic, extendable theorem for STLC Typ:
+theorem stlcProof(F: Type)(unmk: F -> STLC.Typ F): STLC.Typ F -> SomeBullshitConjecture := sorry
+
+theorem bvarLemma(F: Type): SysF.Typ.bvar -> SomeBullshitConjecture := sorry
+theorem fvarLemma(F: Type): SysF.Typ.fvar -> SomeBullshitConjecture := sorry
+
+theorem sysFCorollary(F: Type): SysF.Typ F -> SomeBullshitConjecture :=
+  match t with
+  | .backbone t' => stlcProof F unmk t'
+  | .bvar n => bvarLemma F
+  | .fvar x => fvarLemma F
+
+
+end Example
+
+end SysF
 
 end Lp2lc.Active
