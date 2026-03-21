@@ -1,5 +1,3 @@
-
-
 import Mathlib.Tactic
 import «Lp2lc».Active.Shared
 
@@ -74,29 +72,78 @@ namespace Example
 
 def SomeBullshitConjecture : Prop := sorry
 
--- assuuming you have a generic, extendable theorem for STLC Typ:
-theorem stlcProof (F : Type)
-  (mk : STLC.Typ F -> F)
-  (unmk : F -> STLC.Typ F) : STLC.Typ F -> SomeBullshitConjecture :=
-  sorry
 
 theorem bvarLemma (_F : Type) (_n : Nat) : SomeBullshitConjecture := sorry
 theorem fvarLemma (_F : Type) (_x : Var) : SomeBullshitConjecture := sorry
 
+namespace P1
+
+-- assuuming you have a generic, extendable theorem for STLC Typ:
+theorem stlcProof (F : Type)
+  (mk : STLC.Typ F -> F)
+  (unmk : F -> STLC.Typ F) -- TODO: not sure if ⊕' can be moved to call-site
+  : STLC.Typ F -> SomeBullshitConjecture :=
+  sorry
+
+
 theorem sysFCorollary (F : Type)
   (mk : Typ F -> F)
-  (unmk : F -> Typ F) : Typ F -> SomeBullshitConjecture
+  (unmk : F -> Typ F)
+  : Typ F -> SomeBullshitConjecture
   | .bvar n => bvarLemma F n
   | .fvar x => fvarLemma F x
   | .backbone t =>
-    let subMk (typ: STLC.Typ F): F := mk (Typ.backbone typ)
-    let subUnmk(real: F): STLC.Typ F :=
+    let ev1(typ: STLC.Typ F): F := mk (Typ.backbone typ)
+    let ev2(real: F): STLC.Typ F :=
       let typ := unmk real
 
       sorry
-    stlcProof F subMk subUnmk t
+    stlcProof F ev1 ev2 t
     -- let t' := unmk t
     -- stlcProof F unmk t
+
+end P1
+
+namespace P2
+
+
+-- assuuming you have a generic, extendable theorem for STLC Typ:
+theorem stlcProof (F : Type)
+  (mk : STLC.Typ F <-> F)
+  (v: F)
+  : SomeBullshitConjecture :=
+  sorry
+
+-- assuuming you have a generic, extendable theorem for STLC Typ:
+theorem stlcProofRelaxed (F : Type)
+  (mk : STLC.Typ F -> F)
+  (unmk : F -> (STLC.Typ F ⊕' SomeBullshitConjecture)) -- TODO: not sure if ⊕' can be moved to call-site
+  (v: F)
+  : SomeBullshitConjecture :=
+  match unmk v with
+  | .inl t => stlcProof F mk unmk t
+  | .inr p => p
+
+
+-- theorem sysFCorollary (F : Type)
+--   (mk : Typ F -> F)
+--   (unmk : F -> Typ F)
+--   (v: F)
+--   : SomeBullshitConjecture :=
+--     match unmk v with
+--     | .bvar n => bvarLemma f n
+--     | .fvar x => fvarLemma f n
+--     | .backbone t =>
+
+--     let ev1 (typ: STLC.Typ F): F := mk (Typ.backbone typ)
+
+--     let ev2(real: F): STLC.Typ F :=
+--       let typ := unmk real
+
+--     let result := fun (v: F) => stlcProof F ev1 ev2 v
+--     result
+
+end P2
 
 
 end Example
