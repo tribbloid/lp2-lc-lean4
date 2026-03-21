@@ -13,7 +13,7 @@ namespace Lp2lc.Active
 -- the problem is that theorems are defined for types (including wrapper), not rules
 -- Basic (pre)types --
 
-namespace LC -- lambda calculus, untyped
+namespace LC -- untyped lambda calculus
 
 inductive Typ (F: Type): Type -- F stands for "fixed-point"
 | leaks: F -> Typ F -- AKA wildcard, others, unknown, can be any type symbol
@@ -22,7 +22,7 @@ deriving Repr
 
 end LC
 
-namespace STLC
+namespace STLC -- simply-typed lambda calculus
 
 inductive Typ (F: Type): Type
 | backbone: LC.Typ F -> Typ F
@@ -41,7 +41,7 @@ namespace Example
     let k2 := -- STLC(LC)
       let k1View := .backbone k1
       Typ.arrow k1View k1View
-    let k3 := LC.Typ.leaks (RealTyp.mk k2) -- LC(STLC(LC))
+    let _ := LC.Typ.leaks (RealTyp.mk k2) -- LC(STLC(LC))
     Unit
 
   -- more generic STLC expressions in any type system that uses STLC as backbone
@@ -55,7 +55,7 @@ namespace Example
     let k2 := -- STLC(LC)
       let k1View := .backbone k1
       Typ.arrow k1View k1View
-    let k3 := LC.Typ.leaks (mk k2) -- LC(STLC(LC))
+    let _ := LC.Typ.leaks (mk k2) -- LC(STLC(LC))
     Unit
 
 end Example
@@ -72,21 +72,31 @@ deriving Repr
 
 namespace Example
 
-def SomeBullshitConjecture: Prop := sorry
-
-def stlcProof0(F: Type)(unmk: F -> STLC.Typ F): STLC.Typ F -> SomeBullshitConjecture := sorry
+def SomeBullshitConjecture : Prop := sorry
 
 -- assuuming you have a generic, extendable theorem for STLC Typ:
-theorem stlcProof(F: Type)(unmk: F -> STLC.Typ F): STLC.Typ F -> SomeBullshitConjecture := sorry
+theorem stlcProof (F : Type)
+  (mk : STLC.Typ F -> F)
+  (unmk : F -> STLC.Typ F) : STLC.Typ F -> SomeBullshitConjecture :=
+  sorry
 
-theorem bvarLemma(F: Type): SysF.Typ.bvar -> SomeBullshitConjecture := sorry
-theorem fvarLemma(F: Type): SysF.Typ.fvar -> SomeBullshitConjecture := sorry
+theorem bvarLemma (_F : Type) (_n : Nat) : SomeBullshitConjecture := sorry
+theorem fvarLemma (_F : Type) (_x : Var) : SomeBullshitConjecture := sorry
 
-theorem sysFCorollary(F: Type): SysF.Typ F -> SomeBullshitConjecture :=
-  match t with
-  | .backbone t' => stlcProof F unmk t'
-  | .bvar n => bvarLemma F
-  | .fvar x => fvarLemma F
+theorem sysFCorollary (F : Type)
+  (mk : Typ F -> F)
+  (unmk : F -> Typ F) : Typ F -> SomeBullshitConjecture
+  | .bvar n => bvarLemma F n
+  | .fvar x => fvarLemma F x
+  | .backbone t =>
+    let subMk (typ: STLC.Typ F): F := mk (Typ.backbone typ)
+    let subUnmk(real: F): STLC.Typ F :=
+      let typ := unmk real
+
+      sorry
+    stlcProof F subMk subUnmk t
+    -- let t' := unmk t
+    -- stlcProof F unmk t
 
 
 end Example
