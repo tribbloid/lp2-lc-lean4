@@ -31,3 +31,6 @@ require batteries from
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4" @ "v4.28.0"
+
+require iris from git
+  "https://github.com/leanprover-community/iris-lean.git" @ "master"
