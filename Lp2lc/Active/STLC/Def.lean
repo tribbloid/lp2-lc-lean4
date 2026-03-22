@@ -42,9 +42,9 @@ namespace Example
   example :=
     let k1 :=  (.all : LC.Typ RealTyp) -- LC
     let k2 := -- STLC(LC)
-      let k1View := .backbone k1
-      Typ.arrow k1View k1View
-    let _ := LC.Typ.leaks (RealTyp.mk k2) -- LC(STLC(LC))
+      let k1View : Typ RealTyp := Typ.backbone k1
+      Typ.arrow (RealTyp.mk k1View) (RealTyp.mk k1View)
+    let _ : RealTyp := RealTyp.mk k2 -- fixpoint of STLC(LC)
     Unit
 
   -- more generic STLC expressions in any type system that uses STLC as backbone
@@ -56,9 +56,9 @@ namespace Example
   example (F: Type) (mk: Typ F -> F) :=
     let k1 :=  (.all : LC.Typ (F)) -- LC
     let k2 := -- STLC(LC)
-      let k1View := .backbone k1
-      Typ.arrow k1View k1View
-    let _ := LC.Typ.leaks (mk k2) -- LC(STLC(LC))
+      let k1View : Typ F := Typ.backbone k1
+      Typ.arrow (mk k1View) (mk k1View)
+    let _ : F := mk k2 -- fixpoint of STLC(LC)
     Unit
 
 end Example
@@ -161,17 +161,16 @@ theorem sysFCorollary2 (F : Type)
   (mk : BiMap (Typ F) F)
   (v: F)
   : SomeBullshitConjecture :=
+    let defaultTyp : STLC.Typ F := STLC.Typ.backbone (.all : LC.Typ F)
     let view : BiMap (STLC.Typ F) F := {
         fwd := fun typ => mk.fwd (Typ.backbone typ)
         inv := fun real =>
           match mk.inv real with
           | .backbone t' => t'
-          | .bvar n => bvarLemma F n
-          | .fvar x => fvarLemma F x
+          | .bvar _ => defaultTyp
+          | .fvar _ => defaultTyp
       }
     stlcProof F view v
-
-w
 end P2
 
 
