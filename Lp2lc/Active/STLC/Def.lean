@@ -28,15 +28,15 @@ end LC
 namespace STLC -- simply-typed lambda calculus
 
 inductive Typ (F: Type): Type
-| backbone: LC.Typ F -> Typ F -- should cost 0 fuel in induction, but no problem if it cost 1 fuel
+| backbone: LC.Typ F -> Typ F -- unfold ([a] expression to its parts) should be free (cost no fuel) in induction, but no problem if it cost 1 fuel
 | arrow : F -> F -> (Typ F)
 deriving Repr
 -- together they can write any type expression, e.g.
 
 namespace Example
 
-  structure RealTyp where -- so this is the actual bottleneck?
-    self: Typ RealTyp
+  structure RealTyp where
+    self: Typ RealTyp -- unfold[a] should also be free, mk (parts to expression) cost fuel
 
   -- real expressions of RealTyp in STLC
   example :=
@@ -56,8 +56,8 @@ namespace Example
   example (F: Type) (mk: Typ F -> F) :=
     let k1 :=  (.all : LC.Typ (F)) -- LC
     let k2 := -- STLC(LC)
-      let k1View : Typ F := Typ.backbone k1
-      Typ.arrow (mk k1View) (mk k1View)
+      let _k1 : Typ F := Typ.backbone k1
+      Typ.arrow (mk _k1) (mk _k1)
     let _ : F := mk k2 -- fixpoint of STLC(LC)
     Unit
 
@@ -75,104 +75,33 @@ deriving Repr
 
 namespace Example
 
-def SomeBullshitConjecture : Prop := sorry
+  def SomeBullshitConjecture : Prop := sorry
 
+  lemma bvarLemma (_F : Type) (_n : Nat) : SomeBullshitConjecture := sorry
+  lemma fvarLemma (_F : Type) (_x : Var) : SomeBullshitConjecture := sorry
 
-theorem bvarLemma (_F : Type) (_n : Nat) : SomeBullshitConjecture := sorry
-theorem fvarLemma (_F : Type) (_x : Var) : SomeBullshitConjecture := sorry
+  -- assuuming you have a generic, extendable theorem for STLC Typ:
+  lemma stlcLemma (F : Type) -- THIS should NOT happen.
+    (mk : STLC.Typ F -> F)
+    (unfold : F -> (STLC.Typ F ⊕' SomeBullshitConjecture)) -- contains a shortcut to the conjecture directly
+    (v: F)
+    : SomeBullshitConjecture :=
+      sorry --
 
-namespace P1
-
--- assuuming you have a generic, extendable theorem for STLC Typ:
-theorem stlcProof (F : Type)
-  (view : BiMap (STLC.Typ F) F) -- TODO: not sure if ⊕' can be moved to call-site
-  : STLC.Typ F -> SomeBullshitConjecture :=
-  sorry
-
-
-theorem sysFCorollary (F : Type)
-  (mk : Typ F -> F)
-  (unmk : F -> Typ F)
-  : Typ F -> SomeBullshitConjecture
-  | .bvar n => bvarLemma F n
-  | .fvar x => fvarLemma F x
-  | .backbone t =>
-    let view : BiMap (STLC.Typ F) F := {
-      fwd := fun typ => mk (Typ.backbone typ)
-      inv := fun real =>
-        let typ := unmk real
-
-        sorry
-    }
-    stlcProof F view t
-    -- let t' := unmk t
-    -- stlcProof F unmk t
-
-end P1
-
-namespace P2
-
--- assuuming you have a generic, extendable theorem for STLC Typ:
-theorem stlcProof (F : Type)
-  (_view : BiMap (STLC.Typ F) F) -- assuming that both to_fun and inv_fun are total and terminating
-  (_v : F)
-  : SomeBullshitConjecture :=
-  sorry
-
--- assuuming you have a generic, extendable theorem for STLC Typ:
-theorem stlcProofRelaxed (F : Type) -- THIS should NOT happen.
-  (mk : STLC.Typ F -> F)
-  (unmk : F -> (STLC.Typ F ⊕' SomeBullshitConjecture)) -- contains a shortcut to the conjecture directly
-  (v: F)
-  : SomeBullshitConjecture :=
-    match unmk v with
-    | .inl (t: STLC.Typ F) =>
-      stlcProof F {
-        fwd := mk
-        inv := fun real =>
-          match unmk real with
-          | .inl t' => t'
-          | .inr _ => t
-          -- t
-      }
-        (mk t)
-    | .inr p => p
-
-
-theorem sysFCorollary (F : Type)
-  (mk : BiMap (Typ F) F)
-  (v: F)
-  : SomeBullshitConjecture :=
-    match mk.inv v with
-    | .bvar n => bvarLemma F n
-    | .fvar x => fvarLemma F x
-    | .backbone (t: STLC.Typ F) =>
-      let view : BiMap (STLC.Typ F) F := {
-        fwd := fun typ => mk.fwd (Typ.backbone typ)
-        inv := fun real =>
-          match mk.inv real with
-          | .backbone t' => t'
-          | .bvar _ => t
-          | .fvar _ => t
-      }
-      stlcProof F view v
-
-theorem sysFCorollary2 (F : Type)
-  (mk : BiMap (Typ F) F)
-  (v: F)
-  : SomeBullshitConjecture :=
-    let defaultTyp : STLC.Typ F := STLC.Typ.backbone (.all : LC.Typ F)
-    let view : BiMap (STLC.Typ F) F := {
-        fwd := fun typ => mk.fwd (Typ.backbone typ)
-        inv := fun real =>
-          match mk.inv real with
-          | .backbone t' => t'
-          | .bvar _ => defaultTyp
-          | .fvar _ => defaultTyp
-      }
-    stlcProof F view v
-end P2
-
+  theorem sysFCorollary (F : Type)
+    (mk : Typ F -> F)
+    (unfold : F -> (Typ F ⊕' SomeBullshitConjecture)) -- contains a shortcut to the conjecture directly
+    (v: F)
+    : SomeBullshitConjecture :=
+      stlcLemma F
+        (fun t => mk (.backbone t))
+        (fun real =>
+          match unfold real with
+          | .inl (.backbone t) => .inl t
+          | .inl (.bvar n) => .inr (bvarLemma F n)
+          | .inl (.fvar x) => .inr (fvarLemma F x)
+          | .inr p => .inr p)
+        v
 
 end Example
 
