@@ -8,19 +8,15 @@ namespace Guarded
 
 open Iris
 
-inductive TypLike (Peer : Type _) : Type _ where
-| typ_all : TypLike Peer
-| typ_arrow : Later Peer → Later Peer → TypLike Peer
+inductive Typ (Peer : Type _) : Type _ where
+| typ_all : Typ Peer
+| typ_arrow : Later Peer → Later Peer → Typ Peer
 
-inductive TrmLike (Typ Peer : Type _) : Type _ where
-| bvar : Nat → TrmLike Typ Peer
-| fvar : Var → TrmLike Typ Peer
-| abs : Typ → Later Peer → TrmLike Typ Peer
-| app : Later Peer → Later Peer → TrmLike Typ Peer
-
-abbrev TypBody := TypLike
-
-abbrev TrmBody (Typ : Type _) := TrmLike Typ
+inductive Trm (Typ Peer : Type _) : Type _ where
+| bvar : Nat → Trm Typ Peer
+| fvar : Var → Trm Typ Peer
+| abs : Typ → Later Peer → Trm Typ Peer
+| app : Later Peer → Later Peer → Trm Typ Peer
 
 end Guarded
 

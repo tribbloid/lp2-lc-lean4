@@ -1,5 +1,4 @@
-import «Lp2lc».Active.STLCv0.Guarded
-
+import «Lp2lc».Active.STLCv0.Guarded.Guarded
 
 namespace Lp2lc.Active.STLC
 
