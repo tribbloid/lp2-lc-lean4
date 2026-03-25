@@ -1,2 +1,2 @@
-import «Lp2lc».Active.STLC.Def
-import «Lp2lc».Active.STLC.Proof
+import «Lp2lc».Active.STLC.StepIndexedDemo
+import «Lp2lc».Active.STLC.StepIndexDemo_partiallyCorrect

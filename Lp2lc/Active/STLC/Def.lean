@@ -3,10 +3,6 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active
 
-structure BiMap (α β : Type) where
-  fwd : α -> β
-  inv : β -> α
-
 -- System extension, induction rule always cast input into output in either the same system or the most specific system that defined the rule
 -- AKA, Typ and Trm are always closed under rules/composition/induction
 -- e.g. using STLC rule can cast STLC Typ into STLC Typ, or F Typ into F Typ
@@ -15,96 +11,106 @@ structure BiMap (α β : Type) where
 -- the problem is that theorems are defined for types (including wrapper), not rules
 -- Basic (pre)types --
 
+structure Sys where
+  FType: Type u -- F stands for "fixed-point"
+  FTerm: Type v
+
 namespace LC -- untyped lambda calculus
 
-inductive Typ
-  (F: Type) --AKA wildcard, others, unknown, can be any type symbol
-  : Type -- F stands for "fixed-point"
-| all : Typ F
+inductive Trm (sys: Sys) : Type
+| bvar : Nat -> Trm sys -- de Bruijn for bounded variable
+| fvar : Var -> Trm sys -- name for free variable (they also have de Bruijn but are quite useless)
+| abs : (T: sys.FType) -> (x: sys.FTerm) -> Trm sys -- {x: T => x + 1}
+| app : (fn: sys.FTerm) -> (x: sys.FTerm) -> Trm sys -- {fn(x)}
+
+inductive Typ (sys: Sys) : Type
+| any : Typ sys -- can bind anything, in type system without subtyping (e.g. LEAN, Haskell) this is usually an internal feature not exposed to user
 deriving Repr
 
 end LC
 
 namespace STLC -- simply-typed lambda calculus
 
-inductive Typ (F: Type): Type
-| backbone: LC.Typ F -> Typ F -- unfold ([a] expression to its parts) should be free (cost no fuel) in induction, but no problem if it cost 1 fuel
-| arrow : F -> F -> (Typ F)
-deriving Repr
+abbrev Trm (sys: Sys) := LC.Trm sys
+
+inductive Typ (sys: Sys): Type
+| backbone: LC.Typ sys -> Typ sys -- unfold ([a] expression to its parts) should be free (cost no fuel) in induction, but no problem if it cost 1 fuel
+| arrow : sys.FType -> sys.FType -> (Typ sys)
+
 -- together they can write any type expression, e.g.
 
-namespace Example
+-- namespace Example
 
-  structure RealTyp where
-    self: Typ RealTyp -- unfold[a] should also be free, mk (parts to expression) cost fuel
+  abbrev mk_sys (FType FTerm : Type) : Sys := {
+    FType := FType
+    FTerm := FTerm
+  }
 
-  -- real expressions of RealTyp in STLC
-  example :=
-    let k1 :=  (.all : LC.Typ RealTyp) -- LC
-    let k2 := -- STLC(LC)
-      let k1View : Typ RealTyp := Typ.backbone k1
-      Typ.arrow (RealTyp.mk k1View) (RealTyp.mk k1View)
-    let _ : RealTyp := RealTyp.mk k2 -- fixpoint of STLC(LC)
-    Unit
+  mutual
+    unsafe structure RealTyp : Type where
+      self: Typ (mk_sys RealTyp RealTrm)
 
-  -- more generic STLC expressions in any type system that uses STLC as backbone
-  -- namely, mk ensures that Typ F always has a representation in F
-  -- the reverse (F -> Typ F) is not true (e.g. for System F)
+    unsafe structure RealTrm : Type where
+      self: Trm (mk_sys RealTyp RealTrm)
+  end
 
-  -- consequently, generic, extendable inductive proof need stronger conditions
-  -- see Example in SysF for what these conditions look like
-  example (F: Type) (mk: Typ F -> F) :=
-    let k1 :=  (.all : LC.Typ (F)) -- LC
-    let k2 := -- STLC(LC)
-      let _k1 : Typ F := Typ.backbone k1
-      Typ.arrow (mk _k1) (mk _k1)
-    let _ : F := mk k2 -- fixpoint of STLC(LC)
-    Unit
+  unsafe def sys : Sys := mk_sys RealTyp RealTrm
 
-end Example
+
+--   -- real expressions of RealTyp in STLC
+--   example :=
+--     let k1 :=  (any : LC.Typ RealTyp) -- LC
+--     let k2 := -- STLC(LC)
+--       let k1View : Typ RealTyp := Typ.backbone k1
+--       Typ.arrow (RealTyp.mk k1View) (RealTyp.mk k1View)
+--     let _ : RealTyp := RealTyp.mk k2 -- fixpoint of STLC(LC)
+--     Unit
+
+--   -- more generic STLC expressions in any type system that uses STLC as backbone
+--   -- namely, mk ensures that Typ F always has a representation in F
+--   -- the reverse (F -> Typ F) is not true (e.g. for System F)
+
+--   -- consequently, generic, extendable inductive proof need stronger conditions
+--   -- see Example in SysF for what these conditions look like
+--   example (F: Type) (mk: Typ F -> F) :=
+--     let k1 :=  (any : LC.Typ (F)) -- LC
+--     let k2 := -- STLC(LC)
+--       let _k1 : Typ F := Typ.backbone k1
+--       Typ.arrow (mk _k1) (mk _k1)
+--     let _ : F := mk k2 -- fixpoint of STLC(LC)
+--     Unit
+
+
+--   structure RealTrm where
+--     self: Trm RealTyp RealTrm
+--   deriving Repr
+
+--   example (mkT : Trm RealTyp RealTrm -> RealTrm) (mkY : Typ RealTyp -> RealTyp) :=
+--     let t1 := (any : LC.Typ RealTyp)
+--     let k1 := mkY (Typ.backbone t1)
+--     let e1 := (LC.Trm.abs k1 (mkT (Trm.backbone (LC.Trm.bvar 0))) : LC.Trm RealTyp RealTrm)
+--     let e2 := Trm.backbone e1
+--     let _ : RealTrm := mkT e2
+--     Unit
+
+-- end Example
 
 end STLC
 
-namespace SysF
+-- namespace SysF
 
-inductive Typ (F: Type): Type
-| backbone: STLC.Typ F -> Typ F
-| bvar : Nat -> Typ F -- binded type variable by De-Bruijn index
-| fvar : Var -> Typ F -- free type variable by name
-deriving Repr
+-- inductive Typ (F: Type): Type
+-- | backbone: STLC.Typ F -> Typ F
+-- | bvar : Nat -> Typ F -- binded type variable by De-Bruijn index
+-- | fvar : Var -> Typ F -- free type variable by name
+-- deriving Repr
 
-namespace Example
+-- inductive Trm (F: Type) (G: Type) : Type
+-- | backbone : STLC.Trm F G -> Trm F G
+-- | tabs : F -> G -> Trm F G
+-- | tapp : G -> F -> Trm F G
+-- deriving Repr
 
-  def SomeBullshitConjecture : Prop := sorry
-
-  lemma bvarLemma (_F : Type) (_n : Nat) : SomeBullshitConjecture := sorry
-  lemma fvarLemma (_F : Type) (_x : Var) : SomeBullshitConjecture := sorry
-
-  -- assuuming you have a generic, extendable theorem for STLC Typ:
-  lemma stlcLemma (F : Type) -- THIS should NOT happen.
-    (mk : STLC.Typ F -> F)
-    (unfold : F -> (STLC.Typ F ⊕' SomeBullshitConjecture)) -- contains a shortcut to the conjecture directly
-    (v: F)
-    : SomeBullshitConjecture :=
-      sorry --
-
-  theorem sysFCorollary (F : Type)
-    (mk : Typ F -> F)
-    (unfold : F -> (Typ F ⊕' SomeBullshitConjecture)) -- contains a shortcut to the conjecture directly
-    (v: F)
-    : SomeBullshitConjecture :=
-      stlcLemma F
-        (fun t => mk (.backbone t))
-        (fun real =>
-          match unfold real with
-          | .inl (.backbone t) => .inl t
-          | .inl (.bvar n) => .inr (bvarLemma F n)
-          | .inl (.fvar x) => .inr (fvarLemma F x)
-          | .inr p => .inr p)
-        v
-
-end Example
-
-end SysF
+-- end SysF
 
 end Lp2lc.Active
