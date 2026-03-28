@@ -1,3 +1,5 @@
+import «Lp2lc».Util
+
 /-!
 # Parametric Higher-Order Abstract Syntax
 
@@ -33,6 +35,12 @@ We call it the "dot notation".
 @[reducible] def Ty.denote : Ty → Type
   | Ty.nat => Nat
   | Ty.fn a b => Ty.denote a → Ty.denote b
+
+def v1 :=
+  let x := Ty.nat
+  x.denote
+#rfl v1
+example : v1 = Nat := rfl
 
 /-!
 With HOAS, each object language binding construct is represented with a function of
@@ -195,6 +203,8 @@ the `simp` tactic. We also say this is a hint for the Lean term simplifier.
   | Term'.app f a  => denote f (denote a)
   | Term'.lam f    => fun x => denote (f x)
   | Term'.let a b  => denote (b (denote a))
+
+#rfl denote three_the_hard_way
 
 example : denote three_the_hard_way = 3 :=
   rfl

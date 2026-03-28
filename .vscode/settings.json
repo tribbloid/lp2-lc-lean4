@@ -4,5 +4,6 @@
     },
     "search.exclude": {
         "original/": true
-    }
+    },
+    "java.compile.nullAnalysis.mode": "automatic"
 }

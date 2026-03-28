@@ -1,7 +1,6 @@
 import Std
 import Mathlib.Data.Finset.Basic
 
-
 namespace Lp2lc.Active
 
 -- Shared variable type and finite set of variables
@@ -39,13 +38,9 @@ end Lp2lc.Active
 
 -----
 
+inductive Which : Type -- only a tag/index for AST of different nature
+| typ
+| trm
+deriving DecidableEq, Repr
 
-namespace Exp
-
-inductive TypLike (X: Type) : Type
-| _unknown: X -> TypLike X
-| all : TypLike X -- all-inclusive base type
-| arrow : X -> X -> TypLike X
-deriving Repr
-
-end Exp
+def Rep := Which -> Type -- both types and terms are represented by a type family from `Which`
