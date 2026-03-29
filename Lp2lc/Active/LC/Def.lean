@@ -21,24 +21,23 @@ def EnvTrms (F: Rep) := Finset (Var × AST F .trm)
 def EnvTyps (F: Rep) := Finset (Var × AST F .typ)
 def Env (F: Rep) := EnvTrms F × EnvTyps F
 
-def typing (F: Rep) : Env F -> (x: Trm F) -> (T: Typ F) -> Prop -- true if x can inhabit T
+def typing : Env F -> (x: Trm F) -> (T: Typ F) -> Prop -- true if x can inhabit T
  := sorry
 
-def isValue : Trm F -> Prop
+def isValue : (x: Trm F) -> Prop -- true if x is a value
   := sorry
 
-def canReduce : Trm F -> Trm F -> Prop
+def canReduce : (e: Trm F) -> (x: Trm F) -> Prop -- true if e can be reduced to x
   := sorry
-
 
 def preservation : Prop := ∀ (F: Rep) (E : Env F) (e e' : Trm F) (T : Typ F),
-  typing F E e T ->
+  typing E e T ->
   canReduce e e' ->
-  typing F E e' T
+  typing E e' T
 
--- def progress : Prop := ∀ (F: Rep) (E: Env F) (e : Trm F) (T : Typ F),
---   Typing E e T ->
---   Value e ∨ (∃ e', Red e e')
+def progress : Prop := ∀ (F: Rep) (E: Env F) (e : Trm F) (T : Typ F),
+  typing E e T ->
+  isValue e ∨ (∃ e', canReduce e e')
 
 
 
