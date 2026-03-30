@@ -50,3 +50,6 @@ lean
 **/.idea
 
 .DS_Store
+
+# AI
+.superset/
