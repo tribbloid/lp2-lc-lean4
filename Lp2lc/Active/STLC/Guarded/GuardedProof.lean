@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLCv0.Guarded.Guarded
+import «Lp2lc».Active.STLC.Guarded.Guarded
 
 
 namespace Lp2lc.Active.STLC
@@ -12,7 +12,7 @@ lemma pick_fresh (t : Trm) (L : Finset Var) : ∃ (x : Var), x ∉ (L ∪ fv t) 
 
 -- If a variable does not appear free in a term, then substituting for it has no effect --
 lemma subst_fresh (t u : Trm) (y : Var) (h : y ∉ (fv t)) : ([y // u] t) = t := by
-  induction t using Trm.rec_like
+  induction t using rec_like
   case bvar i =>
     simp [subst]
   case fvar x =>
@@ -33,7 +33,6 @@ end Trm
 In order to make typing judgments, we need the notion of Env.
 The definition is designed to talk about "(x : T)"-like assumptions.
 -/
-open List
 
 lemma context_terms_iff_in_list (x : Var) (Γ : Env) :
     (x ∈ Env.terms Γ) ↔ Env.in_context x Γ := by
@@ -55,7 +54,7 @@ lemma in_context_append_neg (x : Var) (Γ Δ : Env) :
   induction Γ
   case nil =>
     simp only [Env.in_context, not_false_eq_true, true_and] at H ⊢
-    rwa [nil_append] at H
+    rwa [List.nil_append] at H
   case cons b Γ' f =>
     simp [Env.in_context] at H f ⊢
     exact ⟨⟨H.1, (f (H.2)).1⟩, (f (H.2)).2⟩
@@ -65,10 +64,10 @@ lemma in_context_append_neg' (x : Var) (Γ Δ : Env) :
   rintro ⟨H1, H2⟩
   induction Γ
   case nil =>
-    simp only [nil_append]
+    simp only [List.nil_append]
     exact H2
   case cons b Γ' f =>
-    simp [Env.in_context, append_eq] at H1 ⊢
+    simp [Env.in_context, List.append_eq] at H1 ⊢
     exact ⟨H1.1, f H1.2⟩
 
 -- We can only bind variable once per Env --
@@ -76,7 +75,7 @@ lemma in_context_append_neg' (x : Var) (Γ Δ : Env) :
 --Properties of valid contexts
 lemma valid_push (Γ : Env) (x : Var) (T : Typ) :
     Env.valid_ctx Γ → ¬ (Env.in_context x Γ) → Env.valid_ctx ((([(x, T)] : Env) ++ Γ)) := by
-  simp only [singleton_append]
+  simp only [List.singleton_append]
   exact (Env.valid_ctx.valid_cons Γ x T)
 
 lemma valid_remove_mid (Γ Δ Ψ : Env) :
@@ -85,19 +84,19 @@ lemma valid_remove_mid (Γ Δ Ψ : Env) :
   case nil =>
     induction Δ
     case nil =>
-      simp only [append_nil, nil_append, imp_self]
+      simp only [List.append_nil, List.nil_append, imp_self]
     case cons b Δ' f =>
-      simp only [nil_append, cons_append] at f ⊢
+      simp only [List.nil_append, List.cons_append] at f ⊢
       intro H
       cases H
       next x S p p' =>
         exact (f p)
   case cons b Ψ f =>
-    simp only [cons_append, append_assoc]
+    simp only [List.cons_append, List.append_assoc]
     intro H
     cases H
     next x S p p' =>
-      simp only [cons_append, append_assoc] at f p ⊢
+      simp only [List.cons_append, List.append_assoc] at f p ⊢
       apply Env.valid_ctx.valid_cons
       exact (f p)
       apply in_context_append_neg'
@@ -109,7 +108,7 @@ lemma valid_remove_mid_cons (x : Var) (T : Typ) (Γ Δ : Env) :
     Env.valid_ctx (Δ ++ (x, T ) :: Γ)
     → Env.valid_ctx (Δ ++ Γ) := by
   intro H
-  simp only [append_cons Δ (x, T ) Γ] at H
+  simp only [List.append_cons Δ (x, T ) Γ] at H
   apply valid_remove_mid
   exact H
 
@@ -117,7 +116,7 @@ lemma valid_remove_cons (x : Var) (T : Typ) (Γ : Env) :
     Env.valid_ctx ((x, T ) :: Γ)
     → Env.valid_ctx (Γ) := by
   intro H
-  rw [← nil_append Γ]
+  rw [← List.nil_append Γ]
   apply valid_remove_mid_cons
   simp
   exact H
@@ -130,7 +129,7 @@ lemma binds_singleton (x : Var) (T : Typ) : Env.binds x T (([(x, T)] : Env)) := 
 
 lemma binds_singleton_tail (x : Var) (T : Typ) (Γ : Env) :
     Env.binds x T ((([(x, T)] : Env) ++ Γ)) := by
-  simp [Env.binds, Env.get, append_eq, nil_append, ite_true]
+  simp [Env.binds, Env.get, List.append_eq, List.nil_append, ite_true]
 
 lemma binds_tail (x : Var) (T : Typ) (Γ Δ : Env) :
     Env.binds x T Γ → (¬ (Env.in_context x Δ)) → Env.binds x T (Δ ++ Γ) := by
@@ -138,11 +137,11 @@ lemma binds_tail (x : Var) (T : Typ) (Γ Δ : Env) :
   simp [Env.binds] at bx ⊢
   induction Δ
   case nil =>
-    simp only [nil_append, bx]
+    simp only [List.nil_append, bx]
   case cons b Δ' f' =>
     simp [Env.in_context] at nx
     push_neg at nx
-    simp [Env.get, append_eq]
+    simp [Env.get, List.append_eq]
     rw [if_neg nx.1]
     apply (f' nx.2)
 
@@ -152,12 +151,12 @@ lemma binds_head (x : Var) (T : Typ) (Γ Δ : Env) :
   case nil =>
     simp
   case cons b Γ' f =>
-    simp only [Env.binds, Env.get, append_eq]
+    simp only [Env.binds, Env.get, List.append_eq]
     by_cases hxb : x = b.1
-    . simp only [cons_append, Env.get]
+    . simp only [List.cons_append, Env.get]
       rw [if_pos hxb, if_pos hxb]
       exact id
-    . simp only [cons_append, Env.get]
+    . simp only [List.cons_append, Env.get]
       rw [if_neg hxb]
       intro H
       simp [Env.binds] at f
@@ -218,12 +217,12 @@ lemma binds_mid (x : Var) (T : Typ) (Δ Γ : Env) :
     → Env.binds x T (Γ ++ (([(x, T)] : Env)) ++ Δ) := by
   induction Γ
   case nil =>
-    simp only [nil_append, singleton_append, Env.binds, Env.get, append_eq, ite_true, implies_true]
+    simp only [List.nil_append, List.singleton_append, Env.binds, Env.get, List.append_eq, ite_true, implies_true]
   case cons b Γ' f =>
     intro H
     cases H
     next y S H' g =>
-      simp only [Env.binds, Env.get, append_eq, append_assoc, singleton_append] at f H' g ⊢
+      simp only [Env.binds, Env.get, List.append_eq, List.append_assoc, List.singleton_append] at f H' g ⊢
       by_cases hxy : x = y
       . simp [if_pos hxy]
         have ⟨_, t2⟩ := in_context_append_neg _ _ _ g
@@ -239,13 +238,13 @@ lemma binds_mid_eq (x : Var) (T S : Typ) (Γ Δ : Env) :
     → Env.valid_ctx (Δ ++ (([(x, S)] : Env)) ++ Γ) →  T = S := by
   induction Δ
   case nil =>
-    simp only [Env.binds, Env.get, append_eq, nil_append, ite_true, Option.some.injEq, singleton_append]
+    simp only [Env.binds, Env.get, List.append_eq, List.nil_append, ite_true, Option.some.injEq, List.singleton_append]
     exact (fun p _ => p.symm)
   case cons b Δ' f =>
     intro p H
     cases H
     next y S' H' g =>
-      simp only [Env.binds, Env.get, append_eq, append_assoc, singleton_append] at p f H' g ⊢
+      simp only [Env.binds, Env.get, List.append_eq, List.append_assoc, List.singleton_append] at p f H' g ⊢
       by_cases hxy : x = y
       . have ⟨_, t2⟩ := in_context_append_neg _ _ _ g
         simp at t2
@@ -259,7 +258,7 @@ lemma binds_mid_eq_cons (x : Var) (T S : Typ) (Γ Δ : Env) :
     Env.binds x T (Δ ++ (x, S ) :: Γ)
     → Env.valid_ctx (Δ ++ (x, S ) :: Γ) → T = S := by
   intro p H
-  simp only [append_cons Δ (x, S ) Γ] at p H
+  simp only [List.append_cons Δ (x, S ) Γ] at p H
   exact (binds_mid_eq x T S Γ Δ p H)
 
 --Additional properties of Env.binds
@@ -287,13 +286,13 @@ lemma binds_concat_ok (x : Var) (T : Typ) (Γ Δ : Env) :
     Env.binds x T Γ -> Env.valid_ctx (Δ ++ Γ) -> Env.binds x T (Δ ++ Γ) := by
   induction Δ
   case nil =>
-    simp only [Env.binds, nil_append]
+    simp only [Env.binds, List.nil_append]
     exact (fun p _ => p)
   case cons b Δ' f =>
     intro p H
     cases H
     next y S H' g =>
-      simp only [Env.binds, Env.get, append_eq] at H' ⊢
+      simp only [Env.binds, Env.get, List.append_eq] at H' ⊢
       by_cases hxy : x = y
       . simp [if_pos hxy]
         by_contra
@@ -310,13 +309,13 @@ lemma binds_weaken (x : Var) (T : Typ) (Γ Δ Ψ: Env) :
     → Env.binds x T (Ψ ++ Δ ++ Γ) := by
   induction Ψ
   case nil =>
-    simp only [Env.binds, nil_append]
+    simp only [Env.binds, List.nil_append]
     exact (fun p H => (binds_concat_ok _ _ _ _ p H))
   case cons b Ψ' f =>
     intro p H
     cases H
     next y S H' g =>
-      simp only [Env.binds, Env.get, append_eq, append_assoc, Env.in_context] at f H' p g ⊢
+      simp only [Env.binds, Env.get, List.append_eq, List.append_assoc, Env.in_context] at f H' p g ⊢
       by_cases hxy : x = y
       . simp [if_pos hxy] at p ⊢
         exact p
@@ -344,7 +343,7 @@ lemma binds_remove_mid_cons  (x y : Var) (T S : Typ) (Γ Δ : Env) :
     → x ≠ y → Env.binds x T (Δ ++ Γ) := by
   intro H p
   apply (binds_remove_mid x y T S Δ Γ)
-  rwa [append_cons, append_assoc] at H
+  rwa [List.append_cons, List.append_assoc] at H
   exact p
 
 
@@ -358,7 +357,7 @@ It is used to build an abstraction given a representation of its body. -/
 
 lemma open_var_fv (t u: Trm) :
     (k : Nat) → fv (opening k u t) ⊆ (fv t) ∪ (fv u) := by
-  induction t using Trm.rec_like
+  induction t using rec_like
   case bvar i =>
     intro k
     simp [opening]
@@ -386,7 +385,7 @@ lemma opening_lc_lemma (t u v : Trm) :
     (i j: Nat) → i ≠ j
     → ({j ~> u} t) = ({i ~> v} ({j ~> u} t))
     → t = ({i ~> v} t) := by
-  induction t using Trm.rec_like
+  induction t using rec_like
   case bvar k =>
    intro i j neqij h
    by_cases hik : (i = k)
@@ -416,7 +415,7 @@ lemma opening_lc_lemma (t u v : Trm) :
 ----------------------------------------------------------------------
 lemma close_var_fv (t : Trm) (x : Var) :
     (k : Nat) → fv (closing k x t) = (fv t) \ {x} := by
-  induction t using Trm.rec_like
+  induction t using rec_like
   case bvar _ =>
     simp [closing, fv]
   case fvar y =>
@@ -445,7 +444,6 @@ lemma close_var_fv (t : Trm) (x : Var) :
 
 ----------------------------------------------------------------------
 --Locally closed terms
-open lc
 
 /-The predicate “body t” asserts that t describes
 the body of a locally closed abstraction.-/
@@ -457,7 +455,7 @@ lemma lc_abs_iff_body : ∀ t T, lc (abs T t) ↔ body t := by
     next L a =>
       use L
   . rintro ⟨L, h⟩
-    exact (lc_abs t T L h)
+    exact (lc.lc_abs t T L h)
 ----------------------------------------------------------------------
 /-The following lemmas show that opening and closing
 are inverses of each other on variables.-/
@@ -465,7 +463,7 @@ are inverses of each other on variables.-/
 lemma close_open (x : Var) (t : Trm) :
     x ∉ fv t → (k : Nat) → closing k x (opening k ($ x) t) = t := by
   intro hx
-  induction t using Trm.rec_like
+  induction t using rec_like
   case bvar i =>
     intro j
     simp [opening, closing]
@@ -508,7 +506,7 @@ lemma open_close_lemma (x y z : Var) (t : Trm) : x ≠ y → y ∉ fv t
     → ((i j : Nat) → i ≠ j → ({ i ~> ($ y)} ({j ~> ($ z)} ({j <~ x} t)))
       = ({j ~> ($ z)} ({j <~ x} ({i ~> ($ y)} t))) ):= by
   intro neqxy hy
-  induction t using Trm.rec_like
+  induction t using rec_like
   case bvar k =>
     intro i j neqij
     simp only [opening]
@@ -624,7 +622,7 @@ lemma open₀_lc (t u : Trm) : lc t → (t = open₀ t u) := by
 --Free variable substitution distributes over index substitution.
 lemma subst_open_rec (t1 t2 u : Trm) : (i : Var) → (j : Nat) → lc u
     → ([i // u] ({j ~> t2} t1)) = ({j ~> [i // u] t2} ([i // u] t1)) := by
-  induction t1 using Trm.rec_like
+  induction t1 using rec_like
   case bvar k =>
    intro i j _
    by_cases hjk : (j = k)
@@ -683,11 +681,11 @@ lemma subst_lc (t u : Trm) : (x : Var) → lc t → lc u → lc ([x // u] t) := 
       exact lcu
       exact hxy
     . rw [if_neg]
-      exact (lc_var y)
+      exact (lc.lc_var y)
       exact hxy
   case lc_abs v T L _ hv =>
     simpa [subst] using
-      (lc_abs ([ x // u ] v) T (L ∪ {x}) (fun x₀ hx₀ => by
+      (lc.lc_abs ([ x // u ] v) T (L ∪ {x}) (fun x₀ hx₀ => by
         have t1 : x₀ ∉ L := by
           intro s
           exact (hx₀ (Finset.mem_union_left {x} s))
@@ -698,7 +696,7 @@ lemma subst_lc (t u : Trm) : (x : Var) → lc t → lc u → lc ([x // u] t) := 
         rw [subst_open_var v u lcu x x₀ t2.symm]
         exact (hv x₀ t1)))
   case lc_app t1 t2 lct1 lct2 ht1 ht2 =>
-    simpa [subst] using (lc_app ([ x // u ] t1) ([ x // u ] t2) ht1 ht2)
+    simpa [subst] using (lc.lc_app ([ x // u ] t1) ([ x // u ] t2) ht1 ht2)
 
 lemma open_var_body : ∀ x t, body t → lc (open₀ t ($ x)) := by
   intro x t bt
@@ -706,10 +704,10 @@ lemma open_var_body : ∀ x t, body t → lc (open₀ t ($ x)) := by
   have ⟨y, hy⟩ := pick_fresh t (L ∪ {x})
   simp at hy
   push_neg at hy
-  rw [subst_intro t ($ x) (lc_var x) y (hy.2.2)]
+  rw [subst_intro t ($ x) (lc.lc_var x) y (hy.2.2)]
   apply (subst_lc (open₀ t ($ y)) ($ x))
   exact (a y hy.2.1)
-  exact (lc_var x)
+  exact (lc.lc_var x)
 
 lemma open_var_lc : ∀ x t, lc (abs T t) → lc (open₀ t ($ x)) := by
   intro x t lcat
@@ -748,7 +746,7 @@ lemma open_close_subst t x y :
     push_neg at qw
     have hwx : x ≠ w := (fun p => (qw.1 p.symm))
     have fact := h w qw.2.1 (k + 1)
-    rw [← subst_open_var _ _ (lc_var y) _ _ hwx, open₀] at fact
+    rw [← subst_open_var _ _ (lc.lc_var y) _ _ hwx, open₀] at fact
     rw [← open_close_lemma _ _ _ _ hwx, ← open₀] at fact
     apply open₀_injective w _
     exact qw.2.2.1
@@ -763,123 +761,119 @@ lemma open_close_subst t x y :
 end Trm
 
 
-open Typ
-open Trm
-open lc
 
 /- # Different Forms of β-reductions -/
 
 --full beta reduction
-open beta_red
 
-lemma beta_red_regular : ∀ t1 t2, (beta_red t1 t2) → (lc t1) ∧ (lc t2) := by
+lemma beta_red_regular : ∀ t1 t2, (beta_red t1 t2) → (Trm.lc t1) ∧ (Trm.lc t2) := by
   intro t1 t2 t1rt2
   induction t1rt2
   case br_beta s1 s2 T lcas1 lcs2 =>
     constructor
-    exact (lc_app (abs T s1) s2 lcas1 lcs2)
-    exact (open_lc s1 s2 lcas1 lcs2)
+    exact (Trm.lc.lc_app (Trm.abs T s1) s2 lcas1 lcs2)
+    exact (Trm.open_lc s1 s2 lcas1 lcs2)
   case br_app1 s1 s1' s2 lcs2 _ h =>
-    exact ⟨lc_app s1 s2 h.1 lcs2, lc_app s1' s2 h.2 lcs2⟩
+    exact ⟨Trm.lc.lc_app s1 s2 h.1 lcs2, Trm.lc.lc_app s1' s2 h.2 lcs2⟩
   case br_app2 s1 s2 s2' lcs1 _ h =>
-    exact ⟨lc_app s1 s2 lcs1 h.1, lc_app s1 s2' lcs1 h.2⟩
+    exact ⟨Trm.lc.lc_app s1 s2 lcs1 h.1, Trm.lc.lc_app s1 s2' lcs1 h.2⟩
   case br_abs s1 s1' T L _ h =>
     constructor
-    . apply (lc_abs s1 T L (fun x hx => (h x hx).1))
-    . apply (lc_abs s1' T L (fun x hx => (h x hx).2))
+    . apply (Trm.lc.lc_abs s1 T L (fun x hx => (h x hx).1))
+    . apply (Trm.lc.lc_abs s1' T L (fun x hx => (h x hx).2))
 
 lemma beta_rename t1 t2 x y : beta_red t1 t2
     → beta_red ([x // ($ y)] t1) ([x // ($ y)] t2) := by
   intro R
   induction R
   case br_beta s1 s2 T lc1 lc2 =>
-    rw [open₀]
-    rw [subst_open_rec s1 s2 ($ y) x 0 (lc_var y)]
-    rw [← open₀]
-    simpa [subst] using
-      (br_beta ([x // ($ y)] s1) ([x // ($ y)] s2) T
+    rw [Trm.open₀]
+    rw [Trm.subst_open_rec s1 s2 ($ y) x 0 (Trm.lc.lc_var y)]
+    rw [← Trm.open₀]
+    simpa [Trm.subst] using
+      (beta_red.br_beta ([x // ($ y)] s1) ([x // ($ y)] s2) T
         (by
-          rw [← subst]
-          exact subst_lc (abs T s1) ($ y) x lc1 (lc_var y))
+          rw [← Trm.subst]
+          exact Trm.subst_lc (Trm.abs T s1) ($ y) x lc1 (Trm.lc.lc_var y))
         (by
-          exact subst_lc s2 ($ y) x lc2 (lc_var y)))
+          exact Trm.subst_lc s2 ($ y) x lc2 (Trm.lc.lc_var y)))
   case br_app1 s1 s1' s2 lc2 bs1' h =>
-    simp only [subst]
-    apply br_app1
-    apply subst_lc
+    simp only [Trm.subst]
+    apply beta_red.br_app1
+    apply Trm.subst_lc
     apply lc2
-    apply (lc_var)
+    apply (Trm.lc.lc_var)
     exact h
   case br_app2 s1 s2 s2' lc1 bs2' h =>
-    simp only [subst]
-    apply br_app2
-    apply subst_lc
+    simp only [Trm.subst]
+    apply beta_red.br_app2
+    apply Trm.subst_lc
     apply lc1
-    apply (lc_var)
+    apply (Trm.lc.lc_var)
     exact h
   case br_abs s1 s1' T L h f =>
-    simp only [subst]
-    apply br_abs _ _ _ (L ∪ {x})
+    simp only [Trm.subst]
+    apply beta_red.br_abs _ _ _ (L ∪ {x})
     intro z hz
     simp at hz
     push_neg at hz
-    simp [subst_open_var s1 ($ y) (lc_var y) x z (fun p => hz.1 p.symm)]
-    simp [subst_open_var s1' ($ y) (lc_var y) x z (fun p => hz.1 p.symm)]
+    simp [Trm.subst_open_var s1 ($ y) (Trm.lc.lc_var y) x z (fun p => hz.1 p.symm)]
+    simp [Trm.subst_open_var s1' ($ y) (Trm.lc.lc_var y) x z (fun p => hz.1 p.symm)]
     exact (f z hz.2)
 
 lemma beta_abs_intro t1 t2 T x :
-    beta_red (open₀ t1 ($ x)) (open₀ t2 ($ x))
-    → x ∉ fv t1 → x ∉ fv t2 → beta_red (λT, t1) (λT, t2) := by
+    beta_red (Trm.open₀ t1 ($ x)) (Trm.open₀ t2 ($ x))
+    → x ∉ Trm.fv t1 → x ∉ Trm.fv t2 → beta_red (λT, t1) (λT, t2) := by
   intro R fx1 fx2
-  apply br_abs t1 t2 T ∅
+  apply beta_red.br_abs t1 t2 T ∅
   intro y _
-  rw [subst_intro _ _ _ x fx1, subst_intro _ _ _ x fx2]
+  rw [Trm.subst_intro _ _ _ x fx1, Trm.subst_intro _ _ _ x fx2]
   apply beta_rename
   exact R
-  exact (lc_var y)
-  exact (lc_var y)
+  exact (Trm.lc.lc_var y)
+  exact (Trm.lc.lc_var y)
 
 lemma beta_red_subst_out t1 t2 x u :
-    (beta_red t1 t2) ∧ (lc u)
+    (beta_red t1 t2) ∧ (Trm.lc u)
     → (beta_red ([x // u] t1) ([x // u] t2)) := by
   rintro ⟨t1bt2, lcu⟩
   induction t1bt2
   case br_beta s1 s2 T lc1 lc2 =>
-    simp only [subst]
-    have q : ([x // u] open₀ s1 s2) = open₀ ([x // u] s1) ([x // u] s2) := by
-      simp [open₀]
-      apply subst_open_rec
+    simp only [Trm.subst]
+    have q : ([x // u] Trm.open₀ s1 s2) = Trm.open₀ ([x // u] s1) ([x // u] s2) := by
+      simp [Trm.open₀]
+      apply Trm.subst_open_rec
       exact lcu
     rw [q]
-    apply br_beta
-    rw [← subst]
-    apply subst_lc
+    apply beta_red.br_beta
+    rw [← Trm.subst]
+    apply Trm.subst_lc
     exact lc1
     exact lcu
-    apply subst_lc
+    apply Trm.subst_lc
     exact lc2
     exact lcu
   case br_app1 s1 s1' s2 lc2 s1bs1' f =>
-    simp only [subst]
-    apply br_app1
-    apply subst_lc
+    simp only [Trm.subst]
+    apply beta_red.br_app1
+    apply Trm.subst_lc
     exact lc2
     exact lcu
     exact f
   case br_app2 s1 s2 s2' lc1 s2bs2' f =>
-    simp only [subst]
-    apply br_app2
-    apply subst_lc
+    simp only [Trm.subst]
+    apply beta_red.br_app2
+    apply Trm.subst_lc
     exact lc1
     exact lcu
     exact f
   case br_abs s1 s2 T L f h =>
-    simp only [subst]
-    let ⟨y, hy⟩ := pick_fresh ([x // u] s1) (L ∪ (fv ([x // u] s2)) ∪ {x})
+    simp only [Trm.subst]
+    let ⟨y, hy⟩ := Trm.pick_fresh ([x // u] s1) (L ∪ (Trm.fv ([x // u] s2)) ∪ {x})
     apply beta_abs_intro _ _ _ y
     simp at hy
     push_neg at hy
-    rw [subst_open_var _ _ lcu , subst_open_var _ _ lcu]
+    rw [Trm.subst_open_var _ _ lcu , Trm.subst_open_var _ _ lcu]
     apply (h y hy.2.1)
     exact (fun p => hy.1 p.symm)
     exact (fun p => hy.1 p.symm)
@@ -893,38 +887,37 @@ lemma beta_red_subst_out t1 t2 x u :
 -------------------------
 
 --paralel reduction
-open para
 
-lemma para_regular : ∀ t1 t2, (para t1 t2) → (lc t1) ∧ (lc t2) := by
+lemma para_regular : ∀ t1 t2, (para t1 t2) → (Trm.lc t1) ∧ (Trm.lc t2) := by
   intro t1 t2 t1pt2
   induction t1pt2
   case para_var x =>
-    exact ⟨lc_var x, lc_var x⟩
+    exact ⟨Trm.lc.lc_var x, Trm.lc.lc_var x⟩
   case para_red s1 s1' s2 s2' T L _ _ h h' =>
     constructor
-    . apply (lc_app (abs T s1) s2)
-      exact (lc_abs s1 T L (fun x hx => (h x hx).1))
+    . apply (Trm.lc.lc_app (Trm.abs T s1) s2)
+      exact (Trm.lc.lc_abs s1 T L (fun x hx => (h x hx).1))
       exact h'.1
-    . apply (open_lc s1' s2')
-      exact (lc_abs s1' T L (fun x hx => (h x hx).2))
+    . apply (Trm.open_lc s1' s2')
+      exact (Trm.lc.lc_abs s1' T L (fun x hx => (h x hx).2))
       exact h'.2
   case para_app s1 s1' s2 s2' _ _ h1 h2 =>
-    exact ⟨lc_app s1 s2 h1.1 h2.1, lc_app s1' s2' h1.2 h2.2⟩
+    exact ⟨Trm.lc.lc_app s1 s2 h1.1 h2.1, Trm.lc.lc_app s1' s2' h1.2 h2.2⟩
   case para_abs s1 s1' T L _ h =>
     constructor
-    . exact (lc_abs s1 T L (fun x hx => (h x hx).1))
-    . exact (lc_abs s1' T L (fun x hx => (h x hx).2))
+    . exact (Trm.lc.lc_abs s1 T L (fun x hx => (h x hx).1))
+    . exact (Trm.lc.lc_abs s1' T L (fun x hx => (h x hx).2))
 
-lemma lc_para_refl : ∀ t, lc t → para t t := by
+lemma lc_para_refl : ∀ t, Trm.lc t → para t t := by
   intro t lct
   induction lct
   case lc_var x =>
-    exact (para_var x)
+    exact (para.para_var x)
   case lc_abs u T L _ h =>
-    apply (para_abs u u T L)
+    apply (para.para_abs u u T L)
     exact h
   case lc_app u1 u2 _ _ h h' =>
-    exact (para_app u1 u1 u2 u2 h h')
+    exact (para.para_app u1 u1 u2 u2 h h')
 
 lemma para_subst_all t1 t2 s1 s2 :
     (para t1 t2) → (para s1 s2)
@@ -932,83 +925,82 @@ lemma para_subst_all t1 t2 s1 s2 :
   intro t1pt2 s1ps2 x
   induction t1pt2
   case para_var y =>
-    simp only [subst]
+    simp only [Trm.subst]
     by_cases hyx : y = x
     . simp only [if_pos hyx]
       exact s1ps2
     . simp only [if_neg hyx]
-      exact (para_var y)
+      exact (para.para_var y)
   case para_red u1 u1' u2 u2' T L f u2pu2' g h =>
-    simp only [subst]
-    rw [open₀, (subst_open_rec u1' u2' s2 x 0 (para_regular _ _ s1ps2).2), ← open₀]
-    apply para_red _ _ _ _ _ (L ∪ {x})
+    simp only [Trm.subst]
+    rw [Trm.open₀, (Trm.subst_open_rec u1' u2' s2 x 0 (para_regular _ _ s1ps2).2), ← Trm.open₀]
+    apply para.para_red _ _ _ _ _ (L ∪ {x})
     intro y hy
     simp at hy
     push_neg at hy
     have p : x ≠ y := (fun q => (hy.1 q.symm))
-    rw [subst_open_var u1 s1 (para_regular _ _ s1ps2).1 x y p]
-    rw [subst_open_var u1' s2 (para_regular _ _ s1ps2).2 x y p]
+    rw [Trm.subst_open_var u1 s1 (para_regular _ _ s1ps2).1 x y p]
+    rw [Trm.subst_open_var u1' s2 (para_regular _ _ s1ps2).2 x y p]
     exact (g y hy.2)
     exact h
   case para_app u1 u1' u2 u2' u1pu1' u2pu2' f g =>
-    simp only [subst]
-    apply para_app
+    simp only [Trm.subst]
+    apply para.para_app
     exact f
     exact g
   case para_abs u1 u1' T L f g =>
-    simp only [subst] at g ⊢
-    apply para_abs _ _ _ (L ∪ {x})
+    simp only [Trm.subst] at g ⊢
+    apply para.para_abs _ _ _ (L ∪ {x})
     intro y hy
     simp at hy
     push_neg at hy
     have p : x ≠ y := (fun q => (hy.1 q.symm))
-    rw [subst_open_var _ _ _ x y p, subst_open_var _ _ _ x y p]
+    rw [Trm.subst_open_var _ _ _ x y p, Trm.subst_open_var _ _ _ x y p]
     exact (g y hy.2)
     exact (para_regular _ _ s1ps2).2
     exact (para_regular _ _ s1ps2).1
 
 lemma para_open_out t t' u u' (L : Finset Var) :
-    (∀ x, x ∉ L → para (open₀ t ($ x)) (open₀ u ($ x)))
-    → para t' u' → para (open₀ t t') (open₀ u u') := by
+    (∀ x, x ∉ L → para (Trm.open₀ t ($ x)) (Trm.open₀ u ($ x)))
+    → para t' u' → para (Trm.open₀ t t') (Trm.open₀ u u') := by
   intro f tpu'
-  let ⟨x, qx⟩ := pick_fresh t (L ∪ (fv u))
+  let ⟨x, qx⟩ := Trm.pick_fresh t (L ∪ (Trm.fv u))
   simp at qx
-  rw [subst_intro t t' (para_regular _ _ tpu').1 x qx.2.2]
-  rw [subst_intro u u' (para_regular _ _ tpu').2 x qx.2.1]
+  rw [Trm.subst_intro t t' (para_regular _ _ tpu').1 x qx.2.2]
+  rw [Trm.subst_intro u u' (para_regular _ _ tpu').2 x qx.2.1]
   apply para_subst_all
   exact (f x qx.1)
   exact tpu'
 
 lemma opening_closing_para t u x y z :
-    para t u → y ∉ ((fv t) ∪ (fv u) ∪ {x})
-    → para (opening z ($ y) (closing z x t))
-           (opening z ($ y) (closing z x u)) := by
+    para t u → y ∉ ((Trm.fv t) ∪ (Trm.fv u) ∪ {x})
+    → para (Trm.opening z ($ y) (Trm.closing z x t))
+           (Trm.opening z ($ y) (Trm.closing z x u)) := by
   intro tpu hy
   simp at hy
   push_neg at hy
-  rw [open_close_subst t x y (para_regular _ _ tpu).1 z]
-  rw [open_close_subst u x y (para_regular _ _ tpu).2 z]
-  apply para_subst_all _ _ _ _ tpu (para_var y)
+  rw [Trm.open_close_subst t x y (para_regular _ _ tpu).1 z]
+  rw [Trm.open_close_subst u x y (para_regular _ _ tpu).2 z]
+  apply para_subst_all _ _ _ _ tpu (para.para_var y)
 
 lemma open_close_para t u x y :
-    para t u → y ∉ ((fv t) ∪ (fv u) ∪ {x})
-    → para (open₀ (close₀ t x) ($ y))
-           (open₀ (close₀ u x) ($ y)) := opening_closing_para t u x y 0
+    para t u → y ∉ ((Trm.fv t) ∪ (Trm.fv u) ∪ {x})
+    → para (Trm.open₀ (Trm.close₀ t x) ($ y))
+           (Trm.open₀ (Trm.close₀ u x) ($ y)) := opening_closing_para t u x y 0
 
 lemma para_through t1 t2 u1 u2 x :
-    (x ∉ fv t1 ∧ x ∉ fv t2)
-    → (para (open₀ t1 ($ x)) (open₀ t2 ($ x)))
-    → (para u1 u2) → (para (open₀ t1 u1) (open₀ t2 u2)) := by
+    (x ∉ Trm.fv t1 ∧ x ∉ Trm.fv t2)
+    → (para (Trm.open₀ t1 ($ x)) (Trm.open₀ t2 ($ x)))
+    → (para u1 u2) → (para (Trm.open₀ t1 u1) (Trm.open₀ t2 u2)) := by
   rintro ⟨h1, h2⟩ f g
-  rw [subst_intro t1 u1 (para_regular _ _ g).1 x h1]
-  rw [subst_intro t2 u2 (para_regular _ _ g).2 x h2]
+  rw [Trm.subst_intro t1 u1 (para_regular _ _ g).1 x h1]
+  rw [Trm.subst_intro t2 u2 (para_regular _ _ g).2 x h2]
   apply para_subst_all
   exact f
   exact g
 
 ---------------------------
 --multiple-step reduction
-open multi_red
 
 lemma multi_red_trans t1 t2 t3 :
     (multi_red t1 t2) → (multi_red t2 t3) → (multi_red t1 t3) := by
@@ -1017,12 +1009,12 @@ lemma multi_red_trans t1 t2 t3 :
   case mr_refl _ =>
     exact t1mlt2
   case mr_head s1 s2 _ s2bs3 f =>
-    apply mr_head
+    apply multi_red.mr_head
     . exact f
     . exact s2bs3
 
 lemma multi_red_regular :
-    ∀ t1 t2, (multi_red t1 t2) → (lc t1) ∧ (lc t2) := by
+    ∀ t1 t2, (multi_red t1 t2) → (Trm.lc t1) ∧ (Trm.lc t2) := by
   intro t1 t2 t1mt2
   induction t1mt2
   case mr_refl s =>
@@ -1033,50 +1025,50 @@ lemma multi_red_regular :
 lemma beta_to_multi_red :
     ∀ t1 t2, (beta_red t1 t2) → (multi_red t1 t2) := by
   intro t1 t2 t1rt2
-  apply (mr_head t1 t1 t2)
-  apply (mr_refl t1)
+  apply (multi_red.mr_head t1 t1 t2)
+  apply (multi_red.mr_refl t1)
   exact (beta_red_regular t1 t2 t1rt2).1
   exact t1rt2
 
 lemma multi_red_abs_intro' u1 u2 T x :
     multi_red u1 u2
-    → (∀ t1 t2, u1 = open₀ t1 ($ x) → u2 = open₀ t2 ($ x)
-       → x ∉ fv t1 → x ∉ fv t2 → multi_red (λT, t1) (λT, t2)) := by
+    → (∀ t1 t2, u1 = Trm.open₀ t1 ($ x) → u2 = Trm.open₀ t2 ($ x)
+       → x ∉ Trm.fv t1 → x ∉ Trm.fv t2 → multi_red (λT, t1) (λT, t2)) := by
   intro u1mu2
   induction u1mu2
   case mr_refl t =>
     intro t1 t2 p1 p2 fx1 fx2
     rw [p1] at p2
-    have q := open₀_injective _ _ _ fx1 fx2 p2
+    have q := Trm.open₀_injective _ _ _ fx1 fx2 p2
     rw [q]
-    apply mr_refl
-    apply lc_abs t2 T ∅
+    apply multi_red.mr_refl
+    apply Trm.lc.lc_abs t2 T ∅
     intro z _
-    rw [subst_intro t2 ($ z) (lc_var z) x fx2]
-    apply subst_lc
+    rw [Trm.subst_intro t2 ($ z) (Trm.lc.lc_var z) x fx2]
+    apply Trm.subst_lc
     rw [← q, ← p1]
     exact t
-    exact (lc_var z)
+    exact (Trm.lc.lc_var z)
   case mr_head s1 s2 _ s1bs2 f =>
     intro t1 t2 p1 p2 fx1 fx2
-    apply mr_head _ (λ T,(close₀ s1 x)) _
-    apply (f t1 (close₀ s1 x))
+    apply multi_red.mr_head _ (λ T,(Trm.close₀ s1 x)) _
+    apply (f t1 (Trm.close₀ s1 x))
     exact p1
-    rw [← (open_close_var x s1 (beta_red_regular _ _ s1bs2).1).symm]
+    rw [← (Trm.open_close_var x s1 (beta_red_regular _ _ s1bs2).1).symm]
     exact fx1
-    simp [close₀, close_var_fv s1 x 0]
-    apply (beta_abs_intro (close₀ s1 x) t2)
+    simp [Trm.close₀, Trm.close_var_fv s1 x 0]
+    apply (beta_abs_intro (Trm.close₀ s1 x) t2)
     rw [← p2]
-    rw [← (open_close_var x s1 (beta_red_regular _ _ s1bs2).1).symm]
+    rw [← (Trm.open_close_var x s1 (beta_red_regular _ _ s1bs2).1).symm]
     exact s1bs2
-    simp [close₀, close_var_fv s1 x 0]
+    simp [Trm.close₀, Trm.close_var_fv s1 x 0]
     exact fx2
 
 lemma multi_red_abs_intro t1 t2 T x :
-    multi_red (open₀ t1 ($ x)) (open₀ t2 ($ x))
-    → x ∉ fv t1 → x ∉ fv t2 → multi_red (λT, t1) (λT, t2) := by
+    multi_red (Trm.open₀ t1 ($ x)) (Trm.open₀ t2 ($ x))
+    → x ∉ Trm.fv t1 → x ∉ Trm.fv t2 → multi_red (λT, t1) (λT, t2) := by
   intro R hx1 hx2
-  apply (multi_red_abs_intro' (open₀ t1 ($ x)) (open₀ t2 ($ x)) T x)
+  apply (multi_red_abs_intro' (Trm.open₀ t1 ($ x)) (Trm.open₀ t2 ($ x)) T x)
   exact R
   simp
   simp
@@ -1084,10 +1076,10 @@ lemma multi_red_abs_intro t1 t2 T x :
   exact hx2
 
 lemma multi_red_abs t1 t2 T (L : Finset Var):
-    (∀ x, x ∉ L → multi_red (open₀ t1 ($ x)) (open₀ t2 ($ x)))
+    (∀ x, x ∉ L → multi_red (Trm.open₀ t1 ($ x)) (Trm.open₀ t2 ($ x)))
     → multi_red (λT, t1) (λT, t2) := by
   intro f
-  let ⟨x, hx⟩ := pick_fresh t2 (L ∪ (fv t1))
+  let ⟨x, hx⟩ := Trm.pick_fresh t2 (L ∪ (Trm.fv t1))
   simp at hx
   apply (multi_red_abs_intro t1 t2 T x)
   apply (f x hx.1)
@@ -1095,75 +1087,75 @@ lemma multi_red_abs t1 t2 T (L : Finset Var):
   exact hx.2.2
 
 lemma multi_red_app1 t1 t1' t2 :
-    (multi_red t1 t1') ∧ (lc t2)
-    → (multi_red (app t1 t2) (app t1' t2)) := by
+    (multi_red t1 t1') ∧ (Trm.lc t2)
+    → (multi_red (Trm.app t1 t2) (Trm.app t1' t2)) := by
   rintro ⟨t1mt2, lct2⟩
   induction t1mt2
   case mr_refl t =>
-    apply mr_refl
-    apply lc_app
+    apply multi_red.mr_refl
+    apply Trm.lc.lc_app
     exact t
     exact lct2
   case mr_head s1 s2 _ s1bs2 f =>
-    apply mr_head _ (s1 @ t2) _
+    apply multi_red.mr_head _ (s1 @ t2) _
     exact f
-    apply br_app1
+    apply beta_red.br_app1
     exact lct2
     exact s1bs2
 
 lemma multi_red_app2 t1 t2 t2' :
-    (multi_red t2 t2') ∧ (lc t1)
-    → (multi_red (app t1 t2) (app t1 t2')) := by
+    (multi_red t2 t2') ∧ (Trm.lc t1)
+    → (multi_red (Trm.app t1 t2) (Trm.app t1 t2')) := by
   rintro ⟨t1mt2, lct1⟩
   induction t1mt2
   case mr_refl t =>
-    apply mr_refl
-    apply lc_app
+    apply multi_red.mr_refl
+    apply Trm.lc.lc_app
     exact lct1
     exact t
   case mr_head s1 s2 _ s1bs2 f =>
-    apply mr_head _ (t1 @ s1) _
+    apply multi_red.mr_head _ (t1 @ s1) _
     exact f
-    apply br_app2
+    apply beta_red.br_app2
     exact lct1
     exact s1bs2
 
 lemma multi_red_subst_in t x u1 u2 :
-    (multi_red u1 u2) ∧ (lc t)
+    (multi_red u1 u2) ∧ (Trm.lc t)
     → (multi_red ([x // u1] t) ([x // u2] t)) := by
   rintro ⟨u1mu2, lct⟩
   induction lct
   case lc_var i =>
-    simp only [subst]
+    simp only [Trm.subst]
     by_cases hix : i = x
     . simp [if_pos hix]
       exact u1mu2
     . simp [if_neg hix]
-      exact (mr_refl _ (lc_var i))
+      exact (multi_red.mr_refl _ (Trm.lc.lc_var i))
   case lc_abs u T L h f =>
-    simp [subst]
+    simp [Trm.subst]
     apply multi_red_abs _ _ _ (L ∪ {x})
     intro y hy
     simp at hy
     push_neg at hy
-    rw [subst_open_var u u1 (multi_red_regular _ _ u1mu2).1 x y]
-    rw [subst_open_var u u2 (multi_red_regular _ _ u1mu2).2 x y]
+    rw [Trm.subst_open_var u u1 (multi_red_regular _ _ u1mu2).1 x y]
+    rw [Trm.subst_open_var u u2 (multi_red_regular _ _ u1mu2).2 x y]
     apply (f y hy.2)
     exact (fun s => hy.1 s.symm)
     exact (fun s => hy.1 s.symm)
   case lc_app s1 s2 lc1 lc2 h1 h2 =>
-    simp [subst]
+    simp [Trm.subst]
     apply multi_red_trans _ (([x // u2] s1) @ ([x // u1] s2)) _
     apply multi_red_app1
     constructor
     . apply h1
-    . apply subst_lc
+    . apply Trm.subst_lc
       exact lc2
       apply (multi_red_regular _ _ u1mu2).1
     apply multi_red_app2
     constructor
     . apply h2
-    . apply subst_lc
+    . apply Trm.subst_lc
       apply lc1
       apply (multi_red_regular _ _ u1mu2).2
 
@@ -1176,26 +1168,25 @@ lemma multi_red_subst_all t1 t2 x u1 u2 :
     apply multi_red_subst_in
     exact ⟨u1mu2, lct⟩
   case mr_head s1 s2 _ s1bs2 f =>
-     apply mr_head _ ([x // u2] s1) _
+     apply multi_red.mr_head _ ([x // u2] s1) _
      exact f
      apply beta_red_subst_out
      exact ⟨s1bs2, (multi_red_regular _ _ u1mu2).2⟩
 
 lemma multi_red_through t1 t2 u1 u2 x :
-    (x ∉ fv t1 ∧ x ∉ fv t2) →
-    (multi_red (open₀ t1 ($ x)) (open₀ t2 ($ x))) →
+    (x ∉ Trm.fv t1 ∧ x ∉ Trm.fv t2) →
+    (multi_red (Trm.open₀ t1 ($ x)) (Trm.open₀ t2 ($ x))) →
     (multi_red u1 u2) →
-    (multi_red (open₀ t1 u1) (open₀ t2 u2)) := by
+    (multi_red (Trm.open₀ t1 u1) (Trm.open₀ t2 u2)) := by
   rintro ⟨h1, h2⟩ f g
-  rw [subst_intro t1 u1 (multi_red_regular _ _ g).1 x h1]
-  rw [subst_intro t2 u2 (multi_red_regular _ _ g).2 x h2]
+  rw [Trm.subst_intro t1 u1 (multi_red_regular _ _ g).1 x h1]
+  rw [Trm.subst_intro t2 u2 (multi_red_regular _ _ g).2 x h2]
   apply multi_red_subst_all
   exact ⟨f, g⟩
 
 ------------------------
 
 --multiple-step paralel reduction
-open multi_para
 
 lemma multi_para_trans : ∀ t1 t2 t3,
     (multi_para t1 t2) → (multi_para t2 t3) → (multi_para t1 t3) := by
@@ -1204,11 +1195,11 @@ lemma multi_para_trans : ∀ t1 t2 t3,
   case m_para_refl _ =>
    exact t1mpt2
   case m_para_head s1 s2 _ s1ps2 f =>
-   apply (m_para_head t1 s1 s2)
+   apply (multi_para.m_para_head t1 s1 s2)
    exact f
    exact s1ps2
 
-lemma multi_para_regular : ∀ t1 t2, (multi_para t1 t2) → (lc t1) ∧ (lc t2) := by
+lemma multi_para_regular : ∀ t1 t2, (multi_para t1 t2) → (Trm.lc t1) ∧ (Trm.lc t2) := by
   intro t1 t2 t1mpt2
   induction t1mpt2
   case m_para_refl lct =>
@@ -1220,27 +1211,27 @@ lemma para_to_multi_para : ∀ t1 t2, (para t1 t2) → (multi_para t1 t2) := by
   intro t1 t2 t1pt2
   induction t1pt2
   case para_var x =>
-    exact (m_para_refl ($ x) (lc_var x))
+    exact (multi_para.m_para_refl ($ x) (Trm.lc.lc_var x))
   case para_red s1 s1' s2 s2' T L f s2ps2' _ b =>
-    apply (m_para_head _ ((abs T s1) @ s2) (open₀ s1' s2'))
-    . apply (m_para_refl ((abs T s1) @ s2))
-      apply lc_app
-      apply lc_abs s1 T L
+    apply (multi_para.m_para_head _ ((Trm.abs T s1) @ s2) (Trm.open₀ s1' s2'))
+    . apply (multi_para.m_para_refl ((Trm.abs T s1) @ s2))
+      apply Trm.lc.lc_app
+      apply Trm.lc.lc_abs s1 T L
       exact (fun x hx => (para_regular _ _ (f x hx)).1)
       exact (multi_para_regular _ _ b).1
-    . apply (para_red s1 s1' s2 s2' T L f s2ps2')
+    . apply (para.para_red s1 s1' s2 s2' T L f s2ps2')
   case para_app s1 s1' s2 s2' s1ps1' s2ps2' _ _ =>
-    apply m_para_head _ (s1 @ s2)
-    . apply m_para_refl
-      apply (lc_app _ _ (para_regular _ _ s1ps1').1 (para_regular _ _ s2ps2').1)
-    . exact (para_app s1 s1' s2 s2' s1ps1' s2ps2')
+    apply multi_para.m_para_head _ (s1 @ s2)
+    . apply multi_para.m_para_refl
+      apply (Trm.lc.lc_app _ _ (para_regular _ _ s1ps1').1 (para_regular _ _ s2ps2').1)
+    . exact (para.para_app s1 s1' s2 s2' s1ps1' s2ps2')
   case para_abs s1 s1' T L f _ =>
-    apply (m_para_head _ (abs T s1) (abs T s1'))
-    . apply (m_para_refl (abs T s1))
-      apply (lc_abs s1 T L)
+    apply (multi_para.m_para_head _ (Trm.abs T s1) (Trm.abs T s1'))
+    . apply (multi_para.m_para_refl (Trm.abs T s1))
+      apply (Trm.lc.lc_abs s1 T L)
       intro x hx
       exact (para_regular _ _ (f x hx)).1
-    . apply (para_abs s1 s1' T L f)
+    . apply (para.para_abs s1 s1' T L f)
 
 ------------------------
 
@@ -1251,30 +1242,30 @@ lemma beta_red_to_para : ∀ t t', beta_red t t' → para t t' := by
   intro t t' trt'
   induction trt'
   case br_beta t1 t2 T lcat1 lct2 =>
-    apply (para_red t1 t1 t2 t2 T ∅)
+    apply (para.para_red t1 t1 t2 t2 T ∅)
     simp
     intro x
-    exact (lc_para_refl _ (open_var_lc x t1 lcat1))
+    exact (lc_para_refl _ (Trm.open_var_lc x t1 lcat1))
     exact (lc_para_refl _ lct2)
   case br_app1 t1 t1' t2 lct2 _ h =>
-    apply (para_app t1 t1' t2 t2)
+    apply (para.para_app t1 t1' t2 t2)
     exact h
     exact (lc_para_refl _ lct2)
   case br_app2 t1 t2 t2' lct1 _ h =>
-    apply (para_app t1 t1 t2 t2')
+    apply (para.para_app t1 t1 t2 t2')
     exact (lc_para_refl _ lct1)
     exact h
   case br_abs t1 t1' T L _ h =>
-    apply (para_abs t1 t1' T L)
+    apply (para.para_abs t1 t1' T L)
     exact h
 
 lemma multi_red_to_multi_para : ∀ t t', multi_red t t' → multi_para t t' := by
   intro t t' tmrt'
   induction tmrt'
   case mr_refl lct =>
-    exact (m_para_refl t lct)
+    exact (multi_para.m_para_refl t lct)
   case mr_head t1 t2 _ t1rt2 t2pt3 =>
-    apply m_para_head
+    apply multi_para.m_para_head
     exact t2pt3
     exact (beta_red_to_para t1 t2 t1rt2)
 
@@ -1282,19 +1273,19 @@ lemma para_to_multi_red : ∀ t t', para t t' → multi_red t t' := by
   intro t t' tpt'
   induction tpt'
   case para_var x =>
-    exact (mr_refl ($ x) (lc_var x))
+    exact (multi_red.mr_refl ($ x) (Trm.lc.lc_var x))
   case para_red t1 t1' t2 t2' T L f t2pt2' h h' =>
-    apply (multi_red_trans ((abs T t1) @ t2) (open₀ t1 t2) (open₀ t1' t2'))
-    . apply (beta_to_multi_red ((abs T t1) @ t2) (open₀ t1 t2))
-      apply (br_beta t1 t2)
-      have lcabst1 : lc (abs T t1):= by
-        apply (lc_abs t1 T L)
+    apply (multi_red_trans ((Trm.abs T t1) @ t2) (Trm.open₀ t1 t2) (Trm.open₀ t1' t2'))
+    . apply (beta_to_multi_red ((Trm.abs T t1) @ t2) (Trm.open₀ t1 t2))
+      apply (beta_red.br_beta t1 t2)
+      have lcabst1 : Trm.lc (Trm.abs T t1):= by
+        apply (Trm.lc.lc_abs t1 T L)
         intro x hx
         have := f x hx
-        exact (para_regular (open₀ t1 ($ x)) (open₀ t1' ($ x)) (f x hx)).1
+        exact (para_regular (Trm.open₀ t1 ($ x)) (Trm.open₀ t1' ($ x)) (f x hx)).1
       exact lcabst1
       exact (para_regular t2 t2' t2pt2').1
-    . have ⟨x, hx⟩ := pick_fresh t1' (L ∪ fv t1)
+    . have ⟨x, hx⟩ := Trm.pick_fresh t1' (L ∪ Trm.fv t1)
       simp at hx
       apply (multi_red_through t1 t1' t2 t2' x)
       constructor
@@ -1315,7 +1306,7 @@ lemma multi_para_to_multi_red : ∀ t t', multi_para t t' → multi_red t t' := 
   intro t t' tmpt'
   induction tmpt'
   case m_para_refl lct =>
-    exact (mr_refl t lct)
+    exact (multi_red.mr_refl t lct)
   case m_para_head t1 t2 _ t1pt2 t1mlt2 =>
     apply (multi_red_trans t t1 t2)
     exact t1mlt2
@@ -1330,7 +1321,6 @@ lemma multi_red_iff_multi_para : ∀ t1 t2, (multi_red t1 t2) ↔ (multi_para t1
 
 
 --Typing judgment
-open typing
 
 --Typing judgments only allow valid contexts.
 lemma typing_valid_ctx  Γ t T : typing Γ t T → Env.valid_ctx Γ := by
@@ -1339,7 +1329,7 @@ lemma typing_valid_ctx  Γ t T : typing Γ t T → Env.valid_ctx Γ := by
   case typ_var _ _ _ h _ =>
     exact h
   case typ_abs L φ t T1 _ _ f =>
-    let ⟨p1, p2⟩ := pick_fresh t L
+    let ⟨p1, p2⟩ := Trm.pick_fresh t L
     simp at p2
     apply valid_remove_cons
     apply (f p1 p2.1)
@@ -1356,25 +1346,25 @@ lemma typing_weakening_strengthened' (Γ Δ Ψ' : Env) (t : Trm) (T : Typ) :
   induction H
   case typ_var φ x T' _ fT' =>
     intro φ p f
-    apply typ_var
+    apply typing.typ_var
     exact f
     rw [p] at fT'
     exact (binds_weaken _ _ _ _ _ fT' f)
   case typ_abs L φ' s T1 T2 _ fT2 =>
     intro φ p f
-    apply typ_abs (L ∪ Env.terms (φ ++ Δ ++ Γ))
+    apply typing.typ_abs (L ∪ Env.terms (φ ++ Δ ++ Γ))
     intro x hx
     simp at hx
     apply (fT2 x hx.1 ((x, T1) :: φ))
     simp [p]
     apply Env.valid_ctx.valid_cons
     exact f
-    simp [append_cons]
+    simp [List.append_cons]
     intro q
     exact (hx.2 ((context_terms_iff_in_list x _).mpr q))
   case typ_app φ' t1 t2 T1 T2 _ _ fT1 fT2 =>
     intro φ p f
-    apply typ_app
+    apply typing.typ_app
     exact (fT1 φ p f)
     exact (fT2 φ p f)
 
@@ -1392,7 +1382,7 @@ lemma typing_weakening (Γ Δ : Env) (t : Trm) (T : Typ) :
     typing (Γ) t T → Env.valid_ctx (Δ ++ Γ)
     → typing (Δ ++ Γ) t T := by
   intro H p
-  rw [← nil_append (Δ ++ Γ)] at p
+  rw [← List.nil_append (Δ ++ Γ)] at p
   apply (typing_weakening_strengthened Γ Δ [])
   simp
   exact H
@@ -1402,7 +1392,7 @@ lemma typing_weakening_head (Γ : Env) (t : Trm) (T S : Typ) (x : Var):
     ¬ (Env.in_context x Γ) → typing Γ t T
     → typing ((x, S ) :: Γ) t T := by
   intro notxl typt
-  rw [← nil_append ((x, S ) :: Γ), append_cons, nil_append]
+  rw [← List.nil_append ((x, S ) :: Γ), List.append_cons, List.nil_append]
   apply typing_weakening _ _ _ _ typt
   apply valid_push
   apply (typing_valid_ctx _ _ _ typt)
@@ -1414,21 +1404,21 @@ lemma typing_subst_var_case (Γ Δ : Env) (u : Trm) (S T : Typ) (z x : Var) :
     → Env.valid_ctx (Δ ++ (z, S ) :: Γ)
     → typing Γ u S → typing (Δ ++ Γ) ([z // u] ($ x)) T := by
   intro b v t
-  simp only [subst]
+  simp only [Trm.subst]
   by_cases hxz : x = z
   . simp [if_pos hxz]
     rw [← hxz] at b v
     have h : T = S := by
       apply (binds_mid_eq x T S Γ Δ)
-      simp only [← append_cons]
+      simp only [← List.append_cons]
       exact b
-      simp only [← append_cons]
+      simp only [← List.append_cons]
       exact v
     apply typing_weakening
     simp [h, t]
     apply (valid_remove_mid_cons x S Γ Δ v)
   . simp [if_neg hxz]
-    apply typ_var
+    apply typing.typ_var
     apply (valid_remove_mid_cons z S Γ Δ v)
     apply binds_remove_mid_cons
     apply b
@@ -1436,17 +1426,17 @@ lemma typing_subst_var_case (Γ Δ : Env) (u : Trm) (S T : Typ) (z x : Var) :
     exact hxz
 
 lemma typing_regular (t : Trm) (T : Typ) (Γ : Env) :
-    typing Γ t T -> lc t := by
+    typing Γ t T -> Trm.lc t := by
   intro H
   induction H
   case typ_var _ x _ _ _ =>
-    exact (lc.lc_var x)
+    exact (Trm.lc.lc_var x)
   case typ_abs L _ u T1 _ _ h' =>
-    apply (lc.lc_abs u T1 L)
+    apply (Trm.lc.lc_abs u T1 L)
     intro x hx
     exact (h' x hx)
   case typ_app _ t1 t2 _ _ _ _ f1 f2 =>
-    apply (lc.lc_app)
+    apply (Trm.lc.lc_app)
     exact f1
     exact f2
 
@@ -1466,8 +1456,8 @@ lemma typing_subst_strengthened' Γ Δ' t u S T z :
     exact f
   case typ_abs L ψ s S1 S2 h h' =>
     intro Δ p _ f
-    simp only [subst]
-    apply typ_abs (L ∪ Env.terms (Δ ++ Γ) ∪ {z}) (Δ ++ Γ) ([z // u] s) S1 S2
+    simp only [Trm.subst]
+    apply typing.typ_abs (L ∪ Env.terms (Δ ++ Γ) ∪ {z}) (Δ ++ Γ) ([z // u] s) S1 S2
     intro x hx
     have hxz : x ≠ z := by
       intro q
@@ -1477,17 +1467,17 @@ lemma typing_subst_strengthened' Γ Δ' t u S T z :
       intro q
       apply hx
       simp [q]
-    rw [subst_open_var s u (typing_regular _ _ _ f) z x (fun q => hxz q.symm)]
-    rw [← nil_append ((x, S1 ) :: (Δ ++ Γ)), append_cons, nil_append, ← append_assoc]
+    rw [Trm.subst_open_var s u (typing_regular _ _ _ f) z x (fun q => hxz q.symm)]
+    rw [← List.nil_append ((x, S1 ) :: (Δ ++ Γ)), List.append_cons, List.nil_append, ← List.append_assoc]
     apply (h' x hxL)
     simp [p]
-    rw [append_assoc, ← p]
+    rw [List.append_assoc, ← p]
     simp [h x hxL]
     exact f
   case typ_app ψ t1 t2 S1 S2 h h' f1 f2 =>
     intro φ p _ f
-    simp only [subst]
-    apply typ_app
+    simp only [Trm.subst]
+    apply typing.typ_app
     apply (f1 φ p)
     simp [← p, h]
     exact f
@@ -1511,18 +1501,18 @@ lemma typing_subst (Γ : Env) (t u : Trm) (S T : Typ) (z : Var) :
     typing Γ u S →
     typing Γ ([z // u] t) T := by
   intro H p
-  rw [← nil_append ((z, S ) :: Γ)] at H
-  rw [← nil_append Γ]
+  rw [← List.nil_append ((z, S ) :: Γ)] at H
+  rw [← List.nil_append Γ]
   apply typing_subst_strengthened
   exact H
   exact p
 --------------------------------------------
 
 lemma typing_rename (Γ : Env) (x y : Var) (t : Trm) (T1 T2 : Typ) :
-    x ∉ fv t →  ¬ (Env.in_context x Γ)
-    → y ∉ fv t →  ¬ (Env.in_context y Γ)
-    → typing ((x, T1) :: Γ) (open₀ t ($ x)) T2
-    → typing ((y, T1) :: Γ) (open₀ t ($ y)) T2 := by
+    x ∉ Trm.fv t →  ¬ (Env.in_context x Γ)
+    → y ∉ Trm.fv t →  ¬ (Env.in_context y Γ)
+    → typing ((x, T1) :: Γ) (Trm.open₀ t ($ x)) T2
+    → typing ((y, T1) :: Γ) (Trm.open₀ t ($ y)) T2 := by
   intro hx fx _ fy R
   by_cases hxy : x = y
   . rwa [hxy] at R
@@ -1530,9 +1520,9 @@ lemma typing_rename (Γ : Env) (x y : Var) (t : Trm) (T1 T2 : Typ) :
       apply valid_remove_cons
       apply typing_valid_ctx
       exact R
-    have p := subst_intro t ($ y) (lc_var y) x hx
+    have p := Trm.subst_intro t ($ y) (Trm.lc.lc_var y) x hx
     rw [p]
-    apply typing_subst ((y, T1) :: Γ) (open₀ t ($ x)) ($ y) T1 T2
+    apply typing_subst ((y, T1) :: Γ) (Trm.open₀ t ($ x)) ($ y) T1 T2
     have q : ((x, T1 ) :: (y, T1 ) :: Γ) = ((([(x, T1)] : Env) ++ (([(y, T1)] : Env))) ++ Γ) := by
       simp
     rw [q]
@@ -1542,16 +1532,16 @@ lemma typing_rename (Γ : Env) (x y : Var) (t : Trm) (T1 T2 : Typ) :
     simp
     push_neg
     exact ⟨hxy, fx⟩
-    apply typ_var
+    apply typing.typ_var
     apply valid_push _ _ _ ok_ctx fy
     simp
 
 lemma typing_abs_intro (Γ : Env) (x : Var) (t : Trm) (T1 T2 : Typ) :
-    x ∉ fv t →  ¬ (Env.in_context x Γ)
-    → typing ((x, T1) :: Γ) (open₀ t ($ x)) T2
-    → typing Γ (abs T1 t) (T1 -> T2) := by
+    x ∉ Trm.fv t →  ¬ (Env.in_context x Γ)
+    → typing ((x, T1) :: Γ) (Trm.open₀ t ($ x)) T2
+    → typing Γ (Trm.abs T1 t) (T1 -> T2) := by
   intro hx fx R
-  apply typ_abs (fv t ∪ Env.terms Γ)
+  apply typing.typ_abs (Trm.fv t ∪ Env.terms Γ)
   intro y hy
   simp at hy
   apply (typing_rename _ _ _ _ _ _ hx fx)
@@ -1571,10 +1561,10 @@ lemma preservation_beta_red E t T :
     intro e' p
     cases p
     next t1' L' a' =>
-      apply typ_abs (L' ∪ L)
+      apply typing.typ_abs (L' ∪ L)
       intro x hx
       simp at hx
-      apply (a_ih x hx.2 (open₀ t1' ($ x)))
+      apply (a_ih x hx.2 (Trm.open₀ t1' ($ x)))
       apply (a' x hx.1)
   case typ_app φ t1 t2 S1 S2 f1 f2 h1 h2 =>
     intro e' p
@@ -1582,20 +1572,20 @@ lemma preservation_beta_red E t T :
     next e1 T lce1 g =>
       cases f1
       next L h =>
-        let ⟨x, hx⟩ := pick_fresh e1 L
-        have q : lc t2 := by
+        let ⟨x, hx⟩ := Trm.pick_fresh e1 L
+        have q : Trm.lc t2 := by
           apply (typing_regular _ _ _ f2)
         simp at hx
-        rw [subst_intro e1 t2 q x hx.2]
+        rw [Trm.subst_intro e1 t2 q x hx.2]
         apply (typing_subst)
         exact (h x hx.1)
         exact f2
     next e1 eve1 lct2 =>
-      apply typ_app
+      apply typing.typ_app
       apply (h1 e1 eve1)
       exact f2
     next e2 lct1 eve2 =>
-      apply typ_app
+      apply typing.typ_app
       exact f1
       apply (h2 e2 eve2)
 
@@ -1611,7 +1601,7 @@ lemma preservation_multi_red E t T :
 
 
 
-lemma value_regular (t : Trm) : value t → lc t := by
+lemma value_regular (t : Trm) : value t → Trm.lc t := by
   intro valt
   induction valt
   case value_abs _ lcu =>
@@ -1619,31 +1609,31 @@ lemma value_regular (t : Trm) : value t → lc t := by
 
 --call by value
 
-lemma eval_regular (e1 e2 : Trm) : eval e1 e2 → lc e1 ∧ lc e2  := by
+lemma eval_regular (e1 e2 : Trm) : eval e1 e2 → Trm.lc e1 ∧ Trm.lc e2  := by
   intro ev12
   induction ev12
   case eval_beta u1 u2 lc1 v2 =>
     constructor
-    . apply lc_app
+    . apply Trm.lc.lc_app
       exact lc1
       exact (value_regular _ v2)
-    . apply open_lc
+    . apply Trm.open_lc
       exact lc1
       exact (value_regular _ v2)
   case eval_app1 u1 u1' u2 lc2 _ f =>
     constructor
-    . apply lc_app
+    . apply Trm.lc.lc_app
       exact f.1
       exact lc2
-    . apply lc_app
+    . apply Trm.lc.lc_app
       exact f.2
       exact lc2
   case eval_app2 u1 u2 u2' lc1 _ f =>
     constructor
-    . apply lc_app
+    . apply Trm.lc.lc_app
       exact lc1
       exact f.1
-    . apply lc_app
+    . apply Trm.lc.lc_app
       exact lc1
       exact f.2
 
@@ -1662,20 +1652,20 @@ lemma preservation E e T : typing E e T → ((e' : Trm) →  eval e e' → typin
     next e1 T lce1 g =>
       cases f1
       next L h =>
-        let ⟨x, hx⟩ := pick_fresh e1 L
-        have q : lc t2 := by
+        let ⟨x, hx⟩ := Trm.pick_fresh e1 L
+        have q : Trm.lc t2 := by
           apply (typing_regular _ _ _ f2)
         simp at hx
-        rw [subst_intro e1 t2 q x hx.2]
+        rw [Trm.subst_intro e1 t2 q x hx.2]
         apply (typing_subst)
         exact (h x hx.1)
         exact f2
     next e1 eve1 lct2 =>
-      apply typ_app
+      apply typing.typ_app
       apply (h1 e1 eve1)
       exact f2
     next e2 lct1 eve2 =>
-      apply typ_app
+      apply typing.typ_app
       exact f1
       apply (h2 e2 eve2)
 
@@ -1688,7 +1678,7 @@ lemma progress e T : typing [] e T → (value e) ∨ (∃ e', eval e e') := by
   case typ_abs L Δ s S1 S2 f _ =>
     left
     apply value.value_abs
-    apply lc_abs s S1 L
+    apply Trm.lc.lc_abs s S1 L
     intro x hx
     exact (typing_regular _ _ _ (f x hx))
   case typ_app Δ s1 s2 S1 S2 f g h1 h2 =>
@@ -1699,7 +1689,7 @@ lemma progress e T : typing [] e T → (value e) ∨ (∃ e', eval e e') := by
     . by_cases val2 : value s2
       . cases val1
         next s3 T lcs3 =>
-          use (open₀ s3 s2)
+          use (Trm.open₀ s3 s2)
           apply eval.eval_beta
           exact lcs3
           exact val2
@@ -1731,13 +1721,13 @@ lemma para_diamond t t1 :
     intro t2 tpt2
     cases tpt2
     case para_red u1' u2' L' f' s2pu2' =>
-      let ⟨x, qx⟩ := pick_fresh u2' (L ∪ L' ∪ (fv u1') ∪ (fv s1') ∪ (fv s2'))
+      let ⟨x, qx⟩ := Trm.pick_fresh u2' (L ∪ L' ∪ (Trm.fv u1') ∪ (Trm.fv s1') ∪ (Trm.fv s2'))
       simp at qx
-      rw [subst_intro u1' u2' (para_regular _ _ s2pu2').2 x qx.2.2.1]
-      rw [subst_intro s1' s2' (para_regular _ _ s2ps2').2 x qx.2.2.2.1]
+      rw [Trm.subst_intro u1' u2' (para_regular _ _ s2pu2').2 x qx.2.2.1]
+      rw [Trm.subst_intro s1' s2' (para_regular _ _ s2ps2').2 x qx.2.2.2.1]
       have fact1: ∃ t', para s2' t' ∧ para u2' t' := by
         apply ih2 _ s2pu2'
-      have fact2 : ∃ t', para (open₀ s1' ($ x)) t' ∧ para (open₀ u1' ($ x)) t' := by
+      have fact2 : ∃ t', para (Trm.open₀ s1' ($ x)) t' ∧ para (Trm.open₀ u1' ($ x)) t' := by
         apply ih1 _ qx.1 _ (f' _ qx.2.1)
       rcases fact1 with ⟨t', qt'⟩
       rcases fact2 with ⟨t'', qt''⟩
@@ -1748,23 +1738,23 @@ lemma para_diamond t t1 :
     case para_app u2 u2' s1pu2 s2pu2' =>
       cases s1pu2
       next s1'' L' f' =>
-        let ⟨x, qx⟩ := pick_fresh s1' (L ∪ L' ∪ (fv s1''))
+        let ⟨x, qx⟩ := Trm.pick_fresh s1' (L ∪ L' ∪ (Trm.fv s1''))
         simp at qx
         have fact1: ∃ t', para s2' t' ∧ para u2' t' := by
           apply ih2 _ s2pu2'
-        have fact2 : ∃ t', para (open₀ s1' ($ x)) t' ∧ para (open₀ s1'' ($ x)) t' := by
+        have fact2 : ∃ t', para (Trm.open₀ s1' ($ x)) t' ∧ para (Trm.open₀ s1'' ($ x)) t' := by
           apply ih1 _ qx.1 _ (f' _ qx.2.1)
         rcases fact1 with ⟨t', qt'⟩
         rcases fact2 with ⟨t'', qt''⟩
-        use (open₀ (close₀ t'' x) t')
+        use (Trm.open₀ (Trm.close₀ t'' x) t')
         constructor
-        . apply para_through _ _ _ _ x ⟨qx.2.2.2, by simp [close₀, (close_var_fv t'' x 0)]⟩
-          rw [open_close_var _ _ (para_regular _ _ qt''.1).2]
+        . apply para_through _ _ _ _ x ⟨qx.2.2.2, by simp [Trm.close₀, (Trm.close_var_fv t'' x 0)]⟩
+          rw [Trm.open_close_var _ _ (para_regular _ _ qt''.1).2]
           exact qt''.1
           exact qt'.1
-        . apply para_red _ _ _ _ _ (fv (open₀ s1'' ($ x)) ∪ fv t'' ∪ {x})
+        . apply para.para_red _ _ _ _ _ (Trm.fv (Trm.open₀ s1'' ($ x)) ∪ Trm.fv t'' ∪ {x})
           intro y qy
-          rw [← close_open_var x s1'' qx.2.2.1]
+          rw [← Trm.close_open_var x s1'' qx.2.2.1]
           apply open_close_para _ _ _ _ qt''.2 qy
           exact qt'.2
   case para_app s1 s1' s2 s2' s1ps1' _ ih1 ih2 =>
@@ -1773,21 +1763,21 @@ lemma para_diamond t t1 :
       case para_red t1' u1' u2' T L f s2pu2' =>
         cases s1ps1'
         next s1'' L' f' =>
-          let ⟨x, qx⟩ := pick_fresh u1' (L ∪ L' ∪ (fv s1''))
+          let ⟨x, qx⟩ := Trm.pick_fresh u1' (L ∪ L' ∪ (Trm.fv s1''))
           simp at qx
           have fact1: ∃ t', para s2' t' ∧ para u2' t' := by
             apply ih2 _ s2pu2'
           have fact2 : ∃ t', para (λT, s1'') t' ∧ para (λT, u1') t' := by
-            apply ih1 (λT, u1') (para_abs _ _ _ L f)
+            apply ih1 (λT, u1') (para.para_abs _ _ _ L f)
           rcases fact1 with ⟨t', qt'⟩
           rcases fact2 with ⟨t'', qt''⟩
           cases qt''.1
           next w1 L'' f'' =>
             cases qt''.2
             next L''' f''' =>
-              use (open₀ w1 t')
+              use (Trm.open₀ w1 t')
               constructor
-              . apply para_red _ _ _ _ _ L'' f'' qt'.1
+              . apply para.para_red _ _ _ _ _ L'' f'' qt'.1
               . apply para_open_out _ _ _ _ L''' f''' qt'.2
       case para_app u1 u2' s1pu1 s2pu2' =>
         have fact1: ∃ t', para s1' t' ∧ para u1 t' := by
@@ -1798,25 +1788,25 @@ lemma para_diamond t t1 :
         rcases fact2 with ⟨t'', qt''⟩
         use (t' @ t'')
         constructor
-        . apply para_app _ _ _ _ qt'.1 qt''.1
-        . apply para_app _ _ _ _ qt'.2 qt''.2
+        . apply para.para_app _ _ _ _ qt'.1 qt''.1
+        . apply para.para_app _ _ _ _ qt'.2 qt''.2
   case para_abs s1 s2' T L _ ih =>
     intro t2 tpt2
     cases tpt2
     next t2' L' f' =>
-      let ⟨x, qx⟩ := pick_fresh s2' (L ∪ L' ∪ (fv t2'))
+      let ⟨x, qx⟩ := Trm.pick_fresh s2' (L ∪ L' ∪ (Trm.fv t2'))
       simp at qx
       have fact1 := ih x qx.1 _ (f' x qx.2.1)
       rcases fact1 with ⟨t', qt'⟩
-      use (λT, (close₀ t' x))
+      use (λT, (Trm.close₀ t' x))
       constructor
-      . apply para_abs _ _ _ (fv (open₀ s2' ($ x)) ∪ fv t' ∪ {x})
+      . apply para.para_abs _ _ _ (Trm.fv (Trm.open₀ s2' ($ x)) ∪ Trm.fv t' ∪ {x})
         intro y qy
-        rw [← close_open_var x s2' qx.2.2.2]
+        rw [← Trm.close_open_var x s2' qx.2.2.2]
         apply open_close_para _ _ _ _ qt'.1 qy
-      . apply para_abs _ _ _ (fv (open₀ t2' ($ x)) ∪ fv t' ∪ {x})
+      . apply para.para_abs _ _ _ (Trm.fv (Trm.open₀ t2' ($ x)) ∪ Trm.fv t' ∪ {x})
         intro y qy
-        rw [← close_open_var x t2' qx.2.2.1]
+        rw [← Trm.close_open_var x t2' qx.2.2.1]
         apply open_close_para _ _ _ _ qt'.2 qy
 
 lemma multi_para_diamond_core t t1 t2 :
@@ -1827,7 +1817,7 @@ lemma multi_para_diamond_core t t1 t2 :
   case m_para_refl _ =>
     use t1
     constructor
-    apply m_para_refl
+    apply multi_para.m_para_refl
     exact (para_regular _ _ tpt1).2
     exact tpt1
   case m_para_head s1 s2 _ s1ps2 h =>
@@ -1836,7 +1826,7 @@ lemma multi_para_diamond_core t t1 t2 :
     rcases q with ⟨t'', ⟨h3, h4⟩⟩
     use t''
     constructor
-    exact (m_para_head _ _ _ h1 h4)
+    exact (multi_para.m_para_head _ _ _ h1 h4)
     exact h3
 
 lemma multi_para_diamond t t1 t2 :
@@ -1846,7 +1836,7 @@ lemma multi_para_diamond t t1 t2 :
   induction tmpt1
   case m_para_refl _ =>
     use t2
-    exact ⟨tmpt2, m_para_refl t2 (multi_para_regular _ _ tmpt2).2⟩
+    exact ⟨tmpt2, multi_para.m_para_refl t2 (multi_para_regular _ _ tmpt2).2⟩
   case m_para_head s1 s2 _ s1ps2 f =>
     rcases f with ⟨t', ⟨h1,h2⟩⟩
     have q := (multi_para_diamond_core _ _ _ ⟨s1ps2, h1⟩)
@@ -1854,7 +1844,7 @@ lemma multi_para_diamond t t1 t2 :
     use t''
     constructor
     exact h3
-    exact (m_para_head _ _ _ h2 h4)
+    exact (multi_para.m_para_head _ _ _ h2 h4)
 
 theorem beta_red_confluence :
     ∀ t t1 t2, (multi_red t t1) ∧ (multi_red t t2)
