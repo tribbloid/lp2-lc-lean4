@@ -176,5 +176,10 @@ inductive eval : Trm → Trm → Prop
 | eval_app1 : ∀ (e1 : Trm) (e1' : Trm) (e2 : Trm), lc e2 → eval e1 e1' → eval (app e1 e2) (app e1' e2)
 | eval_app2 : ∀ (e1 : Trm) (e2 : Trm) (e2' : Trm), lc e1 → eval e2 e2' → eval (app e1 e2) (app e1 e2')
 
+def Preservation : Prop := ∀ (E : Env) (e e' : Trm) (T : Typ),
+  typing E e T → eval e e' → typing E e' T
+
+def Progress : Prop := ∀ (e : Trm) (T : Typ),
+  typing [] e T → (value e) ∨ (∃ e', eval e e')
 
 end Lp2lc.Active.STLC

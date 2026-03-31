@@ -1667,8 +1667,9 @@ lemma eval_regular (e1 e2 : Trm) : eval e1 e2 → lc e1 ∧ lc e2  := by
       exact lc1
       exact f.2
 
-lemma preservation E e T : typing E e T → ((e' : Trm) →  eval e e' → typing E e' T) := by
-  intro H
+lemma preservation_result : Preservation := by
+  intro E e e' T H
+  revert e'
   induction H
   case typ_var φ x S _ _ =>
     intro e' p
@@ -1699,8 +1700,8 @@ lemma preservation E e T : typing E e T → ((e' : Trm) →  eval e e' → typin
       exact f1
       apply (h2 e2 eve2)
 
-lemma progress e T : typing [] e T → (value e) ∨ (∃ e', eval e e') := by
-  intro H
+lemma progress_result : Progress := by
+  intro e T H
   generalize p : [] = Γ at H
   induction H
   case typ_var Γ x S _ bx =>
