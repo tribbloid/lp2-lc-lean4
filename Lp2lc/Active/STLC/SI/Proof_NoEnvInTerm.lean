@@ -27,11 +27,23 @@ inductive Ty : Type
 | arrow : (input : Ty) → (output : Ty) → Ty
 deriving DecidableEq, Repr
 
+namespace TypeNotation
+
+scoped infixr:60 " => " => Ty.arrow
+
+end TypeNotation
+
+section
+
+open scoped TypeNotation
+
 inductive Term : Ty -> Type where
 | term_variable : Var -> Term type
 | unit : Term Ty.base
-| lambda : Var -> Term output -> Term (Ty.arrow input output)
-| apply : Term (Ty.arrow input output) -> Term input -> Term output
+| lambda : Var -> Term output -> Term (input => output)
+| apply : Term (input => output) -> Term input -> Term output
+
+end
 
 abbrev Env := List (Var × Ty)
 
@@ -87,31 +99,32 @@ def Denotation : (type : Ty) → Type
 | .arrow input output => Denotation input → Denotation output
 
 /--
-Assigns a semantic value to each variable justified by an environment lookup.
-It is the semantic counterpart of a typing environment: once `env.get` proves
-that a variable has a certain type, the valuation supplies its meaning at that
-type.
+Denotation lookup function type, given a value binded to variable name `name` in `env`, return its `Denotation`. E.g.
 
 ```scala
-f(a)
+val f = {x: Int => x + 1}
 ```
 
-Evaluating this phrase needs a semantic value for `f` and another one for `a`.
-`Valuation` is the table that provides those meanings.
+in the above environment, if name-type pair `f: (Int => Int)` is given, then `Valuation env f (Int => Int) = Unit -> Uint`.
 -/
-def Valuation (env : Env): Type := ∀ (name : Var) (type : Ty), env.get name = some type → Denotation type
+abbrev Valuation (env : Env): Type := ∀ (name : Var) (type : Ty), env.get name = some type → Denotation type
 
 /--
-Extends a valuation with a semantic value for a newly bound variable `name`.
-This models stepping under a lambda: the fresh binder gets the newly supplied
-value, and every different variable keeps the old meaning.
+add a `name`-`value` pair into an existing `Valuation`. E.g.
 
 ```scala
-x => f(x)
+// env0
+var x = 1
+// env1
+x = x + 1
+
+{ x =>
+  // env2
+  ???
+}
 ```
 
-When interpreting the body, the occurrence of `x` is read from the new argument
-value, while `f` is still read from the older valuation.
+both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadowed
 -/
 def extend (valuation : Valuation env) (name : Var) (value : Denotation input) :
     Valuation ((name, input) :: env)
@@ -124,6 +137,31 @@ def extend (valuation : Valuation env) (name : Var) (value : Denotation input) :
         exact value
     else
       valuation tested_name type (by simpa [Env.get, same_name] using binding)
+
+
+/--
+Evaluates a scoped term under a valuation into its semantic denotation.
+Variables are read from the valuation, lambdas become Lean functions, and
+applications are interpreted by semantic function application.
+
+```scala
+(x => x)(a)
+```
+
+`denote` interprets this by turning `x => x` into the identity function and then
+applying it to the meaning of `a`.
+-/
+def denote {env : Env} {type : Ty} (term : Term type) :
+    IsScoped env term → Valuation env → Denotation type :=
+  match term with
+  | .term_variable name => fun hscoped => fun valuation => valuation name _ hscoped
+  | .unit => fun _ => fun _ => PUnit.unit
+  | @Term.lambda output input name body => fun hscoped => fun valuation => fun (value : Denotation input) =>
+      let body_scoped : IsScoped ((name, input) :: env) body := by
+        simpa [IsScoped] using hscoped
+      denote body body_scoped (extend valuation name value)
+  | @Term.apply input output function argument => fun hscoped => fun valuation =>
+      (denote function hscoped.left valuation) (denote argument hscoped.right valuation)
 
 /--
 Step-indexed logical relation describing semantically well-behaved values.
@@ -247,30 +285,6 @@ def empty_valuation : Valuation [] := by
   intro name type binding
   simp [Env.get] at binding
 
-
-/--
-Evaluates a scoped term under a valuation into its semantic denotation.
-Variables are read from the valuation, lambdas become Lean functions, and
-applications are interpreted by semantic function application.
-
-```scala
-(x => x)(a)
-```
-
-`denote` interprets this by turning `x => x` into the identity function and then
-applying it to the meaning of `a`.
--/
-def denote {env : Env} {type : Ty} (term : Term type) :
-    IsScoped env term → Valuation env → Denotation type :=
-  match term with
-  | .term_variable name => fun hscoped => fun valuation => valuation name _ hscoped
-  | .unit => fun _ => fun _ => PUnit.unit
-  | @Term.lambda output input name body => fun hscoped => fun valuation => fun (value : Denotation input) =>
-      let body_scoped : IsScoped ((name, input) :: env) body := by
-        simpa [IsScoped] using hscoped
-      denote body body_scoped (extend valuation name value)
-  | @Term.apply input output function argument => fun hscoped => fun valuation =>
-      (denote function hscoped.left valuation) (denote argument hscoped.right valuation)
 
 /--
 Every scoped term denotes a value satisfying the logical relation at every step index.
