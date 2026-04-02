@@ -11,6 +11,12 @@ inductive Ty : Type
 | arrow : (input : Ty) → (output : Ty) → Ty
 deriving DecidableEq, Repr
 
+inductive Term : Ty -> Type where
+| term_variable : Var -> Term type
+| unit : Term Ty.base
+| lambda : Var -> Term output -> Term (Ty.arrow input output)
+| apply : Term (Ty.arrow input output) -> Term input -> Term output
+
 abbrev Env := List (Var × Ty)
 
 namespace Env
@@ -25,11 +31,13 @@ def get (name : Var) : Env → Option Ty
 
 end Env
 
-inductive Term : (env : Env) → (type : Ty) → Type where
-| term_variable : (name : Var) → (binding : env.get name = some type) → Term env type
-| unit : Term env Ty.base
-| lambda : (name : Var) → (body : Term ((name, input) :: env) output) → Term env (Ty.arrow input output)
-| apply : (function : Term env (Ty.arrow input output)) → (argument : Term env input) → Term env output
+
+def Scoped (Γ : Env) {type : Ty}: Term type → Prop
+| .term_variable x => Γ.get x = some type
+| .unit => True
+| @Term.lambda _ input x body => Scoped ((x, input) :: Γ) body
+| @Term.apply _ _ f a => Scoped Γ f ∧ Scoped Γ a
+
 
 def Denotation : (type : Ty) → Type
 | .base => PUnit
@@ -48,12 +56,6 @@ def extend (valuation : Valuation env) (name : Var) (value : Denotation input) :
         exact value
     else
       valuation tested_name type (by simpa [Env.get, same_name] using binding)
-
-def denote : (term : Term env type) → (valuation : Valuation env) → Denotation type
-| .term_variable name binding, valuation => valuation name type binding
-| .unit, _ => PUnit.unit
-| .lambda name body, valuation => fun value => denote body (extend valuation name value)
-| .apply function argument, valuation => (denote function valuation) (denote argument valuation)
 
 def Semantics : (type : Ty) → (steps : Nat) → Denotation type → Prop
 | .base, _, _ => True
@@ -98,35 +100,53 @@ lemma extend_semantics {env : Env} {input : Ty} {steps : Nat} {valuation : Valua
       simpa [Env.get, same_name] using binding
     simpa [extend, same_name] using valuation_semantics tested_name type tail_binding
 
-theorem fundamental {env : Env} {type : Ty} (term : Term env type) :
-    ∀ {steps : Nat} {valuation : Valuation env},
-      EnvironmentSemantics env steps valuation → Semantics type steps (denote term valuation) := by
-  induction term with
-  | term_variable name binding =>
-      intro _ _ valuation_semantics
-      simpa [denote] using valuation_semantics name _ binding
-  | unit =>
-      intro _ _ _
-      trivial
-  | lambda name body induction_hypothesis =>
-      intro steps valuation valuation_semantics smaller_steps smaller_bound value value_semantics
-      exact ⟨induction_hypothesis (steps := smaller_steps) (valuation := extend valuation name value)
-        (extend_semantics (EnvironmentSemantics.monotone smaller_bound valuation_semantics) value_semantics)⟩
-  | apply function argument function_induction argument_induction =>
-      intro steps valuation valuation_semantics
-      exact (function_induction valuation_semantics steps le_rfl
-        (denote argument valuation) (argument_induction valuation_semantics)).force
-
-abbrev closed (type : Ty) := Term [] type
-
 def empty_valuation : Valuation [] := by
   intro name type binding
   simp [Env.get] at binding
 
+
+def denote {env : Env} {type : Ty} (term : Term type) :
+    Scoped env term → Valuation env → Denotation type :=
+  match term with
+  | .term_variable name => fun hscoped => fun valuation => valuation name _ hscoped
+  | .unit => fun _ => fun _ => PUnit.unit
+  | @Term.lambda output input name body => fun hscoped => fun valuation => fun (value : Denotation input) =>
+      let body_scoped : Scoped ((name, input) :: env) body := by
+        simpa [Scoped] using hscoped
+      denote body body_scoped (extend valuation name value)
+  | @Term.apply input output function argument => fun hscoped => fun valuation =>
+      (denote function hscoped.left valuation) (denote argument hscoped.right valuation)
+
+theorem fundamental {env : Env} {type : Ty} (term : Term type) :
+    ∀ {steps : Nat} {valuation : Valuation env} (hscoped : Scoped env term),
+      EnvironmentSemantics env steps valuation →
+      Semantics type steps (denote term hscoped valuation) := by
+  induction term generalizing env with
+  | term_variable name =>
+      intro _ valuation hscoped valuation_semantics
+      simpa [denote] using valuation_semantics name _ hscoped
+  | unit =>
+      intro _ _ _ _
+      trivial
+  | @lambda output input name body induction_hypothesis =>
+      intro steps valuation hscoped valuation_semantics smaller_steps smaller_bound value value_semantics
+      have body_scoped : Scoped ((name, input) :: env) body := by
+        simpa [Scoped] using hscoped
+      exact ⟨induction_hypothesis (env := (name, input) :: env) (steps := smaller_steps)
+        (valuation := extend valuation name value) body_scoped
+        (extend_semantics (EnvironmentSemantics.monotone smaller_bound valuation_semantics) value_semantics)⟩
+  | @apply input output function argument function_induction argument_induction =>
+      intro steps valuation hscoped valuation_semantics
+      exact (function_induction (valuation := valuation) hscoped.left valuation_semantics steps le_rfl
+        (denote argument hscoped.right valuation)
+        (argument_induction (valuation := valuation) hscoped.right valuation_semantics)).force
+
+abbrev closed (type : Ty) := { term : Term type // Scoped [] term }
+
 theorem soundness {type : Ty} (term : closed type) :
-    ∀ steps, Semantics type steps (denote term empty_valuation) := by
+    ∀ steps, Semantics type steps (denote term.1 term.2 empty_valuation) := by
   intro steps
-  exact fundamental term (valuation := empty_valuation) (by
+  exact fundamental term.1 (valuation := empty_valuation) term.2 (by
     intro name inner_type binding
     simp [Env.get] at binding)
 
