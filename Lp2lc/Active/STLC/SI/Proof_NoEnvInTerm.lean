@@ -88,6 +88,7 @@ def IsScoped (env : Env) {type : Ty}: (term: Term type) → Prop
 | @Term.lambda _ input x body => IsScoped ((x, input) :: env) body
 | @Term.apply _ _ f a => IsScoped env f ∧ IsScoped env a
 
+abbrev ScopedTerm (env : Env) (type : Ty) := { term : Term type // IsScoped env term }
 
 /--
 Convert each `Ty` into a lean semantic type.
