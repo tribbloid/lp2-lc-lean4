@@ -21,6 +21,7 @@ abbrev Env := List (Var × Ty)
 
 namespace Env
 
+/-- Looks up the type associated with a variable name in an environment. -/
 def get (name : Var) : Env → Option Ty
 | [] => none
 | (bound_name, type) :: env =>
@@ -32,6 +33,7 @@ def get (name : Var) : Env → Option Ty
 end Env
 
 
+/-- States that every free variable in a term is assigned the expected type by `Γ`. -/
 def Scoped (Γ : Env) {type : Ty}: Term type → Prop
 | .term_variable x => Γ.get x = some type
 | .unit => True
@@ -39,12 +41,15 @@ def Scoped (Γ : Env) {type : Ty}: Term type → Prop
 | @Term.apply _ _ f a => Scoped Γ f ∧ Scoped Γ a
 
 
+/-- Interprets object-language types as Lean types of semantic values. -/
 def Denotation : (type : Ty) → Type
 | .base => PUnit
 | .arrow input output => Denotation input → Denotation output
 
+/-- Assigns a semantic value to each variable justified by an environment lookup. -/
 def Valuation (env : Env): Type := ∀ (name : Var) (type : Ty), env.get name = some type → Denotation type
 
+/-- Extends a valuation with a semantic value for a newly bound variable. -/
 def extend (valuation : Valuation env) (name : Var) (value : Denotation input) :
     Valuation ((name, input) :: env)
 | tested_name, type, binding =>
@@ -57,6 +62,7 @@ def extend (valuation : Valuation env) (name : Var) (value : Denotation input) :
     else
       valuation tested_name type (by simpa [Env.get, same_name] using binding)
 
+/-- Step-indexed logical relation describing semantically well-behaved values. -/
 def Semantics : (type : Ty) → (steps : Nat) → Denotation type → Prop
 | .base, _, _ => True
 | .arrow input output, steps, function =>
@@ -64,6 +70,7 @@ def Semantics : (type : Ty) → (steps : Nat) → Denotation type → Prop
       ∀ value, Semantics input smaller_steps value →
         Later (Semantics output smaller_steps (function value))
 
+/-- Shrinking the step index preserves semantic validity of a value. -/
 lemma Semantics.monotone {type : Ty} {smaller_steps steps : Nat} {value : Denotation type}
     (bound : smaller_steps ≤ steps) :
     Semantics type steps value → Semantics type smaller_steps value := by
@@ -75,10 +82,12 @@ lemma Semantics.monotone {type : Ty} {smaller_steps steps : Nat} {value : Denota
       intro function_semantics test_steps test_bound test_value test_semantics
       exact function_semantics test_steps (le_trans test_bound bound) test_value test_semantics
 
+/-- Requires every variable in an environment to denote a semantically valid value. -/
 def EnvironmentSemantics (env : Env) (steps : Nat) (valuation : Valuation env) : Prop :=
   ∀ (name : Var) (type : Ty) (binding : env.get name = some type),
     Semantics type steps (valuation name type binding)
 
+/-- Environment semantics is also preserved when the step index decreases. -/
 lemma EnvironmentSemantics.monotone
     {env : Env} {smaller_steps steps : Nat} {valuation : Valuation env}
     (bound : smaller_steps ≤ steps) :
@@ -86,6 +95,7 @@ lemma EnvironmentSemantics.monotone
   intro valuation_semantics name type binding
   exact Semantics.monotone bound (valuation_semantics name type binding)
 
+/-- Extending a semantically valid environment with a valid value preserves validity. -/
 lemma extend_semantics {env : Env} {input : Ty} {steps : Nat} {valuation : Valuation env}
     (valuation_semantics : EnvironmentSemantics env steps valuation)
     {name : Var} {value : Denotation input} (value_semantics : Semantics input steps value) :
@@ -100,11 +110,13 @@ lemma extend_semantics {env : Env} {input : Ty} {steps : Nat} {valuation : Valua
       simpa [Env.get, same_name] using binding
     simpa [extend, same_name] using valuation_semantics tested_name type tail_binding
 
+/-- The empty environment admits the unique valuation, since no variable can be looked up. -/
 def empty_valuation : Valuation [] := by
   intro name type binding
   simp [Env.get] at binding
 
 
+/-- Evaluates a scoped term under a valuation into its semantic denotation. -/
 def denote {env : Env} {type : Ty} (term : Term type) :
     Scoped env term → Valuation env → Denotation type :=
   match term with
@@ -117,6 +129,7 @@ def denote {env : Env} {type : Ty} (term : Term type) :
   | @Term.apply input output function argument => fun hscoped => fun valuation =>
       (denote function hscoped.left valuation) (denote argument hscoped.right valuation)
 
+/-- Every scoped term denotes a value satisfying the logical relation at every step index. -/
 theorem fundamental {env : Env} {type : Ty} (term : Term type) :
     ∀ {steps : Nat} {valuation : Valuation env} (hscoped : Scoped env term),
       EnvironmentSemantics env steps valuation →
@@ -143,6 +156,7 @@ theorem fundamental {env : Env} {type : Ty} (term : Term type) :
 
 abbrev closed (type : Ty) := { term : Term type // Scoped [] term }
 
+/-- A closed term is semantically sound in the empty environment at every step index. -/
 theorem soundness {type : Ty} (term : closed type) :
     ∀ steps, Semantics type steps (denote term.1 term.2 empty_valuation) := by
   intro steps
