@@ -90,7 +90,7 @@ def IsScoped (env : Env) {type : Ty}: (term: Term type) → Prop
 | @Term.lambda _ input x body => IsScoped ((x, input) :: env) body
 | @Term.apply _ _ f a => IsScoped env f ∧ IsScoped env a
 
-abbrev ScopedTerm (env : Env) (type : Ty) := { term : Term type // IsScoped env term }
+def ScopedTerm (env : Env) (type : Ty) := { term : Term type // IsScoped env term }
 
 /--
 Convert each `Ty` into a lean semantic type.
@@ -110,7 +110,7 @@ val f = {x: Int => x + 1}
 
 in the above environment, if name-type pair `f: (Int => Int)` is given, then `Valuation env f (Int => Int) = Unit -> Uint`.
 -/
-abbrev Valuation (env : Env): Type := ∀ (name : Var) (type : Ty), env.get name = some type → Denotation type
+def Valuation (env : Env): Type := ∀ (name : Var) (type : Ty), env.get name = some type → Denotation type
 
 /--
 add a `name`-`value` pair into an existing `Valuation`. E.g.

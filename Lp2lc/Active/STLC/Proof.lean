@@ -144,7 +144,7 @@ lemma binds_tail (x : Var) (T : Typ) (Γ Δ : Env) :
     simp only [List.nil_append, bx]
   case cons b Δ' f' =>
     simp [Env.in_context] at nx
-    push_neg at nx
+    push Not at nx
     simp [Env.get, List.append_eq]
     rw [if_neg nx.1]
     apply (f' nx.2)
@@ -204,7 +204,7 @@ lemma binds_concat_inv (x : Var) (T : Typ) (Γ Δ : Env) :
   refine Iff.mpr or_iff_not_imp_left ?_
   intro H
   apply binds_concat_inv' _ _ _ _ bxT
-  push_neg at H
+  push Not at H
   exact Iff.mpr or_iff_not_imp_left H
 
 lemma binds_singleton_inv (x y : Var) (X Y : Typ) :
@@ -231,7 +231,7 @@ lemma binds_mid (x : Var) (T : Typ) (Δ Γ : Env) :
       . simp [if_pos hxy]
         have ⟨_, t2⟩ := in_context_append_neg _ _ _ g
         simp at t2
-        push_neg at t2
+        push Not at t2
         by_contra _
         exact (t2.1 hxy.symm)
       . simp [if_neg hxy]
@@ -252,7 +252,7 @@ lemma binds_mid_eq (x : Var) (T S : Typ) (Γ Δ : Env) :
       by_cases hxy : x = y
       . have ⟨_, t2⟩ := in_context_append_neg _ _ _ g
         simp at t2
-        push_neg at t2
+        push Not at t2
         by_contra _
         exact (t2.1 hxy.symm)
       . simp [if_neg hxy] at p
@@ -549,7 +549,7 @@ lemma open_close_lemma (x y z : Var) (t : Trm) : x ≠ y → y ∉ fv t
     constructor
     simp only
     apply (hu hy (i + 1) (j + 1))
-    exact Iff.mpr Nat.succ_ne_succ neqij
+    exact Iff.mpr Nat.succ_ne_succ_iff neqij
   case app u1 u2 hu1 hu2 =>
     intro i j neqij
     simp only [closing, opening, app.injEq]
@@ -708,7 +708,7 @@ lemma subst_lc (t u : Trm) : (x : Var) → lc t → lc u → lc ([x // u] t) := 
       exact (hx₀ (Finset.mem_union_left {x} s))
     have t2 : x₀ ≠ x := by
       simp at hx₀
-      push_neg at hx₀
+      push Not at hx₀
       exact hx₀.1
     rw [subst_open_var v u lcu x x₀ t2.symm]
     exact (hv x₀ t1)
@@ -721,7 +721,7 @@ lemma open_var_body : ∀ x t, body t → lc (open₀ t ($ x)) := by
   rcases bt with ⟨L , a⟩
   have ⟨y, hy⟩ := pick_fresh t (L ∪ {x})
   simp at hy
-  push_neg at hy
+  push Not at hy
   rw [subst_intro t ($ x) (lc.lc_var x) y (hy.2.2)]
   apply (subst_lc (open₀ t ($ y)) ($ x))
   exact (a y hy.2.1)
@@ -761,7 +761,7 @@ lemma open_close_subst t x y :
     intro k
     let ⟨w, qw⟩ := pick_fresh s (L ∪ {x} ∪ (fv ( {k + 1 ~> $ y} { k + 1 <~ x } s)) ∪ (fv ([x // $ y] s)))
     simp at qw
-    push_neg at qw
+    push Not at qw
     have hwx : x ≠ w := (fun p => (qw.1 p.symm))
     have fact := h w qw.2.1 (k + 1)
     rw [← subst_open_var _ _ (lc.lc_var y) _ _ hwx, open₀] at fact
@@ -836,7 +836,7 @@ lemma beta_rename t1 t2 x y : beta_red t1 t2
     apply beta_red.br_abs _ _ _ (L ∪ {x})
     intro z hz
     simp at hz
-    push_neg at hz
+    push Not at hz
     simp [Trm.subst_open_var s1 ($ y) (Trm.lc.lc_var y) x z (fun p => hz.1 p.symm)]
     simp [Trm.subst_open_var s1' ($ y) (Trm.lc.lc_var y) x z (fun p => hz.1 p.symm)]
     exact (f z hz.2)
@@ -892,16 +892,16 @@ lemma beta_red_subst_out t1 t2 x u :
     let ⟨y, hy⟩ := Trm.pick_fresh ([x // u] s1) (L ∪ (Trm.fv ([x // u] s2)) ∪ {x})
     apply beta_abs_intro _ _ _ y
     simp at hy
-    push_neg at hy
+    push Not at hy
     rw [Trm.subst_open_var _ _ lcu , Trm.subst_open_var _ _ lcu]
     apply (h y hy.2.1)
     exact (fun p => hy.1 p.symm)
     exact (fun p => hy.1 p.symm)
     simp at hy
-    push_neg at hy
+    push Not at hy
     exact hy.2.2.2
     simp at hy
-    push_neg at hy
+    push Not at hy
     exact hy.2.2.1
 
 -------------------------
@@ -957,7 +957,7 @@ lemma para_subst_all t1 t2 s1 s2 :
     apply para.para_red _ _ _ _ _ (L ∪ {x})
     intro y hy
     simp at hy
-    push_neg at hy
+    push Not at hy
     have p : x ≠ y := (fun q => (hy.1 q.symm))
     rw [Trm.subst_open_var u1 s1 (para_regular _ _ s1ps2).1 x y p]
     rw [Trm.subst_open_var u1' s2 (para_regular _ _ s1ps2).2 x y p]
@@ -973,7 +973,7 @@ lemma para_subst_all t1 t2 s1 s2 :
     apply para.para_abs _ _ _ (L ∪ {x})
     intro y hy
     simp at hy
-    push_neg at hy
+    push Not at hy
     have p : x ≠ y := (fun q => (hy.1 q.symm))
     rw [Trm.subst_open_var _ _ _ x y p, Trm.subst_open_var _ _ _ x y p]
     exact (g y hy.2)
@@ -998,7 +998,7 @@ lemma opening_closing_para t u x y z :
            (Trm.opening z ($ y) (Trm.closing z x u)) := by
   intro tpu hy
   simp at hy
-  push_neg at hy
+  push Not at hy
   rw [Trm.open_close_subst t x y (para_regular _ _ tpu).1 z]
   rw [Trm.open_close_subst u x y (para_regular _ _ tpu).2 z]
   apply para_subst_all _ _ _ _ tpu (para.para_var y)
@@ -1157,7 +1157,7 @@ lemma multi_red_subst_in t x u1 u2 :
     apply multi_red_abs _ _ _ (L ∪ {x})
     intro y hy
     simp at hy
-    push_neg at hy
+    push Not at hy
     rw [Trm.subst_open_var u u1 (multi_red_regular _ _ u1mu2).1 x y]
     rw [Trm.subst_open_var u u2 (multi_red_regular _ _ u1mu2).2 x y]
     apply (f y hy.2)
@@ -1442,7 +1442,7 @@ lemma typing_subst_var_case (Γ Δ : Env) (u : Trm) (S T : Typ) (z x : Var) :
     apply (valid_remove_mid_cons z S Γ Δ v)
     apply binds_remove_mid_cons
     apply b
-    push_neg at hxz
+    push Not at hxz
     exact hxz
 
 lemma typing_regular (t : Trm) (T : Typ) (Γ : Env) :
@@ -1550,7 +1550,7 @@ lemma typing_rename (Γ : Env) (x y : Var) (t : Trm) (T1 T2 : Typ) :
     simp [R]
     apply (valid_push _ _ _ (valid_push _ _ _ ok_ctx fy))
     simp
-    push_neg
+    push Not
     exact ⟨hxy, fx⟩
     apply typing.typ_var
     apply valid_push _ _ _ ok_ctx fy
@@ -2118,7 +2118,7 @@ lemma strongly_normalizable_iff_SN t :
     have this : ∀ u , ¬ SN u → ∃ t', beta_red u t' ∧ ¬ SN t' := by
       intro u notsnu
       by_contra F
-      push_neg at F
+      push Not at F
       apply notsnu (SN.sn F)
     choose f w hw using this
     let f' : Nat → {u // ¬ SN u} := fun n =>
