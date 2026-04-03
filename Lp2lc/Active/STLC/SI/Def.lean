@@ -110,29 +110,12 @@ Denotation lookup function type, given a value binded to variable name `name` in
 val f = {x: Int => x + 1}
 ```
 
-in the above environment, if name-type pair `f: (Int => Int)` is given, then `Valuation env f (Int => Int) = Unit -> Uint`.
+in the above environment, if name-type pair `f: (Int => Int)` is given, then `Lookup env f (Int => Int) = Unit -> Uint`.
 -/
-def Valuation (env : Env): Type := ∀ (name : Var) (type : Ty), env.get name = some type → Denotation type
-
+def Env.Lookup (env : Env): Type := ∀ (name : Var) (type : Ty), env.get name = some type → Denotation type
 
 /--
-The empty environment admits the unique valuation, since no variable can be
-looked up. This is exactly what closed terms need: there are no free variables
-whose meanings must be supplied externally.
-
-```scala
-x => x
-```
-
-The function above is closed because its only variable is bound by the lambda.
-So `empty_valuation` never has to return a meaning for a genuinely free name.
--/
-def empty_valuation : Valuation [] := by
-  intro name type binding
-  simp [Env.get] at binding
-
-/--
-add a `name`-`value` pair into an existing `Valuation`. E.g.
+add a `name`-`value` pair into an existing Lookup. E.g.
 
 ```scala
 // env0
@@ -148,8 +131,8 @@ x = x + 1
 
 both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadowed
 -/
-def extend (valuation : Valuation env) (name : Var) (value : Denotation input) :
-    Valuation ((name, input) :: env)
+def extend {env : Env} (lookup : env.Lookup) (name : Var) (value : Denotation input) :
+    Env.Lookup ((name, input) :: env)
 | tested_name, type, binding =>
     if same_name : tested_name = name then
       by
@@ -158,7 +141,7 @@ def extend (valuation : Valuation env) (name : Var) (value : Denotation input) :
         cases binding
         exact value
     else
-      valuation tested_name type (by simpa [Env.get, same_name] using binding)
+      lookup tested_name type (by simpa [Env.get, same_name] using binding)
 
 
 /--
@@ -174,19 +157,19 @@ applications are interpreted by semantic function application.
 applying it to the meaning of `a`.
 -/
 def denote (scopedTerm : ScopedTerm env type) :
-    Valuation env → Denotation type :=
+    env.Lookup → Denotation type :=
 
   let rec impl {env : Env} {type : Ty} (term : Term type) (hscoped : IsScoped env term) :
-      Valuation env → Denotation type :=
+      env.Lookup → Denotation type :=
     match term with
-    | .term_variable name => fun valuation => valuation name _ hscoped
+    | .term_variable name => fun lookup => lookup name _ hscoped
     | .unit => fun _ => PUnit.unit
-    | @Term.lambda output input name body => fun valuation => fun (value : Denotation input) =>
+    | @Term.lambda output input name body => fun lookup => fun (value : Denotation input) =>
         let body_scoped : IsScoped ((name, input) :: env) body := by
           simpa [IsScoped] using hscoped
-        impl body body_scoped (extend valuation name value)
-    | @Term.apply input output function argument => fun valuation =>
-        (impl function hscoped.left valuation) (impl argument hscoped.right valuation)
+        impl body body_scoped (extend lookup name value)
+    | @Term.apply input output function argument => fun lookup =>
+        (impl function hscoped.left lookup) (impl argument hscoped.right lookup)
 
   impl scopedTerm.1 scopedTerm.2
 

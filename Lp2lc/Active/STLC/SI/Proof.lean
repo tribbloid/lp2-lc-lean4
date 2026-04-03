@@ -88,7 +88,7 @@ f(a)
 To reason about this open term, the environment must provide semantically valid
 meanings for both `f` and `a`.
 -/
-def EnvironmentSemantics (env : Env) (steps : Nat) (valuation : Valuation env) : Prop :=
+def EnvironmentSemantics (env : Env) (steps : Nat) (valuation : env.Lookup) : Prop :=
   ∀ (name : Var) (type : Ty) (binding : env.get name = some type),
     Semantics type steps (valuation name type binding)
 
@@ -105,7 +105,7 @@ If the meanings of `f` and `a` are valid for more steps, they are valid for
 fewer too.
 -/
 lemma EnvironmentSemantics.monotone
-    {env : Env} {smaller_steps steps : Nat} {valuation : Valuation env}
+    {env : Env} {smaller_steps steps : Nat} {valuation : env.Lookup}
     (bound : smaller_steps ≤ steps) :
     EnvironmentSemantics env steps valuation → EnvironmentSemantics env smaller_steps valuation := by
   intro valuation_semantics name type binding
@@ -124,7 +124,7 @@ Inside the body, `x` is handled by the new binding introduced by the lambda,
 while `f` still comes from the older environment. `extend_semantics` proves
 that both sources of information coexist correctly.
 -/
-lemma extend_semantics {env : Env} {input : Ty} {steps : Nat} {valuation : Valuation env}
+lemma extend_semantics {env : Env} {input : Ty} {steps : Nat} {valuation : env.Lookup}
     (valuation_semantics : EnvironmentSemantics env steps valuation)
     {name : Var} {value : Denotation input} (value_semantics : Semantics input steps value) :
     EnvironmentSemantics ((name, input) :: env) steps (extend valuation name value) := by
@@ -155,7 +155,7 @@ for the environment to supply a valid meaning for `f`; the bound `x` is handled
 by the lambda case itself.
 -/
 theorem fundamental {env : Env} {type : Ty} (term : ScopedTerm env type) :
-    ∀ {steps : Nat} {valuation : Valuation env},
+    ∀ {steps : Nat} {valuation : env.Lookup},
       EnvironmentSemantics env steps valuation →
       Semantics type steps (denote term valuation) := by
   rcases term with ⟨term, hscoped⟩
