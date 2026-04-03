@@ -142,19 +142,6 @@ def extend (valuation : Valuation env) (name : Var) (value : Denotation input) :
       valuation tested_name type (by simpa [Env.get, same_name] using binding)
 
 
-private def denote_core (term : Term type) (hscoped : IsScoped env term) :
-    Valuation env → Denotation type :=
-  match term with
-  | .term_variable name => fun valuation => valuation name _ hscoped
-  | .unit => fun _ => PUnit.unit
-  | @Term.lambda output input name body => fun valuation => fun (value : Denotation input) =>
-      let body_scoped : IsScoped ((name, input) :: env) body := by
-        simpa [IsScoped] using hscoped
-      denote_core body body_scoped (extend valuation name value)
-  | @Term.apply input output function argument => fun valuation =>
-      (denote_core function hscoped.left valuation) (denote_core argument hscoped.right valuation)
-
-
 /--
 Evaluates a scoped term under a valuation into its semantic denotation.
 Variables are read from the valuation, lambdas become Lean functions, and
@@ -167,9 +154,22 @@ applications are interpreted by semantic function application.
 `denote` interprets this by turning `x => x` into the identity function and then
 applying it to the meaning of `a`.
 -/
-def denoteScoped (scopedTerm : ScopedTerm env type) :
+def denote (scopedTerm : ScopedTerm env type) :
     Valuation env → Denotation type :=
-  denote_core scopedTerm.1 scopedTerm.2
+
+  let rec impl {env : Env} {type : Ty} (term : Term type) (hscoped : IsScoped env term) :
+      Valuation env → Denotation type :=
+    match term with
+    | .term_variable name => fun valuation => valuation name _ hscoped
+    | .unit => fun _ => PUnit.unit
+    | @Term.lambda output input name body => fun valuation => fun (value : Denotation input) =>
+        let body_scoped : IsScoped ((name, input) :: env) body := by
+          simpa [IsScoped] using hscoped
+        impl body body_scoped (extend valuation name value)
+    | @Term.apply input output function argument => fun valuation =>
+        (impl function hscoped.left valuation) (impl argument hscoped.right valuation)
+
+  impl scopedTerm.1 scopedTerm.2
 
 /--
 Step-indexed logical relation describing semantically well-behaved values.
@@ -312,12 +312,12 @@ by the lambda case itself.
 theorem fundamental {env : Env} {type : Ty} (term : ScopedTerm env type) :
     ∀ {steps : Nat} {valuation : Valuation env},
       EnvironmentSemantics env steps valuation →
-      Semantics type steps (denoteScoped term valuation) := by
+      Semantics type steps (denote term valuation) := by
   rcases term with ⟨term, hscoped⟩
   induction term generalizing env with
   | term_variable name =>
       intro _ valuation valuation_semantics
-      simpa [denoteScoped, denote_core] using valuation_semantics name _ hscoped
+      simpa [denote] using valuation_semantics name _ hscoped
   | unit =>
       intro _ _ _
       trivial
@@ -325,13 +325,15 @@ theorem fundamental {env : Env} {type : Ty} (term : ScopedTerm env type) :
       intro steps valuation valuation_semantics smaller_steps smaller_bound value value_semantics
       have body_scoped : IsScoped ((name, input) :: env) body := by
         simpa [IsScoped] using hscoped
-      exact ⟨induction_hypothesis (env := (name, input) :: env) (steps := smaller_steps)
+      refine ⟨?_⟩
+      simpa [denote] using induction_hypothesis (env := (name, input) :: env) (steps := smaller_steps)
         (valuation := extend valuation name value) body_scoped
-        (extend_semantics (EnvironmentSemantics.monotone smaller_bound valuation_semantics) value_semantics)⟩
+        (extend_semantics (EnvironmentSemantics.monotone smaller_bound valuation_semantics) value_semantics)
   | @apply input output function argument function_induction argument_induction =>
       intro steps valuation valuation_semantics
-      exact (function_induction (valuation := valuation) hscoped.left valuation_semantics steps le_rfl
-        (denoteScoped ⟨argument, hscoped.right⟩ valuation)
+      simpa [denote] using
+        (function_induction (valuation := valuation) hscoped.left valuation_semantics steps le_rfl
+        (denote ⟨argument, hscoped.right⟩ valuation)
         (argument_induction (valuation := valuation) hscoped.right valuation_semantics)).force
 
 abbrev closed (type : Ty) := ScopedTerm [] type
@@ -350,7 +352,7 @@ for any number of steps. No external lookup is needed, since the only `x` is
 bound inside the term itself.
 -/
 theorem soundness {type : Ty} (term : closed type) :
-    ∀ steps, Semantics type steps (denoteScoped term empty_valuation) := by
+    ∀ steps, Semantics type steps (denote term empty_valuation) := by
   intro steps
   exact fundamental term (valuation := empty_valuation) (by
     intro name inner_type binding
