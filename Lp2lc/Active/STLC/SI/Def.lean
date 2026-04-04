@@ -8,13 +8,7 @@ reason about functions recursively: a function is safe for `steps` when, for
 any `smaller_steps ≤ steps`, it sends semantically safe inputs to outputs that
 stay safe one guarded step later.
 
-The docstrings use tiny Scala-style STLC phrases as demonstrations. They only
-use variables, lambdas, and application, and they reuse names such as `x`,
-`f`, and `a` that also appear in the Lean definitions below.
-
-```scala
-f => x => f(x)
-```
+All docstrings use tiny Scala-style STLC phrases as demonstrations.
 -/
 
 namespace Lp2lc.Active.STLC
@@ -95,7 +89,7 @@ def IsScoped (env : Env) {type : Ty}: (term: Term type) → Prop
 def ScopedTerm (env : Env) (type : Ty) := { term : Term type // IsScoped env term }
 
 /--
-Convert each `Ty` into a lean semantic type.
+Convert each `Ty` into a Lean semantic type.
 
 (technically `Ty` can be coverted into anything, `PUnit` and lean functions are for convenience)
 -/
@@ -104,18 +98,28 @@ def Denotation : (type : Ty) → Type
 | (input :=> output) => Denotation input → Denotation output
 
 /--
-Denotation lookup function type, given a value binded to variable name `name` in `env`, return its `Denotation`. E.g.
+Bundles an environment together with a denotation lookup for its typed bindings. E.g.
 
 ```scala
 val f = {x: Int => x + 1}
 ```
 
-in the above environment, if name-type pair `f: (Int => Int)` is given, then `Lookup env f (Int => Int) = Unit -> Uint`.
+if `f : Int => Int` is in the environment, then `lookup` returns its semantic
+meaning as a Lean function.
 -/
-def Env.Lookup (env : Env): Type := ∀ (name : Var) (type : Ty), env.get name = some type → Denotation type
+structure Evaluator where
+  env: Env
+  lookup:  ∀ (name : Var) (type : Ty), (env.get name = some type) → Denotation type
+
+namespace Evaluator
+
+def empty : Evaluator where
+  env := []
+  lookup := fun _ _ binding => by
+    cases binding
 
 /--
-add a `name`-`value` pair into an existing Lookup. E.g.
+Add a `name`-`value` pair into an existing evaluator. E.g.
 
 ```scala
 // env0
@@ -131,9 +135,9 @@ x = x + 1
 
 both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadowed
 -/
-def extend {env : Env} (lookup : env.Lookup) (name : Var) (value : Denotation input) :
-    Env.Lookup ((name, input) :: env)
-| tested_name, type, binding =>
+def extend (evaluator : Evaluator) (name : Var) (value : Denotation input) : Evaluator where
+  env := (name, input) :: evaluator.env
+  lookup := fun tested_name type binding =>
     if same_name : tested_name = name then
       by
         subst same_name
@@ -141,36 +145,34 @@ def extend {env : Env} (lookup : env.Lookup) (name : Var) (value : Denotation in
         cases binding
         exact value
     else
-      lookup tested_name type (by simpa [Env.get, same_name] using binding)
-
+      evaluator.lookup tested_name type (by simpa [Env.get, same_name] using binding)
 
 /--
-Evaluates a scoped term under a valuation into its semantic denotation.
-Variables are read from the valuation, lambdas become Lean functions, and
-applications are interpreted by semantic function application.
+Given an evaluator, evaluates a scoped term into its semantic denotation.
 
-```scala
-(x => x)(a)
-```
+- variables are read from the evaluator lookup
+- lambdas become Lean functions
+- applications are interpreted by semantic function application
 
-`denote` interprets this by turning `x => x` into the identity function and then
-applying it to the meaning of `a`.
 -/
-def denote (scopedTerm : ScopedTerm env type) :
-    env.Lookup → Denotation type :=
+def denote (evaluator : Evaluator) (scopedTerm : ScopedTerm evaluator.env type) :
+    Denotation type :=
 
-  let rec impl {env : Env} {type : Ty} (term : Term type) (hscoped : IsScoped env term) :
-      env.Lookup → Denotation type :=
+  let rec impl {type : Ty} (evaluator : Evaluator) (term : Term type)
+      (hscoped : IsScoped evaluator.env term) :
+      Denotation type :=
     match term with
-    | .term_variable name => fun lookup => lookup name _ hscoped
-    | .unit => fun _ => PUnit.unit
-    | @Term.lambda output input name body => fun lookup => fun (value : Denotation input) =>
-        let body_scoped : IsScoped ((name, input) :: env) body := by
+    | .term_variable name => evaluator.lookup name _ hscoped
+    | .unit => PUnit.unit
+    | @Term.lambda output input name body => fun (value : Denotation input) =>
+        let body_scoped : IsScoped ((name, input) :: evaluator.env) body := by
           simpa [IsScoped] using hscoped
-        impl body body_scoped (extend lookup name value)
-    | @Term.apply input output function argument => fun lookup =>
-        (impl function hscoped.left lookup) (impl argument hscoped.right lookup)
+        impl (evaluator.extend (input := input) name value) body body_scoped
+    | @Term.apply input output function argument =>
+        (impl evaluator function hscoped.left) (impl evaluator argument hscoped.right)
 
-  impl scopedTerm.1 scopedTerm.2
+  impl evaluator scopedTerm.1 scopedTerm.2
+
+end Evaluator
 
 end SI

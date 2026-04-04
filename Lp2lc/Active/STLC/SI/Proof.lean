@@ -9,13 +9,7 @@ reason about functions recursively: a function is safe for `steps` when, for
 any `smaller_steps ≤ steps`, it sends semantically safe inputs to outputs that
 stay safe one guarded step later.
 
-The docstrings use tiny Scala-style STLC phrases as demonstrations. They only
-use variables, lambdas, and application, and they reuse names such as `x`,
-`f`, and `a` that also appear in the Lean definitions below.
-
-```scala
-f => x => f(x)
-```
+All docstrings use tiny Scala-style STLC phrases as demonstrations.
 -/
 
 namespace Lp2lc.Active.STLC
@@ -88,9 +82,9 @@ f(a)
 To reason about this open term, the environment must provide semantically valid
 meanings for both `f` and `a`.
 -/
-def EnvironmentSemantics (env : Env) (steps : Nat) (valuation : env.Lookup) : Prop :=
-  ∀ (name : Var) (type : Ty) (binding : env.get name = some type),
-    Semantics type steps (valuation name type binding)
+def EnvironmentSemantics (evaluator : Evaluator) (steps : Nat) : Prop :=
+  ∀ (name : Var) (type : Ty) (binding : evaluator.env.get name = some type),
+    Semantics type steps (evaluator.lookup name type binding)
 
 /--
 Environment semantics is also preserved when the step index decreases.
@@ -105,11 +99,11 @@ If the meanings of `f` and `a` are valid for more steps, they are valid for
 fewer too.
 -/
 lemma EnvironmentSemantics.monotone
-    {env : Env} {smaller_steps steps : Nat} {valuation : env.Lookup}
+    {evaluator : Evaluator} {smaller_steps steps : Nat}
     (bound : smaller_steps ≤ steps) :
-    EnvironmentSemantics env steps valuation → EnvironmentSemantics env smaller_steps valuation := by
-  intro valuation_semantics name type binding
-  exact Semantics.monotone bound (valuation_semantics name type binding)
+    EnvironmentSemantics evaluator steps → EnvironmentSemantics evaluator smaller_steps := by
+  intro evaluator_semantics name type binding
+  exact Semantics.monotone bound (evaluator_semantics name type binding)
 
 /--
 Extending a semantically valid environment with a valid value preserves validity.
@@ -124,19 +118,20 @@ Inside the body, `x` is handled by the new binding introduced by the lambda,
 while `f` still comes from the older environment. `extend_semantics` proves
 that both sources of information coexist correctly.
 -/
-lemma extend_semantics {env : Env} {input : Ty} {steps : Nat} {valuation : env.Lookup}
-    (valuation_semantics : EnvironmentSemantics env steps valuation)
+lemma extend_semantics {input : Ty} {steps : Nat} {evaluator : Evaluator}
+    (evaluator_semantics : EnvironmentSemantics evaluator steps)
     {name : Var} {value : Denotation input} (value_semantics : Semantics input steps value) :
-    EnvironmentSemantics ((name, input) :: env) steps (extend valuation name value) := by
+    EnvironmentSemantics (evaluator.extend name value) steps := by
   intro tested_name type binding
   by_cases same_name : tested_name = name
   · subst same_name
-    simp [extend, Env.get] at binding ⊢
+    simp [Evaluator.extend, Env.get] at binding ⊢
     cases binding
-    simpa [extend, Env.get] using value_semantics
-  · have tail_binding : env.get tested_name = some type := by
-      simpa [Env.get, same_name] using binding
-    simpa [extend, same_name] using valuation_semantics tested_name type tail_binding
+    simpa [Evaluator.extend, Env.get] using value_semantics
+  · have tail_binding : evaluator.env.get tested_name = some type := by
+      simpa [Evaluator.extend, Env.get, same_name] using binding
+    simpa [Evaluator.extend, same_name] using
+      evaluator_semantics tested_name type tail_binding
 
 
 /--
@@ -154,54 +149,61 @@ the whole term denotes a semantically valid value. In the example, it is enough
 for the environment to supply a valid meaning for `f`; the bound `x` is handled
 by the lambda case itself.
 -/
-theorem fundamental {env : Env} {type : Ty} (term : ScopedTerm env type) :
-    ∀ {steps : Nat} {valuation : env.Lookup},
-      EnvironmentSemantics env steps valuation →
-      Semantics type steps (denote term valuation) := by
+theorem fundamental {type : Ty} (evaluator : Evaluator) (term : ScopedTerm evaluator.env type) :
+    ∀ {steps : Nat},
+      EnvironmentSemantics evaluator steps →
+      Semantics type steps (evaluator.denote term) := by
   rcases term with ⟨term, hscoped⟩
-  revert env
+  revert evaluator
   induction term with
   | term_variable name =>
-      intro env hscoped steps valuation valuation_semantics
-      simpa [denote] using valuation_semantics name _ hscoped
+      intro evaluator hscoped steps evaluator_semantics
+      simpa [Evaluator.denote] using evaluator_semantics name _ hscoped
   | unit =>
-      intro env hscoped steps valuation valuation_semantics
+      intro evaluator hscoped steps evaluator_semantics
       simp [Semantics]
   | @lambda output input name body induction_hypothesis =>
-      intro env hscoped steps valuation valuation_semantics
-      have body_scoped : IsScoped ((name, input) :: env) body := by
+      intro evaluator hscoped steps evaluator_semantics
+      have body_scoped : IsScoped ((name, input) :: evaluator.env) body := by
         simpa [IsScoped] using hscoped
       change
         ∀ smaller_steps, smaller_steps ≤ steps →
           ∀ value, Semantics input smaller_steps value →
             Later (Semantics output smaller_steps
-              ((denote ⟨Term.lambda name body, hscoped⟩ valuation) value))
+              ((evaluator.denote ⟨Term.lambda name body, hscoped⟩) value))
       intro smaller_steps smaller_bound value value_semantics
       refine ⟨?_⟩
-      simpa [denote] using
-        induction_hypothesis body_scoped
+      simpa [Evaluator.denote] using
+        induction_hypothesis
+          (evaluator := evaluator.extend (input := input) name value)
+          body_scoped
           (steps := smaller_steps)
-          (valuation := extend valuation name value)
           (extend_semantics
-            (EnvironmentSemantics.monotone smaller_bound valuation_semantics)
+            (EnvironmentSemantics.monotone smaller_bound evaluator_semantics)
             value_semantics)
   | @apply input output function argument function_induction argument_induction =>
-      intro env hscoped steps valuation valuation_semantics
+      intro evaluator hscoped steps evaluator_semantics
       have function_semantics :
           ∀ smaller_steps, smaller_steps ≤ steps →
             ∀ value, Semantics input smaller_steps value →
               Later
                 (Semantics output smaller_steps
-                  ((denote ⟨function, hscoped.left⟩ valuation) value)) := by
-        simpa [Semantics] using function_induction hscoped.left
-          (steps := steps) (valuation := valuation) valuation_semantics
+                  ((evaluator.denote ⟨function, hscoped.left⟩) value)) := by
+        simpa [Semantics] using function_induction
+          (evaluator := evaluator)
+          hscoped.left
+          (steps := steps)
+          evaluator_semantics
       have argument_semantics :
-          Semantics input steps (denote ⟨argument, hscoped.right⟩ valuation) :=
-        argument_induction hscoped.right
-          (steps := steps) (valuation := valuation) valuation_semantics
-      simpa [denote] using
+          Semantics input steps (evaluator.denote ⟨argument, hscoped.right⟩) :=
+        argument_induction
+          (evaluator := evaluator)
+          hscoped.right
+          (steps := steps)
+          evaluator_semantics
+      simpa [Evaluator.denote] using
         (function_semantics steps le_rfl
-          (denote ⟨argument, hscoped.right⟩ valuation) argument_semantics).force
+          (evaluator.denote ⟨argument, hscoped.right⟩) argument_semantics).force
 
 abbrev closed (type : Ty) := ScopedTerm [] type
 
@@ -214,15 +216,15 @@ external assumptions remain.
 x => x
 ```
 
-Because this term is closed, it is semantically valid under the empty valuation
+Because this term is closed, it is semantically valid under the empty evaluator
 for any number of steps. No external lookup is needed, since the only `x` is
 bound inside the term itself.
 -/
 theorem soundness {type : Ty} (term : closed type) :
-    ∀ steps, Semantics type steps (denote term empty_valuation) := by
+    ∀ steps, Semantics type steps (Evaluator.empty.denote term) := by
   intro steps
-  exact fundamental term (valuation := empty_valuation) (by
-    intro name inner_type binding
-    simp [Env.get] at binding)
+  exact fundamental Evaluator.empty term (steps := steps) (by
+      intro name inner_type binding
+      simp [Evaluator.empty, Env.get] at binding)
 
 end SI
