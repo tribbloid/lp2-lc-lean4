@@ -1,8 +1,6 @@
-import «Lp2lc».Active.STLC.SI.Proof
+import «Lp2lc».Active.STLC.Proof
 
 namespace Lp2lc.Active.STLC
-
-namespace SI
 
 namespace Example
 
@@ -264,6 +262,4 @@ end Soundness
 
 end Example
 
-end SI
-
-end Lp2lc.Active.STLC
+end STLC

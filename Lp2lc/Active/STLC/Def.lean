@@ -1,185 +1,176 @@
 import Mathlib.Tactic
 import «Lp2lc».Active.Shared
 
+/-!
+This file proves soundness for simply typed lambda calculus by interpreting
+terms with a step-indexed logical relation. The step index is the fuel used to
+reason about functions recursively: a function is safe for `steps` when, for
+any `smaller_steps ≤ steps`, it sends semantically safe inputs to outputs that
+stay safe one guarded step later.
+
+All docstrings use tiny Scala-style STLC phrases as demonstrations.
+-/
+
 namespace Lp2lc.Active.STLC
 
--- Basic types --
-inductive Typ : Type
-| typ_all : Typ -- all-inclusive base type
-| typ_arrow : Typ → Typ → Typ
+structure Later (step : Prop) : Prop where
+  force : step
+
+inductive Ty : Type
+| base : Ty
+| arrow : (input : Ty) → (output : Ty) → Ty
 deriving DecidableEq, Repr
 
--- Defining (pre)terms by recursion --
-inductive Trm : Type
-| bvar : Nat → Trm
-| fvar : Var → Trm
-| abs : Typ → Trm → Trm
-| app : Trm → Trm → Trm
-deriving DecidableEq, Repr
+namespace TypeNotation
 
-namespace Trm
+scoped infixr:60 " :=> " => Ty.arrow
 
--- Notations --
-notation t1 " -> " t2 => Typ.typ_arrow t1 t2
-notation "€" i => bvar i
-notation "$" x => fvar x
-notation "λ " T "," t => abs T t
-notation t1 " @ " t2 => app t1 t2
+end TypeNotation
 
--- Defining free variable substitution by induction on terms --
-@[simp]
-def subst (x : Var) (a : Trm) : Trm → Trm
-| bvar i => bvar i
-| fvar y => if y = x then a else (fvar y)
-| abs T u => abs T (subst x a u)
-| app u1 u2 => app (subst x a u1) (subst x a u2)
+section
 
-notation  "["x" // "u"] "t => subst x u t
+open scoped TypeNotation
 
--- Set of free variables --
-def fv : Trm → Finset Var
-| bvar _ => {}
-| fvar y => {y}
-| abs _ t => fv t
-| app t1 t2 => (fv t1) ∪ (fv t2)
+inductive Term : Ty -> Type where
+| term_variable : Var -> Term type
+| unit : Term Ty.base
+| lambda : Var -> Term output -> Term (input :=> output)
+| apply : Term (input :=> output) -> Term input -> Term output
 
---We can always pick a fresh variable for a given term out of a fixed set.
+end
 
-@[simp]
-def opening (k : Nat) (u : Trm) : Trm → Trm
-| bvar i => if k = i then u else (bvar i)
-| fvar x => fvar x
-| abs T t => abs T (opening (k + 1) u t)
-| app t1 t2 => app (opening k u t1) (opening k u t2)
+abbrev Env := List (Var × Ty)
 
-notation " {" k " ~> " u "} " t => opening k u t
-
---Opening at index zero
-def open₀ (t : Trm) (u : Trm) : Trm := opening 0 u t
-
-@[simp]
-def closing (k : Nat) (x : Var) : Trm → Trm
-| bvar i => bvar i
-| fvar i => if x = i then (bvar k) else (fvar i)
-| abs T t => abs T (closing (k + 1) x t)
-| app t1 t2 => app (closing k x t1) (closing k x t2)
-
-notation " { " k " <~ " x " } " t => closing k x t
-
---Closing at index zero
-def close₀ (u : Trm) (x : Var) : Trm := closing 0 x u
-
-inductive lc : Trm → Prop
-| lc_var : ∀ x : Var, lc (fvar x)
-| lc_abs : ∀ t : Trm, ∀ T : Typ, ∀ L : Finset Var,
-    (∀ x : Var, x ∉ L → lc (open₀ t ($ x))) → lc (abs T t)
-| lc_app : ∀ t1 t2 : Trm, lc t1 → lc t2 → lc (app t1 t2)
-
-
-/-The predicate “body t” asserts that t describes
-the body of a locally closed abstraction.-/
-def body (t : Trm) : Prop := ∃ (L : Finset Var), ∀ x : Var, x ∉ L → lc (open₀ t ($ x))
-
-end Trm
-
-/-
-In order to make typing judgments, we need the notion of Env.
-The definition is designed to talk about "(x : T)"-like assumptions.
--/
-abbrev Env := List (Var × Typ)
+open scoped TypeNotation
 
 namespace Env
 
-@[simp]
-def terms : Env → Finset Var
-| [] => ∅
-| ((x, _) :: Γ') => {x} ∪ (Env.terms Γ')
+/--
+Looks up the type associated with `name` in an environment.
+The search proceeds from the front of the list, so a newer binder shadows an
+older one. That matches the way nested lambda binders are read in STLC. E.g.
 
-@[simp]
-def in_context (x : Var) : Env → Prop
-| [] => False
-| (b :: m) => (x = b.1) ∨ (Env.in_context x m)
-
-inductive valid_ctx : Env → Prop where
-| valid_nil : Env.valid_ctx []
-| valid_cons (Γ : Env) (x : Var) (T : Typ) :
-    (Env.valid_ctx Γ) → (¬ (Env.in_context x Γ)) → Env.valid_ctx ((x, T) :: Γ)
-
---Properties of valid contexts
-@[simp]
-def get (x : Var) : Env → Option Typ
+```scala
+x => {x => x /* first "x" is shadowed*/}
+```
+-/
+@[simp] def get (name : Var) : Env → Option Ty
 | [] => none
-| (y , S) :: Γ' =>
-    if x = y then
-      some S
+| (bound_name, type) :: env =>
+    if name = bound_name then
+      some type
     else
-      Env.get x Γ'
-
--- proof/refute if x inhabits T
-@[simp]
-def binds (x : Var) (T : Typ) (Γ : Env) : Prop := (Env.get x Γ = some T)
+      get name env
 
 end Env
 
-open Trm
 
-/- # Different Forms of β-reductions -/
+/--
+True if every free variable occurrence in `term` is typed in `env`:
 
---full beta reduction
-inductive beta_red : Trm → Trm → Prop
-| br_beta : ∀ (t1 : Trm) (t2 : Trm) (T : Typ), lc (abs T t1) → lc t2 → beta_red (app (abs T t1) t2) (open₀ t1 t2)
-| br_app1 : ∀ (t1 : Trm) (t1' : Trm) (t2 : Trm), lc t2 → beta_red t1 t1' → beta_red (app t1 t2) (app t1' t2)
-| br_app2 : ∀ (t1 : Trm) (t2 : Trm) (t2' : Trm), lc t1 → beta_red t2 t2' → beta_red (app t1 t2) (app t1 t2')
-| br_abs : ∀ (t1 : Trm) (t1' : Trm) (T : Typ) (L : Finset Var),
-    (∀ x : Var, x ∉ L → beta_red (open₀ t1 ($ x)) (open₀ t1' ($ x))) → beta_red (abs T t1) (abs T t1')
+- variable case: checks `env.get`
+- lambda: checks its `body` under an extended environment that includes input variable, e.g.
 
+  ```scala
+  val z = 1
+  {x : Int => x + z /* environment here is extended to include x */}
+  ```
 
-inductive para : Trm → Trm → Prop
-| para_var : ∀ (x : Var), para ($ x) ($ x)
-| para_red : ∀ (t1 : Trm) (t1' : Trm) (t2 : Trm) (t2' : Trm) (T : Typ) (L : Finset Var),
-    (∀ x : Var, x ∉ L → para (open₀ t1 ($ x)) (open₀ t1' ($ x))) →
-    para t2 t2' →
-    para (app (abs T t1) t2) (open₀ t1' t2')
-| para_app : ∀ (t1 : Trm) (t1' : Trm) (t2 : Trm) (t2' : Trm), para t1 t1' → para t2 t2' → para (app t1 t2) (app t1' t2')
-| para_abs : ∀ (t1 : Trm) (t1' : Trm) (T : Typ) (L : Finset Var) ,
-    (∀ x : Var, x ∉ L → para (open₀ t1 ($ x)) (open₀ t1' ($ x))) →
-    para (abs T t1) (abs T t1')
+- application: requires both `f` and `a` to be scoped.
+-/
+@[simp] def IsScoped (env : Env) {type : Ty}: (term: Term type) → Prop
+| .term_variable x => env.get x = some type
+| .unit => True
+| @Term.lambda _ input x body => IsScoped ((x, input) :: env) body
+| @Term.apply _ _ f a => IsScoped env f ∧ IsScoped env a
 
+def ScopedTerm (env : Env) (type : Ty) := { term : Term type // IsScoped env term }
 
-inductive multi_red : Trm → Trm → Prop
-| mr_refl : ∀ (t : Trm), lc t → multi_red t t
-| mr_head : ∀ (t1 : Trm) (t2 : Trm) (t3 : Trm), (multi_red t1 t2) → beta_red t2 t3 → multi_red t1 t3
+/--
+Convert each `Ty` into a Lean semantic type.
 
+(technically `Ty` can be coverted into anything, `PUnit` and lean functions are for convenience)
+-/
+def Denotation : (type : Ty) → Type
+| .base => PUnit
+| (input :=> output) => Denotation input → Denotation output
 
-inductive multi_para : Trm → Trm → Prop
-| m_para_refl : ∀ (t : Trm), lc t → multi_para t t
-| m_para_head : ∀ (t1 : Trm) (t2 : Trm) (t3 : Trm), (multi_para t1 t2) → para t2 t3 → multi_para t1 t3
+/--
+Bundles an environment together with a denotation lookup for its typed bindings. E.g.
 
+```scala
+val f = {x: Int => x + 1}
+```
 
---Typing judgment
-inductive typing : Env → Trm → Typ → Prop
-| typ_var (Γ : Env) (x : Var) (T : Typ) : (Env.valid_ctx Γ) → (Env.binds x T Γ) → (typing Γ ($ x) T)
-| typ_abs (L : Finset Var) (Γ : Env) (t : Trm) (T1 T2 : Typ) :
-        ((x : Var) → x ∉ L → (typing ((x, T1) :: Γ) (open₀ t ($ x)) T2)) → (typing Γ (abs T1 t) (Typ.typ_arrow T1 T2))
-| typ_app (Γ : Env) (t₁ t₂ : Trm) (T1 T2 : Typ) :
-        (typing Γ t₁ (Typ.typ_arrow T1 T2)) → (typing Γ t₂ T1) → typing Γ (app t₁ t₂) T2
+if `f : Int => Int` is in the environment, then `lookup` returns its semantic
+meaning as a Lean function.
+-/
+structure Evaluator where
+  env: Env
+  lookup:  ∀ (name : Var) (type : Ty), (env.get name = some type) → Denotation type
 
+namespace Evaluator
 
---Typing judgments only allow valid contexts.
+@[simp] def empty : Evaluator where
+  env := []
+  lookup := fun _ _ binding => by
+    cases binding
 
-inductive value : Trm → Prop
-| value_abs : ∀ (e : Trm) (T : Typ), lc (abs T e) → value (abs T e)
+/--
+Add a `name`-`value` pair into an existing evaluator. E.g.
 
+```scala
+// env0
+var x = 1
+// env1
+x = x + 1
 
-inductive eval : Trm → Trm → Prop
-| eval_beta : ∀ (e1 : Trm) (e2 : Trm) (T : Typ), lc (abs T e1) → value e2 → eval (app (abs T e1) e2) (open₀ e1 e2)
-| eval_app1 : ∀ (e1 : Trm) (e1' : Trm) (e2 : Trm), lc e2 → eval e1 e1' → eval (app e1 e2) (app e1' e2)
-| eval_app2 : ∀ (e1 : Trm) (e2 : Trm) (e2' : Trm), lc e1 → eval e2 e2' → eval (app e1 e2) (app e1 e2')
+{ x =>
+  // env2
+  ???
+}
+```
 
-def Preservation : Prop := ∀ (E : Env) (e e' : Trm) (T : Typ),
-  typing E e T → eval e e' → typing E e' T
+both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadowed
+-/
+@[simp] def extend (evaluator : Evaluator) (name : Var) (value : Denotation input) : Evaluator where
+  env := (name, input) :: evaluator.env
+  lookup := fun tested_name type binding =>
+    if same_name : tested_name = name then
+      by
+        subst same_name
+        simp at binding
+        cases binding
+        exact value
+    else
+      evaluator.lookup tested_name type (by simpa [same_name] using binding)
 
-def Progress : Prop := ∀ (e : Trm) (T : Typ),
-  typing [] e T → (value e) ∨ (∃ e', eval e e')
+/--
+Given an evaluator, evaluates a scoped term into its semantic denotation.
 
-end Lp2lc.Active.STLC
+- variables are read from the evaluator lookup
+- lambdas become Lean functions
+- applications are interpreted by semantic function application
+
+-/
+def denote (evaluator : Evaluator) (scopedTerm : ScopedTerm evaluator.env type) : Denotation type :=
+
+  let rec impl {type : Ty} (evaluator : Evaluator) (term : Term type)
+      (hscoped : IsScoped evaluator.env term) :
+      Denotation type :=
+    match term with
+    | .unit => PUnit.unit
+    | .term_variable name => evaluator.lookup name _ hscoped
+    | @Term.lambda output input name body =>
+        fun (value : Denotation input) =>
+          let body_scoped : IsScoped ((name, input) :: evaluator.env) body := by
+            simpa using hscoped
+        impl (evaluator.extend (input := input) name value) body body_scoped
+    | @Term.apply input output function argument =>
+        (impl evaluator function hscoped.left) (impl evaluator argument hscoped.right)
+
+  impl evaluator scopedTerm.1 scopedTerm.2
+
+end Evaluator
+
+end STLC
