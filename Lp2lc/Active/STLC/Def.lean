@@ -21,15 +21,16 @@ inductive Ty : Type
 | arrow : (input : Ty) → (output : Ty) → Ty
 deriving DecidableEq, Repr
 
-namespace TypeNotation
-
 scoped infixr:60 " :=> " => Ty.arrow
 
-end TypeNotation
+/--
+Convert each `Ty` into a Lean semantic type.
 
-section
-
-open scoped TypeNotation
+(technically `Ty` can be coverted into anything, `Unit` and lean functions are for convenience)
+-/
+def Denotation : (type : Ty) → Type
+| .base => Unit
+| (input :=> output) => Denotation input → Denotation output
 
 inductive Term : Ty -> Type where
 | term_variable : Var -> Term type
@@ -37,11 +38,7 @@ inductive Term : Ty -> Type where
 | lambda : Var -> Term output -> Term (input :=> output)
 | apply : Term (input :=> output) -> Term input -> Term output
 
-end
-
 abbrev Env := List (Var × Ty)
-
-open scoped TypeNotation
 
 namespace Env
 
@@ -85,15 +82,6 @@ True if every free variable occurrence in `term` is typed in `env`:
 | @Term.apply _ _ f a => IsScoped env f ∧ IsScoped env a
 
 def ScopedTerm (env : Env) (type : Ty) := { term : Term type // IsScoped env term }
-
-/--
-Convert each `Ty` into a Lean semantic type.
-
-(technically `Ty` can be coverted into anything, `Unit` and lean functions are for convenience)
--/
-def Denotation : (type : Ty) → Type
-| .base => Unit
-| (input :=> output) => Denotation input → Denotation output
 
 /--
 Bundles an environment together with a denotation lookup for its typed bindings. E.g.

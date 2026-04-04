@@ -4,8 +4,6 @@ namespace Lp2lc.Active.STLC
 
 namespace Example
 
-open scoped TypeNotation
-
 def x : Var := ⟨"x"⟩
 def y : Var := ⟨"y"⟩
 
