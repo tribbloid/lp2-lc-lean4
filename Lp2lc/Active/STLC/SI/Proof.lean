@@ -125,12 +125,12 @@ lemma extend_semantics {input : Ty} {steps : Nat} {evaluator : Evaluator}
   intro tested_name type binding
   by_cases same_name : tested_name = name
   · subst same_name
-    simp [Evaluator.extend, Env.get] at binding ⊢
+    simp at binding ⊢
     cases binding
-    simpa [Evaluator.extend, Env.get] using value_semantics
+    simpa using value_semantics
   · have tail_binding : evaluator.env.get tested_name = some type := by
-      simpa [Evaluator.extend, Env.get, same_name] using binding
-    simpa [Evaluator.extend, same_name] using
+      simpa [same_name] using binding
+    simpa [same_name] using
       evaluator_semantics tested_name type tail_binding
 
 
@@ -165,7 +165,7 @@ theorem fundamental {type : Ty} (evaluator : Evaluator) (term : ScopedTerm evalu
   | @lambda output input name body induction_hypothesis =>
       intro evaluator hscoped steps evaluator_semantics
       have body_scoped : IsScoped ((name, input) :: evaluator.env) body := by
-        simpa [IsScoped] using hscoped
+        simpa using hscoped
       change
         ∀ smaller_steps, smaller_steps ≤ steps →
           ∀ value, Semantics input smaller_steps value →
@@ -225,6 +225,6 @@ theorem soundness {type : Ty} (term : closed type) :
   intro steps
   exact fundamental Evaluator.empty term (steps := steps) (by
       intro name inner_type binding
-      simp [Evaluator.empty, Env.get] at binding)
+      simp at binding)
 
 end SI

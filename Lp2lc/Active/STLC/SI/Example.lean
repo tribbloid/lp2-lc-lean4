@@ -22,14 +22,14 @@ def id_app_term : Term Ty.base :=
 def x_env : Env := [(x, Ty.base)]
 def shadow_env : Env := [(x, Ty.base :=> Ty.base), (x, Ty.base)]
 
-def unit_scoped : ScopedTerm [] Ty.base := ⟨Term.unit, by simp [IsScoped]⟩
+def unit_scoped : ScopedTerm [] Ty.base := ⟨Term.unit, by simp⟩
 
 def id_scoped : ScopedTerm [] (Ty.base :=> Ty.base) := ⟨id_term, by
-  simp [id_term, x_var, IsScoped, Env.get]
+  simp [id_term, x_var]
 ⟩
 
 def id_app_scoped : ScopedTerm [] Ty.base := ⟨id_app_term, by
-  simp [id_app_term, id_term, x_var, IsScoped, Env.get]
+  simp [id_app_term, id_term, x_var]
 ⟩
 
 def base_value : Denotation Ty.base := PUnit.unit
@@ -96,22 +96,22 @@ namespace IsScoped
 
 #guard
   let _ : IsScoped x_env x_var := by
-    simp [x_env, x_var, IsScoped, Env.get]
+    simp [x_env, x_var]
   true
 
 #guard
   let _ : IsScoped [] Term.unit := by
-    simp [IsScoped]
+    simp
   true
 
 #guard
   let _ : IsScoped [] id_term := by
-    simp [id_term, x_var, IsScoped, Env.get]
+    simp [id_term, x_var]
   true
 
 #guard
   let _ : IsScoped [] id_app_term := by
-    simp [id_app_term, id_term, x_var, IsScoped, Env.get]
+    simp [id_app_term, id_term, x_var]
   true
 
 end IsScoped
@@ -164,12 +164,12 @@ namespace Extend
 
 #guard
   let _ : x_evaluator.lookup x Ty.base rfl = PUnit.unit := by
-    simp [x_evaluator, empty_evaluator, Evaluator.extend]
+    simp [x_evaluator, empty_evaluator]
   true
 
 #guard
   let _ : shadow_evaluator.lookup x (Ty.base :=> Ty.base) rfl PUnit.unit = PUnit.unit := by
-    simp [shadow_evaluator, x_evaluator, id_value, Evaluator.extend]
+    simp [shadow_evaluator, x_evaluator, id_value]
   true
 
 end Extend
@@ -210,7 +210,7 @@ namespace EnvironmentSemantics
 #guard
   let _ : EnvironmentSemantics empty_evaluator 4 := by
     intro name type binding
-    simp [Evaluator.empty, Env.get] at binding
+    simp at binding
   true
 
 #guard
@@ -223,7 +223,7 @@ namespace EnvironmentSemantics
         (value := base_value)
         (by
           intro name type binding
-          simp [Evaluator.empty, Env.get] at binding)
+          simp at binding)
         (by
           simp [Semantics]))
   true
@@ -236,14 +236,14 @@ namespace Fundamental
   let _ : Semantics (Ty.base :=> Ty.base) 2 (empty_evaluator.denote id_scoped) := by
     exact fundamental empty_evaluator id_scoped (steps := 2) (by
       intro name type binding
-      simp [Evaluator.empty, Env.get] at binding)
+      simp at binding)
   true
 
 #guard
   let _ : Semantics Ty.base 2 (empty_evaluator.denote id_app_scoped) := by
     exact fundamental empty_evaluator id_app_scoped (steps := 2) (by
       intro name type binding
-      simp [Evaluator.empty, Env.get] at binding)
+      simp at binding)
   true
 
 end Fundamental

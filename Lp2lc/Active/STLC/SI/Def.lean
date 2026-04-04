@@ -56,7 +56,7 @@ older one. That matches the way nested lambda binders are read in STLC. E.g.
 x => {x => x /* first "x" is shadowed*/}
 ```
 -/
-def get (name : Var) : Env → Option Ty
+@[simp] def get (name : Var) : Env → Option Ty
 | [] => none
 | (bound_name, type) :: env =>
     if name = bound_name then
@@ -80,7 +80,7 @@ True if every free variable occurrence in `term` is typed in `env`:
 
 - application: requires both `f` and `a` to be scoped.
 -/
-def IsScoped (env : Env) {type : Ty}: (term: Term type) → Prop
+@[simp] def IsScoped (env : Env) {type : Ty}: (term: Term type) → Prop
 | .term_variable x => env.get x = some type
 | .unit => True
 | @Term.lambda _ input x body => IsScoped ((x, input) :: env) body
@@ -113,7 +113,7 @@ structure Evaluator where
 
 namespace Evaluator
 
-def empty : Evaluator where
+@[simp] def empty : Evaluator where
   env := []
   lookup := fun _ _ binding => by
     cases binding
@@ -135,17 +135,17 @@ x = x + 1
 
 both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadowed
 -/
-def extend (evaluator : Evaluator) (name : Var) (value : Denotation input) : Evaluator where
+@[simp] def extend (evaluator : Evaluator) (name : Var) (value : Denotation input) : Evaluator where
   env := (name, input) :: evaluator.env
   lookup := fun tested_name type binding =>
     if same_name : tested_name = name then
       by
         subst same_name
-        simp [Env.get] at binding
+        simp at binding
         cases binding
         exact value
     else
-      evaluator.lookup tested_name type (by simpa [Env.get, same_name] using binding)
+      evaluator.lookup tested_name type (by simpa [same_name] using binding)
 
 /--
 Given an evaluator, evaluates a scoped term into its semantic denotation.
@@ -166,7 +166,7 @@ def denote (evaluator : Evaluator) (scopedTerm : ScopedTerm evaluator.env type) 
     | @Term.lambda output input name body =>
         fun (value : Denotation input) =>
           let body_scoped : IsScoped ((name, input) :: evaluator.env) body := by
-            simpa [IsScoped] using hscoped
+            simpa using hscoped
         impl (evaluator.extend (input := input) name value) body body_scoped
     | @Term.apply input output function argument =>
         (impl evaluator function hscoped.left) (impl evaluator argument hscoped.right)
