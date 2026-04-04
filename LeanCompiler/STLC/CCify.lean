@@ -97,7 +97,7 @@ end
   | t :: envT => .prod t (envType envT)
 
 @[simp] def envOf (var : CType → Type) : List PType → Type
-  | [] => PUnit
+  | [] => Unit
   | t :: envT => var (.data t) × envOf var envT
 
 @[simp] def lookup {var : CType → Type} :
@@ -130,7 +130,7 @@ end
 @[simp] def unpackVar {var : CType → Type} {result : PType} :
     (envT : List PType) → var (.data (envType envT)) →
       (envOf var envT → CTerm var result) → CTerm var result
-  | [], _envx, k => k PUnit.unit
+  | [], _envx, k => k Unit.unit
   | _t :: envT, envx, k =>
       .bind (.fst envx) (fun x =>
         .bind (.snd envx) (fun envx' =>
@@ -355,11 +355,11 @@ theorem inside_correct {result : PType} {α β : Type}
       simp [inside, CFuncs.denote, ih]
 
 @[simp] def envPackVal : (envT : List PType) → envOf CType.denote envT → PType.denote (envType envT)
-  | [], _ => PUnit.unit
+  | [], _ => Unit.unit
   | _t :: envT, (x, env) => (x, envPackVal envT env)
 
 @[simp] def envUnpackVal : (envT : List PType) → PType.denote (envType envT) → envOf CType.denote envT
-  | [], _ => PUnit.unit
+  | [], _ => Unit.unit
   | _t :: envT, p => (p.1, envUnpackVal envT p.2)
 
 @[simp] theorem envPackUnpack {envT : List PType} (v : PType.denote (envType envT)) :
@@ -424,7 +424,7 @@ theorem unpackTerm_correct {result : PType}
     _ = CTerm.denote (e (envUnpackVal envT (CPrimops.denote ps))) k := by
           simpa using unpackVar_correct (envT := envT) (envx := CPrimops.denote ps) (e := e) (k := k)
 
-abbrev UnitVar (_ : PType) := PUnit
+abbrev UnitVar (_ : PType) := Unit
 
 def CtxOk (envT : List PType) (G : Ctxt NatVar UnitVar) : Prop :=
   ∀ {t : PType} {v1 : NatVar t} {v2 : UnitVar t},
@@ -591,7 +591,7 @@ theorem ctxOk_extend {envT : List PType} {G : Ctxt NatVar UnitVar} {t : PType}
     (hCtx : CtxOk envT G) :
   CtxOk (t :: envT)
       (mkPair (v1 := (⟨envT.length⟩ : NatVar t))
-          (v2 := (PUnit.unit : UnitVar t)) :: G) := by
+          (v2 := (Unit.unit : UnitVar t)) :: G) := by
   intro t' v1 v2 hIn
   have hIn' := List.mem_cons.mp hIn
   rcases hIn' with hHead | hTail
@@ -624,10 +624,10 @@ theorem wfTerm_of_equiv :
         have hCtx' :
             CtxOk (t :: envT)
               (mkPair (v1 := (⟨envT.length⟩ : NatVar t))
-                  (v2 := (PUnit.unit : UnitVar t)) :: G) :=
+                  (v2 := (Unit.unit : UnitVar t)) :: G) :=
           ctxOk_extend hCtx
         have hBody : WfTerm (t :: envT) (e1 ⟨envT.length⟩) :=
-          ihe (⟨envT.length⟩) (PUnit.unit : UnitVar t) hCtx'
+          ihe (⟨envT.length⟩) (Unit.unit : UnitVar t) hCtx'
         exact .bind hPrim hBody)
       (var := by
         intro G t v1 v2 hMem envT hCtx
@@ -652,10 +652,10 @@ theorem wfTerm_of_equiv :
         have hCtx' :
             CtxOk (t :: envT)
               (mkPair (v1 := (⟨envT.length⟩ : NatVar t))
-                  (v2 := (PUnit.unit : UnitVar t)) :: G) :=
+                  (v2 := (Unit.unit : UnitVar t)) :: G) :=
           ctxOk_extend hCtx
         have hBody : WfTerm (t :: envT) (f1 ⟨envT.length⟩) :=
-          ihBody (⟨envT.length⟩) (PUnit.unit : UnitVar t) hCtx'
+          ihBody (⟨envT.length⟩) (Unit.unit : UnitVar t) hCtx'
         exact .abs hBody)
       hEq)
       hCtx
@@ -890,7 +890,7 @@ theorem ccTerm_correct_of_equiv :
 @[simp] def CcTerm [PTermParametricity] {result : PType}
     (E : PTermClosed result) : CProgClosed result :=
   fun var =>
-    mapFuncs (fun f => f PUnit.unit)
+    mapFuncs (fun f => f Unit.unit)
       (ccTerm var result (E NatVar) [] (ptermWf E))
 
 theorem CcTerm_correct [PTermParametricity] :
@@ -902,18 +902,18 @@ theorem CcTerm_correct [PTermParametricity] :
         ([] : Ctxt PType.denote NatVar) (E PType.denote) (E NatVar) :=
     ptermEquivClosed (E := E) (var1 := PType.denote) (var2 := NatVar)
   have hCtx :
-      CtxRel ([] : List PType) (PUnit.unit : envOf CType.denote [])
+      CtxRel ([] : List PType) (Unit.unit : envOf CType.denote [])
         ([] : Ctxt PType.denote NatVar) :=
-    ctxRel_nil (env := (PUnit.unit : envOf CType.denote []))
+    ctxRel_nil (env := (Unit.unit : envOf CType.denote []))
   have hMain :
       PTerm.denote (E PType.denote) k =
         CTerm.denote
           (CFuncs.denote (ccTerm CType.denote result (E NatVar) [] (ptermWf E)) k
-            (PUnit.unit : envOf CType.denote []))
+            (Unit.unit : envOf CType.denote []))
           k :=
     ccTerm_correct_of_equiv (e1 := E PType.denote) (e2 := E NatVar) hEq
       (envT := [])
-      (env := (PUnit.unit : envOf CType.denote []))
+      (env := (Unit.unit : envOf CType.denote []))
       (k := k)
       (hWf := ptermWf E)
       hCtx
@@ -921,7 +921,7 @@ theorem CcTerm_correct [PTermParametricity] :
     CProgClosed.denote (CcTerm E) k
         = CTerm.denote
             ((CFuncs.denote (ccTerm CType.denote result (E NatVar) [] (ptermWf E)) k)
-              (PUnit.unit : envOf CType.denote []))
+              (Unit.unit : envOf CType.denote []))
             k := by
                 simp [CcTerm, CProgClosed.denote, CProg.denote, mapFuncs_correct]
     _ = PTerm.denote (E PType.denote) k := by

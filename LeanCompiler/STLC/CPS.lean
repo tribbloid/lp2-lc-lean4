@@ -12,7 +12,7 @@ inductive PType : Type where
 @[simp] def PType.denote : PType → Type
   | .bool => Bool
   | .cont t => PType.denote t → Bool
-  | .unit => PUnit
+  | .unit => Unit
   | .prod t1 t2 => PType.denote t1 × PType.denote t2
 
 mutual

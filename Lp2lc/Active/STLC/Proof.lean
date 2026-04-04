@@ -31,8 +31,8 @@ def Semantics : (type : Ty) → (steps : Nat) → Denotation type → Prop
 | .base, _, _ => True
 | .arrow input output, steps, function =>
     ∀ smaller_steps, smaller_steps ≤ steps →
-      ∀ value, Semantics input smaller_steps value →
-        Later (Semantics output smaller_steps (function value))
+      ∀ _in, Semantics input smaller_steps _in →
+        Later (Semantics output smaller_steps (function _in))
 
 /--
 Shrinking the step index preserves semantic validity of a value.
@@ -48,8 +48,9 @@ valid for every smaller budget as well. The syntax does not change, only the
 amount of fuel we allow ourselves to inspect.
 -/
 lemma Semantics.monotone {type : Ty} {smaller_steps steps : Nat} {value : Denotation type}
-    (bound : smaller_steps ≤ steps) :
-    Semantics type steps value → Semantics type smaller_steps value := by
+    (bound : smaller_steps ≤ steps)
+    : Semantics type steps value → Semantics type smaller_steps value
+    := by
   induction type generalizing smaller_steps steps with
   | base =>
       intro value_semantics

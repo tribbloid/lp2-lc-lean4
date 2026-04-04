@@ -30,13 +30,13 @@ def id_app_scoped : ScopedTerm [] Ty.base := ⟨id_app_term, by
   simp [id_app_term, id_term, x_var]
 ⟩
 
-def base_value : Denotation Ty.base := PUnit.unit
+def base_value : Denotation Ty.base := Unit.unit
 def id_value : Denotation (Ty.base :=> Ty.base) := fun value => value
 
 abbrev empty_evaluator : Evaluator := Evaluator.empty
 
 def x_evaluator : Evaluator :=
-  empty_evaluator.extend (input := Ty.base) x PUnit.unit
+  empty_evaluator.extend (input := Ty.base) x Unit.unit
 
 def shadow_evaluator : Evaluator :=
   x_evaluator.extend (input := Ty.base :=> Ty.base) x id_value
@@ -133,11 +133,11 @@ end ScopedTerm
 namespace Denotation
 
 #guard
-  let _ : base_value = PUnit.unit := rfl
+  let _ : base_value = Unit.unit := rfl
   true
 
 #guard
-  let _ : id_value PUnit.unit = PUnit.unit := rfl
+  let _ : id_value Unit.unit = Unit.unit := rfl
   true
 
 end Denotation
@@ -161,12 +161,12 @@ end Evaluator
 namespace Extend
 
 #guard
-  let _ : x_evaluator.lookup x Ty.base rfl = PUnit.unit := by
+  let _ : x_evaluator.lookup x Ty.base rfl = Unit.unit := by
     simp [x_evaluator, empty_evaluator]
   true
 
 #guard
-  let _ : shadow_evaluator.lookup x (Ty.base :=> Ty.base) rfl PUnit.unit = PUnit.unit := by
+  let _ : shadow_evaluator.lookup x (Ty.base :=> Ty.base) rfl Unit.unit = Unit.unit := by
     simp [shadow_evaluator, x_evaluator, id_value]
   true
 
@@ -175,15 +175,15 @@ end Extend
 namespace Denote
 
 #guard
-  let _ : empty_evaluator.denote unit_scoped = PUnit.unit := rfl
+  let _ : empty_evaluator.denote unit_scoped = Unit.unit := rfl
   true
 
 #guard
-  let _ : empty_evaluator.denote id_scoped PUnit.unit = PUnit.unit := rfl
+  let _ : empty_evaluator.denote id_scoped Unit.unit = Unit.unit := rfl
   true
 
 #guard
-  let _ : empty_evaluator.denote id_app_scoped = PUnit.unit := rfl
+  let _ : empty_evaluator.denote id_app_scoped = Unit.unit := rfl
   true
 
 end Denote

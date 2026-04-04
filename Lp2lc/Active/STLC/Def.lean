@@ -89,10 +89,10 @@ def ScopedTerm (env : Env) (type : Ty) := { term : Term type // IsScoped env ter
 /--
 Convert each `Ty` into a Lean semantic type.
 
-(technically `Ty` can be coverted into anything, `PUnit` and lean functions are for convenience)
+(technically `Ty` can be coverted into anything, `Unit` and lean functions are for convenience)
 -/
 def Denotation : (type : Ty) → Type
-| .base => PUnit
+| .base => Unit
 | (input :=> output) => Denotation input → Denotation output
 
 /--
@@ -159,7 +159,7 @@ def denote (evaluator : Evaluator) (scopedTerm : ScopedTerm evaluator.env type) 
       (hscoped : IsScoped evaluator.env term) :
       Denotation type :=
     match term with
-    | .unit => PUnit.unit
+    | .unit => Unit.unit
     | .term_variable name => evaluator.lookup name _ hscoped
     | @Term.lambda output input name body =>
         fun (value : Denotation input) =>
