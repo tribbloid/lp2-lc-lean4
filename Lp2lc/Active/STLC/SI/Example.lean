@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.SI.Def
+import «Lp2lc».Active.STLC.SI.Proof
 
 namespace Lp2lc.Active.STLC
 
@@ -189,6 +189,78 @@ namespace Denote
   true
 
 end Denote
+
+namespace Semantics
+
+#guard
+  let _ : Semantics Ty.base 3 base_value := by
+    simp [Semantics]
+  true
+
+#guard
+  let _ : Semantics (Ty.base :=> Ty.base) 2 id_value := by
+    intro _ _ _ _
+    exact ⟨by simp [Semantics]⟩
+  true
+
+end Semantics
+
+namespace EnvironmentSemantics
+
+#guard
+  let _ : EnvironmentSemantics empty_evaluator 4 := by
+    intro name type binding
+    simp [Evaluator.empty, Env.get] at binding
+  true
+
+#guard
+  let _ : EnvironmentSemantics x_evaluator 1 := by
+    simpa [x_evaluator, base_value] using
+      (extend_semantics
+        (evaluator := empty_evaluator)
+        (steps := 1)
+        (name := x)
+        (value := base_value)
+        (by
+          intro name type binding
+          simp [Evaluator.empty, Env.get] at binding)
+        (by
+          simp [Semantics]))
+  true
+
+end EnvironmentSemantics
+
+namespace Fundamental
+
+#guard
+  let _ : Semantics (Ty.base :=> Ty.base) 2 (empty_evaluator.denote id_scoped) := by
+    exact fundamental empty_evaluator id_scoped (steps := 2) (by
+      intro name type binding
+      simp [Evaluator.empty, Env.get] at binding)
+  true
+
+#guard
+  let _ : Semantics Ty.base 2 (empty_evaluator.denote id_app_scoped) := by
+    exact fundamental empty_evaluator id_app_scoped (steps := 2) (by
+      intro name type binding
+      simp [Evaluator.empty, Env.get] at binding)
+  true
+
+end Fundamental
+
+namespace Soundness
+
+#guard
+  let _ : Semantics (Ty.base :=> Ty.base) 2 (Evaluator.empty.denote id_scoped) :=
+    soundness id_scoped 2
+  true
+
+#guard
+  let _ : Semantics Ty.base 2 (Evaluator.empty.denote id_app_scoped) :=
+    soundness id_app_scoped 2
+  true
+
+end Soundness
 
 end Example
 

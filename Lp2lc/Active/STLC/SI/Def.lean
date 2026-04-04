@@ -155,18 +155,18 @@ Given an evaluator, evaluates a scoped term into its semantic denotation.
 - applications are interpreted by semantic function application
 
 -/
-def denote (evaluator : Evaluator) (scopedTerm : ScopedTerm evaluator.env type) :
-    Denotation type :=
+def denote (evaluator : Evaluator) (scopedTerm : ScopedTerm evaluator.env type) : Denotation type :=
 
   let rec impl {type : Ty} (evaluator : Evaluator) (term : Term type)
       (hscoped : IsScoped evaluator.env term) :
       Denotation type :=
     match term with
-    | .term_variable name => evaluator.lookup name _ hscoped
     | .unit => PUnit.unit
-    | @Term.lambda output input name body => fun (value : Denotation input) =>
-        let body_scoped : IsScoped ((name, input) :: evaluator.env) body := by
-          simpa [IsScoped] using hscoped
+    | .term_variable name => evaluator.lookup name _ hscoped
+    | @Term.lambda output input name body =>
+        fun (value : Denotation input) =>
+          let body_scoped : IsScoped ((name, input) :: evaluator.env) body := by
+            simpa [IsScoped] using hscoped
         impl (evaluator.extend (input := input) name value) body body_scoped
     | @Term.apply input output function argument =>
         (impl evaluator function hscoped.left) (impl evaluator argument hscoped.right)
