@@ -26,13 +26,19 @@ f(a)
 
 The relation explains when applying `f` to a semantically valid `a` stays safe.
 Safety of a function is therefore expressed by what happens when it is called.
+
+
+TODO: return True if the interpreter can compute or use any value v of given type
+
+AKA well-formedness
 -/
-def Semantics : (type : Ty) → (steps : Nat) → (v: type.Denotation) → Prop
-| .base, _, _ => True
-| .arrow input output, steps, function =>
-    ∀ smaller_steps, smaller_steps ≤ steps →
-      ∀ (_in : input.Denotation), Semantics input smaller_steps _in →
-        Later (Semantics output smaller_steps (function _in))
+def Semantics (type : Ty) (steps : Nat) (v : type.Denotation) : Prop :=
+  match type with
+  | .base => True
+  | .arrow input output =>
+      ∀ smaller_steps, smaller_steps ≤ steps →
+        ∀ (vIn : input.Denotation), Semantics input smaller_steps vIn →
+          Later (Semantics output smaller_steps (v vIn))
 
 /--
 Shrinking the step index preserves semantic validity of a value.
@@ -81,7 +87,7 @@ f(a)
 To reason about this open term, the environment must provide semantically valid
 meanings for both `f` and `a`.
 -/
-def EnvironmentSemantics (evaluator : Evaluator) (steps : Nat) : Prop :=
+def EnvSemantics (evaluator : Evaluator) (steps : Nat) : Prop :=
   ∀ (name : Var) (type : Ty) (binding : evaluator.env.get name = some type),
     Semantics type steps (evaluator.lookup name type binding)
 
@@ -100,7 +106,7 @@ fewer too.
 lemma EnvironmentSemantics.monotone
     {evaluator : Evaluator} {smaller_steps steps : Nat}
     (bound : smaller_steps ≤ steps) :
-    EnvironmentSemantics evaluator steps → EnvironmentSemantics evaluator smaller_steps := by
+    EnvSemantics evaluator steps → EnvSemantics evaluator smaller_steps := by
   intro evaluator_semantics name type binding
   exact Semantics.monotone bound (evaluator_semantics name type binding)
 
@@ -118,9 +124,9 @@ while `f` still comes from the older environment. `extend_semantics` proves
 that both sources of information coexist correctly.
 -/
 lemma extend_semantics {input : Ty} {steps : Nat} {evaluator : Evaluator}
-    (evaluator_semantics : EnvironmentSemantics evaluator steps)
+    (evaluator_semantics : EnvSemantics evaluator steps)
     {name : Var} {value : input.Denotation} (value_semantics : Semantics input steps value) :
-    EnvironmentSemantics (evaluator.extend name value) steps := by
+    EnvSemantics (evaluator.extend name value) steps := by
   intro tested_name type binding
   by_cases same_name : tested_name = name
   · subst same_name
@@ -150,7 +156,7 @@ by the lambda case itself.
 -/
 theorem fundamental {type : Ty} (evaluator : Evaluator) (term : ScopedTerm evaluator.env type) :
     ∀ {steps : Nat},
-      EnvironmentSemantics evaluator steps →
+      EnvSemantics evaluator steps →
       Semantics type steps (evaluator.denote term) := by
   rcases term with ⟨term, hscoped⟩
   revert evaluator

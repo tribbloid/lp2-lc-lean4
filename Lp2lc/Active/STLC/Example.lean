@@ -204,13 +204,13 @@ end Semantics
 namespace EnvironmentSemantics
 
 #guard
-  let _ : EnvironmentSemantics empty_evaluator 4 := by
+  let _ : EnvSemantics empty_evaluator 4 := by
     intro name type binding
     simp at binding
   true
 
 #guard
-  let _ : EnvironmentSemantics x_evaluator 1 := by
+  let _ : EnvSemantics x_evaluator 1 := by
     simpa [x_evaluator, base_value] using
       (extend_semantics
         (evaluator := empty_evaluator)
