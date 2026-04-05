@@ -140,10 +140,10 @@ both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadow
 Evaluates a scoped term into its semantic denotation.
 
 - variables in Env need no evaluation: they are directly from REPL lookup
-- lambdas become semantic Lean functions
-- applications are interpreted by applying the semantic Lean function
+- lambdas become semantic Lean functions composed from input variable and other existing variables in the REPL
+- applications are interpreted by applying the semantic Lean function on the input term
 -/
-def eval (repl : REPL) (scopedTerm : repl.env.ScopedTerm type) : Ty.Denotation type :=
+def eval (repl : REPL) (newTerm : repl.env.ScopedTerm type) : Ty.Denotation type :=
 
   let rec impl {type : Ty} (repl : REPL) (term : Term type)
       (hscoped : repl.env.IsScoped term) :
@@ -159,7 +159,7 @@ def eval (repl : REPL) (scopedTerm : repl.env.ScopedTerm type) : Ty.Denotation t
     | @Term.apply input output function argument =>
         (impl repl function hscoped.left) (impl repl argument hscoped.right)
 
-  impl repl scopedTerm.1 scopedTerm.2
+  impl repl newTerm.1 newTerm.2
 
 end REPL
 

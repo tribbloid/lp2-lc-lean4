@@ -189,12 +189,12 @@ end Denote
 namespace Semantics
 
 #guard
-  let _ : Semantics Ty.base 3 base_value := by
+  let _ : Semantics Ty.base base_value 3 := by
     simp [Semantics]
   true
 
 #guard
-  let _ : Semantics (Ty.base :=> Ty.base) 2 id_value := by
+  let _ : Semantics (Ty.base :=> Ty.base) id_value 2 := by
     intro _ _ _ _
     exact ⟨by simp [Semantics]⟩
   true
@@ -229,14 +229,14 @@ end EnvironmentSemantics
 namespace Fundamental
 
 #guard
-  let _ : Semantics (Ty.base :=> Ty.base) 2 (empty_repl.eval id_scoped) := by
+  let _ : Semantics (Ty.base :=> Ty.base) (empty_repl.eval id_scoped) 2 := by
     exact fundamental empty_repl id_scoped (fuel := 2) (by
       intro name type binding
       simp at binding)
   true
 
 #guard
-  let _ : Semantics Ty.base 2 (empty_repl.eval id_app_scoped) := by
+  let _ : Semantics Ty.base (empty_repl.eval id_app_scoped) 2 := by
     exact fundamental empty_repl id_app_scoped (fuel := 2) (by
       intro name type binding
       simp at binding)
@@ -247,12 +247,12 @@ end Fundamental
 namespace Soundness
 
 #guard
-  let _ : Semantics (Ty.base :=> Ty.base) 2 (REPL.empty.eval id_scoped) :=
+  let _ : Semantics (Ty.base :=> Ty.base) (REPL.empty.eval id_scoped) 2 :=
     soundness id_scoped 2
   true
 
 #guard
-  let _ : Semantics Ty.base 2 (REPL.empty.eval id_app_scoped) :=
+  let _ : Semantics Ty.base (REPL.empty.eval id_app_scoped) 2 :=
     soundness id_app_scoped 2
   true
 
