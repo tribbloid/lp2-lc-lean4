@@ -20,14 +20,16 @@ return True if the interpreter can compute or use `v` at runtime
 
 - Value of base type is always valid.
 - Value of function type is true if its output can be consistently proven to be valid later, when it is called,
-    on an input that is already valid.
+  on an input that is already valid. E.g.
+
+  ```scala
+  val fn = {x: Int => x + 1}
+  ```
+
+  is only valid if given arbitrary valid expression `(expression): Int`, `fn(expression)` is also valid
 
 this Prop is guarded by the step-index: if a function is valid for `fuel`, then at any
-smaller index it must send valid inputs to outputs that become valid later.
-
-```scala
-f(a)
-```
+smaller index it must send valid inputs to outputs that become valid later. E.g.
 -/
 def Semantics (type : Ty) (fuel : Nat) (v : type.Denotation) : Prop :=
   match type with
