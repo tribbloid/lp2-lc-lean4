@@ -86,28 +86,28 @@ def Ty.Denotation : (type : Ty) → Type
 | (input :=> output) => input.Denotation → output.Denotation
 
 /--
-AKA REPL, Bundles an environment together with a denotation lookup for its typed varaible bindings. E.g.
+Bundles an environment together with a denotation lookup for its typed variable bindings. E.g.
 
 ```scala
 val f = {x: Int => x + 1}
 ```
 
-if `f : Int => Int` is in the environment, then `lookup` returns its semantic
+if `f : Int => Int` is in the environment, then `varLookup` returns its semantic
 meaning as a Lean function.
 -/
-structure Evaluator where
+structure REPL where
   env: Env
   varLookup:  ∀ (name : Var) (type : Ty), (env.get name = some type) → Ty.Denotation type
 
-namespace Evaluator
+namespace REPL
 
-@[simp] def empty : Evaluator where
+@[simp] def empty : REPL where
   env := []
   varLookup := fun _ _ binding => by
     cases binding
 
 /--
-Add a `name`-`value` pair into an existing evaluator. E.g.
+Add a `name`-`value` pair into an existing REPL. E.g.
 
 ```scala
 // env0
@@ -123,9 +123,9 @@ x = x + 1
 
 both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadowed
 -/
-@[simp] def extend (evaluator : Evaluator) (name : Var)
-    (value : Ty.Denotation input) : Evaluator where
-  env := (name, input) :: evaluator.env
+@[simp] def extend (repl : REPL) (name : Var)
+    (value : Ty.Denotation input) : REPL where
+  env := (name, input) :: repl.env
   varLookup := fun tested_name type binding =>
     if same_name : tested_name = name then
       by
@@ -134,33 +134,33 @@ both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadow
         cases binding
         exact value
     else
-      evaluator.varLookup tested_name type (by simpa [same_name] using binding)
+      repl.varLookup tested_name type (by simpa [same_name] using binding)
 
 /--
 Evaluates a scoped term into its semantic denotation.
 
-- variables in Env need no evaluation: they are directly from evaluator lookup
+- variables in Env need no evaluation: they are directly from REPL lookup
 - lambdas become semantic Lean functions
 - applications are interpreted by applying the semantic Lean function
 -/
-def eval (evaluator : Evaluator) (scopedTerm : evaluator.env.ScopedTerm type) : Ty.Denotation type :=
+def eval (repl : REPL) (scopedTerm : repl.env.ScopedTerm type) : Ty.Denotation type :=
 
-  let rec impl {type : Ty} (evaluator : Evaluator) (term : Term type)
-      (hscoped : evaluator.env.IsScoped term) :
+  let rec impl {type : Ty} (repl : REPL) (term : Term type)
+      (hscoped : repl.env.IsScoped term) :
       Ty.Denotation type :=
     match term with
     | .unit => Unit.unit
-    | .term_variable name => evaluator.varLookup name _ hscoped
+    | .term_variable name => repl.varLookup name _ hscoped
     | @Term.lambda output input name body =>
         fun (value : Ty.Denotation input) =>
-          let body_scoped : (show Env from ((name, input) :: evaluator.env)).IsScoped body := by
+          let body_scoped : (show Env from ((name, input) :: repl.env)).IsScoped body := by
             simpa using hscoped
-        impl (evaluator.extend (input := input) name value) body body_scoped
+        impl (repl.extend (input := input) name value) body body_scoped
     | @Term.apply input output function argument =>
-        (impl evaluator function hscoped.left) (impl evaluator argument hscoped.right)
+        (impl repl function hscoped.left) (impl repl argument hscoped.right)
 
-  impl evaluator scopedTerm.1 scopedTerm.2
+  impl repl scopedTerm.1 scopedTerm.2
 
-end Evaluator
+end REPL
 
 end STLC

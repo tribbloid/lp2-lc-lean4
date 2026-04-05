@@ -76,18 +76,18 @@ lemma Semantics.monotone {fuel lessFuel : Nat} (bound : lessFuel ≤ fuel)
 /--
 Return true if `Semantics` holds for every variable in an environment
 -/
-def EnvSemantics (evaluator : Evaluator) (fuel : Nat) : Prop :=
-  ∀ (name : Var) (type : Ty) (binding : evaluator.env.get name = some type),
-    Semantics type fuel (evaluator.varLookup name type binding)
+def REPLSemantics (repl : REPL) (fuel : Nat) : Prop :=
+  ∀ (name : Var) (type : Ty) (binding : repl.env.get name = some type),
+    Semantics type fuel (repl.varLookup name type binding)
 
 /--
 Similar to `Semantics.monotone`, but for every variable in an environment
 -/
-lemma EnvSemantics.monotone {lessFuel fuel : Nat}
+lemma REPLSemantics.monotone {repl : REPL} {lessFuel fuel : Nat}
     (bound : lessFuel ≤ fuel) :
-    EnvSemantics evaluator fuel → EnvSemantics evaluator lessFuel := by
-  intro evaluator_semantics name type binding
-  exact Semantics.monotone bound (evaluator_semantics name type binding)
+    REPLSemantics repl fuel → REPLSemantics repl lessFuel := by
+  intro repl_semantics name type binding
+  exact Semantics.monotone bound (repl_semantics name type binding)
 
 /--
 If all inputs are semantically valid, adding one extra binding to an existing REPL will not change its validity. E.g. if
@@ -105,19 +105,19 @@ val z = x + y
 
 will also be safe.
 -/
-lemma EnvSemantics.extend {input : Ty} {fuel : Nat} {evaluator : Evaluator} {name : Var} {value : input.Denotation}
-    (oldEnvSemantics : EnvSemantics evaluator fuel) (extra : Semantics input fuel value) :
-    EnvSemantics (evaluator.extend name value) fuel := by
+lemma REPLSemantics.extend {input : Ty} {fuel : Nat} {repl : REPL} {name : Var} {value : input.Denotation}
+    (old_repl_semantics : REPLSemantics repl fuel) (extra : Semantics input fuel value) :
+    REPLSemantics (repl.extend name value) fuel := by
   intro tested_name type binding
   by_cases same_name : tested_name = name
   · subst same_name
     simp at binding ⊢
     cases binding
     simpa using extra
-  · have tail_binding : evaluator.env.get tested_name = some type := by
+  · have tail_binding : repl.env.get tested_name = some type := by
       simpa [same_name] using binding
     simpa [same_name] using
-      oldEnvSemantics tested_name type tail_binding
+      old_repl_semantics tested_name type tail_binding
 
 /--
 If every outside name already points to a safe runtime value, then running the
@@ -130,60 +130,60 @@ x => f(x)
 Here the program only needs the outside world to supply a safe value for `f`.
 The call later supplies `x`, and the result still behaves correctly.
 -/
-theorem fundamental {type : Ty} (evaluator : Evaluator) (term : evaluator.env.ScopedTerm type) :
+theorem fundamental (repl : REPL) (term : repl.env.ScopedTerm type) :
     ∀ {fuel : Nat},
-      EnvSemantics evaluator fuel →
-      Semantics type fuel (evaluator.eval term) := by
+      REPLSemantics repl fuel →
+      Semantics type fuel (repl.eval term) := by
   rcases term with ⟨term, hscoped⟩
-  revert evaluator
+  revert repl
   induction term with
   | term_variable name =>
-      intro evaluator hscoped fuel evaluator_semantics
-      simpa [Evaluator.eval] using evaluator_semantics name _ hscoped
+      intro repl hscoped fuel repl_semantics
+      simpa [REPL.eval] using repl_semantics name _ hscoped
   | unit =>
-      intro evaluator hscoped fuel evaluator_semantics
+      intro repl hscoped fuel _repl_semantics
       simp [Semantics]
   | @lambda output input name body induction_hypothesis =>
-      intro evaluator hscoped fuel evaluator_semantics
-      have body_scoped : (show Env from ((name, input) :: evaluator.env)).IsScoped body := by
+      intro repl hscoped fuel repl_semantics
+      have body_scoped : (show Env from ((name, input) :: repl.env)).IsScoped body := by
         simpa using hscoped
       change
         ∀ lessFuel, lessFuel ≤ fuel →
           ∀ value, Semantics input lessFuel value →
             Later (Semantics output lessFuel
-              ((evaluator.eval ⟨Term.lambda name body, hscoped⟩) value))
+              ((repl.eval ⟨Term.lambda name body, hscoped⟩) value))
       intro lessFuel smaller_bound value value_semantics
       refine ⟨?_⟩
-      simpa [Evaluator.eval] using
+      simpa [REPL.eval] using
         induction_hypothesis
-          (evaluator := evaluator.extend (input := input) name value)
+          (repl := repl.extend (input := input) name value)
           body_scoped
           (fuel := lessFuel)
-          ((EnvSemantics.monotone smaller_bound evaluator_semantics).extend
+          ((REPLSemantics.monotone smaller_bound repl_semantics).extend
             value_semantics)
   | @apply input output function argument function_induction argument_induction =>
-      intro evaluator hscoped fuel evaluator_semantics
+      intro repl hscoped fuel repl_semantics
       have function_semantics :
           ∀ lessFuel, lessFuel ≤ fuel →
             ∀ value, Semantics input lessFuel value →
               Later
                 (Semantics output lessFuel
-                  ((evaluator.eval ⟨function, hscoped.left⟩) value)) := by
+                  ((repl.eval ⟨function, hscoped.left⟩) value)) := by
         simpa [Semantics] using function_induction
-          (evaluator := evaluator)
+          (repl := repl)
           hscoped.left
           (fuel := fuel)
-          evaluator_semantics
+          repl_semantics
       have argument_semantics :
-          Semantics input fuel (evaluator.eval ⟨argument, hscoped.right⟩) :=
+          Semantics input fuel (repl.eval ⟨argument, hscoped.right⟩) :=
         argument_induction
-          (evaluator := evaluator)
+          (repl := repl)
           hscoped.right
           (fuel := fuel)
-          evaluator_semantics
-      simpa [Evaluator.eval] using
+          repl_semantics
+      simpa [REPL.eval] using
         (function_semantics fuel le_rfl
-          (evaluator.eval ⟨argument, hscoped.right⟩) argument_semantics).force
+          (repl.eval ⟨argument, hscoped.right⟩) argument_semantics).force
 
 abbrev closed (type : Ty) := Env.empty.ScopedTerm type
 
@@ -198,10 +198,10 @@ This program does not read anything preloaded. Its only `x` comes from the call
 itself, so starting with an empty set of names is enough.
 -/
 theorem soundness {type : Ty} (term : closed type) :
-    ∀ fuel, Semantics type fuel (Evaluator.empty.eval term) := by
+    ∀ fuel, Semantics type fuel (REPL.empty.eval term) := by
   intro fuel
-  exact fundamental Evaluator.empty term (fuel := fuel) (by
-      intro name inner_type binding
+  exact fundamental REPL.empty term (fuel := fuel) (by
+      intro _name _inner_type binding
       simp at binding)
 
 end STLC

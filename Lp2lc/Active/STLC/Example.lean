@@ -31,13 +31,13 @@ def id_app_scoped : Env.empty.ScopedTerm Ty.base := ⟨id_app_term, by
 def base_value : Ty.base.Denotation := Unit.unit
 def id_value : (Ty.base :=> Ty.base).Denotation := fun value => value
 
-abbrev empty_evaluator : Evaluator := Evaluator.empty
+abbrev empty_repl : REPL := REPL.empty
 
-def x_evaluator : Evaluator :=
-  empty_evaluator.extend (input := Ty.base) x Unit.unit
+def x_repl : REPL :=
+  empty_repl.extend (input := Ty.base) x Unit.unit
 
-def shadow_evaluator : Evaluator :=
-  x_evaluator.extend (input := Ty.base :=> Ty.base) x id_value
+def shadow_repl : REPL :=
+  x_repl.extend (input := Ty.base :=> Ty.base) x id_value
 
 namespace Later
 
@@ -140,32 +140,32 @@ namespace Denotation
 
 end Denotation
 
-namespace Evaluator
+namespace REPL
 
 #guard
-  let _ : empty_evaluator.env = ([] : Env) := rfl
+  let _ : empty_repl.env = ([] : Env) := rfl
   true
 
 #guard
-  let _ : x_evaluator.env = x_env := rfl
+  let _ : x_repl.env = x_env := rfl
   true
 
 #guard
-  let _ : shadow_evaluator.env = shadow_env := rfl
+  let _ : shadow_repl.env = shadow_env := rfl
   true
 
-end Evaluator
+end REPL
 
 namespace Extend
 
 #guard
-  let _ : x_evaluator.varLookup x Ty.base rfl = Unit.unit := by
-    simp [x_evaluator, empty_evaluator]
+  let _ : x_repl.varLookup x Ty.base rfl = Unit.unit := by
+    simp [x_repl, empty_repl]
   true
 
 #guard
-  let _ : shadow_evaluator.varLookup x (Ty.base :=> Ty.base) rfl Unit.unit = Unit.unit := by
-    simp [shadow_evaluator, x_evaluator, id_value]
+  let _ : shadow_repl.varLookup x (Ty.base :=> Ty.base) rfl Unit.unit = Unit.unit := by
+    simp [shadow_repl, x_repl, id_value]
   true
 
 end Extend
@@ -173,15 +173,15 @@ end Extend
 namespace Denote
 
 #guard
-  let _ : empty_evaluator.eval unit_scoped = Unit.unit := rfl
+  let _ : empty_repl.eval unit_scoped = Unit.unit := rfl
   true
 
 #guard
-  let _ : empty_evaluator.eval id_scoped Unit.unit = Unit.unit := rfl
+  let _ : empty_repl.eval id_scoped Unit.unit = Unit.unit := rfl
   true
 
 #guard
-  let _ : empty_evaluator.eval id_app_scoped = Unit.unit := rfl
+  let _ : empty_repl.eval id_app_scoped = Unit.unit := rfl
   true
 
 end Denote
@@ -204,16 +204,16 @@ end Semantics
 namespace EnvironmentSemantics
 
 #guard
-  let _ : EnvSemantics empty_evaluator 4 := by
+  let _ : REPLSemantics empty_repl 4 := by
     intro name type binding
     simp at binding
   true
 
 #guard
-  let _ : EnvSemantics x_evaluator 1 := by
-    simpa [x_evaluator, base_value] using
-      (EnvSemantics.extend
-        (evaluator := empty_evaluator)
+  let _ : REPLSemantics x_repl 1 := by
+    simpa [x_repl, base_value] using
+      (REPLSemantics.extend
+        (repl := empty_repl)
         (fuel := 1)
         (name := x)
         (value := base_value)
@@ -229,15 +229,15 @@ end EnvironmentSemantics
 namespace Fundamental
 
 #guard
-  let _ : Semantics (Ty.base :=> Ty.base) 2 (empty_evaluator.eval id_scoped) := by
-    exact fundamental empty_evaluator id_scoped (fuel := 2) (by
+  let _ : Semantics (Ty.base :=> Ty.base) 2 (empty_repl.eval id_scoped) := by
+    exact fundamental empty_repl id_scoped (fuel := 2) (by
       intro name type binding
       simp at binding)
   true
 
 #guard
-  let _ : Semantics Ty.base 2 (empty_evaluator.eval id_app_scoped) := by
-    exact fundamental empty_evaluator id_app_scoped (fuel := 2) (by
+  let _ : Semantics Ty.base 2 (empty_repl.eval id_app_scoped) := by
+    exact fundamental empty_repl id_app_scoped (fuel := 2) (by
       intro name type binding
       simp at binding)
   true
@@ -247,12 +247,12 @@ end Fundamental
 namespace Soundness
 
 #guard
-  let _ : Semantics (Ty.base :=> Ty.base) 2 (Evaluator.empty.eval id_scoped) :=
+  let _ : Semantics (Ty.base :=> Ty.base) 2 (REPL.empty.eval id_scoped) :=
     soundness id_scoped 2
   true
 
 #guard
-  let _ : Semantics Ty.base 2 (Evaluator.empty.eval id_app_scoped) :=
+  let _ : Semantics Ty.base 2 (REPL.empty.eval id_app_scoped) :=
     soundness id_app_scoped 2
   true
 
