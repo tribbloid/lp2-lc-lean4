@@ -28,9 +28,9 @@ Convert each `Ty` into a Lean semantic type.
 
 (technically `Ty` can be coverted into anything, `Unit` and lean functions are for convenience)
 -/
-def Denotation : (type : Ty) → Type
+def Ty.Denotation : (type : Ty) → Type
 | .base => Unit
-| (input :=> output) => Denotation input → Denotation output
+| (input :=> output) => input.Denotation → output.Denotation
 
 inductive Term : Ty -> Type where
 | term_variable : Var -> Term type
@@ -95,7 +95,7 @@ meaning as a Lean function.
 -/
 structure Evaluator where
   env: Env
-  lookup:  ∀ (name : Var) (type : Ty), (env.get name = some type) → Denotation type
+  lookup:  ∀ (name : Var) (type : Ty), (env.get name = some type) → type.Denotation
 
 namespace Evaluator
 
@@ -121,7 +121,8 @@ x = x + 1
 
 both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadowed
 -/
-@[simp] def extend (evaluator : Evaluator) (name : Var) (value : Denotation input) : Evaluator where
+@[simp] def extend {input : Ty} (evaluator : Evaluator) (name : Var)
+    (value : input.Denotation) : Evaluator where
   env := (name, input) :: evaluator.env
   lookup := fun tested_name type binding =>
     if same_name : tested_name = name then
@@ -141,16 +142,16 @@ Given an evaluator, evaluates a scoped term into its semantic denotation.
 - applications are interpreted by semantic function application
 
 -/
-def denote (evaluator : Evaluator) (scopedTerm : ScopedTerm evaluator.env type) : Denotation type :=
+def denote (evaluator : Evaluator) (scopedTerm : ScopedTerm evaluator.env type) : type.Denotation :=
 
   let rec impl {type : Ty} (evaluator : Evaluator) (term : Term type)
       (hscoped : IsScoped evaluator.env term) :
-      Denotation type :=
+      type.Denotation :=
     match term with
     | .unit => Unit.unit
     | .term_variable name => evaluator.lookup name _ hscoped
     | @Term.lambda output input name body =>
-        fun (value : Denotation input) =>
+        fun (value : input.Denotation) =>
           let body_scoped : IsScoped ((name, input) :: evaluator.env) body := by
             simpa using hscoped
         impl (evaluator.extend (input := input) name value) body body_scoped

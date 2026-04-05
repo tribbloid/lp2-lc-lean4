@@ -27,11 +27,11 @@ f(a)
 The relation explains when applying `f` to a semantically valid `a` stays safe.
 Safety of a function is therefore expressed by what happens when it is called.
 -/
-def Semantics : (type : Ty) → (steps : Nat) → Denotation type → Prop
+def Semantics : (type : Ty) → (steps : Nat) → (v: type.Denotation) → Prop
 | .base, _, _ => True
 | .arrow input output, steps, function =>
     ∀ smaller_steps, smaller_steps ≤ steps →
-      ∀ _in, Semantics input smaller_steps _in →
+      ∀ (_in : input.Denotation), Semantics input smaller_steps _in →
         Later (Semantics output smaller_steps (function _in))
 
 /--
@@ -47,7 +47,7 @@ If the identity function is semantically valid for a larger budget, it stays
 valid for every smaller budget as well. The syntax does not change, only the
 amount of fuel we allow ourselves to inspect.
 -/
-lemma Semantics.monotone {type : Ty} {smaller_steps steps : Nat} {value : Denotation type}
+lemma Semantics.monotone {type : Ty} {smaller_steps steps : Nat} {value : type.Denotation}
     (bound : smaller_steps ≤ steps)
     : Semantics type steps value → Semantics type smaller_steps value
     := by
@@ -119,7 +119,7 @@ that both sources of information coexist correctly.
 -/
 lemma extend_semantics {input : Ty} {steps : Nat} {evaluator : Evaluator}
     (evaluator_semantics : EnvironmentSemantics evaluator steps)
-    {name : Var} {value : Denotation input} (value_semantics : Semantics input steps value) :
+    {name : Var} {value : input.Denotation} (value_semantics : Semantics input steps value) :
     EnvironmentSemantics (evaluator.extend name value) steps := by
   intro tested_name type binding
   by_cases same_name : tested_name = name

@@ -28,8 +28,8 @@ def id_app_scoped : ScopedTerm [] Ty.base := ⟨id_app_term, by
   simp [id_app_term, id_term, x_var]
 ⟩
 
-def base_value : Denotation Ty.base := Unit.unit
-def id_value : Denotation (Ty.base :=> Ty.base) := fun value => value
+def base_value : Ty.base.Denotation := Unit.unit
+def id_value : (Ty.base :=> Ty.base).Denotation := fun value => value
 
 abbrev empty_evaluator : Evaluator := Evaluator.empty
 
