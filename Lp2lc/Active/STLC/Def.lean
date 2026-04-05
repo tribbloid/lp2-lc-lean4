@@ -84,7 +84,7 @@ True if every free variable occurrence in `term` is typed in `env`:
 def ScopedTerm (env : Env) (type : Ty) := { term : Term type // IsScoped env term }
 
 /--
-Bundles an environment together with a denotation lookup for its typed bindings. E.g.
+AKA REPL, Bundles an environment together with a denotation lookup for its typed varaible bindings. E.g.
 
 ```scala
 val f = {x: Int => x + 1}
@@ -95,13 +95,13 @@ meaning as a Lean function.
 -/
 structure Evaluator where
   env: Env
-  lookup:  ∀ (name : Var) (type : Ty), (env.get name = some type) → type.Denotation
+  varLookup:  ∀ (name : Var) (type : Ty), (env.get name = some type) → type.Denotation
 
 namespace Evaluator
 
 @[simp] def empty : Evaluator where
   env := []
-  lookup := fun _ _ binding => by
+  varLookup := fun _ _ binding => by
     cases binding
 
 /--
@@ -124,7 +124,7 @@ both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadow
 @[simp] def extend {input : Ty} (evaluator : Evaluator) (name : Var)
     (value : input.Denotation) : Evaluator where
   env := (name, input) :: evaluator.env
-  lookup := fun tested_name type binding =>
+  varLookup := fun tested_name type binding =>
     if same_name : tested_name = name then
       by
         subst same_name
@@ -132,24 +132,23 @@ both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadow
         cases binding
         exact value
     else
-      evaluator.lookup tested_name type (by simpa [same_name] using binding)
+      evaluator.varLookup tested_name type (by simpa [same_name] using binding)
 
 /--
-Given an evaluator, evaluates a scoped term into its semantic denotation.
+Evaluates a scoped term into its semantic denotation.
 
-- variables are read from the evaluator lookup
-- lambdas become Lean functions
-- applications are interpreted by semantic function application
-
+- variables in Env need no evaluation: they are directly from evaluator lookup
+- lambdas become semantic Lean functions
+- applications are interpreted by applying the semantic Lean function
 -/
-def denote (evaluator : Evaluator) (scopedTerm : ScopedTerm evaluator.env type) : type.Denotation :=
+def eval (evaluator : Evaluator) (scopedTerm : ScopedTerm evaluator.env type) : type.Denotation :=
 
   let rec impl {type : Ty} (evaluator : Evaluator) (term : Term type)
       (hscoped : IsScoped evaluator.env term) :
       type.Denotation :=
     match term with
     | .unit => Unit.unit
-    | .term_variable name => evaluator.lookup name _ hscoped
+    | .term_variable name => evaluator.varLookup name _ hscoped
     | @Term.lambda output input name body =>
         fun (value : input.Denotation) =>
           let body_scoped : IsScoped ((name, input) :: evaluator.env) body := by

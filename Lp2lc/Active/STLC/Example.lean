@@ -159,12 +159,12 @@ end Evaluator
 namespace Extend
 
 #guard
-  let _ : x_evaluator.lookup x Ty.base rfl = Unit.unit := by
+  let _ : x_evaluator.varLookup x Ty.base rfl = Unit.unit := by
     simp [x_evaluator, empty_evaluator]
   true
 
 #guard
-  let _ : shadow_evaluator.lookup x (Ty.base :=> Ty.base) rfl Unit.unit = Unit.unit := by
+  let _ : shadow_evaluator.varLookup x (Ty.base :=> Ty.base) rfl Unit.unit = Unit.unit := by
     simp [shadow_evaluator, x_evaluator, id_value]
   true
 
@@ -173,15 +173,15 @@ end Extend
 namespace Denote
 
 #guard
-  let _ : empty_evaluator.denote unit_scoped = Unit.unit := rfl
+  let _ : empty_evaluator.eval unit_scoped = Unit.unit := rfl
   true
 
 #guard
-  let _ : empty_evaluator.denote id_scoped Unit.unit = Unit.unit := rfl
+  let _ : empty_evaluator.eval id_scoped Unit.unit = Unit.unit := rfl
   true
 
 #guard
-  let _ : empty_evaluator.denote id_app_scoped = Unit.unit := rfl
+  let _ : empty_evaluator.eval id_app_scoped = Unit.unit := rfl
   true
 
 end Denote
@@ -214,7 +214,7 @@ namespace EnvironmentSemantics
     simpa [x_evaluator, base_value] using
       (extend_semantics
         (evaluator := empty_evaluator)
-        (steps := 1)
+        (fuel := 1)
         (name := x)
         (value := base_value)
         (by
@@ -229,15 +229,15 @@ end EnvironmentSemantics
 namespace Fundamental
 
 #guard
-  let _ : Semantics (Ty.base :=> Ty.base) 2 (empty_evaluator.denote id_scoped) := by
-    exact fundamental empty_evaluator id_scoped (steps := 2) (by
+  let _ : Semantics (Ty.base :=> Ty.base) 2 (empty_evaluator.eval id_scoped) := by
+    exact fundamental empty_evaluator id_scoped (fuel := 2) (by
       intro name type binding
       simp at binding)
   true
 
 #guard
-  let _ : Semantics Ty.base 2 (empty_evaluator.denote id_app_scoped) := by
-    exact fundamental empty_evaluator id_app_scoped (steps := 2) (by
+  let _ : Semantics Ty.base 2 (empty_evaluator.eval id_app_scoped) := by
+    exact fundamental empty_evaluator id_app_scoped (fuel := 2) (by
       intro name type binding
       simp at binding)
   true
@@ -247,12 +247,12 @@ end Fundamental
 namespace Soundness
 
 #guard
-  let _ : Semantics (Ty.base :=> Ty.base) 2 (Evaluator.empty.denote id_scoped) :=
+  let _ : Semantics (Ty.base :=> Ty.base) 2 (Evaluator.empty.eval id_scoped) :=
     soundness id_scoped 2
   true
 
 #guard
-  let _ : Semantics Ty.base 2 (Evaluator.empty.denote id_app_scoped) :=
+  let _ : Semantics Ty.base 2 (Evaluator.empty.eval id_app_scoped) :=
     soundness id_app_scoped 2
   true
 
