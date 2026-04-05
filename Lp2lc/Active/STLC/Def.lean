@@ -66,7 +66,7 @@ True if every free variable occurrence in `term` is typed in `env`:
 
 - application: requires both `f` and `a` to be scoped.
 -/
-@[simp] def IsScoped (env : Env) {type : Ty} : (term : Term type) → Prop
+@[simp] def IsScoped (env : Env) : (term : Term type) → Prop
 | .term_variable x => env.get x = some type
 | .unit => True
 | @Term.lambda _ input x body => (show Env from ((x, input) :: env)).IsScoped body
