@@ -41,19 +41,17 @@ def Semantics (type : Ty) (fuel : Nat) (v : type.Denotation) : Prop :=
           Later (Semantics output lessFuel (fn vIn)) -- output can be evaluated later
 
 /--
-Shrinking the step index preserves semantic validity of a value.
-This is the monotonicity expected from a step-indexed argument: surviving more
-fuel is stronger than surviving fewer fuel.
+If a value works with a larger fuel budget, it also works with a smaller one.
 
 ```scala
-x => x
+val id = { x: Int => x }
 ```
 
-If the identity function is semantically valid for a larger budget, it stays
-valid for every smaller budget as well. The syntax does not change, only the
-amount of fuel we allow ourselves to inspect.
+If `id` is safe to call when we allow more runtime steps, it stays safe when we
+check it with fewer steps. The function itself does not change; only the fuel
+number gets smaller.
 -/
-lemma Semantics.monotone {type : Ty} {fuel lessFuel : Nat} (bound : lessFuel ≤ fuel)
+lemma Semantics.monotone {fuel lessFuel : Nat} (bound : lessFuel ≤ fuel)
     {value : type.Denotation}
     : Semantics type fuel value → Semantics type lessFuel value
     := by
@@ -76,83 +74,61 @@ lemma Semantics.monotone {type : Ty} {fuel lessFuel : Nat} (bound : lessFuel ≤
       exact function_semantics' test_fuel (Nat.le_trans test_bound bound) test_value test_semantics
 
 /--
-Requires every variable in an environment to denote a semantically valid value.
-This upgrades an ordinary valuation into one that is compatible with the
-logical relation at a chosen step index.
-
-```scala
-f(a)
-```
-
-To reason about this open term, the environment must provide semantically valid
-meanings for both `f` and `a`.
+Return true if `Semantics` holds for every variable in an environment
 -/
 def EnvSemantics (evaluator : Evaluator) (fuel : Nat) : Prop :=
   ∀ (name : Var) (type : Ty) (binding : evaluator.env.get name = some type),
     Semantics type fuel (evaluator.varLookup name type binding)
 
 /--
-Environment semantics is also preserved when the step index decreases.
-This is the environment-level version of `Semantics.monotone`: every binding in
-the valuation remains semantically valid after reducing the step budget.
-
-```scala
-f(a)
-```
-
-If the meanings of `f` and `a` are valid for more fuel, they are valid for
-fewer too.
+Similar to `Semantics.monotone`, but for every variable in an environment
 -/
-lemma EnvironmentSemantics.monotone
-    {evaluator : Evaluator} {lessFuel fuel : Nat}
+lemma EnvSemantics.monotone {lessFuel fuel : Nat}
     (bound : lessFuel ≤ fuel) :
     EnvSemantics evaluator fuel → EnvSemantics evaluator lessFuel := by
   intro evaluator_semantics name type binding
   exact Semantics.monotone bound (evaluator_semantics name type binding)
 
 /--
-Extending a semantically valid environment with a valid value preserves validity.
-This is the semantic bookkeeping needed for lambdas: once a new argument value
-is known to satisfy the relation, the extended environment is still sound.
+If all inputs are semantically valid, adding one extra binding to an existing REPL will not change its validity. E.g. if
 
 ```scala
-x => f(x)
+val x = 1
+val y = x + 1
 ```
 
-Inside the body, `x` is handled by the new binding introduced by the lambda,
-while `f` still comes from the older environment. `extend_semantics` proves
-that both sources of information coexist correctly.
+can be interpreted safely, then interpreting
+
+```scala
+val z = x + y
+```
+
+will also be safe.
 -/
-lemma extend_semantics {input : Ty} {fuel : Nat} {evaluator : Evaluator}
-    (evaluator_semantics : EnvSemantics evaluator fuel)
-    {name : Var} {value : input.Denotation} (value_semantics : Semantics input fuel value) :
+lemma EnvSemantics.extend {input : Ty} {fuel : Nat} {evaluator : Evaluator} {name : Var} {value : input.Denotation}
+    (oldEnvSemantics : EnvSemantics evaluator fuel) (extra : Semantics input fuel value) :
     EnvSemantics (evaluator.extend name value) fuel := by
   intro tested_name type binding
   by_cases same_name : tested_name = name
   · subst same_name
     simp at binding ⊢
     cases binding
-    simpa using value_semantics
+    simpa using extra
   · have tail_binding : evaluator.env.get tested_name = some type := by
       simpa [same_name] using binding
     simpa [same_name] using
-      evaluator_semantics tested_name type tail_binding
-
+      oldEnvSemantics tested_name type tail_binding
 
 /--
-Every scoped term denotes a value satisfying the logical relation at every step index.
-This is the fundamental theorem of logical relations for the development. The
-proof follows the syntax of terms: variables use the environment hypothesis,
-lambdas extend the environment, and applications consume the function case.
+If every outside name already points to a safe runtime value, then running the
+whole program also gives a safe runtime value.
 
 ```scala
 x => f(x)
 ```
 
-Once the environment gives semantically valid meanings to the free variables,
-the whole term denotes a semantically valid value. In the example, it is enough
-for the environment to supply a valid meaning for `f`; the bound `x` is handled
-by the lambda case itself.
+Here the program only needs the outside world to supply a safe value for `f`.
+The call later supplies `x`, and the result still behaves correctly.
 -/
 theorem fundamental {type : Ty} (evaluator : Evaluator) (term : ScopedTerm evaluator.env type) :
     ∀ {fuel : Nat},
@@ -183,8 +159,7 @@ theorem fundamental {type : Ty} (evaluator : Evaluator) (term : ScopedTerm evalu
           (evaluator := evaluator.extend (input := input) name value)
           body_scoped
           (fuel := lessFuel)
-          (extend_semantics
-            (EnvironmentSemantics.monotone smaller_bound evaluator_semantics)
+          ((EnvSemantics.monotone smaller_bound evaluator_semantics).extend
             value_semantics)
   | @apply input output function argument function_induction argument_induction =>
       intro evaluator hscoped fuel evaluator_semantics
@@ -213,17 +188,14 @@ theorem fundamental {type : Ty} (evaluator : Evaluator) (term : ScopedTerm evalu
 abbrev closed (type : Ty) := ScopedTerm [] type
 
 /--
-A closed term is semantically sound in the empty environment at every step index.
-This packages the fundamental theorem for programs without free variables, so no
-external assumptions remain.
+A program with no outside names is safe to run from scratch for any fuel budget.
 
 ```scala
-x => x
+val id = { x: Int => x }
 ```
 
-Because this term is closed, it is semantically valid under the empty evaluator
-for any number of fuel. No external lookup is needed, since the only `x` is
-bound inside the term itself.
+This program does not read anything preloaded. Its only `x` comes from the call
+itself, so starting with an empty set of names is enough.
 -/
 theorem soundness {type : Ty} (term : closed type) :
     ∀ fuel, Semantics type fuel (Evaluator.empty.eval term) := by

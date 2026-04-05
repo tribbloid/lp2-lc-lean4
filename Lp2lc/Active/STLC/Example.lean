@@ -212,7 +212,7 @@ namespace EnvironmentSemantics
 #guard
   let _ : EnvSemantics x_evaluator 1 := by
     simpa [x_evaluator, base_value] using
-      (extend_semantics
+      (EnvSemantics.extend
         (evaluator := empty_evaluator)
         (fuel := 1)
         (name := x)
