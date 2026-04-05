@@ -23,11 +23,10 @@ deriving DecidableEq, Repr
 
 scoped infixr:60 " :=> " => Ty.arrow
 
-
 inductive Term : Ty -> Type where
 | term_variable : Var -> Term type
 | unit : Term Ty.base
-| lambda : Var -> Term output -> Term (input :=> output)
+| lambda : Var -> Term tyOut -> Term (tyIn :=> tyOut)
 | apply : Term (input :=> output) -> Term input -> Term output
 
 def Env := List (Var × Ty)
