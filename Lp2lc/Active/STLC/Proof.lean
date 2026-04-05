@@ -130,7 +130,7 @@ x => f(x)
 Here the program only needs the outside world to supply a safe value for `f`.
 The call later supplies `x`, and the result still behaves correctly.
 -/
-theorem fundamental {type : Ty} (evaluator : Evaluator) (term : ScopedTerm evaluator.env type) :
+theorem fundamental {type : Ty} (evaluator : Evaluator) (term : evaluator.env.ScopedTerm type) :
     ∀ {fuel : Nat},
       EnvSemantics evaluator fuel →
       Semantics type fuel (evaluator.eval term) := by
@@ -145,7 +145,7 @@ theorem fundamental {type : Ty} (evaluator : Evaluator) (term : ScopedTerm evalu
       simp [Semantics]
   | @lambda output input name body induction_hypothesis =>
       intro evaluator hscoped fuel evaluator_semantics
-      have body_scoped : IsScoped ((name, input) :: evaluator.env) body := by
+      have body_scoped : (show Env from ((name, input) :: evaluator.env)).IsScoped body := by
         simpa using hscoped
       change
         ∀ lessFuel, lessFuel ≤ fuel →
@@ -185,7 +185,7 @@ theorem fundamental {type : Ty} (evaluator : Evaluator) (term : ScopedTerm evalu
         (function_semantics fuel le_rfl
           (evaluator.eval ⟨argument, hscoped.right⟩) argument_semantics).force
 
-abbrev closed (type : Ty) := ScopedTerm [] type
+abbrev closed (type : Ty) := Env.empty.ScopedTerm type
 
 /--
 A program with no outside names is safe to run from scratch for any fuel budget.

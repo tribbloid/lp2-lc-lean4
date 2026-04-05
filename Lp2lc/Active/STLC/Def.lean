@@ -23,14 +23,6 @@ deriving DecidableEq, Repr
 
 scoped infixr:60 " :=> " => Ty.arrow
 
-/--
-Convert each `Ty` into a Lean semantic type.
-
-(technically `Ty` can be coverted into anything, `Unit` and lean functions are for convenience)
--/
-def Ty.Denotation : (type : Ty) → Type
-| .base => Unit
-| (input :=> output) => input.Denotation → output.Denotation
 
 inductive Term : Ty -> Type where
 | term_variable : Var -> Term type
@@ -38,9 +30,11 @@ inductive Term : Ty -> Type where
 | lambda : Var -> Term output -> Term (input :=> output)
 | apply : Term (input :=> output) -> Term input -> Term output
 
-abbrev Env := List (Var × Ty)
+def Env := List (Var × Ty)
 
 namespace Env
+
+@[simp] def empty : Env := []
 
 /--
 Looks up the type associated with `name` in an environment.
@@ -59,9 +53,6 @@ x => {x => x /* first "x" is shadowed*/}
     else
       get name env
 
-end Env
-
-
 /--
 True if every free variable occurrence in `term` is typed in `env`:
 
@@ -75,13 +66,24 @@ True if every free variable occurrence in `term` is typed in `env`:
 
 - application: requires both `f` and `a` to be scoped.
 -/
-@[simp] def IsScoped (env : Env) {type : Ty}: (term: Term type) → Prop
+@[simp] def IsScoped (env : Env) {type : Ty} : (term : Term type) → Prop
 | .term_variable x => env.get x = some type
 | .unit => True
-| @Term.lambda _ input x body => IsScoped ((x, input) :: env) body
-| @Term.apply _ _ f a => IsScoped env f ∧ IsScoped env a
+| @Term.lambda _ input x body => (show Env from ((x, input) :: env)).IsScoped body
+| @Term.apply _ _ f a => env.IsScoped f ∧ env.IsScoped a
 
-def ScopedTerm (env : Env) (type : Ty) := { term : Term type // IsScoped env term }
+def ScopedTerm (env : Env) (type : Ty) := { term : Term type // env.IsScoped term }
+
+end Env
+
+/--
+Convert each `Ty` into a Lean semantic data type.
+
+(technically `Ty` can be coverted into anything, `Unit` and lean functions are for convenience)
+-/
+def Ty.Denotation : (type : Ty) → Type
+| .base => Unit
+| (input :=> output) => input.Denotation → output.Denotation
 
 /--
 AKA REPL, Bundles an environment together with a denotation lookup for its typed varaible bindings. E.g.
@@ -95,7 +97,7 @@ meaning as a Lean function.
 -/
 structure Evaluator where
   env: Env
-  varLookup:  ∀ (name : Var) (type : Ty), (env.get name = some type) → type.Denotation
+  varLookup:  ∀ (name : Var) (type : Ty), (env.get name = some type) → Ty.Denotation type
 
 namespace Evaluator
 
@@ -121,8 +123,8 @@ x = x + 1
 
 both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadowed
 -/
-@[simp] def extend {input : Ty} (evaluator : Evaluator) (name : Var)
-    (value : input.Denotation) : Evaluator where
+@[simp] def extend (evaluator : Evaluator) (name : Var)
+    (value : Ty.Denotation input) : Evaluator where
   env := (name, input) :: evaluator.env
   varLookup := fun tested_name type binding =>
     if same_name : tested_name = name then
@@ -141,17 +143,17 @@ Evaluates a scoped term into its semantic denotation.
 - lambdas become semantic Lean functions
 - applications are interpreted by applying the semantic Lean function
 -/
-def eval (evaluator : Evaluator) (scopedTerm : ScopedTerm evaluator.env type) : type.Denotation :=
+def eval (evaluator : Evaluator) (scopedTerm : evaluator.env.ScopedTerm type) : Ty.Denotation type :=
 
   let rec impl {type : Ty} (evaluator : Evaluator) (term : Term type)
-      (hscoped : IsScoped evaluator.env term) :
-      type.Denotation :=
+      (hscoped : evaluator.env.IsScoped term) :
+      Ty.Denotation type :=
     match term with
     | .unit => Unit.unit
     | .term_variable name => evaluator.varLookup name _ hscoped
     | @Term.lambda output input name body =>
-        fun (value : input.Denotation) =>
-          let body_scoped : IsScoped ((name, input) :: evaluator.env) body := by
+        fun (value : Ty.Denotation input) =>
+          let body_scoped : (show Env from ((name, input) :: evaluator.env)).IsScoped body := by
             simpa using hscoped
         impl (evaluator.extend (input := input) name value) body body_scoped
     | @Term.apply input output function argument =>

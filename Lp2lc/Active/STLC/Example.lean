@@ -18,13 +18,13 @@ def id_app_term : Term Ty.base :=
 def x_env : Env := [(x, Ty.base)]
 def shadow_env : Env := [(x, Ty.base :=> Ty.base), (x, Ty.base)]
 
-def unit_scoped : ScopedTerm [] Ty.base := ⟨Term.unit, by simp⟩
+def unit_scoped : Env.empty.ScopedTerm Ty.base := ⟨Term.unit, by simp⟩
 
-def id_scoped : ScopedTerm [] (Ty.base :=> Ty.base) := ⟨id_term, by
+def id_scoped : Env.empty.ScopedTerm (Ty.base :=> Ty.base) := ⟨id_term, by
   simp [id_term, x_var]
 ⟩
 
-def id_app_scoped : ScopedTerm [] Ty.base := ⟨id_app_term, by
+def id_app_scoped : Env.empty.ScopedTerm Ty.base := ⟨id_app_term, by
   simp [id_app_term, id_term, x_var]
 ⟩
 
@@ -91,22 +91,22 @@ end Env
 namespace IsScoped
 
 #guard
-  let _ : IsScoped x_env x_var := by
+  let _ : x_env.IsScoped x_var := by
     simp [x_env, x_var]
   true
 
 #guard
-  let _ : IsScoped [] Term.unit := by
+  let _ : Env.empty.IsScoped Term.unit := by
     simp
   true
 
 #guard
-  let _ : IsScoped [] id_term := by
+  let _ : Env.empty.IsScoped id_term := by
     simp [id_term, x_var]
   true
 
 #guard
-  let _ : IsScoped [] id_app_term := by
+  let _ : Env.empty.IsScoped id_app_term := by
     simp [id_app_term, id_term, x_var]
   true
 
@@ -115,15 +115,15 @@ end IsScoped
 namespace ScopedTerm
 
 #guard
-  let _ : ScopedTerm [] Ty.base := unit_scoped
+  let _ : Env.empty.ScopedTerm Ty.base := unit_scoped
   true
 
 #guard
-  let _ : ScopedTerm [] (Ty.base :=> Ty.base) := id_scoped
+  let _ : Env.empty.ScopedTerm (Ty.base :=> Ty.base) := id_scoped
   true
 
 #guard
-  let _ : ScopedTerm [] Ty.base := id_app_scoped
+  let _ : Env.empty.ScopedTerm Ty.base := id_app_scoped
   true
 
 end ScopedTerm
