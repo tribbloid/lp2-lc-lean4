@@ -16,18 +16,20 @@ namespace Lp2lc.Active.STLC
 structure Later (step : Prop) : Prop where
   force : step
 
+def Instructions := String -- instructions are self-contained, concrete code with no variable or abstraction
+
 inductive Ty : Type
 | base : Ty
-| arrow : (input : Ty) → (output : Ty) → Ty
+| arrow : (tyIn : Ty) → (tyOut : Ty) → Ty
 deriving DecidableEq, Repr
 
 scoped infixr:60 " :=> " => Ty.arrow
 
 inductive Term : Ty -> Type where
 | term_variable : Var -> Term type
-| unit : Term Ty.base
+| const : Instructions -> Term Ty.base
 | lambda : Var -> Term tyOut -> Term (tyIn :=> tyOut)
-| apply : Term (input :=> output) -> Term input -> Term output
+| apply : Term (tyIn :=> tyOut) -> Term tyIn -> Term tyOut
 
 def Env := List (Var × Ty)
 
@@ -67,7 +69,7 @@ True if every free variable occurrence in `term` is typed in `env`:
 -/
 @[simp] def IsScoped (env : Env) : (term : Term type) → Prop
 | .term_variable x => env.get x = some type
-| .unit => True
+| .const _ => True
 | @Term.lambda _ input x body => (show Env from ((x, input) :: env)).IsScoped body
 | @Term.apply _ _ f a => env.IsScoped f ∧ env.IsScoped a
 
@@ -78,11 +80,11 @@ end Env
 /--
 Convert each `Ty` into a Lean semantic data type.
 
-(technically `Ty` can be coverted into anything, `Unit` and lean functions are for convenience)
+(technically `Ty` can be coverted into anything, `String` and lean functions are for convenience)
 -/
 def Ty.Denotation : (type : Ty) → Type
-| .base => Unit
-| (input :=> output) => input.Denotation → output.Denotation
+| .base => Instructions
+| (tyIn :=> tyOut) => tyIn.Denotation → tyOut.Denotation
 
 /--
 Bundles an environment together with a denotation lookup for its typed variable bindings. E.g.
@@ -148,13 +150,13 @@ def eval (repl : REPL) (newTerm : repl.env.ScopedTerm type) : Ty.Denotation type
       (hscoped : repl.env.IsScoped term) :
       Ty.Denotation type :=
     match term with
-    | .unit => Unit.unit
+    | .const normal_form => normal_form
     | .term_variable name => repl.varLookup name _ hscoped
     | @Term.lambda output input name body =>
         fun (value : Ty.Denotation input) =>
           let body_scoped : (show Env from ((name, input) :: repl.env)).IsScoped body := by
             simpa using hscoped
-        impl (repl.extend (input := input) name value) body body_scoped
+        impl (repl.extend name value) body body_scoped
     | @Term.apply input output function argument =>
         (impl repl function hscoped.left) (impl repl argument hscoped.right)
 

@@ -10,15 +10,15 @@ def y : Var := ⟨"y"⟩
 def x_var : Term Ty.base := Term.term_variable (type := Ty.base) x
 
 def id_term : Term (Ty.base :=> Ty.base) :=
-  Term.lambda (input := Ty.base) (output := Ty.base) x x_var
+  Term.lambda (tyIn := Ty.base) (tyOut := Ty.base) x x_var
 
 def id_app_term : Term Ty.base :=
-  Term.apply (input := Ty.base) (output := Ty.base) id_term Term.unit
+  Term.apply (tyIn := Ty.base) (tyOut := Ty.base) id_term (Term.const "base_const")
 
 def x_env : Env := [(x, Ty.base)]
 def shadow_env : Env := [(x, Ty.base :=> Ty.base), (x, Ty.base)]
 
-def unit_scoped : Env.empty.ScopedTerm Ty.base := ⟨Term.unit, by simp⟩
+def const_scoped : Env.empty.ScopedTerm Ty.base := ⟨Term.const "base_const", by simp⟩
 
 def id_scoped : Env.empty.ScopedTerm (Ty.base :=> Ty.base) := ⟨id_term, by
   simp [id_term, x_var]
@@ -28,13 +28,13 @@ def id_app_scoped : Env.empty.ScopedTerm Ty.base := ⟨id_app_term, by
   simp [id_app_term, id_term, x_var]
 ⟩
 
-def base_value : Ty.base.Denotation := Unit.unit
+def base_value : Ty.base.Denotation := "base_const"
 def id_value : (Ty.base :=> Ty.base).Denotation := fun value => value
 
 abbrev empty_repl : REPL := REPL.empty
 
 def x_repl : REPL :=
-  empty_repl.extend (input := Ty.base) x Unit.unit
+  empty_repl.extend (input := Ty.base) x base_value
 
 def shadow_repl : REPL :=
   x_repl.extend (input := Ty.base :=> Ty.base) x id_value
@@ -63,11 +63,12 @@ namespace Term
   true
 
 #guard
-  let _ : id_term = Term.lambda (input := Ty.base) (output := Ty.base) x x_var := rfl
+  let _ : id_term = Term.lambda (tyIn := Ty.base) (tyOut := Ty.base) x x_var := rfl
   true
 
 #guard
-  let _ : id_app_term = Term.apply (input := Ty.base) (output := Ty.base) id_term Term.unit := rfl
+  let _ : id_app_term =
+      Term.apply (tyIn := Ty.base) (tyOut := Ty.base) id_term (Term.const "base_const") := rfl
   true
 
 end Term
@@ -96,7 +97,7 @@ namespace IsScoped
   true
 
 #guard
-  let _ : Env.empty.IsScoped Term.unit := by
+  let _ : Env.empty.IsScoped (Term.const "base_const") := by
     simp
   true
 
@@ -115,7 +116,7 @@ end IsScoped
 namespace ScopedTerm
 
 #guard
-  let _ : Env.empty.ScopedTerm Ty.base := unit_scoped
+  let _ : Env.empty.ScopedTerm Ty.base := const_scoped
   true
 
 #guard
@@ -131,11 +132,11 @@ end ScopedTerm
 namespace Denotation
 
 #guard
-  let _ : base_value = Unit.unit := rfl
+  let _ : base_value = "base_const" := rfl
   true
 
 #guard
-  let _ : id_value Unit.unit = Unit.unit := rfl
+  let _ : id_value "base_const" = "base_const" := rfl
   true
 
 end Denotation
@@ -159,12 +160,12 @@ end REPL
 namespace Extend
 
 #guard
-  let _ : x_repl.varLookup x Ty.base rfl = Unit.unit := by
-    simp [x_repl, empty_repl]
+  let _ : x_repl.varLookup x Ty.base rfl = "base_const" := by
+    simp [x_repl, empty_repl, base_value]
   true
 
 #guard
-  let _ : shadow_repl.varLookup x (Ty.base :=> Ty.base) rfl Unit.unit = Unit.unit := by
+  let _ : shadow_repl.varLookup x (Ty.base :=> Ty.base) rfl "base_const" = "base_const" := by
     simp [shadow_repl, x_repl, id_value]
   true
 
@@ -173,15 +174,17 @@ end Extend
 namespace Denote
 
 #guard
-  let _ : empty_repl.eval unit_scoped = Unit.unit := rfl
+  let _ : empty_repl.eval const_scoped = "base_const" := rfl
   true
 
 #guard
-  let _ : empty_repl.eval id_scoped Unit.unit = Unit.unit := rfl
+  let _ : empty_repl.eval id_scoped "base_const" = "base_const" := rfl
   true
 
 #guard
-  let _ : empty_repl.eval id_app_scoped = Unit.unit := rfl
+  let _ : empty_repl.eval id_app_scoped = "base_const" := by
+    change ("base_const" : String) = "base_const"
+    rfl
   true
 
 end Denote

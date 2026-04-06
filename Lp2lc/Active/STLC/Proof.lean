@@ -140,7 +140,7 @@ theorem fundamental (repl : REPL)
   | term_variable name =>
       intro repl hscoped fuel repl_semantics
       simpa [REPL.eval] using repl_semantics name _ hscoped
-  | unit =>
+  | const normal_form =>
       intro repl hscoped fuel _repl_semantics
       simp [Semantics]
   | @lambda output input name body induction_hypothesis =>
