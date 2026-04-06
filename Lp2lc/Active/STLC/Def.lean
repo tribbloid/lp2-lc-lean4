@@ -16,7 +16,7 @@ namespace Lp2lc.Active.STLC
 structure Later (step : Prop) : Prop where
   force : step
 
-def Literal := String -- self-contained, concrete code with no variable or abstraction
+def Instructions := String -- self-contained, concrete code with no variable or abstraction
 
 inductive Ty : Type
 | base : Ty
@@ -27,7 +27,7 @@ scoped infixr:60 " :=> " => Ty.arrow
 
 inductive Term : Ty -> Type where
 | term_variable : Var -> Term type
-| literal : Literal -> Term Ty.base
+| literal : Instructions -> Term Ty.base
 | lambda : Var -> Term tyOut -> Term (tyIn :=> tyOut)
 | apply : Term (tyIn :=> tyOut) -> Term tyIn -> Term tyOut
 
@@ -83,7 +83,7 @@ Convert each `Ty` into a Lean semantic data type.
 (technically `Ty` can be coverted into anything, `String` and lean functions are for convenience)
 -/
 def Ty.Denotation : (type : Ty) → Type
-| .base => Literal
+| .base => Instructions
 | (tyIn :=> tyOut) => tyIn.Denotation → tyOut.Denotation
 
 /--
