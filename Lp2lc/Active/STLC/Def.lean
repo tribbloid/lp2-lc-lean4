@@ -16,7 +16,7 @@ namespace Lp2lc.Active.STLC
 structure Later (step : Prop) : Prop where
   force : step
 
-def Instructions := String -- instructions are self-contained, concrete code with no variable or abstraction
+def Instructions := String -- self-contained, concrete code with no variable or abstraction
 
 inductive Ty : Type
 | base : Ty
