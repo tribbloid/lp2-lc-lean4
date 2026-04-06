@@ -13,12 +13,12 @@ def id_term : Term (Ty.base :=> Ty.base) :=
   Term.lambda (tyIn := Ty.base) (tyOut := Ty.base) x x_var
 
 def id_app_term : Term Ty.base :=
-  Term.apply (tyIn := Ty.base) (tyOut := Ty.base) id_term (Term.const "base_const")
+  Term.apply (tyIn := Ty.base) (tyOut := Ty.base) id_term (Term.literal "base_const")
 
 def x_env : Env := [(x, Ty.base)]
 def shadow_env : Env := [(x, Ty.base :=> Ty.base), (x, Ty.base)]
 
-def const_scoped : Env.empty.ScopedTerm Ty.base := ⟨Term.const "base_const", by simp⟩
+def const_scoped : Env.empty.ScopedTerm Ty.base := ⟨Term.literal "base_const", by simp⟩
 
 def id_scoped : Env.empty.ScopedTerm (Ty.base :=> Ty.base) := ⟨id_term, by
   simp [id_term, x_var]
@@ -68,7 +68,7 @@ namespace Term
 
 #guard
   let _ : id_app_term =
-      Term.apply (tyIn := Ty.base) (tyOut := Ty.base) id_term (Term.const "base_const") := rfl
+      Term.apply (tyIn := Ty.base) (tyOut := Ty.base) id_term (Term.literal "base_const") := rfl
   true
 
 end Term
@@ -97,7 +97,7 @@ namespace IsScoped
   true
 
 #guard
-  let _ : Env.empty.IsScoped (Term.const "base_const") := by
+  let _ : Env.empty.IsScoped (Term.literal "base_const") := by
     simp
   true
 

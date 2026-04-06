@@ -16,7 +16,7 @@ namespace Lp2lc.Active.STLC
 structure Later (step : Prop) : Prop where
   force : step
 
-def Instructions := String -- self-contained, concrete code with no variable or abstraction
+def Literal := String -- self-contained, concrete code with no variable or abstraction
 
 inductive Ty : Type
 | base : Ty
@@ -27,7 +27,7 @@ scoped infixr:60 " :=> " => Ty.arrow
 
 inductive Term : Ty -> Type where
 | term_variable : Var -> Term type
-| const : Instructions -> Term Ty.base
+| literal : Literal -> Term Ty.base
 | lambda : Var -> Term tyOut -> Term (tyIn :=> tyOut)
 | apply : Term (tyIn :=> tyOut) -> Term tyIn -> Term tyOut
 
@@ -69,7 +69,7 @@ True if every free variable occurrence in `term` is typed in `env`:
 -/
 @[simp] def IsScoped (env : Env) : (term : Term type) → Prop
 | .term_variable x => env.get x = some type
-| .const _ => True
+| .literal _ => True
 | @Term.lambda _ input x body => (show Env from ((x, input) :: env)).IsScoped body
 | @Term.apply _ _ f a => env.IsScoped f ∧ env.IsScoped a
 
@@ -83,7 +83,7 @@ Convert each `Ty` into a Lean semantic data type.
 (technically `Ty` can be coverted into anything, `String` and lean functions are for convenience)
 -/
 def Ty.Denotation : (type : Ty) → Type
-| .base => Instructions
+| .base => Literal
 | (tyIn :=> tyOut) => tyIn.Denotation → tyOut.Denotation
 
 /--
@@ -150,7 +150,7 @@ def eval (repl : REPL) (newTerm : repl.env.ScopedTerm type) : Ty.Denotation type
       (hscoped : repl.env.IsScoped term) :
       Ty.Denotation type :=
     match term with
-    | .const normal_form => normal_form
+    | .literal normal_form => normal_form
     | .term_variable name => repl.varLookup name _ hscoped
     | @Term.lambda output input name body =>
         fun (value : Ty.Denotation input) =>
