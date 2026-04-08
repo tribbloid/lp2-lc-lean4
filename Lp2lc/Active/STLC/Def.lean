@@ -32,16 +32,16 @@ structure Later (step : Prop) : Prop where
 
 def Instructions := String
 
+section
+
+variable {TermVar : Type}
+
 inductive Ty : Type
 | base : Ty
 | arrow : (tIn : Ty) → (tOut : Ty) → Ty
 deriving DecidableEq, Repr
 
 scoped infixr:60 " :=> " => Ty.arrow
-
-section
-
-variable {TermVar : Type}
 
 inductive Tm : Type
 | var : TermVar -> Tm
