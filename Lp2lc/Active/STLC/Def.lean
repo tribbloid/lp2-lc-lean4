@@ -33,7 +33,7 @@ structure Later (step : Prop) : Prop where
 def Instructions := String -- self-contained, concrete code/serialised data with no variable or abstraction
 
 section
-variable (TermVar TypeVar : Type)
+variable (TermVar TypeVar : Type) -- termVar is not used but will become useful in stronger systems
 
 inductive Ty : Type -- Pre-type
 | base : Ty -- it is not need for syntax that includes System FSub, but keeping it won't hurt
@@ -44,11 +44,11 @@ scoped infixr:60 " :=> " => Ty.arrow
 
 inductive Tm : Type -- Pre-term
   -- in PHOAS there is no bounded variable, variable also has no name or path
-| freeVar : TypeVar -> Tm
+| var : TermVar -> Tm
 | literal : Instructions -> Tm
   -- literally just a function in Lean that convert TypeVar to another Tern,
   -- in DOT this can be dependent function
-| function : (TypeVar -> Tm) -> Tm
+| function : (TermVar -> Tm) -> Tm
   -- apply the above function
 | apply : (function: Tm) -> (argument: Tm) -> Tm
 
