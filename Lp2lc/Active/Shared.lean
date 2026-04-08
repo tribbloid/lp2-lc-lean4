@@ -27,7 +27,6 @@ namespace Env
   def mapSecond {α β} (f : α → β) (E : List (Var × α)) : List (Var × β) :=
     E.map (fun p => (p.1, f p.2))
 
-
   def dom {α} (E : List (Var × α)) : Vars := E.map (·.1) |>.toFinset
 end Env
 
