@@ -4,17 +4,17 @@ import Mathlib.Data.Finset.Basic
 import Aesop
 import «Lp2lc».Active.Shared
 
-namespace Lp2lc.Active.Dot_top_bot
+namespace Lp2lc.Active.Dot
 
 -- Provide a local alias for shared environment well-formedness
 -- use shared ok from Lp2lc.Active.Shared
 
--- [Coq: Dot_top_bot.v line 13]
+-- [Coq: Dot.v line 13]
 structure TypLabel where
   name : String
   deriving Repr, BEq, Hashable, DecidableEq
 
--- [Coq: Dot_top_bot.v line 14]
+-- [Coq: Dot.v line 14]
 structure TrmLabel where
   name : String
   deriving Repr, BEq, Hashable, DecidableEq
@@ -30,74 +30,57 @@ namespace Env
   def dom {α} (E : List (Var × α)) : Vars := E.map (·.1) |>.toFinset
 end Env
 
--- [Coq: Dot_top_bot.v line 16]
+-- [Coq: Dot.v line 16]
 inductive Label : Type where
   | label_typ : TypLabel → Label
   | label_trm : TrmLabel → Label
   deriving Repr, DecidableEq
 
--- [Coq: Dot_top_bot.v line 20]
+-- [Coq: Dot.v line 20]
 inductive Avar : Type where
-  | avar_b : Nat → Avar -- bound var (de Bruijn serial)
+  | avar_b : Nat → Avar -- bound var (de Bruijn index)
   | avar_f : Var → Avar -- free var
   deriving Repr, DecidableEq
 
 -- Forward mutual declarations
 mutual
-  -- [Coq: Dot_top_bot.v lines 24-32]
+  -- [Coq: Dot.v line 24]
   inductive Typ : Type where
-    -- Top/Any
-    | typ_top  : Typ
-    -- Bottom/Nothing
-    | typ_bot  : Typ
-    -- Record Piece, Intersecting it build a structural type, intersecting with a tag build a trait
-    | typ_rcd  : Dec → Typ
-    -- Intersection/Subtype TODO: need Union type
-    | typ_and  : (left: Typ) → (right: Typ) → Typ
-    -- Dependent selection of type member with a type label
-    | typ_sel  : (var: Avar) → (label: TypLabel) → Typ
-    -- Self binding / `this.type` in Scala
-    -- the only way to use the above `typ_sel` with a de Bruijn serial is within a typ_bnd
-    | typ_bnd  : (self: Typ) → Typ
-    -- Dependent function (AKA forAll quantifier)
-    -- tOut can be a dependent selection, e.g. {x: I => x.DepT}
-    -- the typ_all in System F/FSub is half-assed, should rename them
-    | typ_all  : (tIn: Typ) → (tOut: Typ) → Typ
+    | typ_rcd : Dec → Typ
+    | typ_and : Typ → Typ → Typ
+    | typ_sel : Avar → TypLabel → Typ
+    | typ_bnd : Typ → Typ
+    | typ_all : Typ → Typ → Typ
   deriving Repr, DecidableEq
 
-  -- [Coq: Dot_top_bot.v line 33]
-  inductive Dec : Type where -- member declaration
-    | dec_typ : TypLabel → (upperBound: Typ) → (lowerBound: Typ) → Dec
+  -- [Coq: Dot.v line 30]
+  inductive Dec : Type where
+    | dec_typ : TypLabel → Typ → Typ → Dec
     | dec_trm : TrmLabel → Typ → Dec
   deriving Repr, DecidableEq
 
-  -- [Coq: Dot_top_bot.v line 36]
+  -- [Coq: Dot.v line 34]
   inductive Trm : Type where
-    -- Free/Bounded Variable
     | trm_var : Avar → Trm
-    -- Literal?
     | trm_val : Val → Trm
-    -- selection of term member with a term label
     | trm_sel : Avar → TrmLabel → Trm
-    -- function application
     | trm_app : Avar → Avar → Trm
-    -- ??
     | trm_let : Trm → Trm → Trm
   deriving Repr, DecidableEq
 
-  -- [Coq: Dot_top_bot.v line 42]
+  -- [Coq: Dot.v line 40]
   inductive Val : Type where
     | val_new : Typ → Defs → Val
     | val_lambda : Typ → Trm → Val
   deriving Repr, DecidableEq
 
-  -- [Coq: Dot_top_bot.v line 46]
+  -- [Coq: Dot.v line 43]
   inductive Defn : Type where
     | def_typ : TypLabel → Typ → Defn
     | def_trm : TrmLabel → Trm → Defn
   deriving Repr, DecidableEq
 
-  -- [Coq: Dot_top_bot.v line 49]
+  -- [Coq: Dot.v line 46]
   inductive Defs : Type where
     | defs_nil : Defs
     | defs_cons : Defs → Defn → Defs
@@ -106,37 +89,35 @@ end
 
 -- Note: def is reserved in Lean; we use Defn and document the rename.
 -- Aliases for environments
--- [Coq: Dot_top_bot.v line 53]
+-- [Coq: Dot.v line 51]
 abbrev Ctx := List (Var × Typ)
--- [Coq: Dot_top_bot.v line 56]
+-- [Coq: Dot.v line 54]
 abbrev Sto := List (Var × Val)
 
--- [Coq: Dot_top_bot.v lines 61-69]
+-- [Coq: Dot.v line 59]
 def label_of_def (d : Defn) : Label :=
   match d with
   | Defn.def_typ L _ => Label.label_typ L
   | Defn.def_trm m _ => Label.label_trm m
 
--- [Coq: Dot_top_bot.v lines 66-69]
+-- [Coq: Dot.v line 64]
 def label_of_dec (D : Dec) : Label :=
   match D with
   | Dec.dec_typ L _ _ => Label.label_typ L
   | Dec.dec_trm m _ => Label.label_trm m
 
--- [Coq: Dot_top_bot.v lines 71-79]
+-- [Coq: Dot.v line 69]
 partial def get_def (l : Label) : Defs → Option Defn
   | Defs.defs_nil => none
   | Defs.defs_cons ds' d => if label_of_def d = l then some d else get_def l ds'
 
--- [Coq: Dot_top_bot.v lines 77-79]
+-- [Coq: Dot.v line 75]
 def defs_has (ds : Defs) (d : Defn) : Prop := get_def (label_of_def d) ds = some d
--- [Coq: Dot_top_bot.v line 78]
+-- [Coq: Dot.v line 76]
 def defs_hasnt (ds : Defs) (l : Label) : Prop := get_def l ds = none
 
--- ######################################################################
--- Opening
-
--- [Coq: Dot_top_bot.v line 86]
+-- Opening operations
+-- [Coq: Dot.v line 84]
 def open_rec_avar (k : Nat) (u : Var) (a : Avar) : Avar :=
   match a with
   | Avar.avar_b i => if k = i then Avar.avar_f u else Avar.avar_b i
@@ -144,24 +125,22 @@ def open_rec_avar (k : Nat) (u : Var) (a : Avar) : Avar :=
 
 -- Mutually recursive open operations
 mutual
-  -- [Coq: Dot_top_bot.v lines 92-101]
+  -- [Coq: Dot.v line 90]
   partial def open_rec_typ (k : Nat) (u : Var) (T : Typ) : Typ :=
     match T with
-    | Typ.typ_top       => Typ.typ_top
-    | Typ.typ_bot       => Typ.typ_bot
-    | Typ.typ_rcd D     => Typ.typ_rcd (open_rec_dec k u D)
-    | Typ.typ_and T1 T2 => Typ.typ_and (open_rec_typ k u T1) (open_rec_typ k u T2)
-    | Typ.typ_sel x L   => Typ.typ_sel (open_rec_avar k u x) L
-    | Typ.typ_bnd T     => Typ.typ_bnd (open_rec_typ (k+1) u T)
-    | Typ.typ_all T1 T2 => Typ.typ_all (open_rec_typ k u T1) (open_rec_typ (k+1) u T2)
+    | Typ.typ_rcd D      => Typ.typ_rcd (open_rec_dec k u D)
+    | Typ.typ_and T1 T2  => Typ.typ_and (open_rec_typ k u T1) (open_rec_typ k u T2)
+    | Typ.typ_sel x L    => Typ.typ_sel (open_rec_avar k u x) L
+    | Typ.typ_bnd T      => Typ.typ_bnd (open_rec_typ (k+1) u T)
+    | Typ.typ_all T1 T2  => Typ.typ_all (open_rec_typ k u T1) (open_rec_typ (k+1) u T2)
 
-  -- [Coq: Dot_top_bot.v lines 102-106]
+  -- [Coq: Dot.v line 98]
   partial def open_rec_dec (k : Nat) (u : Var) (D : Dec) : Dec :=
     match D with
     | Dec.dec_typ L T U => Dec.dec_typ L (open_rec_typ k u T) (open_rec_typ k u U)
     | Dec.dec_trm m T => Dec.dec_trm m (open_rec_typ k u T)
 
-  -- [Coq: Dot_top_bot.v lines 108-116]
+  -- [Coq: Dot.v line 104]
   partial def open_rec_trm (k : Nat) (u : Var) (t : Trm) : Trm :=
     match t with
     | Trm.trm_var a      => Trm.trm_var (open_rec_avar k u a)
@@ -170,38 +149,103 @@ mutual
     | Trm.trm_app f a    => Trm.trm_app (open_rec_avar k u f) (open_rec_avar k u a)
     | Trm.trm_let t1 t2  => Trm.trm_let (open_rec_trm k u t1) (open_rec_trm (k+1) u t2)
 
-  -- [Coq: Dot_top_bot.v lines 117-120]
+  -- [Coq: Dot.v line 112]
   partial def open_rec_val (k : Nat) (u : Var) (v : Val) : Val :=
     match v with
     | Val.val_new T ds => Val.val_new (open_rec_typ (k+1) u T) (open_rec_defs (k+1) u ds)
     | Val.val_lambda T e => Val.val_lambda (open_rec_typ k u T) (open_rec_trm (k+1) u e)
 
-  -- [Coq: Dot_top_bot.v lines 121-125]
+  -- [Coq: Dot.v line 117]
   partial def open_rec_def (k : Nat) (u : Var) (d : Defn) : Defn :=
     match d with
     | Defn.def_typ L T => Defn.def_typ L (open_rec_typ k u T)
     | Defn.def_trm m e => Defn.def_trm m (open_rec_trm k u e)
 
-  -- [Coq: Dot_top_bot.v lines 126-130]
+  -- [Coq: Dot.v line 122]
   partial def open_rec_defs (k : Nat) (u : Var) (ds : Defs) : Defs :=
     match ds with
     | Defs.defs_nil => Defs.defs_nil
     | Defs.defs_cons tl d => Defs.defs_cons (open_rec_defs k u tl) (open_rec_def k u d)
 end
 
--- [Coq: Dot_top_bot.v lines 132-139]
+-- [Coq: Dot.v line 128]
 abbrev open_avar (u : Var) (a : Avar) := open_rec_avar 0 u a
+-- [Coq: Dot.v line 129]
 abbrev open_typ  (u : Var) (t : Typ) := open_rec_typ 0 u t
+-- [Coq: Dot.v line 130]
 abbrev open_dec  (u : Var) (D : Dec) := open_rec_dec 0 u D
+-- [Coq: Dot.v line 131]
 abbrev open_trm  (u : Var) (e : Trm) := open_rec_trm 0 u e
+-- [Coq: Dot.v line 132]
 abbrev open_val  (u : Var) (v : Val) := open_rec_val 0 u v
+-- [Coq: Dot.v line 133]
 abbrev open_def  (u : Var) (d : Defn) := open_rec_def 0 u d
+-- [Coq: Dot.v line 134]
 abbrev open_defs (u : Var) (l : Defs) := open_rec_defs 0 u l
 
--- ######################################################################
--- Free variables
+-- Substitution operations
+-- [Coq: Dot.v lines 653-697]
+namespace Subst
+  -- [Coq: Dot.v line 761]
+  def subst_fvar (x y z : Var) : Var := if z = x then y else z
 
--- [Coq: Dot_top_bot.v lines 143-147]
+  -- [Coq: Dot.v line 653]
+  def subst_avar (z u : Var) (a : Avar) : Avar :=
+    match a with
+    | Avar.avar_b i => Avar.avar_b i
+    | Avar.avar_f x => Avar.avar_f (if x = z then u else x)
+
+  mutual
+    -- [Coq: Dot.v lines 659-666]
+    partial def subst_typ (z u : Var) (T : Typ) : Typ :=
+      match T with
+      | Typ.typ_rcd D      => Typ.typ_rcd (subst_dec z u D)
+      | Typ.typ_and T1 T2  => Typ.typ_and (subst_typ z u T1) (subst_typ z u T2)
+      | Typ.typ_sel x L    => Typ.typ_sel (subst_avar z u x) L
+      | Typ.typ_bnd T      => Typ.typ_bnd (subst_typ z u T)
+      | Typ.typ_all T U    => Typ.typ_all (subst_typ z u T) (subst_typ z u U)
+
+    -- [Coq: Dot.v lines 667-671]
+    partial def subst_dec (z u : Var) (D : Dec) : Dec :=
+      match D with
+      | Dec.dec_typ L T U => Dec.dec_typ L (subst_typ z u T) (subst_typ z u U)
+      | Dec.dec_trm L U   => Dec.dec_trm L (subst_typ z u U)
+
+    -- [Coq: Dot.v lines 673-680]
+    partial def subst_trm (z u : Var) (t : Trm) : Trm :=
+      match t with
+      | Trm.trm_var x        => Trm.trm_var (subst_avar z u x)
+      | Trm.trm_val v        => Trm.trm_val (subst_val z u v)
+      | Trm.trm_sel x1 L     => Trm.trm_sel (subst_avar z u x1) L
+      | Trm.trm_app x1 x2    => Trm.trm_app (subst_avar z u x1) (subst_avar z u x2)
+      | Trm.trm_let t1 t2    => Trm.trm_let (subst_trm z u t1) (subst_trm z u t2)
+
+    -- [Coq: Dot.v lines 681-695]
+    partial def subst_val (z u : Var) (v : Val) : Val :=
+      match v with
+      | Val.val_new T ds     => Val.val_new (subst_typ z u T) (subst_defs z u ds)
+      | Val.val_lambda T t   => Val.val_lambda (subst_typ z u T) (subst_trm z u t)
+
+    -- [Coq: Dot.v lines 686-690]
+    partial def subst_def (z u : Var) (d : Defn) : Defn :=
+      match d with
+      | Defn.def_typ L T => Defn.def_typ L (subst_typ z u T)
+      | Defn.def_trm L t => Defn.def_trm L (subst_trm z u t)
+
+    -- [Coq: Dot.v lines 691-695]
+    partial def subst_defs (z u : Var) (ds : Defs) : Defs :=
+      match ds with
+      | Defs.defs_nil        => Defs.defs_nil
+      | Defs.defs_cons rest d => Defs.defs_cons (subst_defs z u rest) (subst_def z u d)
+  end
+
+  -- [Coq: Dot.v line 697]
+  def subst_ctx (z u : Var) (G : Ctx) : Ctx :=
+    G.map (fun p => (p.1, subst_typ z u p.2))
+end Subst
+
+-- Free variables (Vars is Finset Var)
+-- [Coq: Dot.v line 139]
 def fv_avar (a : Avar) : Vars :=
   match a with
   | Avar.avar_b _ => ∅
@@ -209,24 +253,22 @@ def fv_avar (a : Avar) : Vars :=
 
 -- Mutually recursive fv functions
 mutual
-  -- [Coq: Dot_top_bot.v lines 149-158]
+  -- [Coq: Dot.v line 145]
   partial def fv_typ (T : Typ) : Vars :=
     match T with
-    | Typ.typ_top        => ∅
-    | Typ.typ_bot        => ∅
     | Typ.typ_rcd D      => fv_dec D
     | Typ.typ_and T U    => fv_typ T ∪ fv_typ U
     | Typ.typ_sel x _    => fv_avar x
     | Typ.typ_bnd T      => fv_typ T
     | Typ.typ_all T1 T2  => fv_typ T1 ∪ fv_typ T2
 
-  -- [Coq: Dot_top_bot.v lines 159-163]
+  -- [Coq: Dot.v line 153]
   partial def fv_dec (D : Dec) : Vars :=
     match D with
     | Dec.dec_typ _ T U => fv_typ T ∪ fv_typ U
     | Dec.dec_trm _ T   => fv_typ T
 
-  -- [Coq: Dot_top_bot.v lines 165-172]
+  -- [Coq: Dot.v line 159]
   partial def fv_trm (t : Trm) : Vars :=
     match t with
     | Trm.trm_var a       => fv_avar a
@@ -235,94 +277,32 @@ mutual
     | Trm.trm_app f a     => fv_avar f ∪ fv_avar a
     | Trm.trm_let t1 t2   => fv_trm t1 ∪ fv_trm t2
 
-  -- [Coq: Dot_top_bot.v lines 173-177]
+  -- [Coq: Dot.v line 167]
   partial def fv_val (v : Val) : Vars :=
     match v with
     | Val.val_new T ds    => fv_typ T ∪ fv_defs ds
     | Val.val_lambda T e  => fv_typ T ∪ fv_trm e
 
-  -- [Coq: Dot_top_bot.v lines 178-187]
+  -- [Coq: Dot.v line 172]
   partial def fv_def (d : Defn) : Vars :=
     match d with
     | Defn.def_typ _ T     => fv_typ T
     | Defn.def_trm _ t     => fv_trm t
 
+  -- [Coq: Dot.v line 177]
   partial def fv_defs (ds : Defs) : Vars :=
     match ds with
     | Defs.defs_nil         => ∅
     | Defs.defs_cons tl d   => fv_defs tl ∪ fv_def d
 end
 
--- [Coq: Dot_top_bot.v line 189]
+-- [Coq: Dot.v line 183]
 def fv_ctx_types (G : Ctx) : Vars :=
   G.foldl (init := (∅ : Vars)) (fun acc (_, T) => acc ∪ fv_typ T)
 
--- ######################################################################
--- Substitution
+-- Relations (inductives in Prop)
 
--- [Coq: Dot_top_bot.v lines 663-710]
-def subst_avar (z : Var) (u : Var) (a : Avar) : Avar :=
-  match a with
-  | Avar.avar_b i => Avar.avar_b i
-  | Avar.avar_f x => Avar.avar_f (if x = z then u else x)
-
-mutual
-  -- [Coq: Dot_top_bot.v lines 669-678]
-  partial def subst_typ (z : Var) (u : Var) (T : Typ) : Typ :=
-    match T with
-    | Typ.typ_top       => Typ.typ_top
-    | Typ.typ_bot       => Typ.typ_bot
-    | Typ.typ_rcd D     => Typ.typ_rcd (subst_dec z u D)
-    | Typ.typ_and T1 T2 => Typ.typ_and (subst_typ z u T1) (subst_typ z u T2)
-    | Typ.typ_sel x L   => Typ.typ_sel (subst_avar z u x) L
-    | Typ.typ_bnd T     => Typ.typ_bnd (subst_typ z u T)
-    | Typ.typ_all T U   => Typ.typ_all (subst_typ z u T) (subst_typ z u U)
-
-  -- [Coq: Dot_top_bot.v lines 679-683]
-  partial def subst_dec (z : Var) (u : Var) (D : Dec) : Dec :=
-    match D with
-    | Dec.dec_typ L T U => Dec.dec_typ L (subst_typ z u T) (subst_typ z u U)
-    | Dec.dec_trm L U   => Dec.dec_trm L (subst_typ z u U)
-
-  -- [Coq: Dot_top_bot.v lines 685-692]
-  partial def subst_trm (z : Var) (u : Var) (t : Trm) : Trm :=
-    match t with
-    | Trm.trm_var x       => Trm.trm_var (subst_avar z u x)
-    | Trm.trm_val v       => Trm.trm_val (subst_val z u v)
-    | Trm.trm_sel x1 L    => Trm.trm_sel (subst_avar z u x1) L
-    | Trm.trm_app x1 x2   => Trm.trm_app (subst_avar z u x1) (subst_avar z u x2)
-    | Trm.trm_let t1 t2   => Trm.trm_let (subst_trm z u t1) (subst_trm z u t2)
-
-  -- [Coq: Dot_top_bot.v lines 693-697]
-  partial def subst_val (z : Var) (u : Var) (v : Val) : Val :=
-    match v with
-    | Val.val_new T ds    => Val.val_new (subst_typ z u T) (subst_defs z u ds)
-    | Val.val_lambda T t  => Val.val_lambda (subst_typ z u T) (subst_trm z u t)
-
-  -- [Coq: Dot_top_bot.v lines 698-702]
-  partial def subst_def (z : Var) (u : Var) (d : Defn) : Defn :=
-    match d with
-    | Defn.def_typ L T => Defn.def_typ L (subst_typ z u T)
-    | Defn.def_trm L t => Defn.def_trm L (subst_trm z u t)
-
-  -- [Coq: Dot_top_bot.v lines 703-707]
-  partial def subst_defs (z : Var) (u : Var) (ds : Defs) : Defs :=
-    match ds with
-    | Defs.defs_nil          => Defs.defs_nil
-    | Defs.defs_cons rest d  => Defs.defs_cons (subst_defs z u rest) (subst_def z u d)
-end
-
--- [Coq: Dot_top_bot.v line 709]
-def subst_ctx (z : Var) (u : Var) (G : Ctx) : Ctx :=
-  G.map (fun p => (p.1, subst_typ z u p.2))
-
--- [Coq: Dot_top_bot.v line 773]
-def subst_fvar (x : Var) (y : Var) (z : Var) : Var := if z = x then y else z
-
--- ######################################################################
--- Operational Semantics
-
--- [Coq: Dot_top_bot.v lines 194-209]
+-- [Coq: Dot.v line 188]
 inductive Red : Trm → Sto → Trm → Sto → Prop where
   | red_sel : ∀ x m s t T ds,
       Env.binds x (Val.val_new T ds) s →
@@ -340,15 +320,11 @@ inductive Red : Trm → Sto → Trm → Sto → Prop where
       Red t0 s t0' s' →
       Red (Trm.trm_let t0 t) s (Trm.trm_let t0' t) s'
 
--- ######################################################################
--- Typing
-
--- [Coq: Dot_top_bot.v lines 214-216]
+-- [Coq: Dot.v lines 208-314]
 inductive Tymode : Type := | ty_precise | ty_general
 inductive Submode : Type := | sub_tight | sub_general
 
 mutual
-  -- [Coq: Dot_top_bot.v lines 217-255]
   inductive TyTrm : Tymode → Submode → Ctx → Trm → Typ → Prop where
     | ty_var : ∀ (m1 : Tymode) (m2 : Submode) (G : Ctx) (x : Var) (T : Typ),
         Env.binds x T G →
@@ -388,14 +364,14 @@ mutual
         TyTrm m1 m2 G t T →
         Subtyp ty_general m2 G T U →
         TyTrm m1 m2 G t U
-
+  
   inductive TyDef : Ctx → Defn → Dec → Prop where
     | ty_def_typ : ∀ (G : Ctx) (A : TypLabel) (T : Typ),
         TyDef G (Defn.def_typ A T) (Dec.dec_typ A T T)
     | ty_def_trm : ∀ (G : Ctx) (a : TrmLabel) (t : Trm) (T : Typ),
         TyTrm ty_general sub_general G t T →
         TyDef G (Defn.def_trm a t) (Dec.dec_trm a T)
-
+  
   inductive TyDefs : Ctx → Defs → Typ → Prop where
     | ty_defs_one : ∀ (G : Ctx) (d : Defn) (D : Dec),
         TyDef G d D →
@@ -406,12 +382,8 @@ mutual
         defs_hasnt ds (label_of_def d) →
         TyDefs G (Defs.defs_cons ds d) (Typ.typ_and T (Typ.typ_rcd D))
 
-  -- [Coq: Dot_top_bot.v lines 272-314] extended with top/bot
+  -- [Coq: Dot.v lines 266-305]
   inductive Subtyp : Tymode → Submode → Ctx → Typ → Typ → Prop where
-    | subtyp_top : ∀ (m2 : Submode) (G : Ctx) (T : Typ),
-        Subtyp ty_general m2 G T Typ.typ_top
-    | subtyp_bot : ∀ (m2 : Submode) (G : Ctx) (T : Typ),
-        Subtyp ty_general m2 G Typ.typ_bot T
     | subtyp_refl : ∀ (m2 : Submode) (G : Ctx) (T : Typ),
         Subtyp ty_general m2 G T T
     | subtyp_trans : ∀ (m1 : Tymode) (m2 : Submode) (G : Ctx) (S T U : Typ),
@@ -451,7 +423,9 @@ mutual
         Subtyp ty_general m2 G (Typ.typ_all S1 T1) (Typ.typ_all S2 T2)
 end
 
--- [Coq: Dot_top_bot.v lines 316-324]
+-- moved into mutual block above
+
+-- [Coq: Dot.v lines 306-314]
 inductive WfSto : Ctx → Sto → Prop where
   | wf_sto_empty : WfSto [] []
   | wf_sto_push : ∀ (G : Ctx) (s : Sto) (x : Var) (T : Typ) (v : Val),
@@ -459,11 +433,13 @@ inductive WfSto : Ctx → Sto → Prop where
       TyTrm ty_precise sub_general G (Trm.trm_val v) T →
       WfSto ((x, T) :: G) ((x, v) :: s)
 
--- (Optional) record machinery reused from Dot
+-- Record machinery
+-- [Coq: Dot.v lines 1300-1316]
 inductive RecordDec : Dec → Prop where
   | rd_typ : ∀ A T, RecordDec (Dec.dec_typ A T T)
   | rd_trm : ∀ a T, RecordDec (Dec.dec_trm a T)
 
+-- [Coq: Dot.v lines 1305-1316]
 inductive RecordTyp : Typ → Finset Label → Prop where
   | rt_one : ∀ D l,
       RecordDec D → l = label_of_dec D → RecordTyp (Typ.typ_rcd D) {l}
@@ -471,25 +447,25 @@ inductive RecordTyp : Typ → Finset Label → Prop where
       RecordTyp T ls → RecordDec D → l = label_of_dec D → l ∉ ls →
       RecordTyp (Typ.typ_and T (Typ.typ_rcd D)) (ls ∪ {l})
 
--- A simple notion of record types
+-- [Coq: Dot.v line 1318]
 def record_type (T : Typ) : Prop := ∃ ls, RecordTyp T ls
 
-  -- Record-Sub (subset; adapted)
-  inductive RecordSub : Typ → Typ → Prop where
-    | rs_refl : ∀ T, RecordSub T T
-    | rs_dropl : ∀ T T' D, RecordSub T T' → RecordSub (Typ.typ_and T (Typ.typ_rcd D)) (Typ.typ_rcd D)
-    | rs_drop : ∀ T T' D, RecordSub T T' → RecordSub (Typ.typ_and T (Typ.typ_rcd D)) T'
-    | rs_pick : ∀ T T' D, RecordSub T T' → RecordSub (Typ.typ_and T (Typ.typ_rcd D)) (Typ.typ_and T' (Typ.typ_rcd D))
+-- [Coq: Dot.v lines 1542-1554]
+inductive RecordSub : Typ → Typ → Prop where
+  | rs_refl : ∀ T, RecordSub T T
+  | rs_dropl : ∀ T T' D, RecordSub T T' → RecordSub (Typ.typ_and T (Typ.typ_rcd D)) (Typ.typ_rcd D)
+  | rs_drop  : ∀ T T' D, RecordSub T T' → RecordSub (Typ.typ_and T (Typ.typ_rcd D)) T'
+  | rs_pick  : ∀ T T' D, RecordSub T T' → RecordSub (Typ.typ_and T (Typ.typ_rcd D)) (Typ.typ_and T' (Typ.typ_rcd D))
 
-
--- Has-member family (subset; adapted from Dot)
+-- Has-member family
+-- [Coq: Dot.v lines 1960-1981]
 mutual
   inductive HasMember : Ctx → Var → Typ → TypLabel → Typ → Typ → Prop where
     | has_any : ∀ (G : Ctx) (x : Var) (T : Typ) (A : TypLabel) (S U : Typ),
         TyTrm ty_general sub_tight G (Trm.trm_var (Avar.avar_f x)) T →
         HasMemberRules G x T A S U →
         HasMember G x T A S U
-
+  
   inductive HasMemberRules : Ctx → Var → Typ → TypLabel → Typ → Typ → Prop where
     | has_refl : ∀ (G : Ctx) (x : Var) (A : TypLabel) (S U : Typ),
         HasMemberRules G x (Typ.typ_rcd (Dec.dec_typ A S U)) A S U
@@ -503,13 +479,11 @@ mutual
         TyTrm ty_precise sub_general G (Trm.trm_var (Avar.avar_f y)) (Typ.typ_rcd (Dec.dec_typ B T' T')) →
         HasMember G x T' A S U →
         HasMemberRules G x (Typ.typ_sel (Avar.avar_f y) B) A S U
-    | has_bot : ∀ (G : Ctx) (x : Var) (A : TypLabel) (S U : Typ),
-        HasMemberRules G x Typ.typ_bot A S U
 end
 
--- Possible types (subset; adapted)
+-- Possible types (suffix of Dot.v)
+-- [Coq: Dot.v lines 2365-2396]
 inductive PossibleTypes : Ctx → Var → Val → Typ → Prop where
-  | pt_top : ∀ (G : Ctx) (x : Var) (v : Val), PossibleTypes G x v Typ.typ_top
   | pt_new : ∀ (G : Ctx) (x : Var) (T : Typ) (ds : Defs),
       PossibleTypes G x (Val.val_new T ds) (open_typ x T)
   | pt_rcd_trm : ∀ (G : Ctx) (x : Var) (T : Typ) (ds : Defs) (a : TrmLabel) (t : Trm) (T' : Typ),
@@ -534,15 +508,15 @@ inductive PossibleTypes : Ctx → Var → Val → Typ → Prop where
   | pt_bnd : ∀ (G : Ctx) (x : Var) (v : Val) (S S' : Typ),
       PossibleTypes G x v S → S = open_typ x S' → PossibleTypes G x v (Typ.typ_bnd S')
 
--- Record-Has (subset; adapted)
+-- [Coq: Dot.v lines 2461-2469]
 inductive RecordHas : Typ → Dec → Prop where
   | rh_one : ∀ D, RecordHas (Typ.typ_rcd D) D
   | rh_andl : ∀ T D, RecordHas (Typ.typ_and T (Typ.typ_rcd D)) D
   | rh_and : ∀ T D D', RecordHas T D' → RecordHas (Typ.typ_and T D) D'
 
--- Normal forms (subset; adapted)
+-- [Coq: Dot.v lines 3044-3047]
 inductive NormalForm : Trm → Prop where
   | nf_var : ∀ (x : Avar), NormalForm (Trm.trm_var x)
   | nf_val : ∀ (v : Val), NormalForm (Trm.trm_val v)
 
-end Lp2lc.Active.Dot_top_bot
+end Lp2lc.Active.Dot

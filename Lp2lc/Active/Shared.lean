@@ -20,10 +20,17 @@ namespace Env
   def bindsOf {α} (x : Var) (v : α) (E : List (Var × α)) : Prop :=
     E.lookup x = some v
 
+  def binds {α} (x : Var) (v : α) (E : List (Var × α)) : Prop :=
+    E.lookup x = some v
+
   /-- Map a function over the second component of each binding -/
   def mapSecond {α β} (f : α → β) (E : List (Var × α)) : List (Var × β) :=
     E.map (fun p => (p.1, f p.2))
+
+
+  def dom {α} (E : List (Var × α)) : Vars := E.map (·.1) |>.toFinset
 end Env
+
 
 -- Axiom: there is always a variable fresh from a finite set
 axiom var_fresh : (L : Vars) → ∃ X : Var, X ∉ L

@@ -1,0 +1,2 @@
+-- DO NOT IMPORT THIS!
+-- WadlerFest 2016 version of DOT prove doesn't have union type or general function application, it is incomplete!
