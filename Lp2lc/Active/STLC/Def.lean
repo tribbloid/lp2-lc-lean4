@@ -2,13 +2,27 @@ import Mathlib.Tactic
 import «Lp2lc».Active.Shared
 
 /-!
-This file proves soundness for simply typed lambda calculus by interpreting
-terms with a step-indexed logical relation. The step index is the fuel used to
-reason about functions recursively: a function is safe for `steps` when, for
-any `smaller_steps ≤ steps`, it sends semantically safe inputs to outputs that
-stay safe one guarded step later.
+This file defines simply typed lambda calculus and relevant compiler components, with the following conventions:
 
-All docstrings use tiny Scala-style STLC phrases as demonstrations.
+- PHOAS syntax representation: the data structure representing both term and type variables are unknown and
+  irrelevant, all proof must be valid regardless of the concrete data structure.
+  - this means that Variable name, de Bruijn serial are not a thing
+  - Environment/Context should be indexed by the unknown term/type parameter
+- extrinsic/Curry-style type representations: types of terms are predicates instead of built-in index.
+- interpretation is a step-indexed logical relation. The step index is the fuel used to
+  reason about functions recursively: a function is safe for `steps` when, for
+  any `smaller_steps < steps`, it sends semantically safe inputs to outputs that
+  stay safe one guarded step later.
+
+All docstrings use short (under 5 lines) of Scala code as demonstrations.
+
+variable names always follow the following convention:
+
+- Lean variable for type, proposition and sort of any universe should use PascalCase (e.g. `Env`)
+  - inductive cases should use camelCase (because they are constructors)
+- Lean variable for terms, functions & data should use camelCase (e.g. `Env.bind`)
+  - variable for DOT types, pre-types (which are Lean data) should start with `t` (e.g. tIn, tOut)
+- use full name, not acronym or abbreviation
 -/
 
 namespace Lp2lc.Active.STLC
@@ -16,152 +30,44 @@ namespace Lp2lc.Active.STLC
 structure Later (step : Prop) : Prop where
   force : step
 
-def Instructions := String -- self-contained, concrete code with no variable or abstraction
+def Instructions := String -- self-contained, concrete code/serialised data with no variable or abstraction
 
-inductive Ty : Type
-| base : Ty
-| arrow : (tyIn : Ty) → (tyOut : Ty) → Ty
+section
+variable (TermVar TypeVar : Type)
+
+inductive Ty : Type -- Pre-type
+| base : Ty -- it is not need for syntax that includes System FSub, but keeping it won't hurt
+| arrow : (tIn : TypeVar) → (tOut : TypeVar) → Ty
 deriving DecidableEq, Repr
 
 scoped infixr:60 " :=> " => Ty.arrow
 
-inductive Term : Ty -> Type where
-| term_variable : Var -> Term type
-| literal : Instructions -> Term Ty.base
-| lambda : Var -> Term tyOut -> Term (tyIn :=> tyOut)
-| apply : Term (tyIn :=> tyOut) -> Term tyIn -> Term tyOut
+inductive Tm : Type where -- Pre-term
+  -- in PHOAS there is no bounded variable, variable also has no name or path
+| freeVar : TypeVar -> Tm
+| literal : Instructions -> Tm
+  -- literally just a function in Lean that convert TypeVar to another Tern,
+  -- in DOT this can be dependent function
+| function : (TypeVar -> Tm) -> Tm
+  -- apply the above function
+| apply : (function: Tm) -> (argument: Tm) -> Tm
 
-def Env := List (Var × Ty)
+-- raw lookup from TermVar to pre-type declared by user
+def Env := List (TermVar × Ty TypeVar)
+
+-- Proof of inhabitance: true if `term: tT` in Scala compile successfully
+-- def Typing := (term: Tm TermVar) -> (tT: Ty TypeVar) -> Prop
+
+
+@[simp] def empty : Env TermVar TypeVar := []
+
+end
 
 namespace Env
 
-@[simp] def empty : Env := []
 
-/--
-Looks up the type associated with `name` in an environment.
-The search proceeds from the front of the list, so a newer binder shadows an
-older one. That matches the way nested lambda binders are read in STLC. E.g.
-
-```scala
-x => {x => x /* first "x" is shadowed*/}
-```
--/
-@[simp] def get (name : Var) : Env → Option Ty
-| [] => none
-| (bound_name, type) :: env =>
-    if name = bound_name then
-      some type
-    else
-      get name env
-
-/--
-True if every free variable occurrence in `term` is typed in `env`:
-
-- variable case: checks `env.get`
-- lambda: checks its `body` under an extended environment that includes input variable, e.g.
-
-  ```scala
-  val z = 1
-  {x : Int => x + z /* environment here is extended to include x */}
-  ```
-
-- application: requires both `f` and `a` to be scoped.
--/
-@[simp] def IsScoped (env : Env) : (term : Term type) → Prop
-| .term_variable x => env.get x = some type
-| .literal _ => True
-| @Term.lambda _ input x body => (show Env from ((x, input) :: env)).IsScoped body
-| @Term.apply _ _ f a => env.IsScoped f ∧ env.IsScoped a
-
-def ScopedTerm (env : Env) (type : Ty) := { term : Term type // env.IsScoped term }
 
 end Env
 
-/--
-Convert each `Ty` into a Lean semantic data type.
-
-(technically `Ty` can be coverted into anything, `String` and lean functions are for convenience)
--/
-def Ty.Denotation : (type : Ty) → Type
-| .base => Instructions
-| (tyIn :=> tyOut) => tyIn.Denotation → tyOut.Denotation
-
-/--
-Bundles an environment together with a denotation lookup for its typed variable bindings. E.g.
-
-```scala
-val f = {x: Int => x + 1}
-```
-
-if `f : Int => Int` is in the environment, then `varLookup` returns its semantic
-meaning as a Lean function.
--/
-structure REPL where
-  env: Env
-  varLookup:  ∀ (name : Var) (type : Ty), (env.get name = some type) → Ty.Denotation type
-
-namespace REPL
-
-@[simp] def empty : REPL where
-  env := []
-  varLookup := fun _ _ binding => by
-    cases binding
-
-/--
-Add a `name`-`value` pair into an existing REPL. E.g.
-
-```scala
-// env0
-var x = 1
-// env1
-x = x + 1
-
-{ x =>
-  // env2
-  ???
-}
-```
-
-both extension env0 -> env1 and env1 -> env2 cause the old name "x" to be shadowed
--/
-@[simp] def extend (repl : REPL) (name : Var)
-    (value : Ty.Denotation input) : REPL where
-  env := (name, input) :: repl.env
-  varLookup := fun tested_name type binding =>
-    if same_name : tested_name = name then
-      by
-        subst same_name
-        simp at binding
-        cases binding
-        exact value
-    else
-      repl.varLookup tested_name type (by simpa [same_name] using binding)
-
-/--
-Evaluates a scoped term into its semantic denotation.
-
-- variables in Env need no evaluation: they are directly from REPL lookup
-- lambdas become semantic Lean functions composed from input variable and other existing variables in the REPL
-- applications are interpreted by applying the semantic Lean function on the input term
--/
-def eval (repl : REPL) (newTerm : repl.env.ScopedTerm type) : Ty.Denotation type :=
-
-  let rec impl {type : Ty} (repl : REPL) (term : Term type)
-      (hscoped : repl.env.IsScoped term) :
-      Ty.Denotation type :=
-    match term with
-    | .literal normal_form => normal_form
-    | .term_variable name => repl.varLookup name _ hscoped
-    | @Term.lambda output input name body =>
-        fun (value : Ty.Denotation input) =>
-          let body_scoped : (show Env from ((name, input) :: repl.env)).IsScoped body := by
-            simpa using hscoped
-        impl (repl.extend name value) body body_scoped
-    | @Term.apply input output function argument =>
-        (impl repl function hscoped.left) (impl repl argument hscoped.right)
-
-  impl repl newTerm.1 newTerm.2
-
-end REPL
 
 end STLC
