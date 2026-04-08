@@ -38,7 +38,7 @@ inductive Label : Type where
 
 -- [Coq: Dot_top_bot.v line 20]
 inductive Avar : Type where
-  | avar_b : Nat → Avar -- bound var (de Bruijn index)
+  | avar_b : Nat → Avar -- bound var (de Bruijn serial)
   | avar_f : Var → Avar -- free var
   deriving Repr, DecidableEq
 
@@ -46,27 +46,42 @@ inductive Avar : Type where
 mutual
   -- [Coq: Dot_top_bot.v lines 24-32]
   inductive Typ : Type where
+    -- Top/Any
     | typ_top  : Typ
+    -- Bottom/Nothing
     | typ_bot  : Typ
+    -- Record Piece, Intersecting it build a structural type, intersecting with a tag build a trait
     | typ_rcd  : Dec → Typ
-    | typ_and  : Typ → Typ → Typ
-    | typ_sel  : Avar → TypLabel → Typ
-    | typ_bnd  : Typ → Typ
-    | typ_all  : Typ → Typ → Typ
+    -- Intersection/Subtype TODO: need Union type
+    | typ_and  : (left: Typ) → (right: Typ) → Typ
+    -- Dependent selection of type member with a type label
+    | typ_sel  : (var: Avar) → (label: TypLabel) → Typ
+    -- Self binding / `this.type` in Scala
+    -- the only way to use the above `typ_sel` with a de Bruijn serial is within a typ_bnd
+    | typ_bnd  : (self: Typ) → Typ
+    -- Dependent function (AKA forAll quantifier)
+    -- tOut can be a dependent selection, e.g. {x: I => x.DepT}
+    -- the typ_all in System F/FSub is half-assed, should rename them
+    | typ_all  : (tIn: Typ) → (tOut: Typ) → Typ
   deriving Repr, DecidableEq
 
   -- [Coq: Dot_top_bot.v line 33]
-  inductive Dec : Type where
-    | dec_typ : TypLabel → Typ → Typ → Dec
+  inductive Dec : Type where -- member declaration
+    | dec_typ : TypLabel → (upperBound: Typ) → (lowerBound: Typ) → Dec
     | dec_trm : TrmLabel → Typ → Dec
   deriving Repr, DecidableEq
 
   -- [Coq: Dot_top_bot.v line 36]
   inductive Trm : Type where
+    -- Free/Bounded Variable
     | trm_var : Avar → Trm
+    -- Literal?
     | trm_val : Val → Trm
+    -- selection of term member with a term label
     | trm_sel : Avar → TrmLabel → Trm
+    -- function application
     | trm_app : Avar → Avar → Trm
+    -- ??
     | trm_let : Trm → Trm → Trm
   deriving Repr, DecidableEq
 
@@ -373,14 +388,14 @@ mutual
         TyTrm m1 m2 G t T →
         Subtyp ty_general m2 G T U →
         TyTrm m1 m2 G t U
-  
+
   inductive TyDef : Ctx → Defn → Dec → Prop where
     | ty_def_typ : ∀ (G : Ctx) (A : TypLabel) (T : Typ),
         TyDef G (Defn.def_typ A T) (Dec.dec_typ A T T)
     | ty_def_trm : ∀ (G : Ctx) (a : TrmLabel) (t : Trm) (T : Typ),
         TyTrm ty_general sub_general G t T →
         TyDef G (Defn.def_trm a t) (Dec.dec_trm a T)
-  
+
   inductive TyDefs : Ctx → Defs → Typ → Prop where
     | ty_defs_one : ∀ (G : Ctx) (d : Defn) (D : Dec),
         TyDef G d D →
@@ -474,7 +489,7 @@ mutual
         TyTrm ty_general sub_tight G (Trm.trm_var (Avar.avar_f x)) T →
         HasMemberRules G x T A S U →
         HasMember G x T A S U
-  
+
   inductive HasMemberRules : Ctx → Var → Typ → TypLabel → Typ → Typ → Prop where
     | has_refl : ∀ (G : Ctx) (x : Var) (A : TypLabel) (S U : Typ),
         HasMemberRules G x (Typ.typ_rcd (Dec.dec_typ A S U)) A S U
