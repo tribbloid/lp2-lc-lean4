@@ -37,12 +37,12 @@ variable (TermVar TypeVar : Type)
 
 inductive Ty : Type -- Pre-type
 | base : Ty -- it is not need for syntax that includes System FSub, but keeping it won't hurt
-| arrow : (tIn : TypeVar) → (tOut : TypeVar) → Ty
+| arrow : (tIn : Ty) → (tOut : Ty) → Ty
 deriving DecidableEq, Repr
 
 scoped infixr:60 " :=> " => Ty.arrow
 
-inductive Tm : Type where -- Pre-term
+inductive Tm : Type -- Pre-term
   -- in PHOAS there is no bounded variable, variable also has no name or path
 | freeVar : TypeVar -> Tm
 | literal : Instructions -> Tm
@@ -53,13 +53,13 @@ inductive Tm : Type where -- Pre-term
 | apply : (function: Tm) -> (argument: Tm) -> Tm
 
 -- raw lookup from TermVar to pre-type declared by user
-def Env := List (TermVar × Ty TypeVar)
+def Env := List (TermVar × Ty)
 
 -- Proof of inhabitance: true if `term: tT` in Scala compile successfully
 -- def Typing := (term: Tm TermVar) -> (tT: Ty TypeVar) -> Prop
 
 
-@[simp] def empty : Env TermVar TypeVar := []
+@[simp] def empty : Env TermVar := []
 
 end
 
