@@ -16,6 +16,3 @@ namespace Lp2lc.Active.STLC
 
 
 end STLC
-notArrownotArrow
-function
-Tm
