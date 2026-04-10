@@ -34,145 +34,50 @@ def Instructions := String
 
 section
 
-variable {TermVar : Type}
+variable (TermVar : Type) [DecidableEq TermVar]
+variable (TypeVar : Type) [DecidableEq TypeVar] -- useless here
 
-inductive Ty : Type
-| base : Ty
-| arrow : (tIn : Ty) → (tOut : Ty) → Ty
+inductive Typ : Type
+| base : Typ
+| arrow : (tIn : Typ) → (tOut : Typ) → Typ
 deriving DecidableEq, Repr
 
-scoped infixr:60 " :=> " => Ty.arrow
+scoped infixr:60 " :=> " => Typ.arrow
 
-inductive Tm : Type
-| var : TermVar -> Tm
-| literal : Instructions -> Tm
-| function : (TermVar -> Tm) -> Tm
-| apply : (function : Tm) -> (argument : Tm) -> Tm
+inductive Trm : Type
+| var : TermVar -> Trm
+-- | literal : Instructions -> PreTerm TODO: remove, not in STLC
+| function : (TermVar -> Trm) -> Trm
+| apply : (function : Trm) -> (argument : Trm) -> Trm
 
-end
+namespace Semantic
+-- In PHOAS syntax there is no Env data structure
+-- The Lean interpreter local defs is term and type variable binding
+-- The Lean evaluation of Prop is the heyting algebra of semantic typing and bound judgement
 
-def Env (TermVar : Type) := List (TermVar × Ty)
+-- Type determines if a term can inhabits it, union & intersection type can be expressed easily
+def Typ := Trm TermVar -> Prop
 
-namespace Env
+-- Bound determines if a type can fit somewhere into the subtyping hierarchy heyting algebra, not useful for STLC so far
+-- bound is a (mostly implicit) term in Scala (`ev: T <:< Int`)
+def Bound := Typ TermVar -> Prop
 
-section
+end Semantic
 
-variable {TermVar : Type}
+namespace Typ
 
-@[simp] def empty : Env TermVar := []
+def asSemantic: (self: Typ TermVar) -> Semantic.Typ TermVar :=
+  sorry
 
-@[simp] def extend (env : Env TermVar) (name : TermVar) (type : Ty) : Env TermVar :=
-  (name, type) :: env
+end Typ
 
-variable [DecidableEq TermVar]
+namespace Trm
 
-@[simp] def get (name : TermVar) : Env TermVar → Option Ty
-| [] => none
-| (bound_name, type) :: env =>
-    if name = bound_name then
-      some type
-    else
-      get name env
+def Denotation : (self : Trm TermVar) → Type :=
+  sorry
 
-@[simp] lemma get_extend_self (env : Env TermVar) (name : TermVar) (type : Ty) :
-    (env.extend name type).get name = some type := by
-  simp [get, extend]
+end Trm
 
-@[simp] lemma get_extend_of_ne (env : Env TermVar) {tested_name name : TermVar} (type : Ty)
-    (different : tested_name ≠ name) :
-    (env.extend name type).get tested_name = env.get tested_name := by
-  simp [get, extend, different]
-
-inductive Checked : Env TermVar -> Tm -> Ty -> Type where
-| var {env : Env TermVar} {name : TermVar} {type : Ty} :
-    env.get name = some type ->
-    Checked env (.var name) type
-| literal {env : Env TermVar} (code : Instructions) :
-    Checked env (.literal code) Ty.base
-| function {env : Env TermVar} {body : TermVar -> Tm} {tyIn tyOut : Ty} :
-    (∀ name : TermVar, Checked (env.extend name tyIn) (body name) tyOut) ->
-    Checked env (.function body) (tyIn :=> tyOut)
-| apply {env : Env TermVar} {function argument : Tm} {tyIn tyOut : Ty} :
-    Checked env function (tyIn :=> tyOut) ->
-    Checked env argument tyIn ->
-    Checked env (.apply function argument) tyOut
-
-abbrev Typing (env : Env TermVar) (term : Tm (TermVar := TermVar)) (type : Ty) : Prop :=
-  Nonempty (Checked env term type)
-
-@[simp] def IsScoped (env : Env TermVar) (term : Tm (TermVar := TermVar)) : Prop := ∃ type, env.Typing term type
-
-structure ScopedTerm (env : Env TermVar) (type : Ty) where
-  term : Tm (TermVar := TermVar)
-  checked : Checked env term type
-
-end
-
-end Env
-
-def Ty.Denotation : (type : Ty) → Type
-| .base => Instructions
-| (tyIn :=> tyOut) => tyIn.Denotation → tyOut.Denotation
-
-structure REPL (TermVar : Type) [DecidableEq TermVar] where
-  env : Env TermVar
-  varLookup : ∀ (name : TermVar) (type : Ty), (env.get name = some type) → Ty.Denotation type
-
-namespace REPL
-
-section
-
-variable {TermVar : Type} [DecidableEq TermVar]
-
-@[simp] def empty : REPL TermVar where
-  env := []
-  varLookup := fun _ _ binding => by
-    cases binding
-
-@[simp] def extend (repl : REPL TermVar) (name : TermVar)
-    (value : Ty.Denotation input) : REPL TermVar where
-  env := repl.env.extend name input
-  varLookup := fun tested_name type binding =>
-    if same_name : tested_name = name then
-      by
-        subst same_name
-        simp at binding
-        cases binding
-        exact value
-    else
-      repl.varLookup tested_name type (by simpa [Env.extend, Env.get, same_name] using binding)
-
-end
-
-section
-
-variable {TermVar : Type} [DecidableEq TermVar] [Inhabited TermVar]
-
-def eval (repl : REPL TermVar) (newTerm : Env.ScopedTerm repl.env type) : Ty.Denotation type :=
-  let rec impl {type : Ty} {term : Tm} (repl : REPL TermVar)
-      (checked : Env.Checked repl.env term type) :
-      Ty.Denotation type :=
-    match checked with
-    | .literal normalForm => normalForm
-    | .var binding => repl.varLookup _ _ binding
-    | @Env.Checked.function _ _ _ body input output body_checked =>
-        fun value =>
-          impl (repl.extend (input := input) default value) (body_checked default)
-    | @Env.Checked.apply _ _ _ function argument _ output function_checked argument_checked =>
-        (impl repl function_checked) (impl repl argument_checked)
-
-  impl repl newTerm.checked
-
-@[simp] def RunsTo (repl : REPL TermVar)
-    (newTerm : Env.ScopedTerm repl.env type) (value : Ty.Denotation type) : Prop :=
-  repl.eval newTerm = value
-
-@[simp] theorem eval_runsTo (repl : REPL TermVar)
-    (newTerm : Env.ScopedTerm repl.env type) :
-    repl.RunsTo newTerm (repl.eval newTerm) := rfl
-
-end
-
-end REPL
+end section
 
 end STLC
