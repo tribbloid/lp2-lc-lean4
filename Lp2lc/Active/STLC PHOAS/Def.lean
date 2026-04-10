@@ -151,7 +151,16 @@ section
 
 variable {TermVar : Type} [DecidableEq TermVar] [Inhabited TermVar]
 
+/--
+immediate evaluation of a new term
+
+just a thin wrapper of the internal `impl`
+-/
 def eval (repl : REPL TermVar) (newTerm : Env.ScopedTerm repl.env type) : Ty.Denotation type :=
+
+  /-
+  with heavy recursion, why is fuel not required?
+  -/
   let rec impl {type : Ty} {term : Tm} (repl : REPL TermVar)
       (checked : Env.Checked repl.env term type) :
       Ty.Denotation type :=
@@ -166,7 +175,7 @@ def eval (repl : REPL TermVar) (newTerm : Env.ScopedTerm repl.env type) : Ty.Den
 
   impl repl newTerm.checked
 
-@[simp] def RunsTo (repl : REPL TermVar)
+@[simp] def canEvalTo (repl : REPL TermVar)
     (newTerm : Env.ScopedTerm repl.env type) (value : Ty.Denotation type) : Prop :=
   repl.eval newTerm = value
 

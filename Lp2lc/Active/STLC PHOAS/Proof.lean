@@ -146,7 +146,7 @@ abbrev closed (type : Ty) :=
 
 theorem soundness (term : closed type) :
     ∀ fuel, ∃ value,
-      (REPL.empty : REPL TermVar).RunsTo term value ∧
+      (REPL.empty : REPL TermVar).canEvalTo term value ∧
       Semantics type value fuel := by
   intro fuel
   refine ⟨(REPL.empty : REPL TermVar).eval term, ?_, ?_⟩
