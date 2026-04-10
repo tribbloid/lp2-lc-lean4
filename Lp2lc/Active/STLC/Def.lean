@@ -4,12 +4,16 @@ import «Lp2lc».Active.Shared
 /-!
 This file defines simply typed lambda calculus and relevant compiler components, with the following conventions:
 
-- higher-order syntax representation: the data structure representing term variables is unknown and
-  irrelevant, all proof must be valid regardless of the concrete data structure.
-  - this means that Variable name, de Bruijn serial are not a thing
-  - Environment/Context should be indexed by the unknown term parameter
+- parametric higher-order abstract syntax (PHOAS) representation, namely:
+  data structure representing term/type variables is unknown and
+  irrelevant, all proof must be valid regardless of the chosen representation.
+  - There is no variable name or de Bruijn serial.
+  - There is no data structure representing Environment/Context variable bindings,
+    they are just lean def/let bindings.
+  - There is no class or data structure representing subtyping hierarchies,
+    they are just bool/heyting algebra of lean Prop.
 - extrinsic/Curry-style type representations: types of terms are predicates instead of built-in index.
-- interpretation is a step-indexed logical relation. The step index is the fuel used to
+- evaluation is a step-indexed logical relation. The step index is the fuel used to
   reason about functions recursively: a function is safe for `steps` when, for
   any `smaller_steps < steps`, it sends semantically safe inputs to outputs that
   stay safe one guarded step later.
@@ -32,7 +36,7 @@ structure Later (step : Prop) : Prop where
 
 def Instructions := String
 
-section
+section PHOAS
 
 variable (TermVar : Type) [DecidableEq TermVar]
 variable (TypeVar : Type) [DecidableEq TypeVar] -- useless here
@@ -42,18 +46,15 @@ inductive Typ : Type
 | arrow : (tIn : Typ) → (tOut : Typ) → Typ
 deriving DecidableEq, Repr
 
-scoped infixr:60 " :=> " => Typ.arrow
-
 inductive Trm : Type
 | var : TermVar -> Trm
--- | literal : Instructions -> PreTerm TODO: remove, not in STLC
+-- | literal : Instructions -> PreTerm TODO: remove, not in core STLC
 | function : (TermVar -> Trm) -> Trm
 | apply : (function : Trm) -> (argument : Trm) -> Trm
 
+scoped infixr:60 " :=> " => Typ.arrow
+
 namespace Semantic
--- In PHOAS syntax there is no Env data structure
--- The Lean interpreter local defs is term and type variable binding
--- The Lean evaluation of Prop is the heyting algebra of semantic typing and bound judgement
 
 -- Type determines if a term can inhabits it, union & intersection type can be expressed easily
 def Typ := Trm TermVar -> Prop
@@ -66,18 +67,21 @@ end Semantic
 
 namespace Typ
 
-def asSemantic: (self: Typ TermVar) -> Semantic.Typ TermVar :=
+-- how to convert a Typ into a semantic Typ judgement for terms
+def asSemantic: (self: Typ) -> Semantic.Typ TermVar :=
   sorry
 
 end Typ
 
 namespace Trm
 
+-- AKA Intermediate representation (IR): how to compute/beta-reduce the term in lean
 def Denotation : (self : Trm TermVar) → Type :=
   sorry
 
+
 end Trm
 
-end section
+end PHOAS
 
 end STLC

@@ -102,6 +102,9 @@ abbrev Typing (env : Env TermVar) (term : Tm (TermVar := TermVar)) (type : Ty) :
 
 @[simp] def IsScoped (env : Env TermVar) (term : Tm (TermVar := TermVar)) : Prop := ∃ type, env.Typing term type
 
+/--
+AKA well-typed term, every variable in the term is in the environment
+-/
 structure ScopedTerm (env : Env TermVar) (type : Ty) where
   term : Tm (TermVar := TermVar)
   checked : Checked env term type
@@ -167,9 +170,6 @@ def eval (repl : REPL TermVar) (newTerm : Env.ScopedTerm repl.env type) : Ty.Den
     (newTerm : Env.ScopedTerm repl.env type) (value : Ty.Denotation type) : Prop :=
   repl.eval newTerm = value
 
-@[simp] theorem eval_runsTo (repl : REPL TermVar)
-    (newTerm : Env.ScopedTerm repl.env type) :
-    repl.RunsTo newTerm (repl.eval newTerm) := rfl
 
 end
 
