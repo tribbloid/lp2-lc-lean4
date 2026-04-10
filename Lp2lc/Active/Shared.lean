@@ -4,11 +4,11 @@ import Mathlib.Data.Finset.Basic
 namespace Lp2lc.Active
 
 -- Shared variable type and finite set of variables
-structure Var where
-  name : String
-  deriving Repr, BEq, Hashable, DecidableEq
+-- structure Var where
+--   name : String
+--   deriving Repr, BEq, Hashable, DecidableEq
 
-abbrev Vars := Finset Var
+-- abbrev Vars := Finset Var
 
 
 -- Generic environment helpers over lists of (Var × α)
