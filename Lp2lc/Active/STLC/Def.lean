@@ -2,25 +2,28 @@ import Mathlib.Tactic
 import «Lp2lc».Active.Shared
 
 /-!
-This file defines simply typed lambda calculus and relevant compiler components, with the following conventions:
+This file defines the simply typed lambda calculus and related compiler
+components, with the following conventions:
 
 - parametric higher-order abstract syntax (PHOAS) representation, namely:
-  data structure representing term/type variables is unknown and
-  irrelevant, all proof must be valid regardless of the chosen representation.
-  - There is no variable name or de Bruijn serial.
-  - There is no data structure representing Environment/Context variable bindings,
-    they are just lean def/let bindings.
-  - There is no class or data structure representing subtyping hierarchies,
-    they are just bool/heyting algebra of lean Prop.
-- extrinsic/Curry-style type representations: types of terms are predicates instead of built-in index.
+  the data structures representing term and type variables are abstract and
+  irrelevant, so every proof must be valid regardless of the chosen
+  representation.
+  - There are no variable names or de Bruijn indices.
+  - There is no data structure representing environment/context variable
+    bindings; they are just Lean `def`/`let` bindings.
+  - There is no class or data structure representing subtyping hierarchies;
+    they are just the Heyting algebra of Lean `Prop`.
+- extrinsic/Curry-style type representations: term types are predicates
+  instead of built-in indices.
 - evaluation is a step-indexed logical relation. The step index is the fuel used to
   reason about functions recursively: a function is safe for `steps` when, for
   any `smaller_steps < steps`, it sends semantically safe inputs to outputs that
   stay safe one guarded step later.
 
-All docstrings use short (under 5 lines) of Scala code as demonstrations.
+All docstrings use short Scala snippets (under 5 lines) as demonstrations.
 
-variable names always follow the following convention:
+Variable names follow these conventions:
 
 - Lean variable for type, proposition and sort of any universe should use PascalCase (e.g. `Env`)
   - inductive cases should use camelCase (because they are constructors)
@@ -38,8 +41,8 @@ def Instructions := String
 
 section PHOAS
 
-variable (TermVar : Type) [DecidableEq TermVar]
-variable (TypeVar : Type) [DecidableEq TypeVar] -- useless here
+variable (TrmVar : Type) [DecidableEq TrmVar]
+variable (TypVar : Type) [DecidableEq TypVar] -- useless here
 
 inductive Typ : Type
 | base : Typ
@@ -47,37 +50,58 @@ inductive Typ : Type
 deriving DecidableEq, Repr
 
 inductive Trm : Type
-| var : TermVar -> Trm
+| var : TrmVar -> (declared: Typ) -> Trm
 -- | literal : Instructions -> PreTerm TODO: remove, not in core STLC
-| function : (TermVar -> Trm) -> Trm
+| function : ((argument : TrmVar) -> Trm) -> Trm
 | apply : (function : Trm) -> (argument : Trm) -> Trm
 
 scoped infixr:60 " :=> " => Typ.arrow
 
+inductive HasType : Trm TrmVar -> Lp2lc.Active.STLC.Typ -> Prop where
+| var {name : TrmVar} {declared : Lp2lc.Active.STLC.Typ} :
+    HasType (.var name declared) declared
+| function {body : TrmVar -> Trm TrmVar} {tIn tOut : Lp2lc.Active.STLC.Typ} :
+    (∀ argument : TrmVar, HasType (body argument) tOut) ->
+    HasType (.function body) (tIn :=> tOut)
+| apply {function argument : Trm TrmVar} {tIn tOut : Lp2lc.Active.STLC.Typ} :
+    HasType function (tIn :=> tOut) ->
+    HasType argument tIn ->
+    HasType (.apply function argument) tOut
+
 namespace Semantic
 
--- Type determines if a term can inhabits it, union & intersection type can be expressed easily
-def Typ := Trm TermVar -> Prop
+-- A semantic type determines whether a term inhabits it; union and
+-- intersection types can be expressed directly.
+def Typ := Trm TrmVar -> Prop
 
--- Bound determines if a type can fit somewhere into the subtyping hierarchy heyting algebra, not useful for STLC so far
+-- A bound determines whether a type fits somewhere in the subtyping Heyting
+-- algebra; this is not useful for core STLC so far.
 -- bound is a (mostly implicit) term in Scala (`ev: T <:< Int`)
-def Bound := Typ TermVar -> Prop
+def Bound := Typ TrmVar -> Prop
 
 end Semantic
 
 namespace Typ
 
--- how to convert a Typ into a semantic Typ judgement for terms
-def asSemantic: (self: Typ) -> Semantic.Typ TermVar :=
-  sorry
+-- Convert a syntactic type into its semantic typing predicate on terms.
+def asSemantic (self : Typ) : Semantic.Typ TrmVar :=
+  fun term => HasType (TrmVar := TrmVar) term self
 
 end Typ
 
 namespace Trm
 
--- AKA Intermediate representation (IR): how to compute/beta-reduce the term in lean
-def Denotation : (self : Trm TermVar) → Type :=
-  sorry
+-- AKA intermediate representation (IR): reify the term in Lean.
+-- map `_self` to a compatible lean type, e.g. Trm.function should be mapped to an actual lean function type
+def Denotation (_self : Trm TrmVar) : Type := Trm TrmVar
+
+-- AKA intermediate representation (IR): reify the term in Lean.
+def denotation : (self : Trm TrmVar) -> self.Denotation :=
+  fun self =>
+    match self with
+    | .var name declared => .var name declared
+    | .function body => .function body
+    | .apply fn arg => .apply (denotation fn) (denotation arg)
 
 
 end Trm
