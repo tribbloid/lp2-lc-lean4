@@ -51,27 +51,17 @@ deriving DecidableEq, Repr
 
 inductive Trm : Type
 | var : TrmVar -> (declared: Typ) -> Trm
--- | literal : Instructions -> PreTerm TODO: remove, not in core STLC
+| literal : Instructions -> (declared: Typ) -> Trm -- not in core STLC, but included anyway to make it practical
 | function : ((argument : TrmVar) -> Trm) -> Trm
 | apply : (function : Trm) -> (argument : Trm) -> Trm
 
 scoped infixr:60 " :=> " => Typ.arrow
 
-inductive HasType : Trm TrmVar -> Lp2lc.Active.STLC.Typ -> Prop where
-| var {name : TrmVar} {declared : Lp2lc.Active.STLC.Typ} :
-    HasType (.var name declared) declared
-| function {body : TrmVar -> Trm TrmVar} {tIn tOut : Lp2lc.Active.STLC.Typ} :
-    (∀ argument : TrmVar, HasType (body argument) tOut) ->
-    HasType (.function body) (tIn :=> tOut)
-| apply {function argument : Trm TrmVar} {tIn tOut : Lp2lc.Active.STLC.Typ} :
-    HasType function (tIn :=> tOut) ->
-    HasType argument tIn ->
-    HasType (.apply function argument) tOut
 
 namespace Semantic
 
--- A semantic type determines whether a term inhabits it; union and
--- intersection types can be expressed directly.
+-- semantic type is a generator of evidence that a term can inhabit it
+-- union and intersection types can be expressed directly.
 def Typ := Trm TrmVar -> Prop
 
 -- A bound determines whether a type fits somewhere in the subtyping Heyting
@@ -83,9 +73,18 @@ end Semantic
 
 namespace Typ
 
--- Convert a syntactic type into its semantic typing predicate on terms.
-def asSemantic (self : Typ) : Semantic.Typ TrmVar :=
-  fun term => HasType (TrmVar := TrmVar) term self
+inductive AsSemantic : Typ -> Semantic.Typ TrmVar where
+| var {name : TrmVar} {declared : Typ} :
+    AsSemantic declared (.var name declared)
+| literal {instructions : Instructions} {declared : Typ} :
+    AsSemantic declared (.literal instructions declared)
+| function {body : TrmVar -> Trm TrmVar} {tIn tOut : Typ} :
+    (∀ argument : TrmVar, AsSemantic tOut (body argument)) ->
+    AsSemantic (tIn :=> tOut) (.function body)
+| apply {function argument : Trm TrmVar} {tIn tOut : Typ} :
+    AsSemantic (tIn :=> tOut) function ->
+    AsSemantic tIn argument ->
+    AsSemantic tOut (.apply function argument)
 
 end Typ
 
