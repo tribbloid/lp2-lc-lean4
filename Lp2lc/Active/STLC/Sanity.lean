@@ -6,10 +6,10 @@ namespace Trm
 
 -- AKA intermediate representation (IR): reify the term in Lean.
 -- map `_self` to a compatible lean type, e.g. Trm.function should be mapped to an actual lean function type
-def Denotation (_self : Trm TrmVar) : Type := Trm TrmVar
+def Denotation (_self : PreTrmTrm TrmVar) : Type PreTrmPreTrm TrmVar
 
 -- AKA intermediate representation (IR): reify the term in Lean.
-def denotation : (self : Trm TrmVar) -> self.Denotation :=
+def denotation : (self : PreTrmTrm TrmVar) -> self.Denotation :=
   fun self =>
     match self with
     | .var name declared => .var name declared
@@ -25,22 +25,22 @@ namespace Sanity
 
 -- All docstrings use short (under 5 lines) of Scala code as demonstrations.
 
-abbrev base_variable : Trm Unit :=
+abbrev base_variable : PreTrmTrm Unit :=
   Trm.var () .base
 
-abbrev arrow_variable : Trm Unit :=
+abbrev arrow_variable : PreTrmTrm Unit :=
   Trm.var () (.base :=> .base)
 
-abbrev one_argument_base_function : Trm Unit :=
+abbrev one_argument_base_function : PreTrmTrm Unit :=
   Trm.function (fun argument => .var argument .base)
 
-abbrev applies_to_base_variable : Trm Unit :=
+abbrev applies_to_base_variable : PreTrmTrm Unit :=
   Trm.apply one_argument_base_function base_variable
 
-abbrev applies_to_arrow_variable : Trm Unit :=
+abbrev applies_to_arrow_variable : PreTrmTrm Unit :=
   Trm.apply one_argument_base_function arrow_variable
 
-abbrev invalid_application : Trm Unit :=
+abbrev invalid_application : PreTrmTrm Unit :=
   Trm.apply base_variable base_variable
 
 example : Typ.base.AsSemantic (TrmVar := Unit) base_variable = True := by
