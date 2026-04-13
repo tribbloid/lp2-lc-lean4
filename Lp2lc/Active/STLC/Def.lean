@@ -44,7 +44,6 @@ structure Later (step : Prop) : Prop where
 def Instructions := String
 
 section
-
 variable (Index : Type) [DecidableEq Index]
 
 -- syntax only, without consistency check, some Typ/Trm structure won't make sense (e.g. applying a literal)
@@ -62,7 +61,8 @@ deriving DecidableEq, Repr
 end
 
 -- wildcard `Trm ?` lookup
--- impossible to define an instance except inside a function body
+-- .var is deliberately impossible to construct except inside a function body
+-- others are fine
 abbrev ClosedTrm := (Index : Type) -> Trm Index
 
 scoped infixr:60 " :=> " => Typ.arrow
@@ -86,10 +86,10 @@ namespace prev
 inductive HasTypeProto : (typ: Typ) → (trm: Trm Typ) → Prop where
   | var : HasTypeProto typ (.var typ)
   | literal {i : Instructions} : HasTypeProto .base (.literal i)
-  | app {tIn tOut : Typ} {f x : Trm Typ} :
-      HasTypeProto (.arrow tIn tOut) f → HasTypeProto tIn x → HasTypeProto tOut (.apply f x)
   | function {tIn tOut : Typ} {e : Typ → Trm Typ} :
-      HasTypeProto tOut (e tIn) → HasTypeProto (.arrow tIn tOut) (.function e)
+      HasTypeProto tOut (e tIn) → HasTypeProto (tIn :=> tOut) (.function e)
+  | app {tIn tOut : Typ} {f x : Trm Typ} :
+      HasTypeProto (tIn :=> tOut) f → HasTypeProto tIn x → HasTypeProto tOut (.apply f x)
 
 end prev
 
@@ -108,4 +108,10 @@ def HasTypeProto (typ: Typ)(trm: Trm Typ): Prop :=
 def HasType (t: Typ) : Semantic.Typ := fun (E : ClosedTrm) =>
   HasTypeProto t (E Typ)
 
-end Lp2lc.Active.STLC
+-- recursively interpret a closed term using an operational/definitional interpreter
+-- return some if successful
+-- return none if the term is ill-formed, ill-typed or running out of fuel
+-- use `Later` and fuel modality to avoid infinite loop
+def BigStepInterpretation: (fuel : Nat) → ClosedTrm → Option ClosedTrm := sorry
+
+end STLC
