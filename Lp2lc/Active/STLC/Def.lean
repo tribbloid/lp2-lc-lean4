@@ -43,46 +43,34 @@ structure Later (step : Prop) : Prop where
 
 def Instructions := String
 
-namespace Pre
 section
 
 variable (Index : Type) [DecidableEq Index]
 
--- syntax only, without consistency check, some Pre.Typ/Pre.Trm structure won't make sense (e.g. applying a literal)
-inductive _Trm : Type
-| var : Index -> _Trm
-| literal : Instructions -> _Trm -- not in core STLC, but included anyway to make it practical
-| function : ((argument : Index) -> _Trm) -> _Trm
-| apply : (function : _Trm) -> (argument : _Trm) -> _Trm
+-- syntax only, without consistency check, some Typ/Trm structure won't make sense (e.g. applying a literal)
+inductive Trm : Type
+| var : Index -> Trm
+| literal : Instructions -> Trm -- not in core STLC, but included anyway to make it practical
+| function : ((argument : Index) -> Trm) -> Trm
+| apply : (function : Trm) -> (argument : Trm) -> Trm
 
-inductive _Typ : Type
-| base : _Typ
-| arrow : (tIn : _Typ) → (tOut : _Typ) → _Typ
+inductive Typ : Type
+| base : Typ
+| arrow : (tIn : Typ) → (tOut : Typ) → Typ
 deriving DecidableEq, Repr
 
 end
 
-
--- Polymorphic closed term
-abbrev Trm: Type 1 := (index : Type) -> _Trm index
-
--- Helper constructors are not possible for polymorphic PHOAS functions without rank-n typing wrapping,
--- use Pre.Trm constructors directly for locally closed terms.
-
-example : Trm := fun index => Pre.Trm.var index
-
--- ditto
-abbrev Typ := _Typ
+-- impossible to instantiate except inside a function body
+abbrev ClosedTrm := (Index : Type) -> Trm Index
 
 scoped infixr:60 " :=> " => Typ.arrow
-
-end Pre
 
 namespace Semantic
 
 -- semantic type is a generator of evidence that a term can inhabit it
 -- union and intersection types can be expressed directly.
-def Typ := Pre.Trm -> Prop
+def Typ := ClosedTrm -> Prop
 
 -- A bound determines whether a type fits somewhere in the subtyping Heyting
 -- algebra; this is not useful for core STLC so far.
@@ -91,15 +79,10 @@ def Bound := Typ -> Prop
 
 end Semantic
 
-inductive HasType : Pre._Trm Pre.Typ → Pre.Typ → Prop where
-  | var {t : Pre.Typ} : HasType (.var t) t
-  | literal {i : Instructions} {t : Pre.Typ} : HasType (.literal i) t
-  | app {tIn tOut : Pre.Typ} {f x : Pre._Trm Pre.Typ} :
-      HasType f (.arrow tIn tOut) → HasType x tIn → HasType (.apply f x) tOut
-  | function {tIn tOut : Pre.Typ} {e : Pre.Typ → Pre._Trm Pre.Typ} :
-      HasType (e tIn) tOut → HasType (.function e) (.arrow tIn tOut)
+def HasTypeProto (typ: Typ)(trm: Trm Typ): Prop :=
+  sorry
 
-abbrev ClosedHasType (E : Pre.Trm) (t : Pre.Typ) : Prop :=
-  HasType (E Pre.Typ) t
+def HasType (t: Typ) : Semantic.Typ := fun (E : ClosedTrm) =>
+  HasTypeProto t (E Typ)
 
 end Lp2lc.Active.STLC
