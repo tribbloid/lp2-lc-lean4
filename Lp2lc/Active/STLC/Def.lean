@@ -61,7 +61,8 @@ deriving DecidableEq, Repr
 
 end
 
--- impossible to instantiate except inside a function body
+-- wildcard `Trm ?` lookup
+-- impossible to define an instance except inside a function body
 abbrev ClosedTrm := (Index : Type) -> Trm Index
 
 scoped infixr:60 " :=> " => Typ.arrow
@@ -84,12 +85,11 @@ namespace prev
 -- equivalent to below, but harder to read
 inductive HasTypeProto : (typ: Typ) → (trm: Trm Typ) → Prop where
   | var : HasTypeProto typ (.var typ)
-  | literal {i : Instructions} {t : Typ} : HasTypeProto t (.literal i)
+  | literal {i : Instructions} : HasTypeProto .base (.literal i)
   | app {tIn tOut : Typ} {f x : Trm Typ} :
       HasTypeProto (.arrow tIn tOut) f → HasTypeProto tIn x → HasTypeProto tOut (.apply f x)
   | function {tIn tOut : Typ} {e : Typ → Trm Typ} :
       HasTypeProto tOut (e tIn) → HasTypeProto (.arrow tIn tOut) (.function e)
-
 
 end prev
 
@@ -98,7 +98,7 @@ def HasTypeProto (typ: Typ)(trm: Trm Typ): Prop :=
   | .var typ' =>
       typ' = typ
   | .literal _ =>
-      typ = .base
+      typ = typ
   | .function body =>
       ∃ tIn tOut, typ = (tIn :=> tOut) ∧ HasTypeProto tOut (body tIn)
   | .apply function argument =>

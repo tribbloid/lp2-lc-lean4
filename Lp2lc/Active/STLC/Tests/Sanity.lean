@@ -9,8 +9,7 @@ namespace Trm
 def trm1 (Index : Type) : Trm Index :=
  .literal ""
 
-def trm2 : ClosedTrm :=
- trm1
+def trm2 : ClosedTrm := trm1 -- eta-expansion happens automatically
 
 def trm3 (Index : Type) : Trm Index :=
  trm2 Index
