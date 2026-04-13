@@ -79,6 +79,20 @@ def Bound := Typ -> Prop
 
 end Semantic
 
+namespace prev
+
+-- equivalent to below, but harder to read
+inductive HasTypeProto : (typ: Typ) → (trm: Trm Typ) → Prop where
+  | var : HasTypeProto typ (.var typ)
+  | literal {i : Instructions} {t : Typ} : HasTypeProto t (.literal i)
+  | app {tIn tOut : Typ} {f x : Trm Typ} :
+      HasTypeProto (.arrow tIn tOut) f → HasTypeProto tIn x → HasTypeProto tOut (.apply f x)
+  | function {tIn tOut : Typ} {e : Typ → Trm Typ} :
+      HasTypeProto tOut (e tIn) → HasTypeProto (.arrow tIn tOut) (.function e)
+
+
+end prev
+
 def HasTypeProto (typ: Typ)(trm: Trm Typ): Prop :=
   match trm with
   | .var typ' =>
@@ -89,6 +103,7 @@ def HasTypeProto (typ: Typ)(trm: Trm Typ): Prop :=
       ∃ tIn tOut, typ = (tIn :=> tOut) ∧ HasTypeProto tOut (body tIn)
   | .apply function argument =>
       ∃ tIn, HasTypeProto (tIn :=> typ) function ∧ HasTypeProto tIn argument
+
 
 def HasType (t: Typ) : Semantic.Typ := fun (E : ClosedTrm) =>
   HasTypeProto t (E Typ)
