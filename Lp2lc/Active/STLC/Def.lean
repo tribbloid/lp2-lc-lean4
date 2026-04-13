@@ -80,7 +80,15 @@ def Bound := Typ -> Prop
 end Semantic
 
 def HasTypeProto (typ: Typ)(trm: Trm Typ): Prop :=
-  sorry
+  match trm with
+  | .var typ' =>
+      typ' = typ
+  | .literal _ =>
+      typ = .base
+  | .function body =>
+      ∃ tIn tOut, typ = (tIn :=> tOut) ∧ HasTypeProto tOut (body tIn)
+  | .apply function argument =>
+      ∃ tIn, HasTypeProto (tIn :=> typ) function ∧ HasTypeProto tIn argument
 
 def HasType (t: Typ) : Semantic.Typ := fun (E : ClosedTrm) =>
   HasTypeProto t (E Typ)
