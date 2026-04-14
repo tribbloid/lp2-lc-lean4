@@ -46,19 +46,31 @@ def Instructions := String
 section
 variable (Index : Type) [DecidableEq Index]
 
--- syntax only, without consistency check, some Typ/Trm structure won't make sense (e.g. applying a literal)
+mutual
+
+-- syntax only, without consistency check, some Typ/Trm structure won't make sense (e.g. applying a literal on a variable)
+-- a generator of Trm AST for any index type
+-- in Scala ,such generator is usually represented by free monad
 inductive Trm : Type
-| var : Index -> Trm
-| literal : Instructions -> Trm -- not in core STLC, but included anyway to make it practical
-| function : ((argument : Index) -> Trm) -> Trm
+| var : Index -> (tAnnotation: Typ) -> Trm
+  -- not in core STLC, but included anyway to make it practical
+| literal : Instructions -> Trm
+  -- mono function that should break if applied on arg of different type (comparing to tIn)
+  -- polymorphic/generic/dependent functions will have similar AST but without tIn
+| function : ((argument : Index) -> Trm) -> (tIn: Typ) -> Trm
+  -- mono application
 | apply : (function : Trm) -> (argument : Trm) -> Trm
 
 inductive Typ : Type
 | base : Typ
 | arrow : (tIn : Typ) → (tOut : Typ) → Typ
-deriving DecidableEq, Repr
 
 end
+
+end
+
+
+abbrev ClosedTyp := (Index : Type) -> Typ Index
 
 -- wildcard `Trm ?` lookup
 -- .var is deliberately impossible to construct except inside a function body
@@ -80,38 +92,17 @@ def Bound := Typ -> Prop
 
 end Semantic
 
-namespace prev
+/--
+convert a syntactic Typ AST into a semantic one
+-/
+def HasType (t: ClosedTyp) : Semantic.Typ := sorry
 
--- equivalent to below, but harder to read
-inductive HasTypeProto : (typ: Typ) → (trm: Trm Typ) → Prop where
-  | var : HasTypeProto typ (.var typ)
-  | literal {i : Instructions} : HasTypeProto .base (.literal i)
-  | function {tIn tOut : Typ} {e : Typ → Trm Typ} :
-      HasTypeProto tOut (e tIn) → HasTypeProto (tIn :=> tOut) (.function e)
-  | app {tIn tOut : Typ} {f x : Trm Typ} :
-      HasTypeProto (tIn :=> tOut) f → HasTypeProto tIn x → HasTypeProto tOut (.apply f x)
-
-end prev
-
-def HasTypeProto (typ: Typ)(trm: Trm Typ): Prop :=
-  match trm with
-  | .var typ' =>
-      typ' = typ
-  | .literal _ =>
-      typ = typ
-  | .function body =>
-      ∃ tIn tOut, typ = (tIn :=> tOut) ∧ HasTypeProto tOut (body tIn)
-  | .apply function argument =>
-      ∃ tIn, HasTypeProto (tIn :=> typ) function ∧ HasTypeProto tIn argument
-
-
-def HasType (t: Typ) : Semantic.Typ := fun (E : ClosedTrm) =>
-  HasTypeProto t (E Typ)
-
--- recursively interpret a closed term using an operational/definitional interpreter
--- return some if successful
--- return none if the term is ill-formed, ill-typed or running out of fuel
--- use `Later` and fuel modality to avoid infinite loop
-def BigStepInterpretation: (fuel : Nat) → ClosedTrm → Option ClosedTrm := sorry
+/--
+recursively evaluate a closed term using an operational/definitional interpreter
+return some if successful
+return none if the term is ill-formed, ill-typed or running out of fuel
+use `Later` and fuel modality to avoid infinite loop
+-/
+def BigStepRuntimeEval: (fuel : Nat) → ClosedTrm → Option ClosedTrm := sorry
 
 end STLC
