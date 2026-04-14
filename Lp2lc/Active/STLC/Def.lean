@@ -48,34 +48,42 @@ variable (Index : Type) [DecidableEq Index]
 
 mutual
 
--- syntax only, without consistency check, some Typ/Trm structure won't make sense (e.g. applying a literal on a variable)
--- a generator of Trm AST for any index type
--- in Scala ,such generator is usually represented by free monad
+/--
+syntax only, without consistency check, some Typ/Trm structure won't make sense (e.g. applying a literal on a variable)
+a generator of Trm AST for any index type, akin to a free monad in Scala
+
+CAUTION: every declaration in code must be included in this AST
+regardless of index! E.g. the AST for the monoFunction `{(x : In) => fn(x)}` must
+contain `In` all the time (otherwise it become a polyFunction)
+
+-/
 inductive Trm : Type
-| var : Index -> (tAnnotation: Typ) -> Trm
+| var : Index -> (tAnnotation: TypProto) -> Trm
   -- not in core STLC, but included anyway to make it practical
 | literal : Instructions -> Trm
   -- mono function that should break if applied on arg of different type (comparing to tIn)
   -- polymorphic/generic/dependent functions will have similar AST but without tIn
-| function : ((argument : Index) -> Trm) -> (tIn: Typ) -> Trm
+| monoFunction : ((argument : Index) -> Trm) -> (tIn: TypProto) -> Trm
   -- mono application
 | apply : (function : Trm) -> (argument : Trm) -> Trm
 
-inductive Typ : Type
-| base : Typ
-| arrow : (tIn : Typ) → (tOut : Typ) → Typ
+inductive TypProto : Type
+| base : TypProto
+| arrow : (tIn : TypProto) → (tOut : TypProto) → TypProto
 
 end
 
 end
 
+abbrev Typ := TypProto Unit
 
-abbrev ClosedTyp := (Index : Type) -> Typ Index
 
 -- wildcard `Trm ?` lookup
 -- .var is deliberately impossible to construct except inside a function body
 -- others are fine
 abbrev ClosedTrm := (Index : Type) -> Trm Index
+
+def ClosedTrm.Typed(self: ClosedTrm) := self Typ
 
 scoped infixr:60 " :=> " => Typ.arrow
 
@@ -95,7 +103,7 @@ end Semantic
 /--
 convert a syntactic Typ AST into a semantic one
 -/
-def HasType (t: ClosedTyp) : Semantic.Typ := sorry
+def HasType (t: Typ) : Semantic.Typ := sorry
 
 /--
 recursively evaluate a closed term using an operational/definitional interpreter
