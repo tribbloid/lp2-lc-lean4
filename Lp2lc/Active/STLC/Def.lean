@@ -148,7 +148,7 @@ big-step evaluation on local environment (which is a record) with side effect
 - return none if `e` not well-formed (e.g. applying a literal) or ran out of fuel
 - return some Val if otherwise
   - even for well-formed but ill-typed expressions (types are erased in runtime).
-    In soundness proof this will never happen because ill-typed expressions are rejected early
+    In soundness proof this will never happen because ill-typed expressions are rejected early and won't be used
 - not partial evaluation, has no constant folding capability
   - to verify the soundness of partial evaluation, you need to
     write your own definitions of pure function and partial eval rule
@@ -162,7 +162,10 @@ def Eval: (e: Closed Trm) -> (fuel : Nat) → Option (Closed Val) := sorry
 compile-time type checking rule (AKA typing)
 - consumes fuel?
 - return true if `e` is well-formed and can inhabit `t`
-- return false if otherwise
+- return false if otherwise, e.g.
+  - trying to apply a literal/var
+  - trying to apply a function but on a var of wrong type
+  - trying to apply a function but it produce a new term of wrong type
 -/
 def HasType (e : Closed Trm)(t: Closed Typ) : Prop := sorry
 
