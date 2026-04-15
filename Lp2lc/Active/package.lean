@@ -1,7 +1,7 @@
 
 -- STLC module exports Def and Example
 import «Lp2lc».Active.STLC.Proof
-import «Lp2lc».Active.STLC.Sanity
+import «Lp2lc».Tests.Active.STLC.Sanity
 import «Lp2lc».Active.HindleyMilner.Def
 import «Lp2lc».Active.HindleyMilner.Proof
 import «Lp2lc».Active.HindleyMilner.Example

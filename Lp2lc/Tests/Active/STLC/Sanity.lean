@@ -4,55 +4,36 @@ namespace Lp2lc.Active.STLC.Tests
 
 open Lp2lc.Active.STLC
 
-namespace Typ
+local notation "BoolT" => Ty.bool
 
-def base_typ : Typ :=
-   .base
+def fals : TermClosed BoolT :=
+  fun _ => .fals
 
-def mono_arrow_typ : Typ :=
-  .monoArrow .base .base
+def tru : TermClosed BoolT :=
+  fun _ => .tru
 
-#guard
-  let _ : base_typ = .base := rfl
-  true
+def ident : TermClosed (BoolT ==> BoolT) :=
+  fun _ => .abs (fun x => .var x)
 
-#guard
-  let _ : mono_arrow_typ = (.base :=> .base) := rfl
-  true
+def falsAgain : TermClosed BoolT :=
+  fun _ => .app (ident _) (fals _)
 
-end Typ
+def first : TermClosed (BoolT ==> BoolT ==> BoolT) :=
+  fun _ => .abs (fun x => .abs (fun _y => .var x))
 
-namespace Trm
+def second : TermClosed (BoolT ==> BoolT ==> BoolT) :=
+  fun _ => .abs (fun _x => .abs (fun y => .var y))
 
-def trm1 (Index : Type) : Trm Index :=
- .literal "" .base
+def testFirst : TermClosed BoolT :=
+  fun _ => .app (.app (first _) (fals _)) (tru _)
 
-def trm2 : Closed Trm := trm1 -- eta-expansion happens automatically
+def testSecond : TermClosed BoolT :=
+  fun _ => .app (.app (second _) (fals _)) (tru _)
 
-def trm3 (Index : Type) : Trm Index :=
- trm2 Index
+def app : TermClosed ((BoolT ==> BoolT) ==> BoolT ==> BoolT) :=
+  fun _ => .abs (fun f => .abs (fun x => .app (.var f) (.var x)))
 
-def literal_trm : Closed Trm :=
-  fun _ => .literal "3" .base
-
-def mono_fn_trm : Closed Trm :=
-  fun _ => .monoFn (fun arg => .var arg .base) .base .base
-
-def mono_apply_trm : Closed Trm :=
-  fun Index => .monoApply (mono_fn_trm Index) (literal_trm Index)
-
-#guard
-  let _ : literal_trm Unit = .literal "3" .base := rfl
-  true
-
-#guard
-  let _ : mono_fn_trm Unit = .monoFn (fun arg => .var arg .base) .base .base := rfl
-  true
-
-#guard
-  let _ : mono_apply_trm Unit = .monoApply (mono_fn_trm Unit) (literal_trm Unit) := rfl
-  true
-
-end Trm
+def falsAgain2 : TermClosed BoolT :=
+  fun _ => .app (.app (app _) (ident _)) (fals _)
 
 end Tests

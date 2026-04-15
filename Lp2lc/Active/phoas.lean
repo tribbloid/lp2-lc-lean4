@@ -50,13 +50,13 @@ imposed by the Lean kernel. An alternate higher-order encoding is parametric HOA
 and Weirich for Haskell and tweaked by Adam Chlipala for use in Coq. The key idea is to parameterize the
 declaration by a type family `rep` standing for a "representation of variables."
 -/
-inductive Term' (rep : Ty → Type) : Ty → Type
-  | var   : rep ty → Term' rep ty
-  | const : Nat → Term' rep Ty.nat
-  | plus  : Term' rep Ty.nat → Term' rep Ty.nat → Term' rep Ty.nat
-  | lam   : (rep dom → Term' rep ran) → Term' rep (Ty.fn dom ran)
-  | app   : Term' rep (Ty.fn dom ran) → Term' rep dom → Term' rep ran
-  | let   : Term' rep ty₁ → (rep ty₁ → Term' rep ty₂) → Term' rep ty₂
+inductive Term' (termVar : Ty → Type) : Ty → Type
+  | var   : termVar ty → Term' termVar ty
+  | const : Nat → Term' termVar Ty.nat
+  | plus  : Term' termVar Ty.nat → Term' termVar Ty.nat → Term' termVar Ty.nat
+  | lam   : (termVar dom → Term' termVar ran) → Term' termVar (Ty.fn dom ran)
+  | app   : Term' termVar (Ty.fn dom ran) → Term' termVar dom → Term' termVar ran
+  | let   : Term' termVar ty₁ → (termVar ty₁ → Term' termVar ty₂) → Term' termVar ty₂
 
 /-!
 Lean accepts this definition because our embedded functions now merely take variables as

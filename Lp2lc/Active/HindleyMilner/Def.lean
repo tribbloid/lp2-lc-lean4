@@ -2,7 +2,7 @@ import Mathlib.Data.List.AList
 import «Lp2lc».Active.Shared
 
 /-!
-This file defines System FSub and relevant compiler components, with the following conventions:
+This file defines Hindley-Milner syntax and relevant compiler components, with the following conventions:
 
 - higher-order syntax representation: the data structure representing type variables and term variables is unknown and
   irrelevant, all proof must be valid regardless of the concrete data structure.
@@ -25,7 +25,7 @@ variable names always follow the following convention:
 - use full name, not acronym or abbreviation
 -/
 
-namespace Lp2lc.Active.SysFSub
+namespace Lp2lc.Active.HindleyMilner
 
 structure Later (step : Prop) : Prop where
   force : step
@@ -37,30 +37,54 @@ section
 variable {TypeVar : Type}
 variable {TermVar : Type}
 
--- both Type binding of term and bound binding of type are extrinsic and stored in Env.
+/--
+Hindley-Milner monotypes.
+
+```scala
+Base
+a => a
+```
+-/
 inductive Ty : Type
-| top : Ty
-| bottom : Ty
 | base : Ty
 | var : TypeVar -> Ty
 | arrow : (tIn : Ty) → (tOut : Ty) → Ty
-| polyArrow : (bound : Ty) → (fn : TypeVar → Ty) → Ty -- TODO: I think bound should be a proof/evidence attached extrinsically.
 
 local notation "ThisType" => Ty (TypeVar := TypeVar)
 
 scoped infixr:60 " :=> " => Ty.arrow
 
+/--
+Hindley-Milner type schemes.
+
+```scala
+Base
+[a] => a => a
+```
+-/
+inductive Scheme : Type
+| mono : ThisType -> Scheme
+| poly : (fn : TypeVar → Scheme) -> Scheme
+
+local notation "ThisScheme" => Scheme (TypeVar := TypeVar)
+
+/--
+Hindley-Milner terms use let-binding for implicit polymorphism.
+
+```scala
+let id = fun x => x in id id
+```
+-/
 inductive Tm : Type
 | var : TermVar -> Tm
 | literal : Instructions -> Tm
-| function : (fn: TermVar -> Tm) -> Tm
+| function : (fn : TermVar -> Tm) -> Tm
 | apply : (function : Tm) -> (argument : Tm) -> Tm
-| polyFunction : (fn: TypeVar -> Tm) -> Tm
-| polyApply : (function : Tm) -> (argument : ThisType) -> Tm
+| letBinding : (value : Tm) -> (body : TermVar -> Tm) -> Tm
 
 structure Env where
-  termBindings : AList (fun _ : TermVar => ThisType)
-  typeBindings : AList (fun _ : TypeVar => ThisType)
+  termBindings : AList (fun _ : TermVar => ThisScheme)
+  typeBindings : AList (fun _ : TypeVar => Unit)
 
 local notation "ThisEnv" => Env (TypeVar := TypeVar) (TermVar := TermVar)
 
@@ -71,27 +95,26 @@ namespace Env
   typeBindings := ∅
 
 @[simp] def extendTerm [DecidableEq TermVar] (env : ThisEnv) (name : TermVar)
-    (type : ThisType) : ThisEnv where
-  termBindings := env.termBindings.insert name type
+    (scheme : ThisScheme) : ThisEnv where
+  termBindings := env.termBindings.insert name scheme
   typeBindings := env.typeBindings
 
-@[simp] def extendType [DecidableEq TypeVar] (env : ThisEnv) (name : TypeVar)
-    (bound : ThisType) : ThisEnv where
+@[simp] def extendType [DecidableEq TypeVar] (env : ThisEnv) (name : TypeVar) : ThisEnv where
   termBindings := env.termBindings
-  typeBindings := env.typeBindings.insert name bound
+  typeBindings := env.typeBindings.insert name ()
 
 @[simp] def extend [DecidableEq TermVar] (env : ThisEnv) (name : TermVar)
-    (type : ThisType) : ThisEnv :=
-  env.extendTerm name type
+    (scheme : ThisScheme) : ThisEnv :=
+  env.extendTerm name scheme
 
-@[simp] def getTerm [DecidableEq TermVar] (name : TermVar) (env : ThisEnv) : Option ThisType :=
+@[simp] def getTerm [DecidableEq TermVar] (name : TermVar) (env : ThisEnv) : Option ThisScheme :=
   env.termBindings.lookup name
 
-@[simp] def getType [DecidableEq TypeVar] (name : TypeVar) (env : ThisEnv) : Option ThisType :=
+@[simp] def getType [DecidableEq TypeVar] (name : TypeVar) (env : ThisEnv) : Option Unit :=
   env.typeBindings.lookup name
 
 end Env
 
 end
 
-end SysFSub
+end HindleyMilner

@@ -21,3 +21,12 @@ namespace dual
     (getImpl α).cons a as
 
 end dual
+
+
+example : ((∀ (n : Nat), n = 1) = False) := by
+  apply propext
+  constructor
+  · intro h
+    exact Nat.zero_ne_one (h 0)
+  · intro h
+    exact False.elim h

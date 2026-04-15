@@ -36,149 +36,37 @@ Variable names follow these conventions:
 - use full name, not acronym or abbreviation
 -/
 
-
 structure Later (step : Prop) : Prop where
   force : step
 
-def Instruction := String
+inductive Ty : Type where
+  | bool : Ty
+  | arrow : Ty → Ty → Ty
+  deriving DecidableEq, Repr
 
-class PHOAS (Ast : Type → Type) : Prop where
+infixr:60 " ==> " => Ty.arrow
 
-/--
-closed AST are wildcard generators of PHOAS AST given any index type, akin to a free monad in Scala
+@[simp] def Ty.denote : Ty → Type
+  | .bool => Bool
+  | .arrow t1 t2 => Ty.denote t1 → Ty.denote t2
 
-.var is deliberately impossible to construct anywhere, only visible inside a function body.
-(This is why it is called "closed")
--/
-abbrev Closed (Ast : Type → Type) [PHOAS Ast] : Type 1 :=
-  (Index : Type) → Ast Index
+inductive Term (var : Ty → Type) : Ty → Type where
+  | var : var t → Term var t
+  | tru : Term var .bool
+  | fals : Term var .bool
+  | app : Term var (t1 ==> t2) → Term var t1 → Term var t2
+  | abs : (var t1 → Term var t2) → Term var (t1 ==> t2)
 
+abbrev TermClosed (t : Ty) := (var : Ty → Type) → Term var t
 
-inductive Typ : Type
-/--
-AKA primitive type, AnyVal.
-```scala
-type base = AnyVal
-```scala
-subtypes of it in both STLC & Scala are ignored, checking them is trivial
--/
-| base : Typ
-/--
-monomorphic arrow, can only be inhabited by `monoFn`
-```scala
-type monoArrow = (AnyVal => AnyVal)
-```
--/
-| monoArrow : (tIn : Typ) → (tOut : Typ) → Typ
+@[simp] def Term.denote : {t : Ty} → Term Ty.denote t → Ty.denote t
+  | _, .var v => v
+  | _, .tru => true
+  | _, .fals => false
+  | _, .app e1 e2 => (Term.denote e1) (Term.denote e2)
+  | _, .abs e => fun x => Term.denote (e x)
 
-
-section Syntax
-
-/-
-Definition of AST elements without any judgement, it is
-possible to define AST that make no sense (e.g. applying a literal on a variable)
-
-each must have a rigorous correspondence to Scala code regardless of `Index`.
-E.g. the AST for the monoFunction `{(x : In) => fn(x) : Out}` must
-contain `In` and `Out`, or be reduced to a polyFunction)
--/
-
-variable (Index : Type) [DecidableEq Index] -- compatible with Type0 and Type1
-
-
-mutual
-
-inductive Trm : Type
-| var : Index -> (t: Typ) -> Trm
-  /--
-  not in core STLC, but included to make it closer to Scala
-  `Instruction` is the code snippet (without type annotation) to express the literal.
-  ```scala
-  val literal = {3: AnyVal}
-  ```
-  -/
-| literal : Instruction -> (t: Typ) -> Trm
-  /--
-  monomorphic function, can only be applied on arg of type `tIn`.
-  ```scala
-  val monoFn = {(x: AnyVal) => (x: AnyVal)}
-  ```
-  -/
-| monoFn : ((arg : Index) -> Trm) -> (tIn: Typ) -> (tOut: Typ) -> Trm
-
-  /--
-  monomorphic application of a `monoFn`.
-  ```scala
-  val monoApply = monoFn(literal)
-  ```
-  -/
-| monoApply : (function : Trm) -> (argument : Trm) -> Trm
-
-end
-
-instance : PHOAS Trm where
-instance : PHOAS Val where
-
-def Trm.isValue : Trm Index -> Prop
-| (.literal _ _) | (.monoFn _ _ _)  => true
-| _ => false
-
-def Val := {v: Trm Index // v.isValue}
-
-end Syntax
-
-scoped infixr:60 " :=> " => Typ.monoArrow
-
-namespace Semantic
-
--- semantic type is a generator of evidence that a term can inhabit it
--- union and intersection types can be expressed directly.
-def Typ : Type 1 := Closed Trm -> Prop
-
--- A bound determines whether a type fits somewhere in the subtyping Heyting
--- algebra; this is not useful for core STLC so far.
--- bound is a (mostly implicit) term in Scala (`ev: T <:< Int`)
-def Bound : Type := STLC.Typ -> Prop
-
-end Semantic
-
-/--
-runtime recursive evaluation rule (AKA operational semantic). Scala is a pure functional
-language with structural record/object, so small-step imperative evaluation is equivalent to
-big-step evaluation on local environment (which is a record) with side effect
-- consumes 1 fuel per recursion
-- return none if `e` not well-formed (e.g. applying a literal) or ran out of fuel
-- return some Val if otherwise
-  - even for well-formed but ill-typed expressions (types are erased in runtime).
-    In soundness proof this will never happen because ill-typed expressions are rejected early and won't be used
-- not partial evaluation, has no constant folding capability
-  - to verify the soundness of partial evaluation, you need to
-    write your own definitions of pure function and partial eval rule
-
-(some early formalisation of DOT uses small-step definition with let-binding rule, this style
-has been abandoned since 2020)
--/
-def Eval: (e: Closed Trm) -> (fuel : Nat) → Option (Closed Val) := sorry
-
-/--
-compile-time type checking rule (AKA typing)
-- consumes fuel?
-- return true if `e` is well-formed and can inhabit `t`
-- return false if otherwise, e.g.
-  - trying to apply a literal/var
-  - trying to apply a function but on a var of wrong type
-  - trying to apply a function but it produce a new term of wrong type
--/
-def HasType (e : Closed Trm)(t: Typ) : Prop := sorry
-
-/--
-convert a syntactic Typ AST into a semantic one
--/
-def ToSemantic (t: Typ): Semantic.Typ := fun (e) => HasType e t
-
-/--
-Compile-time type judgement /=> runtime/operational type judgement
--/
-def FundamentalLemma : Prop := sorry
+@[simp] def TermClosed.denote {t : Ty} (e : TermClosed t) : Ty.denote t :=
+  Term.denote (e Ty.denote)
 
 end STLC

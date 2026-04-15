@@ -105,7 +105,7 @@ abbrev Typing (env : Env TermVar) (term : Tm (TermVar := TermVar)) (type : Ty) :
 /--
 AKA well-typed term, every variable in the term is in the environment
 -/
-structure ScopedTerm (env : Env TermVar) (type : Ty) where
+structure TermWithType (env : Env TermVar) (type : Ty) where
   term : Tm (TermVar := TermVar)
   checked : Checked env term type
 
@@ -156,14 +156,14 @@ immediate evaluation of a new term
 
 just a thin wrapper of the internal `impl`
 -/
-def eval (repl : REPL TermVar) (newTerm : Env.ScopedTerm repl.env type) : Ty.Denotation type :=
+def eval (repl : REPL TermVar) (newTerm : repl.env.TermWithType type) : type.Denotation :=
 
   /-
   with heavy recursion, why is fuel not required?
   -/
   let rec impl {type : Ty} {term : Tm} (repl : REPL TermVar)
-      (checked : Env.Checked repl.env term type) :
-      Ty.Denotation type :=
+      (checked : repl.env.Checked term type) :
+      type.Denotation :=
     match checked with
     | .literal normalForm => normalForm
     | .var binding => repl.varLookup _ _ binding
@@ -176,7 +176,7 @@ def eval (repl : REPL TermVar) (newTerm : Env.ScopedTerm repl.env type) : Ty.Den
   impl repl newTerm.checked
 
 @[simp] def canEvalTo (repl : REPL TermVar)
-    (newTerm : Env.ScopedTerm repl.env type) (value : Ty.Denotation type) : Prop :=
+    (newTerm : repl.env.TermWithType type) (value : type.Denotation) : Prop :=
   repl.eval newTerm = value
 
 

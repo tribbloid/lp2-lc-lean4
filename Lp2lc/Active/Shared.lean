@@ -36,3 +36,17 @@ inductive Which : Type -- only a tag/index for AST of different nature
 deriving DecidableEq, Repr
 
 def Rep := Which -> Type -- both types and terms are represented by a type family from `Which`
+
+-- mutual
+
+-- inductive Even : Nat → Prop
+-- | _0 : Even 0
+-- | succ : Odd n → Even (n + 1)
+
+-- inductive Odd : Nat → Prop
+-- | succ : Even n → Odd (n + 1)
+
+-- end
+
+-- def odd3 : Odd 3 :=
+--   by repeat constructor

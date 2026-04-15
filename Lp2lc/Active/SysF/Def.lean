@@ -49,7 +49,7 @@ inductive Ty : Type
 | base : Ty
 | var : TypeVar -> Ty
 | arrow : (tIn : Ty) → (tOut : Ty) → Ty
-| poly : (fn : TypeVar → Ty) → Ty
+| polyArrow : (fn : TypeVar → Ty) → Ty
 
 local notation "ThisType" => Ty (TypeVar := TypeVar)
 
