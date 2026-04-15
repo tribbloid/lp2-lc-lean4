@@ -14,20 +14,5 @@ All docstrings use short (under 5 lines) of Scala code as demonstrations.
 
 namespace Lp2lc.Active.STLC
 
-namespace Semantic
-
-/-
-the anatomy of a soundness proof:
-
-Trm.interp_fuel_mono: more fuel never breaks a successful run
-
-Trm.interp_sound: interpreter success implies BigStep
-
-Trm.interp_complete: BigStep implies interpreter success (with enough fuel)
--/
-
-
-
-end Semantic
 
 end STLC
