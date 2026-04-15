@@ -50,12 +50,17 @@ infixr:60 " ==> " => Ty.arrow
   | .bool => Bool
   | .arrow t1 t2 => Ty.denote t1 → Ty.denote t2
 
-inductive Term (var : Ty → Type) : Ty → Type where
-  | var : var t → Term var t
-  | tru : Term var .bool
-  | fals : Term var .bool
-  | app : Term var (t1 ==> t2) → Term var t1 → Term var t2
-  | abs : (var t1 → Term var t2) → Term var (t1 ==> t2)
+section Syntax
+variable (var : Ty → Type)
+
+inductive Term : Ty → Type where
+  | var : var t → Term t
+  | tru : Term .bool
+  | fals : Term .bool
+  | app : Term (t1 ==> t2) → Term t1 → Term t2
+  | abs : (var t1 → Term t2) → Term (t1 ==> t2)
+
+end Syntax
 
 abbrev TermClosed (t : Ty) := {var : Ty → Type} → Term var t
 
