@@ -6,18 +6,18 @@ open Lp2lc.Active.STLC
 
 namespace Typ
 
-def base_typ : Closed Typ :=
-  fun _ => .base
+def base_typ : Typ :=
+   .base
 
-def mono_arrow_typ : Closed Typ :=
-  fun _ => .monoArrow .base .base
+def mono_arrow_typ : Typ :=
+  .monoArrow .base .base
 
 #guard
-  let _ : base_typ Unit = .base := rfl
+  let _ : base_typ = .base := rfl
   true
 
 #guard
-  let _ : mono_arrow_typ Unit = (.base :=> .base) := rfl
+  let _ : mono_arrow_typ = (.base :=> .base) := rfl
   true
 
 end Typ

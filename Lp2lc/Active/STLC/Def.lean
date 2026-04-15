@@ -53,6 +53,25 @@ closed AST are wildcard generators of PHOAS AST given any index type, akin to a 
 abbrev Closed (Ast : Type → Type) [PHOAS Ast] : Type 1 :=
   (Index : Type) → Ast Index
 
+
+inductive Typ : Type
+/--
+AKA primitive type, AnyVal.
+```scala
+type base = AnyVal
+```scala
+subtypes of it in both STLC & Scala are ignored, checking them is trivial
+-/
+| base : Typ
+/--
+monomorphic arrow, can only be inhabited by `monoFn`
+```scala
+type monoArrow = (AnyVal => AnyVal)
+```
+-/
+| monoArrow : (tIn : Typ) → (tOut : Typ) → Typ
+
+
 section Syntax
 
 /-
@@ -65,6 +84,7 @@ contain `In` and `Out`, or be reduced to a polyFunction)
 -/
 
 variable (Index : Type) [DecidableEq Index] -- compatible with Type0 and Type1
+
 
 mutual
 
@@ -94,28 +114,10 @@ inductive Trm : Type
   -/
 | monoApply : (function : Trm) -> (argument : Trm) -> Trm
 
-inductive Typ : Type
-/--
-AKA primitive type, AnyVal.
-```scala
-type base = AnyVal
-```scala
-subtypes of it in both STLC & Scala are ignored, checking them is trivial
--/
-| base : Typ
-/--
-monomorphic arrow, can only be inhabited by `monoFn`
-```scala
-type monoArrow = (AnyVal => AnyVal)
-```
--/
-| monoArrow : (tIn : Typ) → (tOut : Typ) → Typ
-
 end
 
 instance : PHOAS Trm where
 instance : PHOAS Val where
-instance : PHOAS Typ where
 
 def Trm.isValue : Trm Index -> Prop
 | (.literal _ _) | (.monoFn _ _ _)  => true
@@ -136,7 +138,7 @@ def Typ : Type 1 := Closed Trm -> Prop
 -- A bound determines whether a type fits somewhere in the subtyping Heyting
 -- algebra; this is not useful for core STLC so far.
 -- bound is a (mostly implicit) term in Scala (`ev: T <:< Int`)
-def Bound : Type 1 := Closed STLC.Typ -> Prop
+def Bound : Type := STLC.Typ -> Prop
 
 end Semantic
 
@@ -167,12 +169,12 @@ compile-time type checking rule (AKA typing)
   - trying to apply a function but on a var of wrong type
   - trying to apply a function but it produce a new term of wrong type
 -/
-def HasType (e : Closed Trm)(t: Closed Typ) : Prop := sorry
+def HasType (e : Closed Trm)(t: Typ) : Prop := sorry
 
 /--
 convert a syntactic Typ AST into a semantic one
 -/
-def ToSemantic (t: Closed Typ): Semantic.Typ := fun (e) => HasType e t
+def ToSemantic (t: Typ): Semantic.Typ := fun (e) => HasType e t
 
 /--
 Compile-time type judgement /=> runtime/operational type judgement
