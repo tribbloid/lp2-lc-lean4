@@ -57,7 +57,7 @@ inductive Term (var : Ty → Type) : Ty → Type where
   | app : Term var (t1 ==> t2) → Term var t1 → Term var t2
   | abs : (var t1 → Term var t2) → Term var (t1 ==> t2)
 
-abbrev TermClosed (t : Ty) := (var : Ty → Type) → Term var t
+abbrev TermClosed (t : Ty) := {var : Ty → Type} → Term var t
 
 @[simp] def Term.denote : {t : Ty} → Term Ty.denote t → Ty.denote t
   | _, .var v => v
@@ -67,6 +67,6 @@ abbrev TermClosed (t : Ty) := (var : Ty → Type) → Term var t
   | _, .abs e => fun x => Term.denote (e x)
 
 @[simp] def TermClosed.denote {t : Ty} (e : TermClosed t) : Ty.denote t :=
-  Term.denote (e Ty.denote)
+  Term.denote e
 
 end STLC
