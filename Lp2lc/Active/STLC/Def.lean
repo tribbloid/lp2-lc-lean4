@@ -14,11 +14,9 @@ components, with the following conventions:
   - indices are not ID! They are just different ways of categorizing variables,
     it's fine for different types/terms to have identical index (thus `DecidableEq`). Categorizing Terms by
     their tightest type is critical in defining `HasType` predicate
-  - There is no variable names or de Bruijn indices.
-  - Ever term is locally closed, it's impossible to have dangling variable.
-  - There is no data structure representing environment/context variable
-    bindings; they are just Lean `def`/`let` bindings.
-  - There is no class or data structure representing subtyping hierarchies;
+  - There is no variable names or de Bruijn indices, every term/type is a Lean `def`/`let` binding.
+  - There is no environment/context: Scala is purely functional and stateless, every lemma must be proven from AST references
+  - There is no data structure representing subtyping hierarchies:
     they are just the Heyting algebra of Lean `Prop`.
 - extrinsic/Curry-style type representations: term types are predicates
   instead of built-in indices.
@@ -37,6 +35,7 @@ Variable names follow these conventions:
   - variable for DOT types, pre-types (which are Lean data) should start with `t` (e.g. tIn, tOut)
 - use full name, not acronym or abbreviation
 -/
+
 
 structure Later (step : Prop) : Prop where
   force : step
@@ -72,7 +71,7 @@ mutual
 inductive Trm : Type
 | var : Index -> (t: Typ) -> Trm
   /--
-  not in core STLC, but included to make it practical to real language
+  not in core STLC, but included to make it closer to Scala
   `Instruction` is the code snippet (without type annotation) to express the literal.
   ```scala
   val literal = {3: AnyVal}
@@ -119,10 +118,8 @@ instance : PHOAS Val where
 instance : PHOAS Typ where
 
 def Trm.isValue : Trm Index -> Prop
-| .literal _ _ => true
-| .monoFn _ _ _ => true
-| .monoApply _ _ => false
-| .var _ _ => false
+| (.literal _ _) | (.monoFn _ _ _)  => true
+| _ => false
 
 def Val := {v: Trm Index // v.isValue}
 
@@ -145,7 +142,7 @@ end Semantic
 
 /--
 runtime recursive evaluation rule (AKA operational semantic). Scala is a pure functional
-language with structural record, so small-step imperative evaluation is equivalent to
+language with structural record/object, so small-step imperative evaluation is equivalent to
 big-step evaluation on local environment (which is a record) with side effect
 - consumes 1 fuel per recursion
 - return none if `e` not well-formed (e.g. applying a literal) or ran out of fuel
