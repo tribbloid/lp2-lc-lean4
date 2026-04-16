@@ -46,20 +46,20 @@ section Syntax
 
 variable (I: Type)[DecidableEq I][BEq I][Hashable I] -- index
 
-def Env (V: Type) := String → Option V
+def Env (V: Type) := I → Option V
 
 namespace Env
 
-def empty : Env V := fun _ => none
+def empty : Env I V := fun _ => none
 
-def set (σ : Env V) (x : String) (v : Value) : Env V :=
+def set (σ : Env I V) (x : I) (v : Value) : Env I V :=
   fun y => if y = x then some v else σ y
 
-@[simp] theorem set_same (σ : Env V) (x : String) (v : Value) :
+@[simp] theorem set_same (σ : Env I V) (x : I) (v : Value) :
   (σ.set x v) x = some v := by
   simp [set]
 
-@[simp] theorem set_other (σ : Env V) (x y : String) (v : Value) (h : y ≠ x) :
+@[simp] theorem set_other (σ : Env I V) (x y : I) (v : Value) (h : y ≠ x) :
   (σ.set x v) y = σ y := by
   simp [set, h]
 
@@ -82,11 +82,10 @@ inductive Typ : Type where
 | top  : Typ -- `Any`
 | bottom  : Typ -- `Nothing`
 
-inductive Val : Type where
--- Object value carrying a self type together with member definitions
-| val_new : Typ → Definitions → Val
+inductive Val : Type where -- evaluation results and args of Atomic Normal Form (ANF)
+| object : (self: Typ) → Env I Entry → Val -- carrying a self type together with member definitions
 -- Function value with input type annotation and body
-| val_lambda : Typ → Trm → Val
+| fn : (body : (arg: I) -> Trm) -> Trm
 deriving Repr, DecidableEq
 
 inductive Trm : Type where
@@ -94,7 +93,6 @@ inductive Trm : Type where
 | val : Val → Trm -- AKA literal, `3`
 -- TODO: how about typing evidence?
 | subtypeEv: (tUnder: Typ) -> (tOver: Typ) -> Trm -- `Under <:< Over`
-| fn : (body: (arg: I) -> Trm) -> Trm
 | apply : (fn: Trm) -> (arg: Trm) -> Trm -- this should need a subtypeEv
 
 end
