@@ -31,10 +31,12 @@ Recommendations:
 - Scala is purely functional, stateless with structural object/record, so:
   - No let-binding! (exists in Wadler 2016 but was quickly removed), binding is
     just monoFn/monoApply with side effects on the record of local variables
-  - Explicit Env/Context/Store is just a collection of all 3 evidences. It's
-    only an IR built from each AST tree and nothing else, but it's an important
+  - Explicit Env/Context/Store is just a collection of all 3 kinds of evidences (backed
+    by Heyting lattice).
+
+    It's only an IR built from only a AST tree and nothing else, but it's an important
     one. Without it we may never be able to infer the equality of
-    - `type A; type B <: A` and
+    - `type A; type B <: A`, and
     - `type B; type A >: B`
 -/
 
@@ -43,40 +45,64 @@ def ByteCode := String
 section Syntax
 
 variable (I: Type)[DecidableEq I][BEq I][Hashable I] -- index
+
+def Env (V: Type) := String → Option V
+
+namespace Env
+
+def empty : Env V := fun _ => none
+
+def set (σ : Env V) (x : String) (v : Value) : Env V :=
+  fun y => if y = x then some v else σ y
+
+@[simp] theorem set_same (σ : Env V) (x : String) (v : Value) :
+  (σ.set x v) x = some v := by
+  simp [set]
+
+@[simp] theorem set_other (σ : Env V) (x y : String) (v : Value) (h : y ≠ x) :
+  (σ.set x v) y = σ y := by
+  simp [set, h]
+
+end Env
+
 mutual
 
-inductive Entry: Type where
-| type: I -> Ty -> Entry
-| term: I -> Tm -> Entry
-deriving DecidableEq, Repr
+inductive Entry: Type where -- member of an object
+| type: (Label: I) -> Typ -> Entry -- `{type Label = Ty}`
+| term: (label: I) -> Trm -> Entry -- `{term label = Tm}`
 
-inductive Ty : Type where
-| primitive : Ty -- `AnyVal`, won't differentiate Int/Float/Byte.
-| fn : (tIn :Ty) -> (tOut: Ty) -> Ty -- function, `In => Out`
-| object  : Entry → Ty
-| selection: Ty
-| and: (tX: Ty) -> (tY: Ty) -> Ty -- AKA intersection, `X & Y`
-| or: (tX: Ty) -> (tY: Ty) -> Ty -- AKA union, `X | Y`
-| top  : Ty -- `Any`
-| bottom  : Ty -- `Nothing`
-deriving DecidableEq, Repr
+inductive Typ : Type where
+| primitive : Typ -- `AnyVal`, won't differentiate Int/Float/Byte.
+| subtypeEv: (tUnder: Typ) -> (tOver: Typ) -> Typ -- `Under <:< Over`
+| fn : (tIn :Typ) -> (tOut: Typ) -> Typ -- function, `In => Out`
+| object  : Entry → Typ
+| selection: I -> I -> Typ
+| and: (tX: Typ) -> (tY: Typ) -> Typ -- AKA intersection, `X & Y`
+| or: (tX: Typ) -> (tY: Typ) -> Typ -- AKA union, `X | Y`
+| top  : Typ -- `Any`
+| bottom  : Typ -- `Nothing`
 
-inductive Tm : Type where
-| var : I -> Tm -- `x`
-| literal : ByteCode -> Tm -- `3`
+inductive Val : Type where
+-- Object value carrying a self type together with member definitions
+| val_new : Typ → Definitions → Val
+-- Function value with input type annotation and body
+| val_lambda : Typ → Trm → Val
+deriving Repr, DecidableEq
+
+inductive Trm : Type where
+| var : I -> Trm -- `x`
+| val : Val → Trm -- AKA literal, `3`
 -- TODO: how about typing evidence?
-| subtypeEv: (tUnder: Ty) -> (tOver: Ty) -> Tm -- `Under <:< Over`
-| apply : Tm -> Tm -> Tm -- this should need a subtypeEv
-| fn : (arg : I -> Tm) -> Tm
-deriving DecidableEq, Repr
+| subtypeEv: (tUnder: Typ) -> (tOver: Typ) -> Trm -- `Under <:< Over`
+| fn : (body: (arg: I) -> Trm) -> Trm
+| apply : (fn: Trm) -> (arg: Trm) -> Trm -- this should need a subtypeEv
 
 end
 
 namespace postpone
 
-inductive TyCtor : Type where -- type constructor! not type! not in core DOT!
-| ctor: (arg : I ->  Ty) -> TyCtor
-deriving DecidableEq, Repr
+inductive TypCtor : Type where -- type constructor! not type! not in core DOT!
+| ctor: (arg : I -> Typ I) -> TypCtor
 
 end postpone
 
