@@ -39,25 +39,33 @@ Recommendations:
     - `type A; type B <: A`, and
     - `type B; type A >: B`
 - We haven't reach variance yet, so both Function and SubtypeEvidence are
-  invariant (IRL they are 1-contravariant and 2-covariant, but we will get there)
+  invariant (IRL they are 1-contravariant and 2-covariant, but we will get
+  there)
+- Type erasure: Val do NOT carry any type information
+- Currying is always enabled, a binary operation is fold into curried form of 2
+  unary operations.
 -/
 
 def ByteCode := String
 
 def Label := String
 
+structure Lookup (K V : Type) where
+  underlying : K → Option V
+
 section
 
 variable (K: Type)[DecidableEq K] -- index
 
-def Lookup (V: Type) := K → Option V
-
 namespace Lookup
 
-def empty : Lookup K V := fun _ => none
+instance : CoeFun (Lookup K V) (fun _ => K → Option V) where
+  coe σ := σ.underlying
+
+def empty : Lookup K V := ⟨fun _ => none⟩
 
 def set (σ : Lookup K V) (x : K) (v : V) : Lookup K V :=
-  fun y => if y = x then some v else σ y
+  ⟨fun y => if y = x then some v else σ y⟩
 
 @[simp] theorem set_same (σ : Lookup K V) (x : K) (v : V) :
   Lookup.set (K := K) (V := V) σ x v x = some v := by
@@ -87,14 +95,11 @@ inductive Entry: Type where -- member of an object
 inductive Typ : Type where
 -- | later: (raw: Typ) -> Typ -- don't know how to use it in iris yet.
 | primitive : Typ -- `AnyVal`, won't differentiate Int/Float/Byte.
- -- TODO: why is this not a function?
 | subtypeEv (tUnder: Typ) (tOver: Typ): Typ -- subtype evidence, AKA coercion, `Under <:< Over`
- -- TODO: how to represent actual dependent function?
-| depFn : (tIn :Typ) -> (tOut: Typ) -> Typ -- dependent function, `In => Out`
+| depFn : (tIn :Typ) -> (tOut: Typ) -> Typ -- function (`In => Out`) or dependent function (if `tOut` is a "depSelectTyp")
 | object1  : Entry → Typ -- AKA record1, only has 1 member
- -- TODO: useless ????
-| depSelect: (object: I) -> (tLabel: Label) -> Typ -- `object.Label`
- -- TODO: useless ????
+ -- TODO: this hasn't been defined in PHOAS before, need to double check.
+| depSelectTyp: (object: I) -> (tLabel: Label) -> Typ -- `object.Label`
 | self : (self: Typ) → Typ -- AKA type binding, Mu-type, `this`
 | and: (tX: Typ) -> (tY: Typ) -> Typ -- AKA intersection, `X & Y`
 | or: (tX: Typ) -> (tY: Typ) -> Typ -- AKA union, `X | Y`
@@ -103,17 +108,17 @@ inductive Typ : Type where
 
 inductive Val : Type where -- evaluation results and args of Atomic Normal Form (ANF), `Typ` CANNOT be carried! they are erased at runtime!
 | primitive : Val -- `3`, `3.2`, `true` etc.
- -- TODO: useless ????
-| object : ((label: Label) -> Entry) → Val -- carrying a self type & member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
+| object : (Label -?> Entry) → Val -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
 | depFn : (body : (arg: I) -> Trm) -> Val -- same as Typ
 | subtypeEv:  Val -- same as Typ, has no coercion body
 -- TODO: do we need typing evidence?
+-- TODO: for operational semantics, Val should be indistinguisable from denotation, in the next version they should be unified (if positivity doesn't block it)
 
 inductive Trm : Type where -- AKA expression, unlike Val, it is indexed by type
 | var : (symbol: I) -> Trm -- `x`
 | val : Val → Trm -- AKA literal, Values are terms
-| depSelect : (object: I) → (label: Label) → Trm  -- `object.label`
-| depApply : (fn: Trm) -> (arg: Trm) -> Trm -- dependent application
+| depSelectTrm : (object: I) → (label: Label) → Trm  -- `object.label`
+| depApply : (fn: Trm) -> (arg: Trm) -> Trm -- application of (dependent?) function
 
 end
 
