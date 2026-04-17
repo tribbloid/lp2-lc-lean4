@@ -38,62 +38,83 @@ Recommendations:
     one. Without it we may never be able to infer the equality of
     - `type A; type B <: A`, and
     - `type B; type A >: B`
+- We haven't reach variance yet, so both Function and SubtypeEvidence are
+  invariant (IRL they are 1-contravariant and 2-covariant, but we will get there)
 -/
 
 def ByteCode := String
 
-section Syntax
+def Label := String
 
-variable (I: Type)[DecidableEq I][BEq I][Hashable I] -- index
+section
 
-def Env (V: Type) := I → Option V
+variable (K: Type)[DecidableEq K] -- index
 
-namespace Env
+def Lookup (V: Type) := K → Option V
 
-def empty : Env I V := fun _ => none
+namespace Lookup
 
-def set (σ : Env I V) (x : I) (v : Value) : Env I V :=
+def empty : Lookup K V := fun _ => none
+
+def set (σ : Lookup K V) (x : K) (v : V) : Lookup K V :=
   fun y => if y = x then some v else σ y
 
-@[simp] theorem set_same (σ : Env I V) (x : I) (v : Value) :
-  (σ.set x v) x = some v := by
-  simp [set]
+@[simp] theorem set_same (σ : Lookup K V) (x : K) (v : V) :
+  Lookup.set (K := K) (V := V) σ x v x = some v := by
+  simp [Lookup.set]
 
-@[simp] theorem set_other (σ : Env I V) (x y : I) (v : Value) (h : y ≠ x) :
-  (σ.set x v) y = σ y := by
-  simp [set, h]
+@[simp] theorem set_other (σ : Lookup K V) (x y : K) (v : V) (h : y ≠ x) :
+  Lookup.set (K := K) (V := V) σ x v y = σ y := by
+  simp [Lookup.set, h]
 
-end Env
+end Lookup
+
+end
+
+section Syntax
+
+variable (I: Type)[DecidableEq I] -- index
+
+
+infixr:60 " -?> " => Lookup
 
 mutual
 
 inductive Entry: Type where -- member of an object
-| type: (Label: I) -> Typ -> Entry -- `{type Label = Ty}`
-| term: (label: I) -> Trm -> Entry -- `{term label = Tm}`
+| type: (tLabel: Label) -> Typ -> Entry -- `{type Label = Ty}`
+| term: (label: Label) -> Trm -> Entry -- `{term label = Tm}`
 
 inductive Typ : Type where
+-- | later: (raw: Typ) -> Typ -- don't know how to use it in iris yet.
 | primitive : Typ -- `AnyVal`, won't differentiate Int/Float/Byte.
-| subtypeEv: (tUnder: Typ) -> (tOver: Typ) -> Typ -- `Under <:< Over`
-| fn : (tIn :Typ) -> (tOut: Typ) -> Typ -- function, `In => Out`
-| object  : Entry → Typ
-| selection: I -> I -> Typ
+ -- TODO: why is this not a function?
+| subtypeEv (tUnder: Typ) (tOver: Typ): Typ -- subtype evidence, AKA coercion, `Under <:< Over`
+ -- TODO: how to represent actual dependent function?
+| depFn : (tIn :Typ) -> (tOut: Typ) -> Typ -- dependent function, `In => Out`
+| object1  : Entry → Typ -- AKA record1, only has 1 member
+ -- TODO: useless ????
+| depSelect: (object: I) -> (tLabel: Label) -> Typ -- `object.Label`
+ -- TODO: useless ????
+| self : (self: Typ) → Typ -- AKA type binding, Mu-type, `this`
 | and: (tX: Typ) -> (tY: Typ) -> Typ -- AKA intersection, `X & Y`
 | or: (tX: Typ) -> (tY: Typ) -> Typ -- AKA union, `X | Y`
 | top  : Typ -- `Any`
 | bottom  : Typ -- `Nothing`
 
-inductive Val : Type where -- evaluation results and args of Atomic Normal Form (ANF)
-| object : (self: Typ) → Env I Entry → Val -- carrying a self type together with member definitions
--- Function value with input type annotation and body
-| fn : (body : (arg: I) -> Trm) -> Trm
-deriving Repr, DecidableEq
+inductive Val : Type where -- evaluation results and args of Atomic Normal Form (ANF), `Typ` CANNOT be carried! they are erased at runtime!
+| primitive : Val -- `3`, `3.2`, `true` etc.
+ -- TODO: useless ????
+| object : ((label: Label) -> Entry) → Val -- carrying a self type & member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
+| depFn : (body : (arg: I) -> Trm) -> Val -- same as Typ
+| subtypeEv:  Val -- same as Typ, has no coercion body
+-- TODO: do we need typing evidence?
 
-inductive Trm : Type where
-| var : I -> Trm -- `x`
-| val : Val → Trm -- AKA literal, `3`
--- TODO: how about typing evidence?
-| subtypeEv: (tUnder: Typ) -> (tOver: Typ) -> Trm -- `Under <:< Over`
-| apply : (fn: Trm) -> (arg: Trm) -> Trm -- this should need a subtypeEv
+inductive Trm : Type where -- AKA expression, unlike Val, it is indexed by type
+| var : (symbol: I) -> Trm -- `x`
+| val : Val → Trm -- AKA literal, Values are terms
+| depSelect : (object: I) → (label: Label) → Trm  -- `object.label`
+ -- TODO: need subtypeEv?
+| depApply : (fn: Trm) -> (arg: Trm) -> Trm -- dependent application
 
 end
 
