@@ -89,36 +89,36 @@ infixr:60 " -?> " => Lookup
 mutual
 
 inductive Entry: Type where -- member of an object
-| type: (tLabel: Label) -> Typ -> Entry -- `{type Label = Ty}`
-| term: (label: Label) -> Trm -> Entry -- `{term label = Tm}`
+| type (tLabel: Label) (ty: Typ) : Entry -- `{type Label = Ty}`
+| term (label: Label) (tm: Trm) : Entry -- `{term label = Tm}`
 
 inductive Typ : Type where
--- | later: (raw: Typ) -> Typ -- don't know how to use it in iris yet.
+-- | later (raw: Typ) : Typ -- don't know how to use it in iris yet.
 | primitive : Typ -- `AnyVal`, won't differentiate Int/Float/Byte.
-| subtypeEv (tUnder: Typ) (tOver: Typ): Typ -- subtype evidence, AKA coercion, `Under <:< Over`
-| depFn : (tIn :Typ) -> (tOut: Typ) -> Typ -- function (`In => Out`) or dependent function (if `tOut` is a "depSelectTyp")
-| object1  : Entry → Typ -- AKA record1, only has 1 member
+| subtypeEv (tUnder: Typ) (tOver: Typ) : Typ -- subtype evidence, AKA coercion, `Under <:< Over`
+| depFn (tIn : Typ) (tOut: Typ) : Typ -- function (`In => Out`) or dependent function (if `tOut` is a "depSelectTyp")
+| object1 (entry : Entry) : Typ -- AKA record1, only has 1 member
  -- TODO: this hasn't been defined in PHOAS before, need to double check.
-| depSelectTyp: (object: I) -> (tLabel: Label) -> Typ -- `object.Label`
-| self : (self: Typ) → Typ -- AKA type binding, Mu-type, `this`
-| and: (tX: Typ) -> (tY: Typ) -> Typ -- AKA intersection, `X & Y`
-| or: (tX: Typ) -> (tY: Typ) -> Typ -- AKA union, `X | Y`
+| depSelectTyp (object: I) (tLabel: Label) : Typ -- `object.Label`
+| self (self: Typ) : Typ -- AKA type binding, Mu-type, `this`
+| and (tX: Typ) (tY: Typ) : Typ -- AKA intersection, `X & Y`
+| or (tX: Typ) (tY: Typ) : Typ -- AKA union, `X | Y`
 | top  : Typ -- `Any`
 | bottom  : Typ -- `Nothing`
 
 inductive Val : Type where -- evaluation results and args of Atomic Normal Form (ANF), `Typ` CANNOT be carried! they are erased at runtime!
 | primitive : Val -- `3`, `3.2`, `true` etc.
-| object : (Label -?> Entry) → Val -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
-| depFn : (body : (arg: I) -> Trm) -> Val -- same as Typ
+| object (lookup : Label -?> Entry) : Val -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
+| depFn (body : (arg: I) -> Trm) : Val -- same as Typ
 -- TODO: do we need typing evidence?
 -- TODO: for operational semantics, Val should be indistinguisable from denotation, in the next version they should be unified (if positivity doesn't block it)
 
 inductive Trm : Type where -- AKA expression, unlike Val, it is indexed by type
-| var : (symbol: I) -> Trm -- `x`
-| val : Val → Trm -- AKA literal, Values are terms
-| depSelectTrm : (object: I) → (label: Label) → Trm  -- `object.label`
-| depApply : (fn: Trm) -> (arg: Trm) -> Trm -- application of (dependent?) function
-| subtypeEv:  Trm -- same as Typ, has no coercion body, erased at runtime
+| var (symbol: I) : Trm -- `x`
+| val (v : Val) : Trm -- AKA literal, Values are terms
+| depSelectTrm (object: I) (label: Label) : Trm  -- `object.label`
+| depApply (fn: Trm) (arg: Trm) : Trm -- application of (dependent?) function
+| subtypeEv : Trm -- same as Typ, has no coercion body, erased at runtime
 
 end
 
