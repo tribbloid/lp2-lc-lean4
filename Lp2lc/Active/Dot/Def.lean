@@ -122,6 +122,11 @@ inductive Trm : Type where -- AKA expression, unlike Val, it is indexed by type
 
 end
 
+-- inductive Data: Type where -- AKA Denotation
+-- | primitive : Data -- `3`, `3.2`, `true` etc.
+-- | object : (Label -?> Data or (Data -> Data) ) → Data -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
+
+
 namespace postpone
 
 inductive TypCtor : Type where -- type constructor! not type! not in core DOT!
