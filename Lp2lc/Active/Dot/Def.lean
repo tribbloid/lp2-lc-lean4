@@ -110,7 +110,6 @@ inductive Val : Type where -- evaluation results and args of Atomic Normal Form 
 | primitive : Val -- `3`, `3.2`, `true` etc.
 | object : (Label -?> Entry) → Val -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
 | depFn : (body : (arg: I) -> Trm) -> Val -- same as Typ
-| subtypeEv:  Val -- same as Typ, has no coercion body
 -- TODO: do we need typing evidence?
 -- TODO: for operational semantics, Val should be indistinguisable from denotation, in the next version they should be unified (if positivity doesn't block it)
 
@@ -119,6 +118,7 @@ inductive Trm : Type where -- AKA expression, unlike Val, it is indexed by type
 | val : Val → Trm -- AKA literal, Values are terms
 | depSelectTrm : (object: I) → (label: Label) → Trm  -- `object.label`
 | depApply : (fn: Trm) -> (arg: Trm) -> Trm -- application of (dependent?) function
+| subtypeEv:  Trm -- same as Typ, has no coercion body, erased at runtime
 
 end
 
