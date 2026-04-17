@@ -113,7 +113,6 @@ inductive Trm : Type where -- AKA expression, unlike Val, it is indexed by type
 | var : (symbol: I) -> Trm -- `x`
 | val : Val → Trm -- AKA literal, Values are terms
 | depSelect : (object: I) → (label: Label) → Trm  -- `object.label`
- -- TODO: need subtypeEv?
 | depApply : (fn: Trm) -> (arg: Trm) -> Trm -- dependent application
 
 end
