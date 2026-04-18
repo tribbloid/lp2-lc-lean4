@@ -76,7 +76,6 @@ end LookupFn
 structure ObjectBody (V : Type) where
   underlying : Label → Option V
 
-
 end
 
 section Syntax
@@ -95,8 +94,9 @@ inductive Typ : Type where
 | subtypeEv (tUnder: Typ) (tOver: Typ) : Typ -- subtype evidence, AKA coercion, `Under <:< Over`
 | depFn (tIn : Typ) (tOut: Typ) : Typ -- function (`In => Out`) or dependent function (if `tOut` is a "depSelectTyp")
 | object1 (entry : Entry) : Typ -- AKA record1, only has 1 member
- -- TODO: this hasn't been defined in PHOAS before, need to double check.
-| depSelectTyp (object: I) (tLabel: Label) : Typ -- `object.Label`
+-- TODO: this hasn't been defined in PHOAS before, need to double check.
+-- Kind of hairy, how could object I be available when the object body is half-defined?
+| depSelectTyp (object: I) (tK: Label) : Typ -- `object.Label` -- (object: I) used to be a de Bruijn serial which is 0 for `this.K`, in PHOAS we have to use Trm.self
 | self (self: Typ) : Typ -- AKA type binding, Mu-type, `this`
 | and (tX: Typ) (tY: Typ) : Typ -- AKA intersection, `X & Y`
 | or (tX: Typ) (tY: Typ) : Typ -- AKA union, `X | Y`
@@ -113,6 +113,7 @@ inductive Val : Type where -- evaluation results and args of Atomic Normal Form 
 inductive Trm : Type where -- AKA expression, unlike Val, it is indexed by type
 | var (symbol: I) : Trm -- `x`
 | val (v : Val) : Trm -- AKA literal, Values are terms
+| self : Trm -- AKA self-binder, `this`
 | depSelectTrm (object: I) (label: Label) : Trm  -- `object.label`
 | depApply (fn: Trm) (arg: Trm) : Trm -- application of (dependent?) function
 | subtypeEv : Trm -- same as Typ, has no coercion body, erased at runtime
