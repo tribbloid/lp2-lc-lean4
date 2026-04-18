@@ -48,43 +48,39 @@ Recommendations:
 
 def ByteCode := String
 
-def Label := String
+abbrev Label := String
 
-structure Lookup (K V : Type) where
-  underlying : K → Option V
+abbrev LookupFn (V : Type) := Label → Option V
+
+structure Lookup (V : Type) where
+  underlying : Label → Option V
 
 section
 
-variable (K: Type)[DecidableEq K] -- index
+variable (V : Type)
 
-namespace Lookup
+namespace LookupFn
 
-instance : CoeFun (Lookup K V) (fun _ => K → Option V) where
-  coe σ := σ.underlying
+def empty : LookupFn V := fun _ => none
 
-def empty : Lookup K V := ⟨fun _ => none⟩
+def set (σ : LookupFn V) (x : Label) (v : V) : LookupFn V :=
+  fun y => if y = x then some v else σ y
 
-def set (σ : Lookup K V) (x : K) (v : V) : Lookup K V :=
-  ⟨fun y => if y = x then some v else σ y⟩
+@[simp] theorem set_same (σ : LookupFn V) (x : Label) (v : V) :
+  LookupFn.set (V := V) σ x v x = some v := by
+  simp [LookupFn.set]
 
-@[simp] theorem set_same (σ : Lookup K V) (x : K) (v : V) :
-  Lookup.set (K := K) (V := V) σ x v x = some v := by
-  simp [Lookup.set]
+@[simp] theorem set_other (σ : LookupFn V) (x y : Label) (v : V) (h : y ≠ x) :
+  LookupFn.set (V := V) σ x v y = σ y := by
+  simp [LookupFn.set, h]
 
-@[simp] theorem set_other (σ : Lookup K V) (x y : K) (v : V) (h : y ≠ x) :
-  Lookup.set (K := K) (V := V) σ x v y = σ y := by
-  simp [Lookup.set, h]
-
-end Lookup
+end LookupFn
 
 end
 
 section Syntax
 
 variable (I: Type)[DecidableEq I] -- index
-
-
-infixr:60 " -?> " => Lookup
 
 mutual
 
@@ -108,7 +104,7 @@ inductive Typ : Type where
 
 inductive Val : Type where -- evaluation results and args of Atomic Normal Form (ANF), `Typ` CANNOT be carried! they are erased at runtime!
 | primitive : Val -- `3`, `3.2`, `true` etc.
-| object (lookup : Label -?> Entry) : Val -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
+| object (lookup : Lookup Entry) : Val -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
 | depFn (body : (arg: I) -> Trm) : Val -- same as Typ
 -- TODO: do we need typing evidence?
 -- TODO: for operational semantics, Val should be indistinguisable from denotation, in the next version they should be unified (if positivity doesn't block it)
@@ -124,7 +120,7 @@ end
 
 -- inductive Data: Type where -- AKA Denotation
 -- | primitive : Data -- `3`, `3.2`, `true` etc.
--- | object : (Label -?> Data or (Data -> Data) ) → Data -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
+-- | object : (Lookup Data or (Data -> Data) ) → Data -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
 
 
 namespace postpone
