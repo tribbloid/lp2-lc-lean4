@@ -1,4 +1,4 @@
-import Mathlib.Tactic
+import Std
 import «Lp2lc».Active.Shared
 import «Lp2lc».Active.LC.Def
 import «Lp2lc».Util

@@ -24,13 +24,5 @@ lean_exe «lp2lc» where
 require aesop from git
   "https://github.com/leanprover-community/aesop" @ "v4.29.0"
 
-
-require batteries from
-  git "https://github.com/leanprover-community/batteries" @ "v4.29.0"
-
-
-require mathlib from git
-  "https://github.com/leanprover-community/mathlib4" @ "v4.29.1"
-
 require iris from git
   "https://github.com/leanprover-community/iris-lean.git" @ "master"

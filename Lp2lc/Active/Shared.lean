@@ -1,5 +1,4 @@
 import Std
-import Mathlib.Data.Finset.Basic
 
 namespace Lp2lc.Active
 
@@ -8,13 +7,13 @@ structure Var where
   name : String
   deriving Repr, BEq, Hashable, DecidableEq
 
-abbrev Vars := Finset Var
+abbrev Vars := List Var
 
 
 -- Generic environment helpers over lists of (Var × α)
 namespace Env
   /-- Domain (set of variables) of an environment represented as a list of (Var × α) -/
-  def domOf {α} (E : List (Var × α)) : Vars := E.map (·.1) |>.toFinset
+  def domOf {α} (E : List (Var × α)) : Vars := E.map (·.1)
 
   /-- Membership predicate for bindings in an environment list -/
   def bindsOf {α} (x : Var) (v : α) (E : List (Var × α)) : Prop :=
@@ -27,7 +26,7 @@ namespace Env
   def mapSecond {α β} (f : α → β) (E : List (Var × α)) : List (Var × β) :=
     E.map (fun p => (p.1, f p.2))
 
-  def dom {α} (E : List (Var × α)) : Vars := E.map (·.1) |>.toFinset
+  def dom {α} (E : List (Var × α)) : Vars := E.map (·.1)
 end Env
 
 

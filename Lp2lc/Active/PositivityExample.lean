@@ -1,4 +1,4 @@
-import Mathlib.Tactic
+import Std
 
 namespace Lp2lc.Active.Dot.PositivityExample
 

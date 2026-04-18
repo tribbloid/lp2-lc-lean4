@@ -1,4 +1,4 @@
-import Mathlib.Tactic
+import Std
 import «Lp2lc».Active.Shared
 import «Lp2lc».Util
 
@@ -17,8 +17,8 @@ inductive AST(F: Rep) : Rep
 def Trm (F: Rep) := AST F .trm
 def Typ (F: Rep) := AST F .typ
 
-def EnvTrms (F: Rep) := Finset (Var × AST F .trm)
-def EnvTyps (F: Rep) := Finset (Var × AST F .typ)
+def EnvTrms (F: Rep) := List (Var × AST F .trm)
+def EnvTyps (F: Rep) := List (Var × AST F .typ)
 def Env (F: Rep) := EnvTrms F × EnvTyps F
 
 def typing : Env F -> (x: Trm F) -> (T: Typ F) -> Prop -- true if x can inhabit T
