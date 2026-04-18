@@ -6,7 +6,7 @@ import «Lp2lc».Active.STLC.Example
 
 import «Lp2lc».Active.SysF.Def
 
-import «Lp2lc».Active.Dot.Def
+import «Lp2lc».Active.DOT.Def
 import «Lp2lc».Active.PositivityExample
 -- import «Lp2lc».Active.Dot.Auxiliary
 -- import «Lp2lc».Active.Dot.Proof

@@ -15,36 +15,6 @@ It is:
 - Not WadlerFest 2016 version! (lack of union type)
 -/
 
-/-
-Recommendations:
-- PHOAS, term/type indices are irrelevant, no de Bruijn serial or explicit
-  variable name allowed
-- All typing/subtyping/variance relations are evidences (a special kind of
-  term)! These includes:
-  - typing: t : T
-  - subtyping: T1 <:< T2
-  - variance for type constructors: [+I] => T[I], [-I] => T[I]
-- Intrinsic typing but they are just built-in evidences/axioms for the symbol,
-  they don't participate in judgement of inhabitance or well-typedness (these
-  are still extrinsic).
-- Scala is purely functional, stateless with structural object/record, so:
-  - No let-binding! (exists in Wadler 2016 but was quickly removed), binding is
-    just monoFn/monoApply with side effects on the record of local variables
-  - Explicit Env/Context/Store is just a collection of all 3 kinds of evidences (backed
-    by Heyting lattice).
-
-    It's only an IR built from only a AST tree and nothing else, but it's an important
-    one. Without it we may never be able to infer the equality of
-    - `type A; type B <: A`, and
-    - `type B; type A >: B`
-- We haven't reach variance yet, so both Function and SubtypeEvidence are
-  invariant (IRL they are 1-contravariant and 2-covariant, but we will get
-  there)
-- Type erasure: Val do NOT carry any type information
-- Currying is always enabled, a binary operation is fold into curried form of 2
-  unary operations.
--/
-
 def ByteCode := String
 
 abbrev Label := String
