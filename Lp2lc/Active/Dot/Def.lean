@@ -52,9 +52,6 @@ abbrev Label := String
 
 abbrev LookupFn (V : Type) := Label → Option V
 
-structure Lookup (V : Type) where
-  underlying : Label → Option V
-
 section
 
 variable (V : Type)
@@ -75,6 +72,10 @@ def set (σ : LookupFn V) (x : Label) (v : V) : LookupFn V :=
   simp [LookupFn.set, h]
 
 end LookupFn
+
+structure ObjectBody (V : Type) where
+  underlying : Label → Option V
+
 
 end
 
@@ -104,7 +105,7 @@ inductive Typ : Type where
 
 inductive Val : Type where -- evaluation results and args of Atomic Normal Form (ANF), `Typ` CANNOT be carried! they are erased at runtime!
 | primitive : Val -- `3`, `3.2`, `true` etc.
-| object (lookup : Lookup Entry) : Val -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
+| object (lookup : ObjectBody Entry) : Val -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
 | depFn (body : (arg: I) -> Trm) : Val -- same as Typ
 -- TODO: do we need typing evidence?
 -- TODO: for operational semantics, Val should be indistinguisable from denotation, in the next version they should be unified (if positivity doesn't block it)
