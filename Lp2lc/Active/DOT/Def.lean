@@ -97,4 +97,6 @@ end Syntax
 
 abbrev TrmClosed := {I : Type} -> Trm I
 
+abbrev TypClosed := {I : Type} -> Typ I
+
 end DOT
