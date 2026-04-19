@@ -42,7 +42,7 @@ inductive Typ : Type where
 | bottom  : Typ -- `Nothing`
 
 inductive Val : Type where -- evaluation results and args of Atomic Normal Form (ANF), `Typ` CANNOT be carried! they are erased at runtime!
-| primitive : Val -- `3`, `3.2`, `true` etc.
+| primitive (repr: ByteCode) : Val -- `3`, `3.2`, `true` etc.
 | object (lookup : ObjectBody Entry) : Val -- carrying a member lookup, DOT only uses structural typing so Trait has to carry an extra hidden type member
 | depFn (body : (arg: I) -> Trm) : Val -- see "Typ.depFn", does it really need a body?
 | subtypeEv : Val -- see "Typ.subtypeEv", has no body, erased at runtime
@@ -95,6 +95,6 @@ doesn't block it), can we avoid repetitive definitions?
 
 end Syntax
 
-abbrev TermClosed := {I : Type} -> Trm I
+abbrev TrmClosed := {I : Type} -> Trm I
 
 end DOT
