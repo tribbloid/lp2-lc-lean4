@@ -62,33 +62,36 @@ positivity constraint and allow `body` to abuse its metadata.
 
 -/
 
+namespace Tests.DOT.Sanity
 
-def fals : TermClosed BoolT :=
-  fun _ => .fals
+def fals : TermClosed :=
+  .literal "false"
 
-def tru : TermClosed BoolT :=
-  fun _ => .tru
+def tru : TermClosed :=
+  .literal "true"
 
-def ident : TermClosed (BoolT ==> BoolT) :=
-  fun _ => .abs (fun x => .var x)
+def ident : TermClosed :=
+  .abs (fun x => .var x)
 
-def falsAgain : TermClosed BoolT :=
-  fun _ => .app (ident _) (fals _)
+def falsAgain : TermClosed :=
+  .app ident fals
 
-def first : TermClosed (BoolT ==> BoolT ==> BoolT) :=
-  fun _ => .abs (fun x => .abs (fun _y => .var x))
+def first : TermClosed :=
+  .abs (fun x => .abs (fun _y => .var x))
 
-def second : TermClosed (BoolT ==> BoolT ==> BoolT) :=
-  fun _ => .abs (fun _x => .abs (fun y => .var y))
+def second : TermClosed :=
+  .abs (fun _x => .abs (fun y => .var y))
 
-def testFirst : TermClosed BoolT :=
-  fun _ => .app (.app (first _) (fals _)) (tru _)
+def testFirst : TermClosed :=
+  .app (.app first fals) tru
 
-def testSecond : TermClosed BoolT :=
-  fun _ => .app (.app (second _) (fals _)) (tru _)
+def testSecond : TermClosed :=
+  .app (.app second fals) tru
 
-def app : TermClosed ((BoolT ==> BoolT) ==> BoolT ==> BoolT) :=
-  fun _ => .abs (fun f => .abs (fun x => .app (.var f) (.var x)))
+def app : TermClosed :=
+  .abs (fun f => .abs (fun x => .app (.var f) (.var x)))
 
-def falsAgain2 : TermClosed BoolT :=
-  fun _ => .app (.app (app _) (ident _)) (fals _)
+def falsAgain2 : TermClosed :=
+  .app (.app app ident) fals
+
+end Sanity
