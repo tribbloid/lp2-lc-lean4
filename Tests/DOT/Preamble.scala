@@ -1,0 +1,3 @@
+package DOT
+
+trait Preamble {}

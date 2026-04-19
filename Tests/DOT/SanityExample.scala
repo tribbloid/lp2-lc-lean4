@@ -1,6 +1,7 @@
-object `typ` extends Preamble {
+package DOT
 
-  { // typ_top: top type
-    type Out = Any
-  }
+object SanityExample extends Preamble {
+
+  object Trm {}
+
 }

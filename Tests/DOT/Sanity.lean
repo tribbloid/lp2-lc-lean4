@@ -63,35 +63,56 @@ positivity constraint and allow `body` to abuse its metadata.
 -/
 
 namespace Tests.DOT.Sanity
+open Lp2lc.Active.DOT
 
-def fals : TermClosed :=
-  .literal "false"
+namespace Trm
 
-def tru : TermClosed :=
-  .literal "true"
+def false : TrmClosed :=
+  .val (.primitive "false")
 
-def ident : TermClosed :=
-  .abs (fun x => .var x)
+def true : TrmClosed :=
+  .val (.primitive "true")
 
-def falsAgain : TermClosed :=
-  .app ident fals
+def identityFn : TrmClosed :=
+  .val
+    (.depFn (fun x => .var x))
 
-def first : TermClosed :=
-  .abs (fun x => .abs (fun _y => .var x))
+def identityFn_onFalse : TrmClosed :=
+  .depApply identityFn false
 
-def second : TermClosed :=
-  .abs (fun _x => .abs (fun y => .var y))
+def get1st : TrmClosed :=
+  .val
+    (.depFn (fun x =>
+      .val
+        (.depFn (fun _y => .var x))))
 
-def testFirst : TermClosed :=
-  .app (.app first fals) tru
+def get2nd : TrmClosed :=
+  .val
+    (.depFn (fun _x =>
+      .val
+        (.depFn (fun y => .var y))))
 
-def testSecond : TermClosed :=
-  .app (.app second fals) tru
+def get1st_onTuple : TrmClosed :=
+  .depApply
+    (.depApply get1st false)
+    true
 
-def app : TermClosed :=
-  .abs (fun f => .abs (fun x => .app (.var f) (.var x)))
+def get2nd_onTuple : TrmClosed :=
+  .depApply
+    (.depApply get2nd false)
+    true
 
-def falsAgain2 : TermClosed :=
-  .app (.app app ident) fals
+def apply1stOn2ndFn : TrmClosed :=
+  .val (.depFn (fun f =>
+    .val (.depFn (fun x =>
+      .depApply
+        (.var f)
+        (.var x)))))
 
+def apply1stOn2ndFn_onTuple : TrmClosed :=
+  .depApply
+    (.depApply apply1stOn2ndFn identityFn)
+    false
+
+end Trm
 end Sanity
