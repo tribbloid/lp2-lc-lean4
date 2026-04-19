@@ -1,0 +1,2 @@
+
+import Tests.DOT.Sanity
