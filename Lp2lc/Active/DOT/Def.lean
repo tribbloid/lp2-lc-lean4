@@ -74,7 +74,6 @@ inductive TypCtor : Type where -- type constructor! not type! not in core DOT!
 -- | higherCtor (body: (arg: I) -> TypCtor) : TypCtor
 | apply (ctor: TypCtor) (arg: TypCtor): TypCtor
 
-obvious error
 
 end
 

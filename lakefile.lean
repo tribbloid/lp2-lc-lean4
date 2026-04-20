@@ -3,6 +3,7 @@ open Lake DSL
 
 package «Lp2lc» where
 
+@[default_target]
 lean_lib «Lp2lc» where
 
 lean_lib «Spike» where
