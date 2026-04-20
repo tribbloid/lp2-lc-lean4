@@ -33,7 +33,7 @@ inductive Typ : Type where
 -- TODO: dependent subtypeEv? then maybe it can be merged into depFn?
 | evidence (ev: Evidence) : Typ -- ev can be both type & value
 | depFn (tIn : Typ) (tOut: (arg: I) -> Typ) : Typ -- function `In => Out` or dependent function (if "tOut" uses "arg")
-| entry (single : ObjectEntry) : Typ -- AKA object1, record1, 1 member only
+| entry (single : Entry) : Typ -- AKA object1, record1, 1 member only
 | depSelectTyp (base: Trm) (tK: Label) : Typ -- `base.K`
 -- TODO: this "body" definition assumes polymorphic output schema depending on input.
 | selfBinder (body: (this: I) -> Typ) : Typ -- AKA Mu-type, body can refer to `this` (If de Bruijn serial is used instead of PHOAS, `this` would have serial "0")
@@ -45,12 +45,12 @@ inductive Typ : Type where
 -- below are not part of core DOT
 -- | genericApply (ctor: TypCtor) (arg: TypCtor): Typ
 
-inductive ObjectEntry: Type where -- member of an object/record, visible in both "Trm" and "Typ"
-| term (label: Option Label) (isGiven: Bool) (tm: Trm) : ObjectEntry -- `{term label = Tm}`, they are multi-indexed after compilation: by label (if label exists) and by "tUnder" (if "isGiven" and is a "subtypeEv"")
-| typeAlias (tLabel: Label) : ObjectEntry -- `{type Label}`, it deliberately contain no type assigment or bound, they are evidence terms in the same object
+inductive Entry: Type where -- member of an object/record, visible in both "Trm" and "Typ"
+| term (label: Option Label) (isGiven: Bool) (tm: Trm) : Entry -- `{term label = Tm}`, they are multi-indexed after compilation: by label (if label exists) and by "tUnder" (if "isGiven" and is a "subtypeEv"")
+| typeAlias (tLabel: Label) : Entry -- `{type Label}`, it deliberately contain no type assigment or bound, they are evidence terms in the same object
 
 structure ObjectBody where
-  underlying : Label → Option ObjectEntry
+  underlying : Label → Option Entry
 
 inductive Trm : Type where -- AKA expression, expr
 | var (symbol: I) (tOver: Typ) : Trm -- variable, `x`, almost always bounded & never free (In PHOAS it is imposible to construct wildcard "(symbol: I)"), `tOver` is the upper-bound of "x"

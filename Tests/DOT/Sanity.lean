@@ -62,13 +62,5 @@ def apply1stOn2ndFnOnTuple : TrmClosed :=
     false
 
 
-/-
-Object/record term/type in Scala requires some elaboration, as DOT only contains structural typing:
-
-- structural type with 1 unbounded type alias is a single "Entry.typeAlias"
--
-
--/
-
 end Trm
 end Sanity

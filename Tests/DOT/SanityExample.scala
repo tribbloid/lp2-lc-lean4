@@ -31,11 +31,31 @@ object SanityExample extends Preamble {
     val apply1stOn2ndFnOnTuple: Boolean =
       apply1stOn2ndFn(identityFn)(`false`)
 
-    // val structural1Trm: { val a: Boolean } = { val a = false }
+    /*
+     DOT only contains structural typing
+     */
 
-    // val structural1Typ: { type A } = {}
+    val structural1Trm: { val a: Boolean } = { // object with 1 term entry
+      val a = false
+    }
 
-    // val structural1Typ: { type A >: Tuple <: Product }
+    val structural1Typ: { type A } = { // object with 1 type alias entry
+      type A
+    }
+
+    // so trait & type bound in Scala requires some elaboration:
+    trait EmptyTrait {}
+    // becomes:
+    { type Tag = this.type }
+
+    trait SubTrait extends EmptyTrait {}
+    // becomes
+    { type Tag = this.type; given Tag <:< EmptyTrait }
+
+    trait T1 { type A }
+    val trait0: T1 = { // object with 1 type a
+      new T1
+    }
   }
 
 }
