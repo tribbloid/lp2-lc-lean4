@@ -30,6 +30,12 @@ object SanityExample extends Preamble {
 
     val apply1stOn2ndFnOnTuple: Boolean =
       apply1stOn2ndFn(identityFn)(`false`)
+
+    // val structural1Trm: { val a: Boolean } = { val a = false }
+
+    // val structural1Typ: { type A } = {}
+
+    // val structural1Typ: { type A >: Tuple <: Product }
   }
 
 }

@@ -12,9 +12,9 @@ Conventions:
   - typing: t : T
   - subtyping: T1 <:< T2
   - variance for type constructors: [+I] => T[I], [-I] => T[I]
-- Intrinsic typing but they are just built-in evidences/axioms for the symbol,
-  they don't participate in judgement of inhabitance or well-typedness (these
-  are still extrinsic).
+- Extrinsic typing, in pCIC a type cannot be indexed by another type in the same
+  mutual block which makes intrinsic typing IMPOSSIBLE. Types still exists in
+  term constructors, but they are evaluated much later.
 - Scala is purely functional, stateless with structural object/record, so:
   - No let-binding! (exists in Wadler 2016 but was quickly removed), binding is
     just monoFn/monoApply with side effects on the record of local variables
@@ -57,8 +57,8 @@ type K1[T] = // <- introducing T (bounded type argument)
 ```
 
 in PHO-AST the unknown argument corresponds to "(body : (arg: I) -> ???)" in a
-constructor, the "I" cannot be hardcoded into a concrete type because it may break strict
-positivity constraint and allow `body` to abuse its metadata.
+constructor, the "I" cannot be hardcoded into a concrete type because it may
+break strict positivity constraint and allow `body` to abuse its metadata.
 
 -/
 
@@ -116,9 +116,9 @@ def apply1stOn2ndFnOnTuple : TrmClosed :=
 
 
 /-
-Object/record definition in Scala requires some elaboration:
+Object/record term/type in Scala requires some elaboration, as DOT only contains structural typing:
 
-- structural type with unbounded type alias is a single "Entry.typeAlias"
+- structural type with 1 unbounded type alias is a single "Entry.typeAlias"
 -
 
 -/
