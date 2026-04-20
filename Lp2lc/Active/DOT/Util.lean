@@ -34,10 +34,6 @@ def set [DecidableEq Key] (σ : Lookup (Key := Key) (V := V)) (x : Key) (v : V) 
 
 end Lookup
 
-
-structure ObjectBody (V : Type) where
-  underlying : Label → Option V
-
 end
 
 end DOT

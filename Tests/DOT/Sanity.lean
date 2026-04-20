@@ -114,5 +114,14 @@ def apply1stOn2ndFnOnTuple : TrmClosed :=
     (.depApply apply1stOn2ndFn identityFn)
     false
 
+
+/-
+Object/record definition in Scala requires some elaboration:
+
+- structural type with unbounded type alias is a single "Entry.typeAlias"
+-
+
+-/
+
 end Trm
 end Sanity

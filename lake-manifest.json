@@ -5,7 +5,7 @@
    "type": "git",
    "subDir": null,
    "scope": "",
-   "rev": "978ec8a763b609c69eeef8be329f19752876f558",
+   "rev": "ca11c82c7a53b4d9694f95d19f6bd3b4f2e007ed",
    "name": "iris",
    "manifestFile": "lake-manifest.json",
    "inputRev": "master",
@@ -41,5 +41,5 @@
    "inputRev": "v4.29.0",
    "inherited": true,
    "configFile": "lakefile.toml"}],
- "name": "lp2lc",
+ "name": "Lp2lc",
  "lakeDir": ".lake"}
