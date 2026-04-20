@@ -22,7 +22,7 @@ def true : TrmClosed :=
 
 def identityFn : TrmClosed :=
   .val
-    (.depFn (fun x => .var x))
+    (.depFn (fun x => .var x .primitive))
 
 def identityFnOnFalse : TrmClosed :=
   .depApply identityFn false
@@ -31,13 +31,13 @@ def get1st : TrmClosed :=
   .val
     (.depFn (fun x =>
       .val
-        (.depFn (fun _y => .var x))))
+        (.depFn (fun _y => .var x .primitive))))
 
 def get2nd : TrmClosed :=
   .val
     (.depFn (fun _x =>
       .val
-        (.depFn (fun y => .var y))))
+        (.depFn (fun y => .var y .primitive))))
 
 def get1stOnTuple : TrmClosed :=
   .depApply
@@ -53,8 +53,8 @@ def apply1stOn2ndFn : TrmClosed :=
   .val (.depFn (fun f =>
     .val (.depFn (fun x =>
       .depApply
-        (.var f)
-        (.var x)))))
+        (.var f (.depFn .primitive (fun _ => .primitive)))
+        (.var x .primitive)))))
 
 def apply1stOn2ndFnOnTuple : TrmClosed :=
   .depApply
