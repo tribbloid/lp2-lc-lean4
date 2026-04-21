@@ -108,4 +108,6 @@ object SanityExample extends Preamble {
     }
   }
 
+  obvious error
+
 }
