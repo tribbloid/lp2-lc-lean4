@@ -63,4 +63,43 @@ def apply1stOn2ndFnOnTuple : TrmClosed :=
 
 
 end Trm
+
+namespace Typ
+
+def false : TypClosed :=
+  .primitive
+
+def true : TypClosed :=
+  .primitive
+
+def identityFn : TypClosed :=
+  .depFn .primitive (fun _x => .primitive)
+
+def identityFnOnFalse : TypClosed :=
+  .primitive
+
+def get1st : TypClosed :=
+  .depFn .primitive (fun _x =>
+    .depFn .primitive (fun _y => .primitive))
+
+def get2nd : TypClosed :=
+  .depFn .primitive (fun _x =>
+    .depFn .primitive (fun _y => .primitive))
+
+def get1stOnTuple : TypClosed :=
+  .primitive
+
+def get2ndOnTuple : TypClosed :=
+  .primitive
+
+def apply1stOn2ndFn : TypClosed :=
+  .depFn
+    (.depFn .primitive (fun _x => .primitive))
+    (fun _f =>
+      .depFn .primitive (fun _x => .primitive))
+
+def apply1stOn2ndFnOnTuple : TypClosed :=
+  .primitive
+
+end Typ
 end Sanity

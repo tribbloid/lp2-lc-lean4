@@ -54,6 +54,12 @@ object SanityExample extends Preamble {
       type A >: Nothing <: EmptyTrait
     } = {} // elaborated into { type A ; given Nothing <:< A ; given A <:< EmptyTrait}
 
+    trait SubTrait
+        extends EmptyTrait {} // elaborated into: { type class_EmptyTrait ; type class_SubTrait; given class_SubTrait <:< class_EmptyTrait }
+
+    trait TraitSubTyp
+        : { type A >: Nothing <: EmptyTrait }
+
   }
 
 }
