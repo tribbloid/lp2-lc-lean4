@@ -34,10 +34,10 @@ inductive Typ : Type where
 | evidence (ev: Evidence) : Typ -- ev can be both type & value
 | depFn (tIn : Typ) (tOut: (arg: I) -> Typ) : Typ -- function `In => Out` or dependent function (if "tOut" uses "arg")
 | entry (single : Entry) : Typ -- AKA object1, record1, 1 member only
-| depSelectTyp (base: Trm) (tK: Label) : Typ -- `base.K`
+| depSelectTyp (base: Trm) (tK: Name) : Typ -- `base.K`
 -- TODO: this "body" definition assumes polymorphic output schema depending on input.
 | selfBinder (body: (this: I) -> Typ) : Typ -- AKA Mu-type, body can refer to `this` (If de Bruijn serial is used instead of PHOAS, `this` would have serial "0")
-| singleton (v: Trm) : Typ -- path singleton type, v can only be a "var" (`x.type`) or "depSelectTrm" (`x.label.type`), otherwise compilation fail
+| singleton (v: Trm) : Typ -- path singleton type, v can only be a "var" (`x.type`) or "depSelectTrm" (`x.name.type`), otherwise compilation fail
 | and (tX: Typ) (tY: Typ) : Typ -- AKA intersection, `X & Y`
 | or (tX: Typ) (tY: Typ) : Typ -- AKA union, `X | Y`
 | top  : Typ -- `Any`
@@ -46,16 +46,16 @@ inductive Typ : Type where
 -- | genericApply (ctor: TypCtor) (arg: TypCtor): Typ
 
 inductive Entry: Type where -- member of an object/record, visible in both "Trm" and "Typ"
-| term (label: Option Label) (isGiven: Bool) (tm: Trm) : Entry -- `{term label = Tm}`, they are multi-indexed after compilation: by label (if label exists) and by "tUnder" (if "isGiven" and is a "subtypeEv"")
-| typeAlias (tLabel: Label) : Entry -- `{type Label}`, it deliberately contain no type assigment or bound, they are evidence terms in the same object
+| term (name: Option Name) (isImplicit: Bool) (tm: Trm) : Entry -- `{term name = Tm}`, they are multi-indexed after compilation: by name (if name exists) and by "tUnder" (if "isGiven" and is a "subtypeEv"")
+| typeAlias (tName: Name) : Entry -- `{type Name}`, it deliberately contain no type assigment or bound, they are evidence terms in the same object
 
 structure ObjectBody where
-  underlying : Label → Option Entry
+  underlying : Name → Option Entry
 
 inductive Trm : Type where -- AKA expression, expr
 | var (symbol: I) (tOver: Typ) : Trm -- variable, `x`, almost always bounded & never free (In PHOAS it is imposible to construct wildcard "(symbol: I)"), `tOver` is the upper-bound of "x"
 | val (v : Val) : Trm -- value, AKA literal
-| depSelectTrm (base: Trm) (label: Label) : Trm  -- `object.label`
+| depSelectTrm (base: Trm) (name: Name) : Trm  -- `object.name`
 | depApply (fn: Trm) (arg: Trm) : Trm -- application of (dependent?) function, execution requires constructing subtyping lattice from AST (which contains many "Evidence")
 
 -- { theoretically everything in this section should have type erased to be used in runtime, but this is not enforced

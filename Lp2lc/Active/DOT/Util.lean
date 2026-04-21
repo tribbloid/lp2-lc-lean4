@@ -6,7 +6,7 @@ namespace Lp2lc.Active.DOT
 
 def ByteCode := String
 
-abbrev Label := String
+abbrev Name := String
 
 section
 

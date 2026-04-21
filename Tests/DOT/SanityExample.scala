@@ -32,30 +32,28 @@ object SanityExample extends Preamble {
       apply1stOn2ndFn(identityFn)(`false`)
 
     /*
-     DOT only contains structural typing
+     structural type and trait/class definition largely follows step-indexed gDOT convention
+     namely trait is elaborated into a structural type with class tag
+     */
+    val structural1Trm: { val a: Boolean } = {
+      val a = false
+    } // 1 term entry in a self-binder
+
+    val structural1Typ: { type A } = {
+      type A
+    } // 1 type alias entry in a self-binder
+
+    trait EmptyTrait {} // elaborated into: { type class_EmptyTrait }
+
+    /*
+     the only change on top of gDOT is that type bounds are
+     now elaborated into nameless implicit evidence entry (subtypeEv)
      */
 
-    val structural1Trm: { val a: Boolean } = { // object with 1 term entry
-      val a = false
-    }
+    val structural1Bounded: {
+      type A >: Nothing <: EmptyTrait
+    } = {} // elaborated into { type A ; given Nothing <:< A ; given A <:< EmptyTrait}
 
-    val structural1Typ: { type A } = { // object with 1 type alias entry
-      type A
-    }
-
-    // so trait & type bound in Scala requires some elaboration:
-    trait EmptyTrait {}
-    // becomes:
-    { type Tag = this.type }
-
-    trait SubTrait extends EmptyTrait {}
-    // becomes
-    { type Tag = this.type; given Tag <:< EmptyTrait }
-
-    trait T1 { type A }
-    val trait0: T1 = { // object with 1 type a
-      new T1
-    }
   }
 
 }
