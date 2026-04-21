@@ -2,7 +2,7 @@ package DOT
 
 object SanityExample extends Preamble {
 
-  object Trm {
+  object TypAndTrm {
     val `false`: Boolean = false
 
     val `true`: Boolean = true
@@ -37,7 +37,7 @@ object SanityExample extends Preamble {
      */
     val structural1Trm: { val a: Boolean } = {
       val a = false
-    } // 1 term entry in a self-binder
+    }
 
     val structural1Typ: { type A } = {
       type A
