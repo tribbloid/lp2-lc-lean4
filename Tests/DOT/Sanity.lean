@@ -12,6 +12,22 @@ in @SanityExample.scala
 namespace Tests.DOT.Sanity
 open Lp2lc.Active.DOT
 
+private def emptyBody : {I : Type} → ObjectBody I
+  | _ => { lookup := fun _ => none }
+
+private def singletonBody {I : Type} (name : Name) (entry : Member I) :
+    ObjectBody I :=
+  { lookup := fun key => if key = name then some entry else none }
+
+private def namedTermEntry {I : Type} (name : Name) (tm : Trm I) : Member I :=
+  .term (some name) false tm
+
+private def implicitSubtypeEntry {I : Type} (tUnder tOver : Typ I) : Member I :=
+  .term none true (.val (.evidence (.subtypeEv tUnder tOver)))
+
+private def selfMemberTyp {I : Type} (this : I) (name : Name) : Typ I :=
+  .depSelectTyp (.var this .top) name
+
 namespace Trm
 
 def false : TrmClosed :=
@@ -61,6 +77,20 @@ def apply1stOn2ndFnOnTuple : TrmClosed :=
     (.depApply apply1stOn2ndFn identityFn)
     false
 
+def structural1Trm : TrmClosed :=
+  .val
+    (.object (fun _this =>
+      singletonBody "a" (namedTermEntry "a" Tests.DOT.Sanity.Trm.false)))
+
+def structural1Typ : TrmClosed :=
+  .val
+    (.object (fun _this =>
+      singletonBody "A" (.typeAlias "A")))
+
+def structural1Bounded : TrmClosed :=
+  .val
+    (.object (fun _this =>
+      emptyBody))
 
 end Trm
 
@@ -100,6 +130,41 @@ def apply1stOn2ndFn : TypClosed :=
 
 def apply1stOn2ndFnOnTuple : TypClosed :=
   .primitive
+
+def structural1Trm : TypClosed :=
+  .selfBinder (fun _this =>
+    oneMember (.term (some "a") Bool.false Tests.DOT.Sanity.Trm.false))
+
+def structural1Typ : TypClosed :=
+  .selfBinder (fun _this =>
+    oneMember (.typeAlias "A"))
+
+def EmptyTrait : TypClosed :=
+  .selfBinder (fun _this =>
+    oneMember (.typeAlias "class_EmptyTrait"))
+
+def structural1Bounded : TypClosed :=
+  .selfBinder (fun this =>
+    .and
+      (oneMember (.typeAlias "A"))
+      (.and
+        (oneMember
+          (implicitSubtypeEntry .bottom (selfMemberTyp this "A")))
+        (oneMember
+          (implicitSubtypeEntry
+            (selfMemberTyp this "A")
+            EmptyTrait))))
+
+def SubTrait : TypClosed :=
+  .selfBinder (fun this =>
+    .and
+      (oneMember (.typeAlias "class_EmptyTrait"))
+      (.and
+        (oneMember (.typeAlias "class_SubTrait"))
+        (oneMember
+          (implicitSubtypeEntry
+            (selfMemberTyp this "class_SubTrait")
+            (selfMemberTyp this "class_EmptyTrait")))))
 
 end Typ
 end Sanity

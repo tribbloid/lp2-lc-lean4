@@ -33,7 +33,7 @@ inductive Typ : Type where
 -- TODO: dependent subtypeEv? then maybe it can be merged into depFn?
 | evidence (ev: Evidence) : Typ -- ev can be both type & value
 | depFn (tIn : Typ) (tOut: (arg: I) -> Typ) : Typ -- function `In => Out` or dependent function (if "tOut" uses "arg")
-| entry (single : Member) : Typ -- AKA object1, record1, 1 member only
+| oneMember (_ : MemberDeclaration) : Typ -- AKA object1, record1, 1 member only
 | depSelectTyp (base: Trm) (tK: Name) : Typ -- `base.K`
 -- TODO: this "body" definition assumes polymorphic output schema depending on input.
 | selfBinder (body: (this: I) -> Typ) : Typ -- AKA Mu-type, body can refer to `this` (If de Bruijn serial is used instead of PHOAS, `this` would have serial "0")
@@ -45,12 +45,12 @@ inductive Typ : Type where
 -- below are not part of core DOT
 -- | genericApply (ctor: TypCtor) (arg: TypCtor): Typ
 
-inductive Member: Type where -- member of an object/record, visible in both "Trm" and "Typ"
-| term (name: Option Name) (isImplicit: Bool) (annotation: Typ) : Member -- `{term name = Tm}`, they are multi-indexed after compilation: by name (if name exists) and by "tUnder" (if "isGiven" and is a "subtypeEv"")
-| typeAlias (tName: Name) : Member -- `{type Name}`, it deliberately contain no type assigment or bound, they are evidence terms in the same object
+inductive MemberDeclaration: Type where -- member of an object/record, visible in both "Trm" and "Typ"
+| typeAlias (tName: Name) : MemberDeclaration -- `{type Name}`, it deliberately contain no type assigment or bound, they are evidence terms in the same object
+| term (name: Option Name) (isImplicit: Bool) (annotation: Typ) : MemberDeclaration -- `{term name = Tm}`, they are multi-indexed after compilation: by name (if name exists) and by "tUnder" (if "isGiven" and is a "subtypeEv"")
 
 structure ObjectBody where
-  underlying : Name → Option Member
+  lookup : Name → Option MemberDeclaration
 
 inductive Trm : Type where -- AKA expression, expr
 | var (symbol: I) (tOver: Typ) : Trm -- variable, `x`, almost always bounded & never free (In PHOAS it is imposible to construct wildcard "(symbol: I)"), `tOver` is the upper-bound of "x"

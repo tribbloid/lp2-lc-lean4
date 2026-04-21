@@ -60,4 +60,52 @@ object SanityExample extends Preamble {
 
   }
 
+  {
+    def f(x: Int): Int = ???
+    def g(x: Int): Int = ???
+    def h(x: Int): Int = ???
+
+    // primary
+    {
+      val x = f.apply(1) + 1
+      val y = g.apply(x) + 1
+      h.apply(y) + 1
+    }
+
+    // dual, Gentzen's sequent form:
+    {
+      { y =>
+        h.apply(y) + 1
+      }.apply {
+        { x =>
+          g.apply(x) + 1
+        }.apply(f.apply(1) + 1)
+      }
+    }
+  }
+
+  {
+    type T1 = { val x: { val y: { val z: Int; type Z } } }
+
+    val v1: T1 = ???
+
+    // primary
+    {
+      val x = v1.x
+      val y = x.y
+      type Z = y.Z
+    }
+
+    // dual
+    {
+      { y =>
+        type Z = y.Z
+      }.apply {
+        { x =>
+          x.y
+        }.apply(v1.x)
+      }
+    }
+  }
+
 }
