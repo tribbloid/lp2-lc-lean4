@@ -32,8 +32,9 @@ object SanityExample extends Preamble {
       apply1stOn2ndFn(identityFn)(`false`)
 
     /*
-     structural type and trait/class definition largely follows step-indexed gDOT convention
-     namely trait is elaborated into a structural type with class tag
+     structural type and trait/class definition largely follows
+     step-indexed gDOT ("Scala step-by-step: soundness for DOT with step-indexed logical relations in Iris") convention
+     namely, each trait is elaborated into a structural type with class tag
      */
     val structural1Trm: { val a: Boolean } = {
       val a = false
@@ -56,9 +57,6 @@ object SanityExample extends Preamble {
 
     trait SubTrait
         extends EmptyTrait {} // elaborated into: { type class_EmptyTrait ; type class_SubTrait; given class_SubTrait <:< class_EmptyTrait }
-
-    trait TraitSubTyp
-        : { type A >: Nothing <: EmptyTrait }
 
   }
 
