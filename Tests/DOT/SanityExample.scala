@@ -37,11 +37,11 @@ object SanityExample extends Preamble {
      namely, each trait is elaborated into a structural type with class tag
      */
     val structural1Trm: { val a: Boolean } = {
-      val a = false
+      new AnyRef { val a = false }
     }
 
     val structural1Typ: { type A } = {
-      type A
+      new AnyRef { type A }
     } // 1 type alias entry in a self-binder
 
     trait EmptyTrait {} // elaborated into: { type class_EmptyTrait }
@@ -53,11 +53,12 @@ object SanityExample extends Preamble {
 
     val structural1Bounded: {
       type A >: Nothing <: EmptyTrait
-    } = {} // elaborated into { type A ; given Nothing <:< A ; given A <:< EmptyTrait}
+    } = new AnyRef {
+      type A >: Nothing <: EmptyTrait
+    } // elaborated into { type A ; given Nothing <:< A ; given A <:< EmptyTrait}
 
     trait SubTrait
-        extends EmptyTrait {} // elaborated into: { type class_EmptyTrait ; type class_SubTrait; given class_SubTrait <:< class_EmptyTrait }
-
+        extends EmptyTrait // elaborated into: { type class_EmptyTrait ; type class_SubTrait; given class_SubTrait <:< class_EmptyTrait }
   }
 
   {
@@ -74,40 +75,14 @@ object SanityExample extends Preamble {
 
     // dual, Gentzen's sequent form:
     {
-      { y =>
+      { (y: Int) =>
         h.apply(y) + 1
       }.apply {
-        { x =>
+        { (x: Int) =>
           g.apply(x) + 1
         }.apply(f.apply(1) + 1)
       }
     }
   }
-
-  {
-    type T1 = { val x: { val y: { val z: Int; type Z } } }
-
-    val v1: T1 = ???
-
-    // primary
-    {
-      val x = v1.x
-      val y = x.y
-      type Z = y.Z
-    }
-
-    // dual
-    {
-      { y =>
-        type Z = y.Z
-      }.apply {
-        { x =>
-          x.y
-        }.apply(v1.x)
-      }
-    }
-  }
-
-  obvious error
 
 }
