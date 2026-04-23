@@ -25,17 +25,18 @@ mutual
 -- TODO: this huge block doesn't model type erasure, for that we need to define 2 blocks referring to runtime AST and compile-time AST respectively
 
 inductive Evidence : Type where -- a thin wrapper of 2 "Typ", there is no co/contravariant evidence, which is just a function between 2 subtypeEv
+-- TODO: dependent subtypeEv? then maybe it can be merged into depFn?
 | subtypeEv (tUnder: Typ) (tOver: Typ) : Evidence -- subtype evidence, AKA coercion, `Under <:< Over`, notice that co/contravariance evidence are just higher-kind subtype evidence: `K[-T]` means `(X <:< Y) <:< (K[Y] <:< K[X])`
+| congruenceEv (tL: Typ) (tR: Typ) : Evidence -- congruence evidence, if `L === R` then all their inhabitats are equal (namely `∀ (l: L, r: R), l.T =:= r.T`), not in core DOT but a critical improvement.
 
 inductive Typ : Type where
 -- | later (raw: Typ) : Typ -- don't know how to use it in iris yet.
 | primitive : Typ -- `AnyVal`, won't differentiate Int/Float/Byte.
--- TODO: dependent subtypeEv? then maybe it can be merged into depFn?
 | evidence (ev: Evidence) : Typ -- ev can be both type & value
 | depFn (tIn : Typ) (tOut: (arg: I) -> Typ) : Typ -- function `In => Out` or dependent function (if "tOut" uses "arg")
 | oneMember (_ : MemberDeclaration) : Typ -- AKA object1, record1, 1 member only
 | depSelectTyp (base: Trm) (tK: Name) : Typ -- `base.K`
--- TODO: this "body" definition assumes polymorphic output schema depending on input.
+-- TODO: this "body" definition assumes polymorphic output schema depending on input, is it true?
 | selfBinder (body: (this: I) -> Typ) : Typ -- AKA Mu-type, body can refer to `this` (If de Bruijn serial is used instead of PHOAS, `this` would have serial "0")
 | singleton (v: Trm) : Typ -- path singleton type, v can only be a "var" (`x.type`) or "depSelectTrm" (`x.name.type`), otherwise compilation fail
 | and (tX: Typ) (tY: Typ) : Typ -- AKA intersection, `X & Y`
@@ -67,11 +68,11 @@ inductive Val : Type where -- evaluation results and args of Atomic Normal Form 
 | object (body : (this: I) -> ObjectBody) : Val -- object/record with a member lookup that can refer to `this`, DOT only uses structural typing so Trait has to carry an extra hidden type member
 -- }
 
--- inductive TypCtor : Type where -- type constructor! not type! not in core DOT!
--- | tVar (symbol: I): TypCtor
--- | ctor (body: ((arg : I) -> TypCtor)): TypCtor
--- -- | higherCtor (body: (arg: I) -> TypCtor) : TypCtor
--- | apply (ctor: TypCtor) (arg: TypCtor): TypCtor
+inductive TypCtor : Type where -- type constructor! not type! not in core DOT!
+| tVar (symbol: I): TypCtor
+| ctor (body: ((arg : I) -> TypCtor)): TypCtor
+-- | higherCtor (body: (arg: I) -> TypCtor) : TypCtor
+| apply (ctor: TypCtor) (arg: TypCtor): TypCtor
 
 end
 
