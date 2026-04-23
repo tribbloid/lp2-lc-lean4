@@ -2,7 +2,8 @@
 
 import «Lp2lc».Active.Shared
 
-namespace Lp2lc.Active.DOT
+namespace Lp2lc.Active.Util
+
 
 def ByteCode := String
 
@@ -36,4 +37,4 @@ end Lookup
 
 end
 
-end DOT
+end Util

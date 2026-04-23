@@ -1,9 +1,11 @@
 import Std
 
 import Aesop
-import «Lp2lc».Active.DOT.Util
+import «Lp2lc».Active.Util
 
 namespace Lp2lc.Active.DOT
+
+open Util
 
 /-
 here is the self-contained syntax for the latest DOT (System D-Diamond with
@@ -14,8 +16,6 @@ It is:
 - Not System F! (or its extension, lack of explicit polyFn, polyArrow, fake ∀)
 - Not WadlerFest 2016 version! (lack of union type)
 -/
-
-
 
 section Syntax
 
