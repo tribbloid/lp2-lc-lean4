@@ -31,31 +31,63 @@ object DepFnAndStructural {
     * So far there is no way to subsume it into other syntax (unlike co/contravarianceEv, which are just higher-order
     * <:<)
     *
-    * deterministic functions (path selector, type/evidence constructor, extension constructor) are merely functions
-    * that carries over `===` from 2 args to their results:
+    * deterministic functions:
+    *   - path selector
+    *   - type/evidence constructor
+    *   - extension constructor
+    *   - literal primitive operators (`2 + 2`)
+    *
+    * are merely functions that carries over `===` from 2 args to their results:
     */
 
   val pureFnExample = {
 
     def pureFn: Product => Tuple = ??? // the following is automatically attached:
 
-    def ev[X <: Product, Y <: Product]: (X === Y) <:< Any =
-      ??? // right side should be (fn(x: X).type  === fn(y: Y).type) = ???
+    def ev[X <: Product, Y <: Product]: (X === Y) <:< (? === ?) = ???
+    // right side should be (fn(x: X).type  === fn(y: Y).type) = ???
   }
 
   /**
-    * DOT calculus is constrained to define dependent type by stable path selection exactly because it is deterministic
+    * DOT calculus is constrained to define dependent type by stable path selection exactly because it's deterministic
     * (same path selection on the same object always yield same result, such that assigning value to its own type
     * annotation is always safe in runtime)
     *
     *   - other deterministic functions are ignored.
-    *   - all DOT syntax definitions spent huge effort on defining deep path selection (`v1.x.y.Z`)
-    *
+    *   - all DOT syntax definitions spent huge effort on defining deep path selection (`v1.x.y.Z`):
+    */
+
+  trait Y { val z: Z; type Z }
+  trait X { val y: Y }
+  trait T1 { val x: X }
+
+  val _ = {
+    def fn(v1: T1): v1.x.y.Z = { // gDOT2020 AST (with multi-layer path selector)
+      ???
+    }
+  }
+
+  /**
     * This is absolutely lame, we should declare `ext(x).T` (type member of extension constructor `ext` applied to `x`)
     * as if it is `x.T`.
     *
     * The new evidence of congruence can help that. The deep path selection become just shallow path selection on the
-    * function itself (converted into a deterministic extension).
+    * function itself as a deterministic extension constructor.
+    */
+
+  val _ = {
+    implicit class Fn(val v1: T1) {
+
+      val x = v1.x
+      val y = x.y
+      type Z = y.Z
+
+      def result: Z = ???
+    }
+  }
+
+  /**
+    * `Fn(v1).result: Fn(v1).result` works equally well.
     */
 
 }
