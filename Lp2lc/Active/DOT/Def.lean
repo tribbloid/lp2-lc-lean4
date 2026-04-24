@@ -46,7 +46,7 @@ inductive Typ : Type where
 -- below are not part of core DOT
 -- | genericApply (ctor: TypCtor) (arg: TypCtor): Typ
 
-inductive MemberDeclaration: Type where -- member of an object/record, visible in both "Trm" and "Typ"
+inductive MemberDeclaration: Type where -- member of an object/record, this is only the type-level declaration, not definition/implementation
 | typeAlias (tName: Name) : MemberDeclaration -- `{type Name}`, it deliberately contain no type assigment or bound, they are evidence terms in the same object
 | term (name: Option Name) (isImplicit: Bool) (annotation: Typ) : MemberDeclaration -- `{term name = Tm}`, they are multi-indexed after compilation: by name (if name exists) and by "tUnder" (if "isGiven" and is a "subtypeEv"")
 

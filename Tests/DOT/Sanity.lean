@@ -11,19 +11,22 @@ in @SanityExample.scala
 
 namespace Tests.DOT.Sanity
 open Lp2lc.Active.DOT
+open Lp2lc.Active.Util
 
 private def emptyBody : {I : Type} → ObjectBody I
   | _ => { lookup := fun _ => none }
 
-private def singletonBody {I : Type} (name : Name) (entry : Member I) :
+private def singletonBody {I : Type} (name : Name) (entry : MemberDeclaration I) :
     ObjectBody I :=
   { lookup := fun key => if key = name then some entry else none }
 
-private def namedTermEntry {I : Type} (name : Name) (tm : Trm I) : Member I :=
-  .term (some name) false tm
+private def namedTermEntry {I : Type} (name : Name) (annotation : Typ I) :
+    MemberDeclaration I :=
+  .term (some name) false annotation
 
-private def implicitSubtypeEntry {I : Type} (tUnder tOver : Typ I) : Member I :=
-  .term none true (.val (.evidence (.subtypeEv tUnder tOver)))
+private def implicitSubtypeEntry {I : Type} (tUnder tOver : Typ I) :
+    MemberDeclaration I :=
+  .term none true (.evidence (.subtypeEv tUnder tOver))
 
 private def selfMemberTyp {I : Type} (this : I) (name : Name) : Typ I :=
   .depSelectTyp (.var this .top) name
@@ -80,7 +83,7 @@ def apply1stOn2ndFnOnTuple : TrmClosed :=
 def structural1Trm : TrmClosed :=
   .val
     (.object (fun _this =>
-      singletonBody "a" (namedTermEntry "a" Tests.DOT.Sanity.Trm.false)))
+      singletonBody "a" (namedTermEntry "a" .primitive)))
 
 def structural1Typ : TrmClosed :=
   .val
@@ -133,24 +136,24 @@ def apply1stOn2ndFnOnTuple : TypClosed :=
 
 def structural1Trm : TypClosed :=
   .selfBinder (fun _this =>
-    oneMember (.term (some "a") Bool.false Tests.DOT.Sanity.Trm.false))
+    .oneMember (.term (some "a") Bool.false .primitive))
 
 def structural1Typ : TypClosed :=
   .selfBinder (fun _this =>
-    oneMember (.typeAlias "A"))
+    .oneMember (.typeAlias "A"))
 
 def EmptyTrait : TypClosed :=
   .selfBinder (fun _this =>
-    oneMember (.typeAlias "class_EmptyTrait"))
+    .oneMember (.typeAlias "class_EmptyTrait"))
 
 def structural1Bounded : TypClosed :=
   .selfBinder (fun this =>
     .and
-      (oneMember (.typeAlias "A"))
+      (.oneMember (.typeAlias "A"))
       (.and
-        (oneMember
+        (.oneMember
           (implicitSubtypeEntry .bottom (selfMemberTyp this "A")))
-        (oneMember
+        (.oneMember
           (implicitSubtypeEntry
             (selfMemberTyp this "A")
             EmptyTrait))))
@@ -158,10 +161,10 @@ def structural1Bounded : TypClosed :=
 def SubTrait : TypClosed :=
   .selfBinder (fun this =>
     .and
-      (oneMember (.typeAlias "class_EmptyTrait"))
+      (.oneMember (.typeAlias "class_EmptyTrait"))
       (.and
-        (oneMember (.typeAlias "class_SubTrait"))
-        (oneMember
+        (.oneMember (.typeAlias "class_SubTrait"))
+        (.oneMember
           (implicitSubtypeEntry
             (selfMemberTyp this "class_SubTrait")
             (selfMemberTyp this "class_EmptyTrait")))))
