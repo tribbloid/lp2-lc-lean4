@@ -4,13 +4,9 @@ import «Lp2lc».Active.Util
 
 namespace Lp2lc.Active
 
-namespace STLC
+namespace DTLC
 /-
 dependently typed lambda calculus, STLC but function output type can depend on input term.
-
-Conventions:
-
-
 -/
 
 open Util
@@ -41,6 +37,8 @@ abbrev TrmClosed := {I : Type} -> Trm I
 
 abbrev TypClosed := {I : Type} -> Typ I
 
-end STLC
+abbrev ByteCodeTrm := Trm ByteCode
+
+end DTLC
 
 end Lp2lc.Active

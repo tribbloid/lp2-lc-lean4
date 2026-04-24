@@ -1,5 +1,4 @@
-
-import Mathlib.Data.Set.Defs
+import Std
 
 example : Type 1 := Type
 example : Type 1 := Type -> Type
@@ -30,7 +29,7 @@ inductive Sys (typ: Type) (trm: Type) : Type where
 example : Type -> Type -> Type := Sys
 
 def SigmaLike (T : Type) : Type :=
-  @Sigma (List T) (fun (_ : List T) => Set T)
+  @Sigma (List T) (fun (_ : List T) => T -> Prop)
 
 
 -- structure Sys2 where
