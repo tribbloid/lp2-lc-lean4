@@ -50,8 +50,12 @@ inductive MemberDeclaration: Type where -- member of an object/record, this is o
 | typeAlias (tName: Name) : MemberDeclaration -- `{type Name}`, it deliberately contain no type assigment or bound, they are evidence terms in the same object
 | term (name: Option Name) (isImplicit: Bool) (annotation: Typ) : MemberDeclaration -- `{term name = Tm}`, they are multi-indexed after compilation: by name (if name exists) and by "tUnder" (if "isGiven" and is a "subtypeEv"")
 
+inductive MemberImpl: Type where -- AKA member definition, runtime only but carries type-tag & schema
+| typeAlias (tName: Name) : MemberImpl -- same as MemberImpl
+| term (name: Option Name) (body: Trm) (annotation: Typ) : MemberImpl -- different, body is only visible at runtime
+
 structure ObjectBody where
-  lookup : Name → Option MemberDeclaration
+  lookup : Name → Option MemberImpl
 
 inductive Trm : Type where -- AKA expression, expr
 | var (symbol: I) (tOver: Typ) : Trm -- variable, `x`, almost always bounded & never free (In PHOAS it is imposible to construct wildcard "(symbol: I)"), `tOver` is the upper-bound of "x"
