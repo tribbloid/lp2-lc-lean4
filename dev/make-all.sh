@@ -9,7 +9,6 @@ DATE=$(date +%Y-%m-%dT%H:%M:%S%z)
 cd "$FWDIR"
 
 lake build
-lake build Tests
 
 cd "$FWDIR/Tests"
 sbt compile

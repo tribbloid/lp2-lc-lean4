@@ -104,42 +104,43 @@ end Typ
 
 namespace Typing
 
-example : typing 2 Trm.false Typ.false := by
-  simp [typing, Trm.false, Typ.false]
+example : TrmClosed.typing Trm.false 2 Typ.false := by
+  simp [TrmClosed.typing, Trm.false, Typ.false]
 
-example : typing 2 Trm.true Typ.true := by
-  simp [typing, Trm.true, Typ.true]
+example : TrmClosed.typing Trm.true 2 Typ.true := by
+  simp [TrmClosed.typing, Trm.true, Typ.true]
 
-example : typing 3 Trm.identityFn Typ.identityFn := by
-  simp [typing, Trm.identityFn, Typ.identityFn]
+example : TrmClosed.typing Trm.identityFn 3 Typ.identityFn := by
+  simp [TrmClosed.typing, Trm.identityFn, Typ.identityFn]
 
-example : typing 4 Trm.get1st Typ.get1st := by
-  simp [typing, Trm.get1st, Typ.get1st]
+example : TrmClosed.typing Trm.get1st 4 Typ.get1st := by
+  simp [TrmClosed.typing, Trm.get1st, Typ.get1st]
 
-example : typing 4 Trm.get2nd Typ.get2nd := by
-  simp [typing, Trm.get2nd, Typ.get2nd]
+example : TrmClosed.typing Trm.get2nd 4 Typ.get2nd := by
+  simp [TrmClosed.typing, Trm.get2nd, Typ.get2nd]
 
-example : ¬ typing 6 Trm.apply1stOn2ndFnOnTuple Typ.apply1stOn2ndFnOnTuple := by
-  simp [typing, Trm.apply1stOn2ndFnOnTuple, Trm.apply1stOn2ndFn, Trm.identityFn, Trm.false,
+example : ¬ TrmClosed.typing Trm.apply1stOn2ndFnOnTuple 6 Typ.apply1stOn2ndFnOnTuple := by
+  simp [TrmClosed.typing, Trm.apply1stOn2ndFnOnTuple, Trm.apply1stOn2ndFn, Trm.identityFn,
+    Trm.false,
     Typ.apply1stOn2ndFnOnTuple]
 
 end Typing
 
 namespace Eval
 
-example : runtime_eval 1 Trm.identityFnOnFalse = none := by
+example : TrmClosed.eval Trm.identityFnOnFalse 1 = none := by
   rfl
 
-example : runtime_eval 3 Trm.identityFnOnFalse = some ((.val (.primitive "false")) : ByteCodeTrm) := by
+example : TrmClosed.eval Trm.identityFnOnFalse 3 = some ((.primitive "false") : ByteCodeVal) := by
   rfl
 
-example : runtime_eval 5 Trm.get1stOnTuple = some ((.val (.primitive "false")) : ByteCodeTrm) := by
+example : TrmClosed.eval Trm.get1stOnTuple 5 = some ((.primitive "false") : ByteCodeVal) := by
   rfl
 
-example : runtime_eval 5 Trm.get2ndOnTuple = some ((.val (.primitive "true")) : ByteCodeTrm) := by
+example : TrmClosed.eval Trm.get2ndOnTuple 5 = some ((.primitive "true") : ByteCodeVal) := by
   rfl
 
-example : runtime_eval 6 Trm.apply1stOn2ndFnOnTuple = none := by
+example : TrmClosed.eval Trm.apply1stOn2ndFnOnTuple 6 = none := by
   rfl
 
 end Eval

@@ -46,17 +46,17 @@ abbrev ByteCodeVal := Val ByteCode
 section Semantics
 
 @[simp]
-private def evalBytecode (fuel : Nat) (trm : ByteCodeTrm) : Option ByteCodeTrm :=
+private def evalBytecode (fuel : Nat) (trm : ByteCodeTrm) : Option ByteCodeVal :=
   match fuel with
   | 0 => none
   | fuel + 1 =>
       match trm with
-      | Trm.var symbol _ => some (Trm.val (Val.primitive symbol))
-      | Trm.val (Val.primitive repr) => some (Trm.val (Val.primitive repr))
-      | Trm.val (Val.depFn body) => some (Trm.val (Val.depFn body))
+      | Trm.var symbol _ => some (Val.primitive symbol)
+      | Trm.val (Val.primitive repr) => some (Val.primitive repr)
+      | Trm.val (Val.depFn body) => some (Val.depFn body)
       | Trm.depApply fn arg =>
           match evalBytecode fuel fn, evalBytecode fuel arg with
-          | some (Trm.val (Val.depFn body)), some (Trm.val (Val.primitive argByte)) =>
+          | some (Val.depFn body), some (Val.primitive argByte) =>
               evalBytecode fuel (body argByte)
           | _, _ => none
 
@@ -79,16 +79,20 @@ private def typingBytecode (fuel : Nat) (trm : ByteCodeTrm) (typ : Typ ByteCode)
           ∃ tIn tOut argByte,
             typingBytecode fuel fn (Typ.depFn tIn tOut) ∧
             typingBytecode fuel arg tIn ∧
-            evalBytecode fuel arg = some (Trm.val (Val.primitive argByte)) ∧
+            evalBytecode fuel arg = some (Val.primitive argByte) ∧
             typ = tOut argByte
 
+namespace TrmClosed
+
 @[simp]
-def runtime_eval (fuel : Nat) (trm : TrmClosed) : Option ByteCodeTrm :=
+def eval (trm : TrmClosed) (fuel : Nat) : Option ByteCodeVal :=
   evalBytecode fuel (trm (I := ByteCode))
 
 @[simp]
-def typing (fuel : Nat) (trm : TrmClosed) (typ : TypClosed) : Prop :=
+def typing (trm : TrmClosed) (fuel : Nat) (typ : TypClosed) : Prop :=
   typingBytecode fuel (trm (I := ByteCode)) (typ (I := ByteCode))
+
+end TrmClosed
 
 end Semantics
 
