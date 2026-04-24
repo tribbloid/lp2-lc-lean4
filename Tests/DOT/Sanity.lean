@@ -16,13 +16,13 @@ open Lp2lc.Active.Util
 private def emptyBody : {I : Type} → ObjectBody I
   | _ => { lookup := fun _ => none }
 
-private def singletonBody {I : Type} (name : Name) (entry : MemberDeclaration I) :
+private def singletonBody {I : Type} (name : Name) (entry : MemberImpl I) :
     ObjectBody I :=
   { lookup := fun key => if key = name then some entry else none }
 
-private def namedTermEntry {I : Type} (name : Name) (annotation : Typ I) :
-    MemberDeclaration I :=
-  .term (some name) false annotation
+private def namedTermImpl {I : Type} (name : Name) (body : Trm I) (annotation : Typ I) :
+    MemberImpl I :=
+  .term (some name) body annotation
 
 private def implicitSubtypeEntry {I : Type} (tUnder tOver : Typ I) :
     MemberDeclaration I :=
@@ -83,7 +83,8 @@ def apply1stOn2ndFnOnTuple : TrmClosed :=
 def structural1Trm : TrmClosed :=
   .val
     (.object (fun _this =>
-      singletonBody "a" (namedTermEntry "a" .primitive)))
+      singletonBody "a"
+        (namedTermImpl "a" (.val (.primitive "false")) .primitive)))
 
 def structural1Typ : TrmClosed :=
   .val

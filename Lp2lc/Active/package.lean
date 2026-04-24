@@ -1,4 +1,3 @@
-import «Lp2lc».Active.LC.Def
 
 -- STLC module exports Def and Scratch
 import «Lp2lc».Active.STLC.Def
