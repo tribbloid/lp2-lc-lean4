@@ -1,5 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-lake update && lake build # && lake test
+FWDIR="$(
+  cd "$(dirname "$0")"/.. || exit
+  pwd
+)"
+DATE=$(date +%Y-%m-%dT%H:%M:%S%z)
 
-if command -v markdownlint >/dev/null 2>&1; then markdownlint '**/*.md'; fi
+cd "$FWDIR"
+
+lake build
+lake build Tests
+
+cd "$FWDIR/Tests"
+sbt compile
