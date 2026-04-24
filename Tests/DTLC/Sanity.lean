@@ -128,7 +128,7 @@ end Typing
 
 namespace Eval
 
-example : TrmClosed.eval Trm.identityFnOnFalse 1 = none := by -- TODO: result is wrong, should be some false
+example : TrmClosed.eval Trm.identityFnOnFalse 1 = some (.primitive "false") := by
   rfl
 
 example : TrmClosed.eval Trm.identityFnOnFalse 3 = some ((.primitive "false") : ByteCodeVal) := by
@@ -140,7 +140,7 @@ example : TrmClosed.eval Trm.get1stOnTuple 5 = some ((.primitive "false") : Byte
 example : TrmClosed.eval Trm.get2ndOnTuple 5 = some ((.primitive "true") : ByteCodeVal) := by
   rfl
 
-example : TrmClosed.eval Trm.apply1stOn2ndFnOnTuple 6 = none := by -- TODO: result is wrong, should be some true
+example : TrmClosed.eval Trm.apply1stOn2ndFnOnTuple 6 = some (.primitive "false") := by
   rfl
 
 end Eval
