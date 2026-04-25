@@ -11,33 +11,31 @@ dependently typed lambda calculus, STLC but function output type can depend on i
 
 open Util
 
-universe u
-
 section Syntax
 
-variable (I : Sort u) -- index
+variable (I : Type) -- index
 
 mutual
 
-inductive Typ : Type (u + 1) where
+inductive Typ : Type where
 | primitive : Typ
 | depFn (tIn : Typ) (tOut : (arg : I) -> Typ) : Typ
 
-inductive Trm : Type (u + 1) where
+inductive Trm : Type where
 | var (symbol : I) {tAnnotation : Typ} : Trm
 | val (v : Val) : Trm
 | depApply (fn : Trm) (arg : Trm) : Trm
 
-inductive Val : Type (u + 1) where
+inductive Val : Type where
 | primitive (repr : ByteCode) : Val
 | depFn (body : (arg : I) -> Trm) : Val
 end
 
 end Syntax
 
-abbrev TrmClosed := {I : Sort u} -> Trm I
+abbrev TrmClosed := {I : Type} -> Trm I
 
-abbrev TypClosed := {I : Sort u} -> Typ I
+abbrev TypClosed := {I : Type} -> Typ I
 
 structure RuntimeCarrier where
   self: ByteCode
