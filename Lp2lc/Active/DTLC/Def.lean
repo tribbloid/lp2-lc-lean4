@@ -39,6 +39,19 @@ abbrev TypClosed := {I : Type} -> Typ I
 
 abbrev ValClosed := {I : Type} -> Val I
 
+mutual
+
+def Trm.squash : Trm (Trm rep) → Trm rep
+ | Trm.var e => e
+ | Trm.val v => Trm.val (Val.squash v)
+ | Trm.depApply f a => Trm.depApply (Trm.squash f) (Trm.squash a)
+
+def Val.squash : Val (Trm rep) → Val rep
+ | Val.primitive repr => Val.primitive repr
+ | Val.depFn body => Val.depFn (fun arg => Trm.squash (body (Trm.var arg)))
+
+end
+
 structure Carrier where
 
 def TrmClosed.eval(trm: TrmClosed)(fuel: Nat): Option ValClosed :=
