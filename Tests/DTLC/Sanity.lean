@@ -85,19 +85,19 @@ end Trm
 
 namespace Eval
 
-example : TrmClosed.eval Trm.identityFnOnFalse 1 = some (Val.primitive "false") := by
+example : TrmClosed.eval Trm.identityFnOnFalse 1 = some ((Val.primitive "false") : ValClosed) := by
   sorry
 
-example : TrmClosed.eval Trm.identityFnOnFalse 3 = some ((Val.primitive "false") : RuntimeVal) := by
+example : TrmClosed.eval Trm.identityFnOnFalse 3 = some ((Val.primitive "false") : ValClosed) := by
   sorry
 
-example : TrmClosed.eval Trm.get1stOnTuple 5 = some ((Val.primitive "false") : RuntimeVal) := by
+example : TrmClosed.eval Trm.get1stOnTuple 5 = some ((Val.primitive "false") : ValClosed) := by
   sorry
 
-example : TrmClosed.eval Trm.get2ndOnTuple 5 = some ((Val.primitive "true") : RuntimeVal) := by
+example : TrmClosed.eval Trm.get2ndOnTuple 5 = some ((Val.primitive "true") : ValClosed) := by
   sorry
 
-example : TrmClosed.eval Trm.apply1stOn2ndFnOnTuple 6 = some (Val.primitive "false") := by
+example : TrmClosed.eval Trm.apply1stOn2ndFnOnTuple 6 = some ((Val.primitive "false") : ValClosed) := by
   sorry
 
 end Eval
