@@ -22,7 +22,7 @@ inductive Typ : Type where
 | depFn (tIn : Typ) (tOut : (arg : I) -> Typ) : Typ
 
 inductive Trm : Type where
-| var (symbol : I) {tAnnotation : Typ} : Trm
+| var (symbol : I) : Trm
 | val (v : Val) : Trm
 | depApply (fn : Trm) (arg : Trm) : Trm
 
@@ -37,20 +37,12 @@ abbrev TrmClosed := {I : Type} -> Trm I
 
 abbrev TypClosed := {I : Type} -> Typ I
 
-structure RuntimeCarrier where
-  self: ByteCode
+abbrev ValClosed := {I : Type} -> Val I
 
-abbrev RuntimeVal := Val RuntimeCarrier
+structure Carrier where
 
-namespace TrmClosed
-
-@[simp]
-def eval (trm : TrmClosed) (fuel : Nat) : Option RuntimeVal := sorry
-
--- @[simp]
--- def typing (trm : TrmClosed) (fuel : Nat) (typ : TypClosed) : Prop := sorry
-
-end TrmClosed
+def eval(trm: TrmClosed)(typ: TypClosed): ValClosed :=
+  sorry
 
 end DTLC
 
