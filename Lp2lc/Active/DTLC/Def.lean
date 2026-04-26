@@ -41,7 +41,7 @@ abbrev ValClosed := {I : Type} -> Val I
 
 structure Carrier where
 
-def eval(trm: TrmClosed)(typ: TypClosed): ValClosed :=
+def TrmClosed.eval(trm: TrmClosed)(typ: TypClosed): ValClosed :=
   sorry
 
 end DTLC

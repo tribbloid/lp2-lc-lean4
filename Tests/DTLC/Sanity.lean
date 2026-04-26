@@ -83,24 +83,24 @@ def apply1stOn2ndFnOnTuple : TrmClosed :=
 
 end Trm
 
--- namespace Eval
+namespace Eval
 
--- example : TrmClosed.eval Trm.identityFnOnFalse 1 = some (Val.primitive "false") := by
---   sorry
+example : TrmClosed.eval Trm.identityFnOnFalse 1 = some (Val.primitive "false") := by
+  sorry
 
--- example : TrmClosed.eval Trm.identityFnOnFalse 3 = some ((Val.primitive "false") : RuntimeVal) := by
---   sorry
+example : TrmClosed.eval Trm.identityFnOnFalse 3 = some ((Val.primitive "false") : RuntimeVal) := by
+  sorry
 
--- example : TrmClosed.eval Trm.get1stOnTuple 5 = some ((Val.primitive "false") : RuntimeVal) := by
---   sorry
+example : TrmClosed.eval Trm.get1stOnTuple 5 = some ((Val.primitive "false") : RuntimeVal) := by
+  sorry
 
--- example : TrmClosed.eval Trm.get2ndOnTuple 5 = some ((Val.primitive "true") : RuntimeVal) := by
---   sorry
+example : TrmClosed.eval Trm.get2ndOnTuple 5 = some ((Val.primitive "true") : RuntimeVal) := by
+  sorry
 
--- example : TrmClosed.eval Trm.apply1stOn2ndFnOnTuple 6 = some (Val.primitive "false") := by
---   sorry
+example : TrmClosed.eval Trm.apply1stOn2ndFnOnTuple 6 = some (Val.primitive "false") := by
+  sorry
 
--- end Eval
+end Eval
 
 -- namespace Typing
 
