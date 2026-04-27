@@ -53,19 +53,25 @@ def Val.squash : Val (Trm rep) → Val rep
 
 end
 
-namespace Runtime
+namespace Denotational
 
-inductive Val : Type 1 where -- compiled to be executed/invoked directly in lean, "none" result means failed execution, type is always erased
-| primitive (v : ByteCode) : Val
-| fn (body : {T : Type} -> (vIn: T) -> Option Val) : Val
 
-class Executable (T: Type) where -- with fuel based execution, "none" result means failed execution
-  eval (v : T) (fuel: Nat) : Option Val
-  isAdequet: Prop -- adequecy lemma: given enough fuel, the execution result matches the big-step semantics.
 
--- TODO: define an instance of Executable here
+end Denotational
 
-end Runtime
+-- namespace Runtime
+
+-- inductive Val : Type 1 where -- compiled to be executed/invoked directly in lean, "none" result means failed execution, type is always erased
+-- | primitive (v : ByteCode) : Val
+-- | fn (body : {T : Type} -> (vIn: T) -> (fuel: Nat) -> Option Val) : Val
+
+-- class Executable (T: Type) where -- with fuel based execution, "none" result means failed execution
+--   eval (v : T) (fuel: Nat) : Option Val
+--   isAdequet: Prop -- adequecy lemma: given enough fuel, the execution result matches the big-step semantics.
+
+-- -- TODO: define an instance of Executable here
+
+-- end Runtime
 
 -- TODO: define a compilation function here, transforming pair of `Trm : Typ` in syntax into a runtime executable
 
