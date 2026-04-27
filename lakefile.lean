@@ -18,4 +18,4 @@ require aesop from git
   "https://github.com/leanprover-community/aesop" @ "v4.29.0"
 
 require iris from git
-  "https://github.com/leanprover-community/iris-lean.git" @ "master"
+  "https://github.com/leanprover-community/iris-lean.git" @ "master" / "Iris"

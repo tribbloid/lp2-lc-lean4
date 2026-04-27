@@ -6,7 +6,7 @@ namespace Lp2lc.Active
 
 namespace DTLC
 /-
-dependently typed lambda calculus, STLC but function output type can depend on input term.
+dependently typed lambda calculus (similar to STLC but function output type can depend on input term) with a top/wildcard type.
 -/
 
 open Util
@@ -20,6 +20,7 @@ mutual
 inductive Typ : Type where
 | primitive : Typ
 | depFn (tIn : Typ) (tOut : (arg : I) -> Typ) : Typ
+| top: Typ -- type of anything, can bind both primitive and depFn.
 
 inductive Trm : Type where
 | var (symbol : I) : Trm
@@ -52,10 +53,21 @@ def Val.squash : Val (Trm rep) → Val rep
 
 end
 
-structure Carrier where
+namespace Runtime
 
-def TrmClosed.eval(trm: TrmClosed)(fuel: Nat): Option ValClosed :=
-  sorry
+inductive Val : Type 1 where -- compiled to be executed/invoked directly in lean, "none" result means failed execution, type is always erased
+| primitive (v : ByteCode) : Val
+| fn (body : {T : Type} -> (vIn: T) -> Option Val) : Val
+
+class Executable (T: Type) where -- with fuel based execution, "none" result means failed execution
+  eval (v : T) (fuel: Nat) : Option Val
+  isAdequet: Prop -- adequecy lemma: given enough fuel, the execution result matches the big-step semantics.
+
+-- TODO: define an instance of Executable here
+
+end Runtime
+
+-- TODO: define a compilation function here, transforming pair of `Trm : Typ` in syntax into a runtime executable
 
 end DTLC
 

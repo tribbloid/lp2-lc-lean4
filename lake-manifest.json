@@ -3,9 +3,9 @@
  "packages":
  [{"url": "https://github.com/leanprover-community/iris-lean.git",
    "type": "git",
-   "subDir": null,
+   "subDir": "Iris",
    "scope": "",
-   "rev": "ca11c82c7a53b4d9694f95d19f6bd3b4f2e007ed",
+   "rev": "de7b6c763c82ab51b33682536c1709bcacb1c20c",
    "name": "iris",
    "manifestFile": "lake-manifest.json",
    "inputRev": "master",

@@ -83,6 +83,8 @@ def add : Term (Ty.fn Ty.nat (Ty.fn Ty.nat Ty.nat)) := fun _rep =>
 def three_the_hard_way : Term Ty.nat := fun rep =>
   Term'.app (Term'.app (add rep) (Term'.const 1)) (Term'.const 2)
 
+
+
 end FirstTry
 
 /-!
@@ -245,3 +247,39 @@ theorem constFold_sound (e : Term' Ty.denote ty) : denote (constFold e) = denote
     split
     next he₁ he₂ => simp [← iha, ← ihb, he₁, he₂]
     next => simp [iha, ihb]
+
+namespace NbE
+
+def Value (rep : Ty → Type) : Ty → Type
+  | Ty.nat => Term' rep Ty.nat
+  | Ty.fn a b => Value rep a → Value rep b
+
+mutual
+  def reify {rep} : {ty : Ty} → Value rep ty → Term' rep ty
+    | Ty.nat, v => v
+    | Ty.fn _ _, f => Term'.lam (fun x => reify (f (reflect (Term'.var x))))
+
+  def reflect {rep} : {ty : Ty} → Term' rep ty → Value rep ty
+    | Ty.nat, v => v
+    | Ty.fn _ _, v => fun x => reflect (Term'.app v (reify x))
+end
+
+def eval {rep} {ty : Ty} : Term' (Value rep) ty → Value rep ty
+  | Term'.var v => v
+  | Term'.const n => reflect (Term'.const n)
+  | Term'.plus a b =>
+    match reify (eval a), reify (eval b) with
+    | Term'.const n, Term'.const m => reflect (Term'.const (n + m))
+    | a', b' => reflect (Term'.plus a' b')
+  | Term'.lam f => fun x => eval (f x)
+  | Term'.app f a => (eval f) (eval a)
+  | Term'.let a b => eval (b (eval a))
+
+def normalize {ty : Ty} (e : Term ty) : Term ty :=
+  fun {rep} =>
+   let evaled := eval (e (rep := Value rep))
+   reify evaled
+
+def eval_three {rep : Ty → Type} : normalize three_the_hard_way (rep := rep) = Term'.const 3 := rfl
+
+end NbE
