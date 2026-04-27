@@ -59,6 +59,10 @@ namespace Denotational
 
 end Denotational
 
+namespace Definitional
+
+end Definitional
+
 -- namespace Runtime
 
 -- inductive Val : Type 1 where -- compiled to be executed/invoked directly in lean, "none" result means failed execution, type is always erased
