@@ -3,11 +3,19 @@
 
 This directory contain syntax, typing/semantic/evaluation rules and proof of soundness for DTLC (dependently-typed lambda calculus).
 
+## Guardrails
+
+- absolute type safety, unsafe/noncomputable/partial definition is NOT allowed.
+- All definition must be with a short docString explaining their necessity.
+- All function/constructor arguments must be named.
+- Do NOT repeat yourself, break repeated condition in pattern matching into multiple layers of pattern matchings if applicable.
+- Avoid leaky abstraction: top-level public definitions should only contain interpreter/compiler API (e.g. type-checking, evaluation). All other functions should be local inside definitions or private (only if they have multiple invocations).
+
 ## Conventions
 
-- PHOAS (parametric higher order abstract syntx), term/type indices are irrelevant, no de Bruijn serial, explicit variable name, or Env data structure allowed. (see @phoas.lean as an example)
-- Big-step semantics without relying on environment or store, typing and evaluation rules are 100% functional and can only use data included in type/term AST.
-- Type/term/value AST are in a mutual block: this will be necessary later.
+- PHOAS (parametric higher order abstract syntx), term/type indices are irrelevant, de Bruijn serial, explicit variable name, or Env data structure are NOT allowed. (see @phoas.lean as an example).
+- Big-step semantics without relying on environment or store, type-checking and evaluation must follow functional programming style and CANNOT use contextual information.
+- Type/term/value AST should be in a mutual block: this will be necessary for extensions.
 - Extrinsic typing, term AST should not be indexed by type (impossible for mutual block due to lean compiler limitation). Type still exists in some term constructors but type-checking is semantic-only, where type become proposition/predicate of terms.
 - Both compile-time type-checking and run-time evaluation/execution should use fuel-indexed Kripke frames with "Later" modality: each level of recursive/inductive evaluation must consume 1 fuel.
 - The sanity tests of Syntax and Semantic Rules are in @Tests/DTLC/Sanity.lean
