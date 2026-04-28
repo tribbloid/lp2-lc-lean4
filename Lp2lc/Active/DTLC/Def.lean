@@ -29,7 +29,7 @@ inductive Trm : Type where
 
 inductive Val : Type where
 | primitive (repr : ByteCode) : Val
-| depFn (tIn : Typ) (tOut : (arg : I) -> Typ) (body : (arg : I) -> Trm) : Val
+| depFn (body : (arg : I) -> Trm) : Val
 end
 
 
@@ -58,19 +58,10 @@ def Trm.squash : Trm (Trm rep) → Trm rep
 
 def Val.squash : Val (Trm rep) → Val rep
  | Val.primitive repr => Val.primitive repr
- | Val.depFn tIn tOut body =>
-    Val.depFn
-      (Typ.squash tIn)
-      (fun arg => Typ.squash (tOut (Trm.var arg)))
-      (fun arg => Trm.squash (body (Trm.var arg)))
+ | Val.depFn body =>
+    Val.depFn (fun arg => Trm.squash (body (Trm.var arg)))
 
 end
-
-namespace Denotational
-
-
-
-end Denotational
 
 namespace Definitional
 
