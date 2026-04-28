@@ -29,7 +29,7 @@ inductive Trm : Type where
 
 inductive Val : Type where
 | primitive (repr : ByteCode) : Val
-| depFn (body : (arg : I) -> Trm) : Val
+| depFn (tIn : Typ) (tOut : (arg : I) -> Typ) (body : (arg : I) -> Trm) : Val
 end
 
 end Syntax
@@ -42,6 +42,12 @@ abbrev ValClosed := {I : Type} -> Val I
 
 mutual
 
+def Typ.squash : Typ (Trm rep) → Typ rep
+ | Typ.primitive => Typ.primitive
+ | Typ.depFn tIn tOut =>
+    Typ.depFn (Typ.squash tIn) (fun arg => Typ.squash (tOut (Trm.var arg)))
+ | Typ.top => Typ.top
+
 def Trm.squash : Trm (Trm rep) → Trm rep
  | Trm.var e => e
  | Trm.val v => Trm.val (Val.squash v)
@@ -49,7 +55,11 @@ def Trm.squash : Trm (Trm rep) → Trm rep
 
 def Val.squash : Val (Trm rep) → Val rep
  | Val.primitive repr => Val.primitive repr
- | Val.depFn body => Val.depFn (fun arg => Trm.squash (body (Trm.var arg)))
+ | Val.depFn tIn tOut body =>
+    Val.depFn
+      (Typ.squash tIn)
+      (fun arg => Typ.squash (tOut (Trm.var arg)))
+      (fun arg => Trm.squash (body (Trm.var arg)))
 
 end
 
