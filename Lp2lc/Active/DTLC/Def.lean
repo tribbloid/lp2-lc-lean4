@@ -32,6 +32,9 @@ inductive Val : Type where
 | depFn (tIn : Typ) (tOut : (arg : I) -> Typ) (body : (arg : I) -> Trm) : Val
 end
 
+
+def SemTyp := Trm I -> Prop
+
 end Syntax
 
 abbrev TrmClosed := {I : Type} -> Trm I
