@@ -65,6 +65,20 @@ end
 
 namespace Definitional
 
+abbrev RuntimeVal := Val ByteCode
+
+structure Interpretable where
+  term: TrmClosed
+  fuel: Nat
+
+/-- Fuel-indexed compile-time type checking for closed terms. True if type-check is successful -/
+def Interpretable.typing (self : Interpretable) (typ : TypClosed) : Prop :=
+  sorry
+
+/-- Fuel-indexed runtime evaluation for closed terms. some if successful, none if failed -/
+def Interpretable.eval (self : Interpretable) : Option RuntimeVal :=
+  sorry
+
 end Definitional
 
 -- namespace Runtime
