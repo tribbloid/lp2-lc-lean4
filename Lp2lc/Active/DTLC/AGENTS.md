@@ -11,6 +11,7 @@ This directory contain syntax, typing/semantic/evaluation rules and proof of sou
 - prefer dot-notation for invoking multi-parameter functions and inductive destructors.
 - Do NOT repeat yourself, break repeated condition in pattern matching into multiple layers of pattern matchings if applicable.
 - Avoid leaky abstraction: top-level public APIs should only contain interpreter/compiler API (e.g. type-checking, evaluation). evaluator/checker helpers of PHOAS should be kept local to to each API, only helpers reused by multiple public APIs may be private.
+- Avoid generic universe, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2)
 
 ## Conventions
 

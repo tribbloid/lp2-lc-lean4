@@ -63,9 +63,23 @@ def Val.squash : Val (Trm rep) → Val rep
 
 end
 
-namespace Definitional
+/--
+runtime value, intermediate representation of "Val" embedded in Lean and executable by Lean. e.g.
 
-abbrev RuntimeVal := Val ByteCode
+- Val.primitive becomes ByteCode directly
+- Val.depFn becomes a Lean function `{Arg: Type} -> (arg: Arg) -> (fuel: Nat) -> Option RuntimeVal`
+
+as usual, recursion must be guarded by fuel
+-/
+structure RuntimeVal where
+  T: Type
+  executable: T
+
+/-- no fuel based or recursive evaluation. -/
+def Val.eval {I : Type} (self: Val I) : RuntimeVal :=
+  sorry
+
+namespace Definitional
 
 structure Interpretable where
   term: TrmClosed
