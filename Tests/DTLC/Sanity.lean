@@ -83,6 +83,11 @@ def apply1stOn2ndFnOnTuple : TrmClosed :=
 
 end Trm
 
+namespace Runtime
+
+
+end Runtime
+
 -- namespace Eval
 
 -- example : Definitional.eval Trm.identityFnOnFalse 0 = none := rfl
