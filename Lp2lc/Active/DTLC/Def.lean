@@ -64,12 +64,14 @@ def Val.squash : Val (Trm rep) → Val rep
 end
 
 /--
-runtime value, intermediate representation of "Val" embedded in Lean and executable by Lean. e.g.
+runtime value, type erased, intermediate representation of "Val" embedded in Lean and executable by Lean. e.g.
 
 - Val.primitive becomes ByteCode directly
 - Val.depFn becomes a Lean function `{Arg: Type} -> (arg: Arg) -> (fuel: Nat) -> Option RuntimeVal`
 
 as usual, recursion must be guarded by fuel
+
+it is only for execution, not inspection or verification.
 -/
 structure RuntimeVal where
   T: Type
