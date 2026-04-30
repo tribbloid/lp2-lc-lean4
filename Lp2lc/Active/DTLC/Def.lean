@@ -18,18 +18,18 @@ variable (I : Type) -- index
 mutual
 
 inductive Typ : Type where
-| primitive : Typ
-| depFn (tIn : Typ) (tOut : (arg : I) -> Typ) : Typ
-| top: Typ -- type of anything, can bind both primitive and depFn.
+| primitive
+| depFn (tIn : Typ) (tOut : (arg : I) -> Typ)
+| top -- type of anything, can bind both primitive and depFn.
 
 inductive Trm : Type where
-| var (symbol : I) : Trm
-| val (v : Val) : Trm
-| depApply (fn : Trm) (arg : Trm) : Trm
+| var (symbol : I)
+| val (v : Val)
+| depApply (fn : Trm) (arg : Trm)
 
 inductive Val : Type where
-| primitive (repr : ByteCode) : Val
-| depFn (body : (arg : I) -> Trm) : Val
+| primitive (repr : ByteCode)
+| depFn (body : (arg : I) -> Trm)
 end
 
 
@@ -78,7 +78,7 @@ structure RuntimeVal where
   executable: T
 
 /-- recursion must be guarded by fuel -/
-def Val.eval {I : Type} (self: Val I) : RuntimeVal :=
+def ValClosed.eval (self: ValClosed) : RuntimeVal :=
   sorry
 
 namespace Definitional
