@@ -77,7 +77,7 @@ structure RuntimeVal where
   T: Type
   executable: T
 
-/-- no fuel based or recursive evaluation. -/
+/-- recursion must be guarded by fuel -/
 def Val.eval {I : Type} (self: Val I) : RuntimeVal :=
   sorry
 
@@ -87,11 +87,11 @@ structure Interpretable where
   term: TrmClosed
   fuel: Nat
 
-/-- Fuel-indexed compile-time type checking for closed terms. True if type-check is successful -/
+/-- Fuel-guarded compile-time type checking for closed terms. True if type-check is successful -/
 def Interpretable.typing (self : Interpretable) (typ : TypClosed) : Prop :=
   sorry
 
-/-- Fuel-indexed runtime evaluation for closed terms. some if successful, none if failed -/
+/-- Fuel-guarded runtime evaluation for closed terms. some if successful, none if failed -/
 def Interpretable.eval (self : Interpretable) : Option RuntimeVal :=
   sorry
 

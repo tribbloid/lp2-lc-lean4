@@ -20,5 +20,5 @@ This directory contain syntax, typing/semantic/evaluation rules and proof of sou
 - Type-checking should be rigorous and reject malformed "term: type" even if they may execute successfully (e.g. calling a term argument of "top" type which may be a function) 
 - Type/term/value AST should be in a mutual block: this will be necessary for extensions.
 - Extrinsic typing, term AST should not be indexed by type (impossible for mutual block due to lean compiler limitation). Type still exists in some term constructors but type-checking is semantic-only, where type become proposition/predicate of terms.
-- Both compile-time type-checking and run-time evaluation/execution should use fuel-indexed guarded recursion: each level of recursive/inductive evaluation must consume 1 fuel.
+- Both compile-time type-checking and run-time evaluation/execution should use fuel-guarded recursion: each level of recursive/inductive evaluation must consume 1 fuel.
 - The sanity tests of Syntax and Semantic Rules are in @Tests/DTLC/Sanity.lean
