@@ -25,7 +25,7 @@ abbrev K1: Type 1 := K
 
 open Util
 
-def Index := Type
+def Index := Type 1
 
 
 section Syntax
@@ -34,17 +34,17 @@ variable (I : Index) -- index
 
 mutual
 
-inductive Typ : Type where
+inductive Typ : Index where
 | primitive
 | depFn (tIn : Typ) (tOut : (arg : I) -> Typ)
 | top -- type of anything, can bind both primitive and depFn.
 
-inductive Trm : Type where
+inductive Trm : Index where
 | var (symbol : I)
 | val (v : Val)
 | depApply (fn : Trm) (arg : Trm)
 
-inductive Val : Type where
+inductive Val : Index where
 | primitive (repr : ByteCode)
 | depFn (body : (arg : I) -> Trm)
 end
@@ -54,13 +54,13 @@ def SemTyp := Trm I -> Prop
 
 end Syntax
 
-abbrev TrmClosed := {I : Type} -> Trm I
+abbrev TrmClosed := {I : Index} -> Trm I
 
-abbrev TypClosed := {I : Type} -> Typ I
+abbrev TypClosed := {I : Index} -> Typ I
 
-abbrev ValClosed := {I : Type} -> Val I
+abbrev ValClosed := {I : Index} -> Val I
 
-abbrev PairClosed := {I : Type} -> ((Trm I) × (Val I))
+abbrev PairClosed := {I : Index} -> ((Trm I) × (Val I))
 
 mutual
 
@@ -92,18 +92,7 @@ as usual, recursion must be guarded by fuel
 
 it is only for execution, not inspection or verification.
 -/
-structure SemVal where
-  T: Type
-  repr: T
-
-/-- recursion must be guarded by fuel -/
-def ValClosed.eval (self: ValClosed) : SemVal :=
-  sorry
-  -- match self (I := SemVal) with
-  -- | Val.primitive repr => {T := ByteCode, repr := repr}
-  -- | Val.depFn body =>
-
-  --   {T := {I : Type} -> (arg : I) -> (fuel: Nat) -> Option SemVal, repr := body}
+structure SemCarrier : Type 1 where
 
 namespace Definitional
 
@@ -111,12 +100,12 @@ structure Interpretable where
   term: TrmClosed
   fuel: Nat
 
-/-- Fuel-guarded compile-time type checking for closed terms. True if type-check is successful -/
-def Interpretable.typing (self : Interpretable) (typ : TypClosed) : Prop :=
-  sorry
+-- /-- Fuel-guarded compile-time type checking for closed terms. True if type-check is successful -/
+-- def Interpretable.typing (self : Interpretable) (typ : TypClosed) : Prop :=
+--   sorry
 
 /-- Fuel-guarded runtime evaluation for closed terms. some if successful, none if failed -/
-def Interpretable.eval (self : Interpretable) : Option SemVal :=
+def Interpretable.eval (self : Interpretable) : Option (Val SemCarrier) :=
   sorry
 
 end Definitional
