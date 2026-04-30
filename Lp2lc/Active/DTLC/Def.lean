@@ -11,9 +11,11 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 
 open Util
 
+def Index := Type
+
 section Syntax
 
-variable (I : Type) -- index
+variable (I : Index) -- index
 
 mutual
 
@@ -42,6 +44,8 @@ abbrev TrmClosed := {I : Type} -> Trm I
 abbrev TypClosed := {I : Type} -> Typ I
 
 abbrev ValClosed := {I : Type} -> Val I
+
+abbrev PairClosed := {I : Type} -> ((Trm I) × (Val I))
 
 mutual
 
@@ -73,13 +77,18 @@ as usual, recursion must be guarded by fuel
 
 it is only for execution, not inspection or verification.
 -/
-structure RuntimeVal where
+structure SemVal where
   T: Type
-  executable: T
+  repr: T
 
 /-- recursion must be guarded by fuel -/
-def ValClosed.eval (self: ValClosed) : RuntimeVal :=
+def ValClosed.eval (self: ValClosed) : SemVal :=
   sorry
+  -- match self (I := SemVal) with
+  -- | Val.primitive repr => {T := ByteCode, repr := repr}
+  -- | Val.depFn body =>
+
+  --   {T := {I : Type} -> (arg : I) -> (fuel: Nat) -> Option SemVal, repr := body}
 
 namespace Definitional
 
@@ -92,7 +101,7 @@ def Interpretable.typing (self : Interpretable) (typ : TypClosed) : Prop :=
   sorry
 
 /-- Fuel-guarded runtime evaluation for closed terms. some if successful, none if failed -/
-def Interpretable.eval (self : Interpretable) : Option RuntimeVal :=
+def Interpretable.eval (self : Interpretable) : Option SemVal :=
   sorry
 
 end Definitional
