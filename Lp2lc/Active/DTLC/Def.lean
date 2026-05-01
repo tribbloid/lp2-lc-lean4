@@ -61,14 +61,14 @@ abbrev TypClosed := {I : Index} -> Typ I
 abbrev ValClosed := {I : Index} -> Val I
 
 abbrev PairClosed := {I : Index} -> ((Trm I) × (Val I))
-
-mutual
-
+/- TODO: should be named "flatten"? -/
 def Typ.squash : Typ (Trm rep) → Typ rep
  | Typ.primitive => Typ.primitive
  | Typ.depFn tIn tOut =>
     Typ.depFn (Typ.squash tIn) (fun arg => Typ.squash (tOut (Trm.var arg)))
  | Typ.top => Typ.top
+
+mutual
 
 def Trm.squash : Trm (Trm rep) → Trm rep
  | Trm.var e => e
@@ -102,11 +102,38 @@ structure Interpretable where
 
 -- /-- Fuel-guarded compile-time type checking for closed terms. True if type-check is successful -/
 -- def Interpretable.typing (self : Interpretable) (typ : TypClosed) : Prop :=
---   sorry
+
+private def step {I : Index} : Nat → Trm (Trm I) → Option (Trm I)
+  | 0, _ => none
+  | fuel + 1, term =>
+    match term with
+    | .var term => some term
+    | .val value => some (.val value.squash)
+    | .depApply (.val (.primitive _)) _ => none
+    | .depApply (.val (.depFn body)) arg => some (body arg.squash).squash
+    | .depApply fn arg => step fuel fn |>.map (fun fn' => .depApply fn' arg.squash)
+
+private def eval_reduction {I : Index} (trm: Trm (Trm I)) : Nat → Option (Val (Trm I))
+  | 0 => none
+  | fuel + 1 => match trm with
+    | .var _ => none
+    | .val value => some value
+    | .depApply fn? arg =>
+      let anf := (eval_reduction fn? fuel, eval_reduction arg fuel) -- atomic normal form
+      match (anf.1, anf.2) with
+      | ((some (.depFn _fnBody)), (some _arg)) =>
+        let applied := _fnBody (.val (_arg.squash))
+        eval_reduction applied fuel
+      | _ => none
 
 /-- Fuel-guarded runtime evaluation for closed terms. some if successful, none if failed -/
+def eval (term : TrmClosed) (fuel : Nat) : Option (Val SemCarrier) :=
+  (eval_reduction (I := SemCarrier) term fuel).map
+    fun v => v.squash
+
+/-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
 def Interpretable.eval (self : Interpretable) : Option (Val SemCarrier) :=
-  sorry
+  Definitional.eval self.term self.fuel
 
 end Definitional
 
