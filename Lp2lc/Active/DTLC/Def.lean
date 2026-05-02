@@ -12,11 +12,13 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 universe u v
 
 -- 1. Implicitly lift a type to a higher universe using ULift
-instance : Coe (Type u) (Type (max u v)) where
+/-- Coerce a lower-universe type into a higher universe through `ULift`. -/
+instance inst_coe_type_ulift : Coe (Type u) (Type (max u v)) where
   coe := ULift
 
 -- 2. Implicitly lift the values of that type into the ULift wrapper, these 2 enabled universe cumulativity in rocq
-instance {α : Type u} : Coe α (ULift.{v, u} α) where
+/-- Coerce a value into the `ULift` carrier chosen by the lifted type. -/
+instance inst_coe_ulift_up {α : Type u} : Coe α (ULift.{v, u} α) where
   coe := ULift.up
 
 structure K : Type
@@ -25,7 +27,8 @@ abbrev K1: Type 1 := K
 
 open Util
 
-def Index := Type 1
+/-- Universe-1 carrier for PHOAS indices. -/
+abbrev Index := Type 1
 
 
 section Syntax
@@ -49,10 +52,18 @@ inductive Val : Index where
 | depFn (body : (arg : I) -> Trm)
 end
 
-
-def SemTyp := Trm I -> Prop
+-- def SemTyp := Trm I -> Prop
 
 end Syntax
+
+def Trm.pretty (e : Trm String) (i : Nat := 1) : String :=
+  match e with
+  | Trm.var s     => s.down
+  | Trm.val (.primitive repr)   => repr
+  | Trm.val (.depFn body)   =>
+      let x := s!"x_{i}"
+      s!"(fun {x} => {pretty (body x) (i+1)})"
+  | Trm.depApply f a   => s!"({pretty f i} {pretty a i})"
 
 abbrev TrmClosed := {I : Index} -> Trm I
 
@@ -61,6 +72,7 @@ abbrev TypClosed := {I : Index} -> Typ I
 abbrev ValClosed := {I : Index} -> Val I
 
 abbrev PairClosed := {I : Index} -> ((Trm I) × (Val I))
+
 /- TODO: should be named "flatten"? -/
 def Typ.squash : Typ (Trm rep) → Typ rep
  | Typ.primitive => Typ.primitive
