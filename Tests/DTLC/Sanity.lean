@@ -100,16 +100,16 @@ example : Definitional.eval Trm.false 0 = none := rfl
 example : Definitional.eval Trm.false 1 = some ((Val.primitive "false") : Val SemCarrier) := rfl
 example : Definitional.eval Trm.false 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
 example : Definitional.eval Trm.identityFnOnFalse 0 = none := rfl
-example : Definitional.eval Trm.identityFnOnFalse 1 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Definitional.eval Trm.identityFnOnFalse 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
 example : Definitional.eval Trm.get1stOnTuple 1 = none := rfl
-example : Definitional.eval Trm.get1stOnTuple 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
-example : Definitional.eval Trm.get2ndOnTuple 2 = some ((Val.primitive "true") : Val SemCarrier) := rfl
+example : Definitional.eval Trm.get1stOnTuple 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Definitional.eval Trm.get2ndOnTuple 3 = some ((Val.primitive "true") : Val SemCarrier) := rfl
 example : Definitional.eval Trm.apply1stOn2ndFnOnTuple 2 = none := rfl
-example : Definitional.eval Trm.apply1stOn2ndFnOnTuple 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Definitional.eval Trm.apply1stOn2ndFnOnTuple 4 = some ((Val.primitive "false") : Val SemCarrier) := rfl
 example : (Definitional.eval Trm.applyIdentityFnOnItself 0).isNone = true := rfl
-example : (Definitional.eval Trm.applyIdentityFnOnItself 1).isSome = true := rfl
+example : (Definitional.eval Trm.applyIdentityFnOnItself 2).isSome = true := rfl
 example : Definitional.eval Trm.identityFnOnFalse2 1 = none := rfl
-example : Definitional.eval Trm.identityFnOnFalse2 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Definitional.eval Trm.identityFnOnFalse2 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
 
 end Eval
 

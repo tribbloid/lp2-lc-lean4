@@ -116,7 +116,9 @@ private def step {I : Index} : Nat → Trm (Trm I) → Option (Trm I)
 private def eval_reduction {I : Index} (trm: Trm (Trm I)) : Nat → Option (Val (Trm I))
   | 0 => none
   | fuel + 1 => match trm with
-    | .var _ => none
+    | .var e => match e with
+      | .val (.primitive p) => some (.primitive p)
+      | _ => none
     | .val value => some value
     | .depApply fn? arg =>
       let anf := (eval_reduction fn? fuel, eval_reduction arg fuel) -- atomic normal form
