@@ -70,6 +70,8 @@ abbrev TypClosed := {I : Index} -> Typ I
 
 abbrev TrmClosed := {I : Index} -> Trm I
 
+abbrev ClosedTrm := TrmClosed
+
 abbrev ValClosed := {I : Index} -> Val I
 
 abbrev PairClosed := {I : Index} -> ((Trm I) × (Val I))
@@ -87,14 +89,17 @@ instance astCanReify {AST: Index -> Type} {I : Index} : Coe ({I : Index} -> AST 
 mutual
 
 def Trm.squash : Trm (Val I) → Trm I
- | Trm.val v => Trm.val (Val.squash v)
- | Trm.depApply f a => Trm.depApply (Trm.squash f) (Trm.squash a)
+| Trm.val v => Trm.val (Val.squash v)
+| Trm.depApply f a => Trm.depApply (Trm.squash f) (Trm.squash a)
 
 def Val.squash : Val (Val I) → Val I
- | Val.var value => value
- | Val.primitive repr => Val.primitive repr
- | Val.depFn body =>
-    Val.depFn (fun arg => Trm.squash (body (Val.var arg)))
+| Val.var value => value
+| Val.primitive repr => Val.primitive repr
+| Val.depFn body =>
+  Val.depFn (fun arg =>
+    let argVar := Val.var arg
+    Trm.squash (body argVar)
+  )
 
 end
 
@@ -131,18 +136,25 @@ structure Interpretable where
 
 
 -- here, trm can be open, but open variable must be assigned a `Val I` already
-private def _evalSubstituted {I : Index} (trm: Trm (Val I)) : (fuel: Nat) → Option (Val I)
+private def _evalSubstituted {I : Index} (trm: Trm (Val I)) : (fuel: Nat) → Option (Val (Val I))
 | 0 => none
 | fuel + 1 => match trm with
-  | .val v => v.squash
+  | .val v => some v
   | .depApply fn? arg =>
-    sorry
+    let anf := (_evalSubstituted fn? fuel, _evalSubstituted arg fuel)
+    match anf with
+    | (some (Val.depFn fnBody), some _arg) =>
+      let applied := (fnBody _arg.squash)
+      let result := _evalSubstituted applied fuel
+      result
+    | _ => none
 
 end Definitional
 
 /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
-def ClosedTrm.eval (self : ClosedTrm) (fuel : nat) : Option (Val SemCarrier) :=
-  sorry
+def ClosedTrm.eval (self : ClosedTrm) (fuel : Nat) : Option (Val SemCarrier) :=
+  let almost := Definitional._evalSubstituted (self (I := Val SemCarrier)) fuel
+  almost.map fun v => v.squash
 
 -- namespace Runtime
 
