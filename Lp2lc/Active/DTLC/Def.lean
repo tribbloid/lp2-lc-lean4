@@ -131,25 +131,12 @@ structure Interpretable where
 
 
 -- here, trm can be open, but open variable must be assigned a `Val I` already
--- private def _evalAssigned {I : Index} (trm: Trm (Val I)) : (fuel: Nat) → Option (Val I)
--- | 0 => none
--- | fuel + 1 => match trm with
---   | .var e => some e -- variable already carrying a value
---   | .val (v : Val (Val I)) =>
---     let t1 : Val I := match v with
---     | .primitive r => .primitive r -- primitive datum is intact
---     | .depFn (body : Val I -> Trm (Val I)) => .depFn (fun (x: I) => -- function with assigned open term:
---         let assigned : Trm I := Trm.var x
---         (body assigned).squash
---       )
---     t1
---   | .depApply fn? arg =>
---     let anf := (_evalAssigned fn? fuel, _evalAssigned arg fuel) -- atomic normal form
---     match (anf.1, anf.2) with
---     | ((some (.depFn _fnBody)), (some _arg)) =>
---       let applied := _fnBody (_arg)
---       _evalAssigned applied fuel
---     | _ => none
+private def _evalSubstituted {I : Index} (trm: Trm (Val I)) : (fuel: Nat) → Option (Val I)
+| 0 => none
+| fuel + 1 => match trm with
+  | .val v => v.squash
+  | .depApply fn? arg =>
+    sorry
 
 -- /-- Fuel-guarded runtime evaluation for closed terms. some if successful, none if failed -/
 -- def eval (term : TrmClosed) (fuel : Nat) : Option (Val SemCarrier) :=
@@ -158,7 +145,7 @@ structure Interpretable where
 
 -- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
 -- def Interpretable.eval (self : Interpretable) : Option (Val SemCarrier) :=
---   Definitional.eval self.term self.fuel
+-- Definitional.eval self.term self.fuel
 
 end Definitional
 
