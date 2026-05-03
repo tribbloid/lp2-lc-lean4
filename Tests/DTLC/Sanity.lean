@@ -17,7 +17,7 @@ namespace Typ
 def false : TypClosed :=
   .primitive
 
-def identityFn : TypClosed :=
+def idFn : TypClosed :=
   .depFn .primitive (fun _x => .primitive)
 
 def get1st : TypClosed :=
@@ -40,12 +40,14 @@ def false : TrmClosed :=
 def true : TrmClosed :=
   .val (.primitive "true")
 
-def identityFn : TrmClosed :=
+def idFn : TrmClosed :=
   .val
     (.depFn (body := fun x => .var x))
 
-def identityFnOnFalse : TrmClosed :=
-  .depApply identityFn false
+def idFnOnFalse : TrmClosed :=
+  .depApply idFn false
+
+#eval idFnOnFalse.pretty 3
 
 def get1st : TrmClosed :=
   .val
@@ -69,6 +71,8 @@ def get2ndOnTuple : TrmClosed :=
     (.depApply get2nd false)
     true
 
+#eval get2ndOnTuple.pretty 5
+
 def apply1stOn2ndFn : TrmClosed :=
   .val (.depFn (body := fun f =>
       .val (.depFn (body := fun x =>
@@ -78,14 +82,16 @@ def apply1stOn2ndFn : TrmClosed :=
 
 def apply1stOn2ndFnOnTuple : TrmClosed :=
   .depApply
-    (.depApply apply1stOn2ndFn identityFn)
+    (.depApply apply1stOn2ndFn idFn)
     false
 
-def applyIdentityFnOnItself : TrmClosed :=
-  .depApply Trm.identityFn Trm.identityFn
+#eval apply1stOn2ndFnOnTuple.pretty 6
 
-def identityFnOnFalse2 : TrmClosed :=
-  .depApply applyIdentityFnOnItself false
+def applyidFnOnItself : TrmClosed :=
+  .depApply Trm.idFn Trm.idFn
+
+def idFnOnFalse2 : TrmClosed :=
+  .depApply applyidFnOnItself false
 
 end Trm
 
@@ -99,30 +105,30 @@ namespace Eval
 example : Definitional.eval Trm.false 0 = none := rfl
 example : Definitional.eval Trm.false 1 = some ((Val.primitive "false") : Val SemCarrier) := rfl
 example : Definitional.eval Trm.false 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
-example : Definitional.eval Trm.identityFnOnFalse 0 = none := rfl
-example : Definitional.eval Trm.identityFnOnFalse 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Definitional.eval Trm.idFnOnFalse 0 = none := rfl
+example : Definitional.eval Trm.idFnOnFalse 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
 example : Definitional.eval Trm.get1stOnTuple 1 = none := rfl
 example : Definitional.eval Trm.get1stOnTuple 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
 example : Definitional.eval Trm.get2ndOnTuple 3 = some ((Val.primitive "true") : Val SemCarrier) := rfl
 example : Definitional.eval Trm.apply1stOn2ndFnOnTuple 2 = none := rfl
 example : Definitional.eval Trm.apply1stOn2ndFnOnTuple 4 = some ((Val.primitive "false") : Val SemCarrier) := rfl
-example : (Definitional.eval Trm.applyIdentityFnOnItself 0).isNone = true := rfl
-example : (Definitional.eval Trm.applyIdentityFnOnItself 2).isSome = true := rfl
-example : Definitional.eval Trm.identityFnOnFalse2 1 = none := rfl
-example : Definitional.eval Trm.identityFnOnFalse2 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : (Definitional.eval Trm.applyidFnOnItself 0).isNone = true := rfl
+example : (Definitional.eval Trm.applyidFnOnItself 2).isSome = true := rfl
+example : Definitional.eval Trm.idFnOnFalse2 1 = none := rfl
+example : Definitional.eval Trm.idFnOnFalse2 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
 
 end Eval
 
 -- namespace Eval
 
--- example : Definitional.eval Trm.identityFnOnFalse 0 = none := rfl
+-- example : Definitional.eval Trm.idFnOnFalse 0 = none := rfl
 
 -- example :
---     Definitional.eval Trm.identityFnOnFalse 1 =
+--     Definitional.eval Trm.idFnOnFalse 1 =
 --       some ((Val.primitive "false") : Val PUnit) := rfl
 
 -- example :
---     Denotational.eval Trm.identityFnOnFalse 1 =
+--     Denotational.eval Trm.idFnOnFalse 1 =
 --       some ((Val.primitive "false") : Val PUnit) := rfl
 
 -- example : Definitional.eval Trm.get1stOnTuple 1 = none := rfl
@@ -141,7 +147,7 @@ end Eval
 --     Definitional.eval Trm.apply1stOn2ndFnOnTuple 3 =
 --       some ((Val.primitive "false") : Val PUnit) := rfl
 
--- example : Definitional.eval (.depApply Trm.identityFn Trm.identityFn) 1 = none := rfl
+-- example : Definitional.eval (.depApply Trm.idFn Trm.idFn) 1 = none := rfl
 
 -- end Eval
 
@@ -153,8 +159,8 @@ end Eval
 -- example : TrmClosed.typing Trm.true 2 Typ.true := by
 --   simp [TrmClosed.typing, Trm.true, Typ.true]
 
--- example : TrmClosed.typing Trm.identityFn 3 Typ.identityFn := by
---   simp [TrmClosed.typing, Trm.identityFn, Typ.identityFn]
+-- example : TrmClosed.typing Trm.idFn 3 Typ.idFn := by
+--   simp [TrmClosed.typing, Trm.idFn, Typ.idFn]
 
 -- example : TrmClosed.typing Trm.get1st 4 Typ.get1st := by
 --   simp [TrmClosed.typing, Trm.get1st, Typ.get1st]
@@ -163,7 +169,7 @@ end Eval
 --   simp [TrmClosed.typing, Trm.get2nd, Typ.get2nd]
 
 -- example : ¬ TrmClosed.typing Trm.apply1stOn2ndFnOnTuple 6 Typ.apply1stOn2ndFnOnTuple := by
---   simp [TrmClosed.typing, Trm.apply1stOn2ndFnOnTuple, Trm.apply1stOn2ndFn, Trm.identityFn,
+--   simp [TrmClosed.typing, Trm.apply1stOn2ndFnOnTuple, Trm.apply1stOn2ndFn, Trm.idFn,
 --     Trm.false,
 --     Typ.apply1stOn2ndFnOnTuple]
 

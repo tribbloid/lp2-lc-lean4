@@ -13,12 +13,12 @@ universe u v
 
 -- 1. Implicitly lift a type to a higher universe using ULift
 /-- Coerce a lower-universe type into a higher universe through `ULift`. -/
-instance inst_coe_type_ulift : Coe (Type u) (Type (max u v)) where
+instance _autoUliftType : Coe (Type u) (Type (max u v)) where
   coe := ULift
 
 -- 2. Implicitly lift the values of that type into the ULift wrapper, these 2 enabled universe cumulativity in rocq
 /-- Coerce a value into the `ULift` carrier chosen by the lifted type. -/
-instance inst_coe_ulift_up {α : Type u} : Coe α (ULift.{v, u} α) where
+instance _autoUliftValue {α : Type u} : Coe α (ULift.{v, u} α) where
   coe := ULift.up
 
 structure K : Type
@@ -43,11 +43,11 @@ inductive Typ : Index where
 | top -- type of anything, can bind both primitive and depFn.
 
 inductive Trm : Index where
-| var (symbol : I)
 | val (v : Val)
 | depApply (fn : Trm) (arg : Trm)
 
 inductive Val : Index where
+| var (symbol : I) -- variable is tolerated as an open value, it just can't exist in closed term at top level
 | primitive (repr : ByteCode)
 | depFn (body : (arg : I) -> Trm)
 end
@@ -56,41 +56,45 @@ end
 
 end Syntax
 
-def Trm.pretty (e : Trm String) (i : Nat := 1) : String :=
-  match e with
-  | Trm.var s     => s.down
+def Trm.pretty (trm : Trm String) : (fuel : Nat) -> String
+| 0 => "[out of fuel]"
+| fuel + 1 => match trm with
+  | Trm.val (.var s)     => s.down
   | Trm.val (.primitive repr)   => repr
   | Trm.val (.depFn body)   =>
-      let x := s!"x_{i}"
-      s!"(fun {x} => {pretty (body x) (i+1)})"
-  | Trm.depApply f a   => s!"({pretty f i} {pretty a i})"
-
-abbrev TrmClosed := {I : Index} -> Trm I
+      let x := s!"x_{fuel}"
+      s!"(fun {x} => {pretty (body x) (fuel)})"
+  | Trm.depApply f a   => s!"({pretty f fuel} {pretty a fuel})"
 
 abbrev TypClosed := {I : Index} -> Typ I
+
+abbrev TrmClosed := {I : Index} -> Trm I
 
 abbrev ValClosed := {I : Index} -> Val I
 
 abbrev PairClosed := {I : Index} -> ((Trm I) × (Val I))
 
+instance astCanReify {AST: Index -> Type} {I : Index} : Coe ({I : Index} -> AST I) (AST I) where
+  coe := (fun c => c (I := I))
+
 /- TODO: should be named "flatten"? -/
-def Typ.squash : Typ (Trm rep) → Typ rep
- | Typ.primitive => Typ.primitive
- | Typ.depFn tIn tOut =>
-    Typ.depFn (Typ.squash tIn) (fun arg => Typ.squash (tOut (Trm.var arg)))
- | Typ.top => Typ.top
+-- def Typ.squash : Typ (Trm rep) → Typ rep
+--  | Typ.primitive => Typ.primitive
+--  | Typ.depFn tIn tOut =>
+--     Typ.depFn (Typ.squash tIn) (fun arg => Typ.squash (tOut (Trm.var arg)))
+--  | Typ.top => Typ.top
 
 mutual
 
-def Trm.squash : Trm (Trm rep) → Trm rep
- | Trm.var e => e
+def Trm.squash : Trm (Val I) → Trm I
  | Trm.val v => Trm.val (Val.squash v)
  | Trm.depApply f a => Trm.depApply (Trm.squash f) (Trm.squash a)
 
-def Val.squash : Val (Trm rep) → Val rep
+def Val.squash : Val (Val I) → Val I
+ | Val.var value => value
  | Val.primitive repr => Val.primitive repr
  | Val.depFn body =>
-    Val.depFn (fun arg => Trm.squash (body (Trm.var arg)))
+    Val.depFn (fun arg => Trm.squash (body (Val.var arg)))
 
 end
 
@@ -115,39 +119,46 @@ structure Interpretable where
 -- /-- Fuel-guarded compile-time type checking for closed terms. True if type-check is successful -/
 -- def Interpretable.typing (self : Interpretable) (typ : TypClosed) : Prop :=
 
-private def step {I : Index} : Nat → Trm (Trm I) → Option (Trm I)
-  | 0, _ => none
-  | fuel + 1, term =>
-    match term with
-    | .var term => some term
-    | .val value => some (.val value.squash)
-    | .depApply (.val (.primitive _)) _ => none
-    | .depApply (.val (.depFn body)) arg => some (body arg.squash).squash
-    | .depApply fn arg => step fuel fn |>.map (fun fn' => .depApply fn' arg.squash)
+-- private def step {I : Index} : Nat → Trm (Trm I) → Option (Trm I)
+--   | 0, _ => none
+--   | fuel + 1, term =>
+--     match term with
+--     | .var term => some term
+--     | .val value => some (.val value.squash)
+--     | .depApply (.val (.primitive _)) _ => none
+--     | .depApply (.val (.depFn body)) arg => some (body arg.squash).squash
+--     | .depApply fn arg => step fuel fn |>.map (fun fn' => .depApply fn' arg.squash)
 
-private def eval_reduction {I : Index} (trm: Trm (Trm I)) : Nat → Option (Val (Trm I))
-  | 0 => none
-  | fuel + 1 => match trm with
-    | .var e => match e with
-      | .val (.primitive p) => some (.primitive p)
-      | _ => none
-    | .val value => some value
-    | .depApply fn? arg =>
-      let anf := (eval_reduction fn? fuel, eval_reduction arg fuel) -- atomic normal form
-      match (anf.1, anf.2) with
-      | ((some (.depFn _fnBody)), (some _arg)) =>
-        let applied := _fnBody (.val (_arg.squash))
-        eval_reduction applied fuel
-      | _ => none
 
-/-- Fuel-guarded runtime evaluation for closed terms. some if successful, none if failed -/
-def eval (term : TrmClosed) (fuel : Nat) : Option (Val SemCarrier) :=
-  (eval_reduction (I := SemCarrier) term fuel).map
-    fun v => v.squash
+-- here, trm can be open, but open variable must be assigned a `Val I` already
+-- private def _evalAssigned {I : Index} (trm: Trm (Val I)) : (fuel: Nat) → Option (Val I)
+-- | 0 => none
+-- | fuel + 1 => match trm with
+--   | .var e => some e -- variable already carrying a value
+--   | .val (v : Val (Val I)) =>
+--     let t1 : Val I := match v with
+--     | .primitive r => .primitive r -- primitive datum is intact
+--     | .depFn (body : Val I -> Trm (Val I)) => .depFn (fun (x: I) => -- function with assigned open term:
+--         let assigned : Trm I := Trm.var x
+--         (body assigned).squash
+--       )
+--     t1
+--   | .depApply fn? arg =>
+--     let anf := (_evalAssigned fn? fuel, _evalAssigned arg fuel) -- atomic normal form
+--     match (anf.1, anf.2) with
+--     | ((some (.depFn _fnBody)), (some _arg)) =>
+--       let applied := _fnBody (_arg)
+--       _evalAssigned applied fuel
+--     | _ => none
 
-/-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
-def Interpretable.eval (self : Interpretable) : Option (Val SemCarrier) :=
-  Definitional.eval self.term self.fuel
+-- /-- Fuel-guarded runtime evaluation for closed terms. some if successful, none if failed -/
+-- def eval (term : TrmClosed) (fuel : Nat) : Option (Val SemCarrier) :=
+--   (_eval (I := SemCarrier) term fuel).map
+--     fun v => v.squash
+
+-- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
+-- def Interpretable.eval (self : Interpretable) : Option (Val SemCarrier) :=
+--   Definitional.eval self.term self.fuel
 
 end Definitional
 
