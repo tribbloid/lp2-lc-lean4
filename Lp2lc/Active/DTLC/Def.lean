@@ -138,11 +138,11 @@ private def _evalSubstituted {I : Index} (trm: Trm (Val I)) : (fuel: Nat) → Op
   | .depApply fn? arg =>
     sorry
 
-/-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
-def Interpretable.eval (self : Interpretable) : Option (Val SemCarrier) :=
-  sorry
-
 end Definitional
+
+/-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
+def ClosedTrm.eval (self : ClosedTrm) (fuel : nat) : Option (Val SemCarrier) :=
+  sorry
 
 -- namespace Runtime
 
