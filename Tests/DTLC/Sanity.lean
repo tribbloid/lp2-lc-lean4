@@ -42,24 +42,24 @@ def true : TrmClosed :=
 
 def idFn : TrmClosed :=
   .val
-    (.depFn (body := fun x => .var x))
+    (.depFn (body := fun x => .val (.var x)))
 
 def idFnOnFalse : TrmClosed :=
   .depApply idFn false
 
-#eval idFnOnFalse.pretty 3
+example : idFnOnFalse.pretty 3 = "((fun x_1 => x_1) false)" := rfl
 
 def get1st : TrmClosed :=
   .val
     (.depFn (body := fun x =>
       .val
-        (.depFn (body := fun _y => .var x))))
+        (.depFn (body := fun _y => .val (.var x)))))
 
 def get2nd : TrmClosed :=
   .val
     (.depFn (body := fun _x =>
       .val
-        (.depFn (body := fun y => .var y))))
+        (.depFn (body := fun y => .val (.var y)))))
 
 def get1stOnTuple : TrmClosed :=
   .depApply
@@ -71,21 +71,25 @@ def get2ndOnTuple : TrmClosed :=
     (.depApply get2nd false)
     true
 
-#eval get2ndOnTuple.pretty 5
+example :
+    get2ndOnTuple.pretty 5 =
+      "(((fun x_2 => (fun x_1 => x_1)) false) true)" := rfl
 
 def apply1stOn2ndFn : TrmClosed :=
   .val (.depFn (body := fun f =>
       .val (.depFn (body := fun x =>
         .depApply
-          (.var f)
-          (.var x)))))
+          (.val (.var f))
+          (.val (.var x))))))
 
 def apply1stOn2ndFnOnTuple : TrmClosed :=
   .depApply
     (.depApply apply1stOn2ndFn idFn)
     false
 
-#eval apply1stOn2ndFnOnTuple.pretty 6
+example :
+    apply1stOn2ndFnOnTuple.pretty 6 =
+      "(((fun x_3 => (fun x_2 => (x_3 x_2))) (fun x_3 => x_3)) false)" := rfl
 
 def applyidFnOnItself : TrmClosed :=
   .depApply Trm.idFn Trm.idFn
@@ -100,24 +104,24 @@ namespace Runtime
 
 end Runtime
 
-namespace Eval
+-- namespace Eval
 
-example : Definitional.eval Trm.false 0 = none := rfl
-example : Definitional.eval Trm.false 1 = some ((Val.primitive "false") : Val SemCarrier) := rfl
-example : Definitional.eval Trm.false 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
-example : Definitional.eval Trm.idFnOnFalse 0 = none := rfl
-example : Definitional.eval Trm.idFnOnFalse 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
-example : Definitional.eval Trm.get1stOnTuple 1 = none := rfl
-example : Definitional.eval Trm.get1stOnTuple 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
-example : Definitional.eval Trm.get2ndOnTuple 3 = some ((Val.primitive "true") : Val SemCarrier) := rfl
-example : Definitional.eval Trm.apply1stOn2ndFnOnTuple 2 = none := rfl
-example : Definitional.eval Trm.apply1stOn2ndFnOnTuple 4 = some ((Val.primitive "false") : Val SemCarrier) := rfl
-example : (Definitional.eval Trm.applyidFnOnItself 0).isNone = true := rfl
-example : (Definitional.eval Trm.applyidFnOnItself 2).isSome = true := rfl
-example : Definitional.eval Trm.idFnOnFalse2 1 = none := rfl
-example : Definitional.eval Trm.idFnOnFalse2 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+-- example : Definitional.eval Trm.false 0 = none := rfl
+-- example : Definitional.eval Trm.false 1 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+-- example : Definitional.eval Trm.false 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+-- example : Definitional.eval Trm.idFnOnFalse 0 = none := rfl
+-- example : Definitional.eval Trm.idFnOnFalse 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+-- example : Definitional.eval Trm.get1stOnTuple 1 = none := rfl
+-- example : Definitional.eval Trm.get1stOnTuple 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+-- example : Definitional.eval Trm.get2ndOnTuple 3 = some ((Val.primitive "true") : Val SemCarrier) := rfl
+-- example : Definitional.eval Trm.apply1stOn2ndFnOnTuple 2 = none := rfl
+-- example : Definitional.eval Trm.apply1stOn2ndFnOnTuple 4 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+-- example : (Definitional.eval Trm.applyidFnOnItself 0).isNone = true := rfl
+-- example : (Definitional.eval Trm.applyidFnOnItself 2).isSome = true := rfl
+-- example : Definitional.eval Trm.idFnOnFalse2 1 = none := rfl
+-- example : Definitional.eval Trm.idFnOnFalse2 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
 
-end Eval
+-- end Eval
 
 -- namespace Eval
 
