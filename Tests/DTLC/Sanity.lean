@@ -42,7 +42,7 @@ def true : TrmClosed :=
 
 def idFn : TrmClosed :=
   .val
-    (.depFn (body := fun x => .val (.var x)))
+    (.depFn (body := fun x => .val (Val.ref x)))
 
 def idFnOnFalse : TrmClosed :=
   .depApply idFn false
@@ -53,13 +53,13 @@ def get1st : TrmClosed :=
   .val
     (.depFn (body := fun x =>
       .val
-        (.depFn (body := fun _y => .val (.var x)))))
+        (.depFn (body := fun _y => .val (Val.ref x)))))
 
 def get2nd : TrmClosed :=
   .val
     (.depFn (body := fun _x =>
       .val
-        (.depFn (body := fun y => .val (.var y)))))
+        (.depFn (body := fun y => .val (Val.ref y)))))
 
 def get1stOnTuple : TrmClosed :=
   .depApply
@@ -79,8 +79,8 @@ def apply1stOn2ndFn : TrmClosed :=
   .val (.depFn (body := fun f =>
       .val (.depFn (body := fun x =>
         .depApply
-          (.val (.var f))
-          (.val (.var x))))))
+          (.val (Val.ref f))
+          (.val (Val.ref x))))))
 
 def apply1stOn2ndFnOnTuple : TrmClosed :=
   .depApply
@@ -104,24 +104,24 @@ namespace Runtime
 
 end Runtime
 
--- namespace Eval
+namespace Eval
 
--- example : Definitional.eval Trm.false 0 = none := rfl
--- example : Definitional.eval Trm.false 1 = some ((Val.primitive "false") : Val SemCarrier) := rfl
--- example : Definitional.eval Trm.false 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
--- example : Definitional.eval Trm.idFnOnFalse 0 = none := rfl
--- example : Definitional.eval Trm.idFnOnFalse 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
--- example : Definitional.eval Trm.get1stOnTuple 1 = none := rfl
--- example : Definitional.eval Trm.get1stOnTuple 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
--- example : Definitional.eval Trm.get2ndOnTuple 3 = some ((Val.primitive "true") : Val SemCarrier) := rfl
--- example : Definitional.eval Trm.apply1stOn2ndFnOnTuple 2 = none := rfl
--- example : Definitional.eval Trm.apply1stOn2ndFnOnTuple 4 = some ((Val.primitive "false") : Val SemCarrier) := rfl
--- example : (Definitional.eval Trm.applyidFnOnItself 0).isNone = true := rfl
--- example : (Definitional.eval Trm.applyidFnOnItself 2).isSome = true := rfl
--- example : Definitional.eval Trm.idFnOnFalse2 1 = none := rfl
--- example : Definitional.eval Trm.idFnOnFalse2 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Trm.false.eval 0 = none := rfl
+example : Trm.false.eval 1 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Trm.false.eval 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Trm.idFnOnFalse.eval 0 = none := rfl
+example : Trm.idFnOnFalse.eval 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Trm.get1stOnTuple.eval 1 = none := rfl
+example : Trm.get1stOnTuple.eval 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Trm.get2ndOnTuple.eval 3 = some ((Val.primitive "true") : Val SemCarrier) := rfl
+example : Trm.apply1stOn2ndFnOnTuple.eval 2 = none := rfl
+example : Trm.apply1stOn2ndFnOnTuple.eval 4 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : (Trm.applyidFnOnItself.eval 0).isNone = true := rfl
+example : (Trm.applyidFnOnItself.eval 2).isSome = true := rfl
+example : Trm.idFnOnFalse2.eval 1 = none := rfl
+example : Trm.idFnOnFalse2.eval 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
 
--- end Eval
+end Eval
 
 -- namespace Eval
 

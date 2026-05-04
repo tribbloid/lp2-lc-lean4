@@ -47,7 +47,7 @@ inductive Trm : Index where
 | depApply (fn : Trm) (arg : Trm)
 
 inductive Val : Index where
-| var (symbol : I) -- variable is tolerated as an open value, it just can't exist in closed term at top level
+| ref (symbol : I) -- Reference to an unkonwn indexed thing. Closed term cannot have it outside depFn body, open value (open term doesn't have such limitation). AKA variable but this name is misleading (lambda calculus doesn't have mutablle binding)
 | primitive (repr : ByteCode)
 | depFn (body : (arg : I) -> Trm)
 end
@@ -59,7 +59,7 @@ end Syntax
 def Trm.pretty (trm : Trm String) : (fuel : Nat) -> String
 | 0 => "[out of fuel]"
 | fuel + 1 => match trm with
-  | Trm.val (.var s)     => s.down
+  | Trm.val (.ref s)     => s.down
   | Trm.val (.primitive repr)   => repr
   | Trm.val (.depFn body)   =>
       let x := s!"x_{fuel}"
@@ -93,15 +93,22 @@ def Trm.squash : Trm (Val I) → Trm I
 | Trm.depApply f a => Trm.depApply (Trm.squash f) (Trm.squash a)
 
 def Val.squash : Val (Val I) → Val I
-| Val.var value => value
+| Val.ref value => value
 | Val.primitive repr => Val.primitive repr
 | Val.depFn body =>
   Val.depFn (fun arg =>
-    let argVar := Val.var arg
+    let argVar := Val.ref arg
     Trm.squash (body argVar)
   )
 
 end
+
+namespace FBound
+
+class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
+  cast: Val I -> I
+
+end FBound
 
 /--
 runtime value, type erased, intermediate representation of "Val" embedded in Lean and executable by Lean. e.g.
@@ -136,25 +143,29 @@ structure Interpretable where
 
 
 -- here, trm can be open, but open variable must be assigned a `Val I` already
-private def _evalSubstituted {I : Index} (trm: Trm (Val I)) : (fuel: Nat) → Option (Val (Val I))
-| 0 => none
-| fuel + 1 => match trm with
-  | .val v => some v
-  | .depApply fn? arg =>
-    let anf := (_evalSubstituted fn? fuel, _evalSubstituted arg fuel)
-    match anf with
-    | (some (Val.depFn fnBody), some _arg) =>
-      let applied := (fnBody _arg.squash)
-      let result := _evalSubstituted applied fuel
-      result
-    | _ => none
+-- private def _evalSubstituted {I : Index} (trm: Trm (Val I)) : (fuel: Nat) → Option (Val (Val I))
+-- | 0 => none
+-- | fuel + 1 => match trm with
+--   | .val v => some v
+--   | .depApply fn? arg =>
+--     let anf := (_evalSubstituted fn? fuel, _evalSubstituted arg fuel) -- atomic normal form
+--     match anf with
+--     | (some (Val.depFn fnBody), some _arg) =>
+--       let applied := (fnBody _arg.squash)
+--       let result := _evalSubstituted applied fuel
+--       result
+--     | _ => none
 
 end Definitional
 
+-- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
+-- def ClosedTrm.eval (self : ClosedTrm) (fuel : Nat) : Option (Val SemCarrier) :=
+--   let almost := Definitional._evalSubstituted (self (I := Val SemCarrier)) fuel
+--   almost.map fun v => v.squash
+
 /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
 def ClosedTrm.eval (self : ClosedTrm) (fuel : Nat) : Option (Val SemCarrier) :=
-  let almost := Definitional._evalSubstituted (self (I := Val SemCarrier)) fuel
-  almost.map fun v => v.squash
+  sorry
 
 -- namespace Runtime
 
