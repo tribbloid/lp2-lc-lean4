@@ -107,19 +107,19 @@ end Runtime
 namespace Eval
 
 example : Trm.false.eval 0 = none := rfl
-example : Trm.false.eval 1 = some ((Val.primitive "false") : Val SemCarrier) := rfl
-example : Trm.false.eval 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Trm.false.eval 1 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
+example : Trm.false.eval 2 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
 example : Trm.idFnOnFalse.eval 0 = none := rfl
-example : Trm.idFnOnFalse.eval 2 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Trm.idFnOnFalse.eval 2 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
 example : Trm.get1stOnTuple.eval 1 = none := rfl
-example : Trm.get1stOnTuple.eval 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
-example : Trm.get2ndOnTuple.eval 3 = some ((Val.primitive "true") : Val SemCarrier) := rfl
+example : Trm.get1stOnTuple.eval 3 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
+example : Trm.get2ndOnTuple.eval 3 = some ((Val.primitive "true") : Val SemanticCarrier) := rfl
 example : Trm.apply1stOn2ndFnOnTuple.eval 2 = none := rfl
-example : Trm.apply1stOn2ndFnOnTuple.eval 4 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Trm.apply1stOn2ndFnOnTuple.eval 4 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
 example : (Trm.applyidFnOnItself.eval 0).isNone = true := rfl
 example : (Trm.applyidFnOnItself.eval 2).isSome = true := rfl
 example : Trm.idFnOnFalse2.eval 1 = none := rfl
-example : Trm.idFnOnFalse2.eval 3 = some ((Val.primitive "false") : Val SemCarrier) := rfl
+example : Trm.idFnOnFalse2.eval 3 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
 
 end Eval
 

@@ -283,3 +283,19 @@ def normalize {ty : Ty} (e : Term ty) : Term ty :=
 def eval_three {rep : Ty → Type} : normalize three_the_hard_way (rep := rep) = Term'.const 3 := rfl
 
 end NbE
+
+def assumedPureIncrement : Term (Ty.fn Ty.nat Ty.nat) :=
+  Term'.lam (fun x => Term'.plus (Term'.var x) (Term'.const 1))
+
+def pureIncrementOnConst : Term Ty.nat :=
+  Term'.app assumedPureIncrement (Term'.const 41)
+
+example : denote pureIncrementOnConst = 42 :=
+  rfl
+
+example {rep : Ty → Type} :
+    constFold (pureIncrementOnConst (rep := rep)) =
+      Term'.app
+        (Term'.lam (fun x => Term'.plus (Term'.var x) (Term'.const 1)))
+        (Term'.const 41) :=
+  rfl

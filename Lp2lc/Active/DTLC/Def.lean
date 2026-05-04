@@ -110,18 +110,6 @@ class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, i
 
 end FBound
 
-/--
-runtime value, type erased, intermediate representation of "Val" embedded in Lean and executable by Lean. e.g.
-
-- Val.primitive becomes ByteCode directly
-- Val.depFn becomes a Lean function `{Arg: Type} -> (arg: Arg) -> (fuel: Nat) -> Option RuntimeVal`
-
-as usual, recursion must be guarded by fuel
-
-it is only for execution, not inspection or verification.
--/
-structure SemCarrier : Type 1 where
-
 namespace Definitional
 
 structure Interpretable where
@@ -163,8 +151,25 @@ end Definitional
 --   let almost := Definitional._evalSubstituted (self (I := Val SemCarrier)) fuel
 --   almost.map fun v => v.squash
 
+
+/--
+runtime value, type erased, intermediate representation of "Val" embedded in Lean and executable by Lean. e.g.
+
+- Val.primitive becomes ByteCode directly
+- Val.depFn becomes a Lean function `{Arg: Type} -> (arg: Arg) -> (fuel: Nat) -> Option RuntimeVal`
+
+as usual, recursion must be guarded by fuel
+
+it is only for execution, not inspection or verification.
+-/
+abbrev SemanticCarrier : Type 1 := sorry
+
+structure EvalResult where
+  output: Option (Val SemanticCarrier)
+  fuelConsumed: Nat
+
 /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
-def ClosedTrm.eval (self : ClosedTrm) (fuel : Nat) : Option (Val SemCarrier) :=
+def ClosedTrm.eval (self : ClosedTrm) (fuel : Nat) : EvalResult :=
   sorry
 
 -- namespace Runtime
