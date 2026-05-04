@@ -70,8 +70,6 @@ abbrev TypClosed := {I : Index} -> Typ I
 
 abbrev TrmClosed := {I : Index} -> Trm I
 
-abbrev ClosedTrm := TrmClosed
-
 abbrev ValClosed := {I : Index} -> Val I
 
 abbrev PairClosed := {I : Index} -> ((Trm I) × (Val I))
@@ -169,7 +167,7 @@ structure EvalResult where
   fuelConsumed: Nat
 
 /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
-def ClosedTrm.eval (self : ClosedTrm) (fuel : Nat) : EvalResult :=
+def ClosedTrm.eval (self : TrmClosed) (fuel : Nat) : EvalResult :=
   sorry
 
 -- namespace Runtime
