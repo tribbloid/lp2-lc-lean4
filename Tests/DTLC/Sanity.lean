@@ -34,6 +34,9 @@ end Typ
 
 namespace Trm
 
+section
+variable (ref : {I : Index} -> (I -> Val I))
+
 def false : TrmClosed :=
   .val (.primitive "false")
 
@@ -42,10 +45,10 @@ def true : TrmClosed :=
 
 def idFn : TrmClosed :=
   .val
-    (.depFn (body := fun x => .val (Val.ref x)))
+    (.depFn (body := fun x => .val (ref x)))
 
 def idFnOnFalse : TrmClosed :=
-  .depApply idFn false
+  .depApply (idFn ref) false
 
 example : idFnOnFalse.pretty 3 = "((fun x_1 => x_1) false)" := rfl
 
@@ -104,24 +107,24 @@ namespace Runtime
 
 end Runtime
 
-namespace Eval
+-- namespace Eval
 
-example : Trm.false.eval 0 = none := rfl
-example : Trm.false.eval 1 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
-example : Trm.false.eval 2 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
-example : Trm.idFnOnFalse.eval 0 = none := rfl
-example : Trm.idFnOnFalse.eval 2 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
-example : Trm.get1stOnTuple.eval 1 = none := rfl
-example : Trm.get1stOnTuple.eval 3 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
-example : Trm.get2ndOnTuple.eval 3 = some ((Val.primitive "true") : Val SemanticCarrier) := rfl
-example : Trm.apply1stOn2ndFnOnTuple.eval 2 = none := rfl
-example : Trm.apply1stOn2ndFnOnTuple.eval 4 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
-example : (Trm.applyidFnOnItself.eval 0).isNone = true := rfl
-example : (Trm.applyidFnOnItself.eval 2).isSome = true := rfl
-example : Trm.idFnOnFalse2.eval 1 = none := rfl
-example : Trm.idFnOnFalse2.eval 3 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
+-- example : Trm.false.eval 0 = none := rfl
+-- example : Trm.false.eval 1 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
+-- example : Trm.false.eval 2 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
+-- example : Trm.idFnOnFalse.eval 0 = none := rfl
+-- example : Trm.idFnOnFalse.eval 2 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
+-- example : Trm.get1stOnTuple.eval 1 = none := rfl
+-- example : Trm.get1stOnTuple.eval 3 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
+-- example : Trm.get2ndOnTuple.eval 3 = some ((Val.primitive "true") : Val SemanticCarrier) := rfl
+-- example : Trm.apply1stOn2ndFnOnTuple.eval 2 = none := rfl
+-- example : Trm.apply1stOn2ndFnOnTuple.eval 4 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
+-- example : (Trm.applyidFnOnItself.eval 0).isNone = true := rfl
+-- example : (Trm.applyidFnOnItself.eval 2).isSome = true := rfl
+-- example : Trm.idFnOnFalse2.eval 1 = none := rfl
+-- example : Trm.idFnOnFalse2.eval 3 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
 
-end Eval
+-- end Eval
 
 -- namespace Eval
 

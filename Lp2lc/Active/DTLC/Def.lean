@@ -28,7 +28,7 @@ abbrev K1: Type 1 := K
 open Util
 
 /-- Universe-1 carrier for PHOAS indices. -/
-abbrev Index := Type 1
+abbrev Index := Type
 
 
 section Syntax
@@ -47,19 +47,22 @@ inductive Trm : Index where
 | depApply (fn : Trm) (arg : Trm)
 
 inductive Val : Index where
-| ref (symbol : I) -- Reference to an unkonwn indexed thing. Closed term cannot have it outside depFn body, open value (open term doesn't have such limitation). AKA variable but this name is misleading (lambda calculus doesn't have mutablle binding)
+-- TOOD: remove, useless in F-bounded HOAS
+-- | ref (symbol : I) -- Reference to an unkonwn indexed thing. Closed term cannot have it outside depFn body, open value (open term doesn't have such limitation). AKA variable but this name is misleading (lambda calculus doesn't have mutablle binding)
 | primitive (repr : ByteCode)
 | depFn (body : (arg : I) -> Trm)
 end
 
 -- def SemTyp := Trm I -> Prop
 
+class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
+  cast: Val I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
+
 end Syntax
 
 def Trm.pretty (trm : Trm String) : (fuel : Nat) -> String
 | 0 => "[out of fuel]"
 | fuel + 1 => match trm with
-  | Trm.val (.ref s)     => s.down
   | Trm.val (.primitive repr)   => repr
   | Trm.val (.depFn body)   =>
       let x := s!"x_{fuel}"
@@ -79,42 +82,11 @@ abbrev PairClosed := {I : Index} -> ((Trm I) × (Val I))
 instance astCanReify {AST: Index -> Type} {I : Index} : Coe ({I : Index} -> AST I) (AST I) where
   coe := (fun c => c (I := I))
 
-/- TODO: should be named "flatten"? -/
--- def Typ.squash : Typ (Trm rep) → Typ rep
---  | Typ.primitive => Typ.primitive
---  | Typ.depFn tIn tOut =>
---     Typ.depFn (Typ.squash tIn) (fun arg => Typ.squash (tOut (Trm.var arg)))
---  | Typ.top => Typ.top
-
-mutual
-
-def Trm.squash : Trm (Val I) → Trm I
-| Trm.val v => Trm.val (Val.squash v)
-| Trm.depApply f a => Trm.depApply (Trm.squash f) (Trm.squash a)
-
-def Val.squash : Val (Val I) → Val I
-| Val.ref value => value
-| Val.primitive repr => Val.primitive repr
-| Val.depFn body =>
-  Val.depFn (fun arg =>
-    let argVar := Val.ref arg
-    Trm.squash (body argVar)
-  )
-
-end
-
-namespace FBound
-
-class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
-  cast: Val I -> I
-
-end FBound
-
 namespace Definitional
 
-structure Interpretable where
-  term: TrmClosed
-  fuel: Nat
+-- structure Interpretable where
+--   term: TrmClosed
+--   fuel: Nat
 
 -- /-- Fuel-guarded compile-time type checking for closed terms. True if type-check is successful -/
 -- def Interpretable.typing (self : Interpretable) (typ : TypClosed) : Prop :=
@@ -152,25 +124,25 @@ end Definitional
 --   almost.map fun v => v.squash
 
 
-/--
-runtime value, type erased, intermediate representation of "Val" embedded in Lean and executable by Lean. e.g.
+-- /--
+-- runtime value, type erased, intermediate representation of "Val" embedded in Lean and executable by Lean. e.g.
 
-- Val.primitive becomes ByteCode directly
-- Val.depFn becomes a Lean function `{Arg: Type} -> (arg: Arg) -> (fuel: Nat) -> Option RuntimeVal`
+-- - Val.primitive becomes ByteCode directly
+-- - Val.depFn becomes a Lean function `{Arg: Type} -> (arg: Arg) -> (fuel: Nat) -> Option RuntimeVal`
 
-as usual, recursion must be guarded by fuel
+-- as usual, recursion must be guarded by fuel
 
-it is only for execution, not inspection or verification.
--/
-abbrev SemanticCarrier : Type 1 := sorry
+-- it is only for execution, not inspection or verification.
+-- -/
+-- abbrev SemanticCarrier : Type 1 := sorry
 
-structure EvalResult where
-  output: Option (Val SemanticCarrier)
-  fuelConsumed: Nat
+-- structure EvalResult where
+--   output: Option (Val SemanticCarrier)
+--   fuelConsumed: Nat
 
-/-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
-def ClosedTrm.eval (self : ClosedTrm) (fuel : Nat) : EvalResult :=
-  sorry
+-- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
+-- def ClosedTrm.eval (self : ClosedTrm) (fuel : Nat) : EvalResult :=
+--   sorry
 
 -- namespace Runtime
 

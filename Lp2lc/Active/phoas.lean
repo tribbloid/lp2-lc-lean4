@@ -299,3 +299,7 @@ example {rep : Ty → Type} :
         (Term'.lam (fun x => Term'.plus (Term'.var x) (Term'.const 1)))
         (Term'.const 41) :=
   rfl
+
+example {rep : Ty → Type} :
+    NbE.normalize pureIncrementOnConst (rep := rep) = Term'.const 42 :=
+  rfl
