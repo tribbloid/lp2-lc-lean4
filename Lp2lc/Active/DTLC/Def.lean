@@ -167,12 +167,12 @@ structure EvalResult where
   fuelConsumed: Nat
 
 -- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
--- def ClosedTrm.eval (self : TrmClosed) (fuel : Nat) : EvalResult :=
---   sorry
-
-/-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
-def ClosedTrm.eval (self : TrmClosed) (typeAnnotation: TypClosed) (fuel : Nat) : EvalResult :=
+def ClosedTrm.eval (self : TrmClosed) (fuel : Nat) : EvalResult :=
   sorry
+
+-- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
+-- def ClosedTrm.eval (self : TrmClosed) (typeAnnotation: TypClosed) (fuel : Nat) : EvalResult :=
+--   sorry
 
 -- namespace Runtime
 
