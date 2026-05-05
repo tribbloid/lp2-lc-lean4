@@ -52,6 +52,9 @@ inductive Val : Index where
 | depFn (body : (arg : I) -> Trm)
 end
 
+instance val2trm : Coe (Val I) (Trm I) where
+  coe := fun v => Trm.val v
+
 -- def SemTyp := Trm I -> Prop
 
 end Syntax
@@ -145,33 +148,72 @@ structure Interpretable where
 end Definitional
 
 -- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
--- def ClosedTrm.eval (self : ClosedTrm) (fuel : Nat) : Option (Val SemCarrier) :=
+-- def TrmClosed.eval (self : TrmClosed) (fuel : Nat) : Option (Val SemCarrier) :=
 --   let almost := Definitional._evalSubstituted (self (I := Val SemCarrier)) fuel
 --   almost.map fun v => v.squash
 
 
-/--
-runtime value, type erased, intermediate representation of "Val" embedded in Lean and executable by Lean. e.g.
+/-- Semantic carrier whose variables are source terms during closed NbE. -/
+abbrev SemanticCarrier : Type 1 := Trm PUnit
 
-- Val.primitive becomes ByteCode directly
-- Val.depFn becomes a Lean function `{Arg: Type} -> (arg: Arg) -> (fuel: Nat) -> Option RuntimeVal`
-
-as usual, recursion must be guarded by fuel
-
-it is only for execution, not inspection or verification.
--/
-abbrev SemanticCarrier : Type 1 := sorry
-
-structure EvalResult where
-  output: Option (Val SemanticCarrier)
+/-- Evaluation result with normalized output and actual fuel consumed. -/
+structure EvalResult (I : Index) where
+  output: Option (Val I)
   fuelConsumed: Nat
 
--- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
-def ClosedTrm.eval (self : TrmClosed) (fuel : Nat) : EvalResult :=
-  sorry
+def EvalResult_Semantic := EvalResult SemanticCarrier
+
+mutual
+
+/-- Replaces PHOAS variables that carry terms, preserving source-level beta substitution. -/
+private def squash_term {I : Index} : Trm (Trm I) -> Trm I
+| .val value => squash_val value
+| .depApply fn arg => .depApply (squash_term fn) (squash_term arg)
+
+/-- Replaces value-level PHOAS variables by their source terms during substitution. -/
+private def squash_val {I : Index} : Val (Trm I) -> Trm I
+| .ref term => term
+| .primitive repr => .val (.primitive repr)
+| .depFn body => .val (.depFn fun arg => squash_term (body (.val (.ref arg))))
+
+end
+
+/-- Normalizes source syntax already instantiated at the semantic carrier. -/
+def Trm.evalOpen (term : Trm (Trm I)) : (fuel : Nat) -> EvalResult (Trm I)
+| 0 => { output := none, fuelConsumed := 0 }
+| fuel + 1 =>
+  match term with
+  | .val value =>
+    match value with
+    | .ref underlying =>  -- reference have to be unpacked
+      match underlying with
+      | .val (.primitive repr) => { output := some (.primitive repr), fuelConsumed := 1 } -- trivial
+      | .val (.depFn body) =>
+        let liftedBody: Trm I -> Trm (Trm I) := (fun arg : Trm I =>
+          match arg with
+          | .val (.ref x) => .val (.ref (body x))
+          | _others => .val (.ref arg))
+        { output := some (.depFn liftedBody), fuelConsumed := 1 }
+      | _others =>
+        -- let substituted := squash_term (.val (.ref underlying))
+        let substituted := squash_val (.ref underlying)
+        Trm.evalOpen (.val (.ref substituted)) fuel
+    | value => { output := some value, fuelConsumed := 1 } -- others can be returned directly
+  | .depApply fnProto arg =>
+    let fn? := Trm.evalOpen fnProto fuel
+    match fn?.output with
+    | some (.depFn body) =>
+      let applied := body (squash_term arg)
+      let result := Trm.evalOpen applied fuel -- function body returns another term, may not be final
+      { output := result.output, fuelConsumed := fn?.fuelConsumed + result.fuelConsumed + 1 }
+    | _others => { output := none, fuelConsumed := fn?.fuelConsumed + 1 } -- cannot apply a non-function
+
+/-- Normalizes a closed term into a closed source value, reporting actual fuel consumed. -/
+def TrmClosed.eval (self : TrmClosed) (fuel : Nat) : EvalResult_Semantic :=
+  (self (I := SemanticCarrier)).evalOpen fuel
 
 -- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
--- def ClosedTrm.eval (self : TrmClosed) (typeAnnotation: TypClosed) (fuel : Nat) : EvalResult :=
+-- def TrmClosed.eval (self : TrmClosed) (typeAnnotation: TypClosed) (fuel : Nat) : EvalResult :=
 --   sorry
 
 -- namespace Runtime
