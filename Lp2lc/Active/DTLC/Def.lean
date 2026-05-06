@@ -55,19 +55,7 @@ end
 instance val2trm : Coe (Val I) (Trm I) where
   coe := fun v => Trm.val v
 
--- def SemTyp := Trm I -> Prop
-
 end Syntax
-
-def Trm.pretty (trm : Trm String) : (fuel : Nat) -> String
-| 0 => "[out of fuel]"
-| fuel + 1 => match trm with
-  | Trm.val (.ref s)     => s.down
-  | Trm.val (.primitive repr)   => repr
-  | Trm.val (.depFn body)   =>
-      let x := s!"x_{fuel}"
-      s!"(fun {x} => {pretty (body x) (fuel)})"
-  | Trm.depApply f a   => s!"({pretty f fuel} {pretty a fuel})"
 
 abbrev TypClosed := {I : Index} -> Typ I
 
@@ -75,17 +63,18 @@ abbrev TrmClosed := {I : Index} -> Trm I
 
 abbrev ValClosed := {I : Index} -> Val I
 
-abbrev PairClosed := {I : Index} -> ((Trm I) × (Val I))
+/-- Semantic carrier whose variables are source terms during closed NbE. -/
+abbrev SemanticCarrier : Type 1 := Trm PUnit
+
+/-- Evaluation result with normalized output and actual fuel consumed. -/
+structure EvalResult (I : Index) where
+  output: Option (Val I)
+  fuelConsumed: Nat
+
+def EvalResult_Semantic := EvalResult SemanticCarrier
 
 instance astCanReify {AST: Index -> Type} {I : Index} : Coe ({I : Index} -> AST I) (AST I) where
   coe := (fun c => c (I := I))
-
-/- TODO: should be named "flatten"? -/
--- def Typ.squash : Typ (Trm rep) → Typ rep
---  | Typ.primitive => Typ.primitive
---  | Typ.depFn tIn tOut =>
---     Typ.depFn (Typ.squash tIn) (fun arg => Typ.squash (tOut (Trm.var arg)))
---  | Typ.top => Typ.top
 
 mutual
 
@@ -104,135 +93,42 @@ def Val.squash : Val (Val I) → Val I
 
 end
 
-namespace FBound
-
-class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
-  cast: Val I -> I
-
-end FBound
-
-namespace Definitional
-
-structure Interpretable where
-  term: TrmClosed
-  fuel: Nat
-
--- /-- Fuel-guarded compile-time type checking for closed terms. True if type-check is successful -/
--- def Interpretable.typing (self : Interpretable) (typ : TypClosed) : Prop :=
-
--- private def step {I : Index} : Nat → Trm (Trm I) → Option (Trm I)
---   | 0, _ => none
---   | fuel + 1, term =>
---     match term with
---     | .var term => some term
---     | .val value => some (.val value.squash)
---     | .depApply (.val (.primitive _)) _ => none
---     | .depApply (.val (.depFn body)) arg => some (body arg.squash).squash
---     | .depApply fn arg => step fuel fn |>.map (fun fn' => .depApply fn' arg.squash)
-
-
--- here, trm can be open, but open variable must be assigned a `Val I` already
--- private def _evalSubstituted {I : Index} (trm: Trm (Val I)) : (fuel: Nat) → Option (Val (Val I))
--- | 0 => none
--- | fuel + 1 => match trm with
---   | .val v => some v
---   | .depApply fn? arg =>
---     let anf := (_evalSubstituted fn? fuel, _evalSubstituted arg fuel) -- atomic normal form
---     match anf with
---     | (some (Val.depFn fnBody), some _arg) =>
---       let applied := (fnBody _arg.squash)
---       let result := _evalSubstituted applied fuel
---       result
---     | _ => none
-
-end Definitional
-
--- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
--- def TrmClosed.eval (self : TrmClosed) (fuel : Nat) : Option (Val SemCarrier) :=
---   let almost := Definitional._evalSubstituted (self (I := Val SemCarrier)) fuel
---   almost.map fun v => v.squash
-
-
-/-- Semantic carrier whose variables are source terms during closed NbE. -/
-abbrev SemanticCarrier : Type 1 := Trm PUnit
-
-/-- Evaluation result with normalized output and actual fuel consumed. -/
-structure EvalResult (I : Index) where
-  output: Option (Val I)
-  fuelConsumed: Nat
-
-def EvalResult_Semantic := EvalResult SemanticCarrier
-
-mutual
-
-/-- Lifts source terms into value-tagged open syntax when a referenced function is re-exposed. -/
-private def Trm.lift {I : Index} : Trm I -> Trm (Val I)
-| .val value => .val (Val.lift value)
-| .depApply fn arg => .depApply (Trm.lift fn) (Trm.lift arg)
-
-/-- Lifts source values into value-tagged open syntax when a referenced function is re-exposed. -/
-private def Val.lift {I : Index} : Val I -> Val (Val I)
-| .ref value => .ref (.ref value)
-| .primitive repr => .primitive repr
-| .depFn body =>
-  .depFn (fun arg =>
-    match arg with
-    | .ref value => Trm.lift (body value)
-    | arg => .val (.ref arg))
-
-end
+def Trm.lift : Trm I -> Trm (Val I)
+| .val value => .val (.ref value)
+| .depApply fn arg => .depApply (lift fn) (lift arg)
 
 /-- Normalizes source syntax already instantiated at the semantic carrier. -/
 def Trm.evalOpen (term : Trm (Val I)) : (fuel : Nat) -> EvalResult (Val I)
 | 0 => { output := none, fuelConsumed := 0 }
 | fuel + 1 =>
   match term with
-  | .val value =>
-    match value with
-    | .ref assignedVal =>  -- reference have to be unpacked
-      let output: Val (Val I) := match assignedVal with
-      | .primitive repr => .primitive repr -- trivial
-      | .depFn body => Val.lift (.depFn body)
-      | .ref _others => value -- this will return an unbinded value, is it safe?
-      { output := output, fuelConsumed := 1}
-    | others => { output := some others, fuelConsumed := 1 } -- others can be returned directly
-  | .depApply fnProto arg =>
-    let fn? := Trm.evalOpen fnProto fuel
-    match fn?.output with
+  | .val (.ref (.depFn body)) => { output := some (.depFn (body := (fun
+      | .ref value => lift (body value)
+      | arg => .val (.ref arg)))), fuelConsumed := 1 }
+  | .val value => { output := some value, fuelConsumed := 1 }
+  | .depApply fn arg =>
+    let fn? := fn.evalOpen fuel; match fn?.output with
     | some (.depFn body) =>
-      let arg? := Trm.evalOpen arg fuel
-      match arg?.output with
-      | some argValue =>
-        let applied := body argValue.squash -- application returns another term but it may not be final
-        let result := Trm.evalOpen applied fuel
+      let arg? := arg.evalOpen fuel; match arg?.output.map (fun value => (body value.squash).evalOpen fuel) with
+      | some result =>
         { output := result.output, fuelConsumed := fn?.fuelConsumed + arg?.fuelConsumed + result.fuelConsumed + 1 }
       | none => { output := none, fuelConsumed := fn?.fuelConsumed + arg?.fuelConsumed + 1 }
-    | _others => { output := none, fuelConsumed := fn?.fuelConsumed + 1 } -- cannot apply a non-function
+    | _ => { output := none, fuelConsumed := fn?.fuelConsumed + 1 }
 
 /-- Normalizes a closed term into a closed source value, reporting actual fuel consumed. -/
 def TrmClosed.eval (self : TrmClosed) (fuel : Nat) : EvalResult_Semantic :=
   let result := (self (I := Val SemanticCarrier)).evalOpen fuel
   { output := result.output.map Val.squash, fuelConsumed := result.fuelConsumed }
 
--- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
--- def TrmClosed.eval (self : TrmClosed) (typeAnnotation: TypClosed) (fuel : Nat) : EvalResult :=
---   sorry
-
--- namespace Runtime
-
--- inductive Val : Type 1 where -- compiled to be executed/invoked directly in lean, "none" result means failed execution, type is always erased
--- | primitive (v : ByteCode) : Val
--- | fn (body : {T : Type} -> (vIn: T) -> (fuel: Nat) -> Option Val) : Val
-
--- class Executable (T: Type) where -- with fuel based execution, "none" result means failed execution
---   eval (v : T) (fuel: Nat) : Option Val
---   isAdequet: Prop -- adequecy lemma: given enough fuel, the execution result matches the big-step semantics.
-
--- -- TODO: define an instance of Executable here
-
--- end Runtime
-
--- TODO: define a compilation function here, transforming pair of `Trm : Typ` in syntax into a runtime executable
+def Trm.pretty (trm : Trm String) : (fuel : Nat) -> String
+| 0 => "[out of fuel]"
+| fuel + 1 => match trm with
+  | Trm.val (.ref s)     => s.down
+  | Trm.val (.primitive repr)   => repr
+  | Trm.val (.depFn body)   =>
+      let x := s!"x_{fuel}"
+      s!"(fun {x} => {pretty (body x) (fuel)})"
+  | Trm.depApply f a   => s!"({pretty f fuel} {pretty a fuel})"
 
 end DTLC
 
