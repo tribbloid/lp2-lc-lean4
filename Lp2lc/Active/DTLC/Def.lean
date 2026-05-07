@@ -64,9 +64,11 @@ class Correspondence (I : Index) extends FBound I where
   fwd := equiv.mp
   rev := equiv.mpr
 
-def TypClosed {I : Index} [Correspondence I] := Typ I
+abbrev TypClosed := {I : Index} -> [Correspondence I] -> Typ I
 
-def TrmClosed {I : Index} [Correspondence I] := Trm I
+abbrev ValClosed := {I : Index} -> [Correspondence I] -> Val I
+
+abbrev TrmClosed := {I : Index} -> [Correspondence I] -> Trm I
 
 -- def Trm.pretty (trm : Trm String) : (fuel : Nat) -> String
 -- | 0 => "[out of fuel]"

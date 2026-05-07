@@ -12,6 +12,83 @@ in @SanityExample.scala
 namespace Tests.DTLC.Sanity
 open Lp2lc.Active.DTLC
 
+namespace Val
+
+def idFn : ValClosed :=
+  .depFn (body := fun x => Correspondence.rev x)
+
+end Val
+
+namespace Trm
+
+def false : TrmClosed :=
+  .val (.primitive "false")
+
+def true : TrmClosed :=
+  .val (.primitive "true")
+
+def idFn : TrmClosed :=
+  .val (.depFn (body := fun x => Correspondence.rev x))
+
+def idFnOnFalse : TrmClosed :=
+  .depApply idFn false
+
+example {I : Index} [Correspondence I] :
+    (idFnOnFalse : Trm I) =
+      .depApply (idFn : Trm I) (false : Trm I) := rfl
+
+def get1st : TrmClosed :=
+  .val
+    (.depFn (body := fun x =>
+      .val
+        (.depFn (body := fun _y => Correspondence.rev x))))
+
+def get2nd : TrmClosed :=
+  .val
+    (.depFn (body := fun _x =>
+      .val
+        (.depFn (body := fun y => Correspondence.rev y))))
+
+def get1stOnTuple : TrmClosed :=
+  .depApply
+    (.depApply get1st false)
+    true
+
+def get2ndOnTuple : TrmClosed :=
+  .depApply
+    (.depApply get2nd false)
+    true
+
+example {I : Index} [Correspondence I] :
+    (get2ndOnTuple : Trm I) =
+      .depApply (.depApply (get2nd : Trm I) (false : Trm I)) (true : Trm I) := rfl
+
+def apply1stOn2ndFn : TrmClosed :=
+  .val (.depFn (body := fun f =>
+      .val (.depFn (body := fun x =>
+        .depApply
+          (Correspondence.rev f)
+          (Correspondence.rev x)))))
+
+def apply1stOn2ndFnOnTuple : TrmClosed :=
+  .depApply
+    (.depApply apply1stOn2ndFn idFn)
+    false
+
+example {I : Index} [Correspondence I] :
+    (apply1stOn2ndFnOnTuple : Trm I) =
+      .depApply
+        (.depApply (apply1stOn2ndFn : Trm I) (idFn : Trm I))
+        (false : Trm I) := rfl
+
+def applyidFnOnItself : TrmClosed :=
+  .depApply idFn idFn
+
+def idFnOnFalse2 : TrmClosed :=
+  .depApply applyidFnOnItself false
+
+end Trm
+
 namespace Typ
 
 def false : TypClosed :=
@@ -31,81 +108,6 @@ def apply1stOn2ndFn : TypClosed :=
       .depFn .primitive (fun _x => .primitive))
 
 end Typ
-
-namespace Trm
-
-section
-variable (ref : {I : Index} -> (I -> Val I))
-
-def false : TrmClosed :=
-  .val (.primitive "false")
-
-def true : TrmClosed :=
-  .val (.primitive "true")
-
-def idFn : TrmClosed :=
-  .val
-    (.depFn (body := fun x => .val (ref x)))
-
-def idFnOnFalse : TrmClosed :=
-  .depApply (idFn ref) false
-
-example : idFnOnFalse.pretty 3 = "((fun x_1 => x_1) false)" := rfl
-
-def get1st : TrmClosed :=
-  .val
-    (.depFn (body := fun x =>
-      .val
-        (.depFn (body := fun _y => .val (Val.ref x)))))
-
-def get2nd : TrmClosed :=
-  .val
-    (.depFn (body := fun _x =>
-      .val
-        (.depFn (body := fun y => .val (Val.ref y)))))
-
-def get1stOnTuple : TrmClosed :=
-  .depApply
-    (.depApply get1st false)
-    true
-
-def get2ndOnTuple : TrmClosed :=
-  .depApply
-    (.depApply get2nd false)
-    true
-
-example :
-    get2ndOnTuple.pretty 5 =
-      "(((fun x_2 => (fun x_1 => x_1)) false) true)" := rfl
-
-def apply1stOn2ndFn : TrmClosed :=
-  .val (.depFn (body := fun f =>
-      .val (.depFn (body := fun x =>
-        .depApply
-          (.val (Val.ref f))
-          (.val (Val.ref x))))))
-
-def apply1stOn2ndFnOnTuple : TrmClosed :=
-  .depApply
-    (.depApply apply1stOn2ndFn idFn)
-    false
-
-example :
-    apply1stOn2ndFnOnTuple.pretty 6 =
-      "(((fun x_3 => (fun x_2 => (x_3 x_2))) (fun x_3 => x_3)) false)" := rfl
-
-def applyidFnOnItself : TrmClosed :=
-  .depApply Trm.idFn Trm.idFn
-
-def idFnOnFalse2 : TrmClosed :=
-  .depApply applyidFnOnItself false
-
-end Trm
-
-namespace Runtime
-
-
-end Runtime
 
 -- namespace Eval
 
