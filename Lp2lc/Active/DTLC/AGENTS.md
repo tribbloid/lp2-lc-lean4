@@ -11,13 +11,14 @@ This directory contain syntax, typing/semantic/evaluation rules and proof of sou
 - Multiple cases in pattern matching should never be in 1 line, each line should start with `|`.
 - Prefer dot-notation for invoking multi-parameter functions and inductive destructors.
 - Do NOT repeat yourself, break repeated condition in pattern matching into multiple layers of pattern matchings if applicable.
-- Avoid leaky abstraction: top-level public APIs should only contain interpreter/compiler API (e.g. type-checking, evaluation). evaluator/checker helpers of PHOAS should be kept local to to each API, only helpers reused by multiple public APIs may be private.
+- Avoid leaky abstraction: top-level public APIs should only contain interpreter/compiler API (e.g. type-checking, evaluation).
 - Avoid generic universe, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2)
 
 ## Conventions
 
-- PHOAS (parametric higher order abstract syntx), term/type indices are irrelevant, de Bruijn serial, explicit variable name, or Env data structure are NOT allowed. (see @phoas.lean as an example).
-- Big-step semantics without relying on environment or store, both type-checking and evaluation must follow functional programming style and CANNOT use contextual information. Evaluation can only happen at runtime and after successful type-checking.
+- Strong HOAS (higher order abstract syntx) + F-Bound: it's almost identical to raw Strong HOAS (see @Tests/STLC_syntax.scala for a Scala example), with one minor twist: a binded variable in a function is no longer a pending `Val`, but an unknown `{I : Index}` that can corresponds to a `Val` (through a `Correspondence` type-class axiom). Any concrete syntax rule or AST definition can only depends on any given `{I : Index}` and `Correspondence` instance.
+  - As a result, de Bruijn serial, explicit variable name, or environment/context/store definitions are NOT allowed.
+- Big-step semantics, both type-checking and evaluation must follow functional programming style and only use AST information. Evaluation should only happen at runtime and after successful type-checking.
 - Type-checking should be rigorous and reject malformed "term: type" even if they may execute successfully (e.g. calling a term argument of "top" type which may be a function) 
 - Type/term/value AST should be in a mutual block: this will be necessary for extensions.
 - Extrinsic typing, term AST should not be indexed by type (impossible for mutual block due to lean compiler limitation). Type still exists in some term constructors but type-checking is semantic-only, where type become proposition/predicate of terms.

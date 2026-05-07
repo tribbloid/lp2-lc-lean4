@@ -1,4 +1,4 @@
-# subtype lattice in PHOAS?
+# subtype lattice in HOAS?
 
 The biggest obstacle to simplification is a data structure representing
 type symbols with their subtype lattice, which:

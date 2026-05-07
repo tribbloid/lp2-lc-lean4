@@ -30,7 +30,6 @@ open Util
 /-- Universe-1 carrier for PHOAS indices. -/
 abbrev Index := Type
 
-
 section Syntax
 
 variable (I : Index) -- index
@@ -47,118 +46,38 @@ inductive Trm : Index where
 | depApply (fn : Trm) (arg : Trm)
 
 inductive Val : Index where
--- TOOD: remove, useless in F-bounded HOAS
--- | ref (symbol : I) -- Reference to an unkonwn indexed thing. Closed term cannot have it outside depFn body, open value (open term doesn't have such limitation). AKA variable but this name is misleading (lambda calculus doesn't have mutablle binding)
 | primitive (repr : ByteCode)
 | depFn (body : (arg : I) -> Trm)
+
 end
 
--- def SemTyp := Trm I -> Prop
-
-class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
-  cast: Val I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
+instance valIsTrm : Coe (Val I) (Trm I) where
+  coe := (fun v => Trm.val v)
 
 end Syntax
 
-def Trm.pretty (trm : Trm String) : (fuel : Nat) -> String
-| 0 => "[out of fuel]"
-| fuel + 1 => match trm with
-  | Trm.val (.primitive repr)   => repr
-  | Trm.val (.depFn body)   =>
-      let x := s!"x_{fuel}"
-      s!"(fun {x} => {pretty (body x) (fuel)})"
-  | Trm.depApply f a   => s!"({pretty f fuel} {pretty a fuel})"
+class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
+  fwd: Val I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
 
-abbrev TypClosed := {I : Index} -> Typ I
+class Correspondence (I : Index) extends FBound I where
+  equiv: Val I = I
+  fwd := equiv.mp
+  rev := equiv.mpr
 
-abbrev TrmClosed := {I : Index} -> Trm I
+def TypClosed {I : Index} [Correspondence I] := Typ I
 
-abbrev ClosedTrm := TrmClosed
+def TrmClosed {I : Index} [Correspondence I] := Trm I
 
-abbrev ValClosed := {I : Index} -> Val I
-
-abbrev PairClosed := {I : Index} -> ((Trm I) × (Val I))
-
-instance astCanReify {AST: Index -> Type} {I : Index} : Coe ({I : Index} -> AST I) (AST I) where
-  coe := (fun c => c (I := I))
-
-namespace Definitional
-
--- structure Interpretable where
---   term: TrmClosed
---   fuel: Nat
-
--- /-- Fuel-guarded compile-time type checking for closed terms. True if type-check is successful -/
--- def Interpretable.typing (self : Interpretable) (typ : TypClosed) : Prop :=
-
--- private def step {I : Index} : Nat → Trm (Trm I) → Option (Trm I)
---   | 0, _ => none
---   | fuel + 1, term =>
---     match term with
---     | .var term => some term
---     | .val value => some (.val value.squash)
---     | .depApply (.val (.primitive _)) _ => none
---     | .depApply (.val (.depFn body)) arg => some (body arg.squash).squash
---     | .depApply fn arg => step fuel fn |>.map (fun fn' => .depApply fn' arg.squash)
-
-
--- here, trm can be open, but open variable must be assigned a `Val I` already
--- private def _evalSubstituted {I : Index} (trm: Trm (Val I)) : (fuel: Nat) → Option (Val (Val I))
--- | 0 => none
+-- def Trm.pretty (trm : Trm String) : (fuel : Nat) -> String
+-- | 0 => "[out of fuel]"
 -- | fuel + 1 => match trm with
---   | .val v => some v
---   | .depApply fn? arg =>
---     let anf := (_evalSubstituted fn? fuel, _evalSubstituted arg fuel) -- atomic normal form
---     match anf with
---     | (some (Val.depFn fnBody), some _arg) =>
---       let applied := (fnBody _arg.squash)
---       let result := _evalSubstituted applied fuel
---       result
---     | _ => none
-
-end Definitional
-
--- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
--- def ClosedTrm.eval (self : ClosedTrm) (fuel : Nat) : Option (Val SemCarrier) :=
---   let almost := Definitional._evalSubstituted (self (I := Val SemCarrier)) fuel
---   almost.map fun v => v.squash
+--   | Trm.val (.primitive repr)   => repr
+--   | Trm.val (.depFn body)   =>
+--       let x := s!"x_{fuel}"
+--       s!"(fun {x} => {pretty (body x) (fuel)})"
+--   | Trm.depApply f a   => s!"({pretty f fuel} {pretty a fuel})"
 
 
--- /--
--- runtime value, type erased, intermediate representation of "Val" embedded in Lean and executable by Lean. e.g.
-
--- - Val.primitive becomes ByteCode directly
--- - Val.depFn becomes a Lean function `{Arg: Type} -> (arg: Arg) -> (fuel: Nat) -> Option RuntimeVal`
-
--- as usual, recursion must be guarded by fuel
-
--- it is only for execution, not inspection or verification.
--- -/
--- abbrev SemanticCarrier : Type 1 := sorry
-
--- structure EvalResult where
---   output: Option (Val SemanticCarrier)
---   fuelConsumed: Nat
-
--- /-- Fuel-guarded runtime evaluation for interpretable closed terms. some if successful, none if failed -/
--- def ClosedTrm.eval (self : ClosedTrm) (fuel : Nat) : EvalResult :=
---   sorry
-
--- namespace Runtime
-
--- inductive Val : Type 1 where -- compiled to be executed/invoked directly in lean, "none" result means failed execution, type is always erased
--- | primitive (v : ByteCode) : Val
--- | fn (body : {T : Type} -> (vIn: T) -> (fuel: Nat) -> Option Val) : Val
-
--- class Executable (T: Type) where -- with fuel based execution, "none" result means failed execution
---   eval (v : T) (fuel: Nat) : Option Val
---   isAdequet: Prop -- adequecy lemma: given enough fuel, the execution result matches the big-step semantics.
-
--- -- TODO: define an instance of Executable here
-
--- end Runtime
-
--- TODO: define a compilation function here, transforming pair of `Trm : Typ` in syntax into a runtime executable
 
 end DTLC
 
