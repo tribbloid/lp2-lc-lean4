@@ -63,6 +63,7 @@ class Correspondence (I : Index) extends FBound I where
   equiv: Val I = I
   fwd := equiv.mp
   rev := equiv.mpr
+  rev_fwd : (value : Val I) -> rev (fwd value) = value
 
 abbrev TypAST := {I : Index} -> [Correspondence I] -> Typ I
 
@@ -70,20 +71,19 @@ abbrev ValAST := {I : Index} -> [Correspondence I] -> Val I
 
 abbrev TrmAST := {I : Index} -> [Correspondence I] -> Trm I
 
--- abbrev TypCompat := {I : Index} -> [FBound I] -> Typ I
-
--- abbrev TrmCompat := {I : Index} -> [FBound I] -> Trm I
-
--- abbrev ValCompat := {I : Index} -> [FBound I] -> Val I
-
--- example : (t : TrmCompat) -> TrmCompat := fun t => t
-
 /-- Normalizes source terms to values while spending fuel at each semantic descent. -/
 def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Option (Val I) :=
   match fuel with
   | 0 => none
   | fuel + 1 =>
     match trm with
+    -- | .val (.depFn body) =>
+    --   -- TODO: HOAS body can only be evaluated into Val after an argument is supplied.
+    --   some (.depFn (body := fun arg =>
+    --     let result := body arg
+    --     match result.eval fuel with
+    --     | some value => .val value
+    --     | none => result))
     | .val value => some value
     | .depApply fn arg =>
       match fn.eval fuel, arg.eval fuel with
