@@ -14,47 +14,47 @@ open Lp2lc.Active.DTLC
 
 namespace Val
 
-def idFn : ValClosed :=
+def idFn : ValAST :=
   .depFn (body := fun x => Correspondence.rev x)
 
 end Val
 
 namespace Trm
 
-def false : TrmClosed :=
+def false : TrmAST :=
   .val (.primitive "false")
 
-def true : TrmClosed :=
+def true : TrmAST :=
   .val (.primitive "true")
 
-def idFn : TrmClosed :=
+def idFn : TrmAST :=
   .val (.depFn (body := fun x => Correspondence.rev x))
 
-def idFnOnFalse : TrmClosed :=
+def idFnOnFalse : TrmAST :=
   .depApply idFn false
 
 example {I : Index} [Correspondence I] :
     (idFnOnFalse : Trm I) =
       .depApply (idFn : Trm I) (false : Trm I) := rfl
 
-def get1st : TrmClosed :=
+def get1st : TrmAST :=
   .val
     (.depFn (body := fun x =>
       .val
         (.depFn (body := fun _y => Correspondence.rev x))))
 
-def get2nd : TrmClosed :=
+def get2nd : TrmAST :=
   .val
     (.depFn (body := fun _x =>
       .val
         (.depFn (body := fun y => Correspondence.rev y))))
 
-def get1stOnTuple : TrmClosed :=
+def get1stOnTuple : TrmAST :=
   .depApply
     (.depApply get1st false)
     true
 
-def get2ndOnTuple : TrmClosed :=
+def get2ndOnTuple : TrmAST :=
   .depApply
     (.depApply get2nd false)
     true
@@ -63,14 +63,14 @@ example {I : Index} [Correspondence I] :
     (get2ndOnTuple : Trm I) =
       .depApply (.depApply (get2nd : Trm I) (false : Trm I)) (true : Trm I) := rfl
 
-def apply1stOn2ndFn : TrmClosed :=
+def apply1stOn2ndFn : TrmAST :=
   .val (.depFn (body := fun f =>
       .val (.depFn (body := fun x =>
         .depApply
           (Correspondence.rev f)
           (Correspondence.rev x)))))
 
-def apply1stOn2ndFnOnTuple : TrmClosed :=
+def apply1stOn2ndFnOnTuple : TrmAST :=
   .depApply
     (.depApply apply1stOn2ndFn idFn)
     false
@@ -81,27 +81,27 @@ example {I : Index} [Correspondence I] :
         (.depApply (apply1stOn2ndFn : Trm I) (idFn : Trm I))
         (false : Trm I) := rfl
 
-def applyidFnOnItself : TrmClosed :=
+def applyidFnOnItself : TrmAST :=
   .depApply idFn idFn
 
-def idFnOnFalse2 : TrmClosed :=
+def idFnOnFalse2 : TrmAST :=
   .depApply applyidFnOnItself false
 
 end Trm
 
 namespace Typ
 
-def false : TypClosed :=
+def false : TypAST :=
   .primitive
 
-def idFn : TypClosed :=
+def idFn : TypAST :=
   .depFn .primitive (fun _x => .primitive)
 
-def get1st : TypClosed :=
+def get1st : TypAST :=
   .depFn .primitive (fun _x =>
     .depFn .primitive (fun _y => .primitive))
 
-def apply1stOn2ndFn : TypClosed :=
+def apply1stOn2ndFn : TypAST :=
   .depFn
     (.depFn .primitive (fun _x => .primitive))
     (fun _f =>
