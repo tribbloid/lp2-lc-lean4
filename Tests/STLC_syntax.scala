@@ -23,17 +23,17 @@ object STLC_syntax {
     def app[A, B](fn: Trm[A => B], arg: Trm[A]): Trm[B] =
       App(fn, arg)
 
-    def normalize[A](trm: Trm[A]): Val[A] =
+    def eval[A](trm: Trm[A]): Val[A] = // AKA normalise, result is also an AST
       trm match {
         case literal: Literal[a] =>
           literal
         case lam: Lam[a, b] =>
-          Lam[a, b](x => normalize(lam.body(x)))
+          Lam[a, b](x => eval(lam.body(x)))
         case App(fn, arg) =>
-          val arg1 = normalize(arg)
-          normalize(fn) match {
+          val arg1 = eval(arg)
+          eval(fn) match {
             case Lam(body) =>
-              normalize(body(arg1))
+              eval(body(arg1))
             case others =>
               throw new RuntimeException(s"malformed application: $fn is not a Lambda & cannot be applied")
           }
@@ -80,10 +80,10 @@ object STLC_syntax {
       app(app(app(ifThenElse, `false`), `true`), `false`)
 
     def run(): Unit = {
-      assert(normalize(identityFnOnFalse) == `false`)
-      assert(normalize(get1stOnTuple) == `false`)
-      assert(normalize(get2ndOnTuple) == `true`)
-      assert(normalize(apply1stOn2ndFnOnTuple) == `false`)
+      assert(eval(identityFnOnFalse) == `false`)
+      assert(eval(get1stOnTuple) == `false`)
+      assert(eval(get2ndOnTuple) == `true`)
+      assert(eval(apply1stOn2ndFnOnTuple) == `false`)
     }
   }
 }

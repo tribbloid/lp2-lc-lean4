@@ -70,7 +70,16 @@ abbrev ValAST := {I : Index} -> [Correspondence I] -> Val I
 
 abbrev TrmAST := {I : Index} -> [Correspondence I] -> Trm I
 
-abbrev TrmCompat := {I : Index} -> [FBound I] -> Trm I
+-- abbrev TypCompat := {I : Index} -> [FBound I] -> Typ I
+
+-- abbrev TrmCompat := {I : Index} -> [FBound I] -> Trm I
+
+-- abbrev ValCompat := {I : Index} -> [FBound I] -> Val I
+
+example : (t : TrmCompat) -> TrmCompat := fun t => t
+
+def Trm.eval {I : Index} [FBound I] (trm: Trm I): Val I := -- AKA normalise, result is also an AST
+  sorry
 
 -- def Trm.pretty (trm : Trm String) : (fuel : Nat) -> String
 -- | 0 => "[out of fuel]"
