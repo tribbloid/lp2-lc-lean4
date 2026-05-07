@@ -23,21 +23,22 @@ object STLC_syntax {
     def app[A, B](fn: Trm[A => B], arg: Trm[A]): Trm[B] =
       App(fn, arg)
 
-    def eval[A](trm: Trm[A]): Val[A] = // AKA normalise, result is also an AST
-      trm match {
-        case literal: Literal[a] =>
-          literal
-        case lam: Lam[a, b] =>
-          Lam[a, b](x => eval(lam.body(x)))
-        case App(fn, arg) =>
-          val arg1 = eval(arg)
-          eval(fn) match {
-            case Lam(body) =>
-              eval(body(arg1))
-            case others =>
-              throw new RuntimeException(s"malformed application: $fn is not a Lambda & cannot be applied")
-          }
-      }
+    def eval[A](trm: Trm[A], fuel: Int): Option[Val[A]] = // AKA normalise, result is also an AST
+      if fuel <= 0 then None
+      else
+        trm match {
+          case literal: Literal[a] =>
+            Some(literal)
+          case lam: Lam[a, b] =>
+            // TODO: HOAS body can only be evaluated into Val after an argument is supplied.
+            Some(lam)
+          case App(fn, arg) =>
+            for {
+              case Lam(body) <- eval(fn, fuel - 1)
+              arg1 <- eval(arg, fuel - 1)
+              result <- eval(body(arg1), fuel - 1)
+            } yield result
+        }
   }
 
   object Examples {
@@ -80,10 +81,13 @@ object STLC_syntax {
       app(app(app(ifThenElse, `false`), `true`), `false`)
 
     def run(): Unit = {
-      assert(eval(identityFnOnFalse) == `false`)
-      assert(eval(get1stOnTuple) == `false`)
-      assert(eval(get2ndOnTuple) == `true`)
-      assert(eval(apply1stOn2ndFnOnTuple) == `false`)
+      assert(eval(`false`, 0).isEmpty)
+      assert(eval(identityFnOnFalse, 1).isEmpty)
+      assert(eval(identityFnOnFalse, 2).contains(`false`))
+      assert(eval(get1stOnTuple, 3).contains(`false`))
+      assert(eval(get2ndOnTuple, 3).contains(`true`))
+      assert(eval(apply1stOn2ndFnOnTuple, 4).contains(`false`))
+      assert(eval(chooseFalse, 4).isEmpty)
     }
   }
 }

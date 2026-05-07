@@ -76,10 +76,19 @@ abbrev TrmAST := {I : Index} -> [Correspondence I] -> Trm I
 
 -- abbrev ValCompat := {I : Index} -> [FBound I] -> Val I
 
-example : (t : TrmCompat) -> TrmCompat := fun t => t
+-- example : (t : TrmCompat) -> TrmCompat := fun t => t
 
-def Trm.eval {I : Index} [FBound I] (trm: Trm I): Val I := -- AKA normalise, result is also an AST
-  sorry
+/-- Normalizes source terms to values while spending fuel at each semantic descent. -/
+def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Option (Val I) :=
+  match fuel with
+  | 0 => none
+  | fuel + 1 =>
+    match trm with
+    | .val value => some value
+    | .depApply fn arg =>
+      match fn.eval fuel, arg.eval fuel with
+      | some (.depFn body), some value => (body (FBound.fwd value)).eval fuel
+      | _, _ => none
 
 -- def Trm.pretty (trm : Trm String) : (fuel : Nat) -> String
 -- | 0 => "[out of fuel]"
