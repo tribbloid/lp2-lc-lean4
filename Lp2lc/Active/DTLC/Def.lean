@@ -48,22 +48,52 @@ inductive Trm : Index where
 inductive Val : Index where
 | primitive (repr : ByteCode)
 | depFn (body : (arg : I) -> Trm)
+-- deriving DecidableEq
 
 end
 
 instance valIsTrm : Coe (Val I) (Trm I) where
   coe := (fun v => Trm.val v)
 
+abbrev Env := I -> Val I
+
+def Env.extend (self: Env) (k : I) (v : Val I) :=
+  fun _k => match _k with
+  | k => v
+  | _others => self (_others)
+
+
+-- class Env  where
+--   def get (k : I) Val I
+--   def extend (k : I) (v : Val I) :
+
 end Syntax
 
 class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
   fwd: Val I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
 
+-- abbrev Symbol : Index := sorry
+
+structure Symbol : Index where
+  self: Dynamic
+
+instance _canBind : FBound Symbol where
+  fwd : (Val Symbol -> Symbol) := sorry
+
+-- structure FCorrespondence {I : Index} where
+--   self: Val I
+
+-- instance fc {I : Index} : FBound (Option I) where
+--   fwd := fun _ => none
+
 class Correspondence (I : Index) extends FBound I where
   equiv: Val I = I
   fwd := equiv.mp
   rev := equiv.mpr
-  rev_fwd : (value : Val I) -> rev (fwd value) = value
+  rev_fwd : (value : Val I) -> rev (fwd value) = value := by
+    intro value
+    cases equiv
+    rfl
 
 abbrev TypAST := {I : Index} -> [Correspondence I] -> Typ I
 
@@ -89,15 +119,6 @@ def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Option (Val I) 
       match fn.eval fuel, arg.eval fuel with
       | some (.depFn body), some value => (body (FBound.fwd value)).eval fuel
       | _, _ => none
-
--- def Trm.pretty (trm : Trm String) : (fuel : Nat) -> String
--- | 0 => "[out of fuel]"
--- | fuel + 1 => match trm with
---   | Trm.val (.primitive repr)   => repr
---   | Trm.val (.depFn body)   =>
---       let x := s!"x_{fuel}"
---       s!"(fun {x} => {pretty (body x) (fuel)})"
---   | Trm.depApply f a   => s!"({pretty f fuel} {pretty a fuel})"
 
 
 

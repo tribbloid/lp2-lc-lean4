@@ -87,6 +87,9 @@ def applyidFnOnItself : TrmAST :=
 def idFnOnFalse2 : TrmAST :=
   .depApply applyidFnOnItself false
 
+def malformedPrimitiveApply : TrmAST :=
+  .depApply false true
+
 end Trm
 
 namespace Typ
@@ -109,24 +112,51 @@ def apply1stOn2ndFn : TypAST :=
 
 end Typ
 
--- namespace Eval
+namespace Eval
 
--- example : Trm.false.eval 0 = none := rfl
--- example : Trm.false.eval 1 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
--- example : Trm.false.eval 2 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
--- example : Trm.idFnOnFalse.eval 0 = none := rfl
--- example : Trm.idFnOnFalse.eval 2 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
--- example : Trm.get1stOnTuple.eval 1 = none := rfl
--- example : Trm.get1stOnTuple.eval 3 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
--- example : Trm.get2ndOnTuple.eval 3 = some ((Val.primitive "true") : Val SemanticCarrier) := rfl
--- example : Trm.apply1stOn2ndFnOnTuple.eval 2 = none := rfl
--- example : Trm.apply1stOn2ndFnOnTuple.eval 4 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
--- example : (Trm.applyidFnOnItself.eval 0).isNone = true := rfl
--- example : (Trm.applyidFnOnItself.eval 2).isSome = true := rfl
--- example : Trm.idFnOnFalse2.eval 1 = none := rfl
--- example : Trm.idFnOnFalse2.eval 3 = some ((Val.primitive "false") : Val SemanticCarrier) := rfl
+variable {I : Index} [Correspondence I]
 
--- end Eval
+example : ((Trm.false : Trm I).eval 0) = none := rfl
+example : ((Trm.false : Trm I).eval 1) = some ((Val.primitive "false") : Val I) := rfl
+example : ((Trm.false : Trm I).eval 2) = some ((Val.primitive "false") : Val I) := rfl
+example : ((Trm.idFnOnFalse : Trm I).eval 0) = none := rfl
+
+example : ((Trm.idFnOnFalse : Trm I).eval 2) =
+    some ((Val.primitive "false") : Val I) := by
+  simp [Trm.eval, Trm.idFnOnFalse, Trm.idFn, Trm.false, Correspondence.rev_fwd]
+
+example : ((Trm.get1stOnTuple : Trm I).eval 1) = none := rfl
+
+example : ((Trm.get1stOnTuple : Trm I).eval 3) =
+    some ((Val.primitive "false") : Val I) := by
+  simp [Trm.eval, Trm.get1stOnTuple, Trm.get1st, Trm.false, Trm.true,
+    Correspondence.rev_fwd]
+
+example : ((Trm.get2ndOnTuple : Trm I).eval 3) =
+    some ((Val.primitive "true") : Val I) := by
+  simp [Trm.eval, Trm.get2ndOnTuple, Trm.get2nd, Trm.false, Trm.true,
+    Correspondence.rev_fwd]
+
+example : ((Trm.apply1stOn2ndFnOnTuple : Trm I).eval 2) = none := rfl
+
+example : ((Trm.apply1stOn2ndFnOnTuple : Trm I).eval 4) =
+    some ((Val.primitive "false") : Val I) := by
+  simp [Trm.eval, Trm.apply1stOn2ndFnOnTuple, Trm.apply1stOn2ndFn, Trm.idFn,
+    Trm.false, Correspondence.rev_fwd]
+
+example : (((Trm.applyidFnOnItself : Trm I).eval 0).isNone) = true := rfl
+
+example : (((Trm.applyidFnOnItself : Trm I).eval 2).isSome) = true := by
+  simp [Trm.eval, Trm.applyidFnOnItself, Trm.idFn, Correspondence.rev_fwd]
+
+example : ((Trm.idFnOnFalse2 : Trm I).eval 1) = none := rfl
+
+example : ((Trm.idFnOnFalse2 : Trm I).eval 3) =
+    some ((Val.primitive "false") : Val I) := by
+  simp [Trm.eval, Trm.idFnOnFalse2, Trm.applyidFnOnItself, Trm.idFn, Trm.false,
+    Correspondence.rev_fwd]
+
+end Eval
 
 -- namespace Eval
 
