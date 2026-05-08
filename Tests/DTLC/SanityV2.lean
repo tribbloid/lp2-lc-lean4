@@ -43,13 +43,15 @@ Your implementation:
 
 def Handle : Type := sorry
 
-def Val! := Val Handle
+def ValAST := Val Handle
+
+def TrmAST := Trm Handle
 
 /-- generate a new handle if `self` is new, otherwise return the old handle -/
-def Val!.getHandle (self: Val!) : Handle := sorry
+def Val!.getHandle (self: ValAST) : Handle := sorry
 
 /-- return some if it's handle has been generated before, otherwise return none -/
-def Handle.getTrm (self: Handle) : Option Val! := sorry
+def Handle.getTrm (self: Handle) : Option ValAST := sorry
 
 instance _impl : FBound Handle where
   fwd := Val!.getHandle
