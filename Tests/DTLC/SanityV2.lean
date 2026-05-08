@@ -27,7 +27,8 @@ simple rig for generating a Handle for each `ValAST` and cache the bijection
 
 this is only for sanity examples, not core syntax.
 
-It is possible to include an environment or cache inside the handle.
+It is possible to include an environment or cache inside `Handle`, it can even be
+made a dependent type that depends on an environment or cache.
 
 functions don't have extensional equality. So for `fn`, `getHandle` should
 always return a new Handle, which can be used in `getTrm` to get the original
@@ -47,8 +48,9 @@ def Handle : Type := sorry
 
 def ValAST := Val Handle
 def TrmAST := Trm Handle
+
 /-- generate a new handle if `self` is new, otherwise return the old handle -/
-def Val!.getHandle (self: ValAST) : Handle := sorry
+def ValAST.getHandle (self: ValAST) : Handle := sorry
 
 /-- return some if it's handle has been generated before, otherwise return none -/
 def Handle.getTrm (self: Handle) : Option ValAST := sorry
