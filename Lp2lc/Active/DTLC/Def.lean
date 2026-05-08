@@ -69,6 +69,8 @@ class Correspondence (I : Index) extends FBound I where
     cases equiv
     rfl
 
+attribute [simp] Correspondence.rev_fwd
+
 abbrev TypAST := {I : Index} -> [Correspondence I] -> Typ I
 
 abbrev ValAST := {I : Index} -> [Correspondence I] -> Val I

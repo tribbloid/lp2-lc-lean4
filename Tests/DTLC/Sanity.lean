@@ -116,6 +116,11 @@ namespace Eval
 
 variable {I : Index} [Correspondence I]
 
+attribute [local simp] Trm.eval Trm.false Trm.true Trm.idFn Trm.idFnOnFalse
+attribute [local simp] Trm.get1st Trm.get2nd Trm.get1stOnTuple Trm.get2ndOnTuple
+attribute [local simp] Trm.apply1stOn2ndFn Trm.apply1stOn2ndFnOnTuple
+attribute [local simp] Trm.applyidFnOnItself Trm.idFnOnFalse2
+
 example : ((Trm.false : Trm I).eval 0) = none := rfl
 example : ((Trm.false : Trm I).eval 1) = some ((Val.primitive "false") : Val I) := rfl
 example : ((Trm.false : Trm I).eval 2) = some ((Val.primitive "false") : Val I) := rfl
@@ -123,38 +128,34 @@ example : ((Trm.idFnOnFalse : Trm I).eval 0) = none := rfl
 
 example : ((Trm.idFnOnFalse : Trm I).eval 2) =
     some ((Val.primitive "false") : Val I) := by
-  simp [Trm.eval, Trm.idFnOnFalse, Trm.idFn, Trm.false, Correspondence.rev_fwd]
+  simp
 
 example : ((Trm.get1stOnTuple : Trm I).eval 1) = none := rfl
 
 example : ((Trm.get1stOnTuple : Trm I).eval 3) =
     some ((Val.primitive "false") : Val I) := by
-  simp [Trm.eval, Trm.get1stOnTuple, Trm.get1st, Trm.false, Trm.true,
-    Correspondence.rev_fwd]
+  simp
 
 example : ((Trm.get2ndOnTuple : Trm I).eval 3) =
     some ((Val.primitive "true") : Val I) := by
-  simp [Trm.eval, Trm.get2ndOnTuple, Trm.get2nd, Trm.false, Trm.true,
-    Correspondence.rev_fwd]
+  simp
 
 example : ((Trm.apply1stOn2ndFnOnTuple : Trm I).eval 2) = none := rfl
 
 example : ((Trm.apply1stOn2ndFnOnTuple : Trm I).eval 4) =
     some ((Val.primitive "false") : Val I) := by
-  simp [Trm.eval, Trm.apply1stOn2ndFnOnTuple, Trm.apply1stOn2ndFn, Trm.idFn,
-    Trm.false, Correspondence.rev_fwd]
+  simp
 
 example : (((Trm.applyidFnOnItself : Trm I).eval 0).isNone) = true := rfl
 
 example : (((Trm.applyidFnOnItself : Trm I).eval 2).isSome) = true := by
-  simp [Trm.eval, Trm.applyidFnOnItself, Trm.idFn, Correspondence.rev_fwd]
+  simp
 
 example : ((Trm.idFnOnFalse2 : Trm I).eval 1) = none := rfl
 
 example : ((Trm.idFnOnFalse2 : Trm I).eval 3) =
     some ((Val.primitive "false") : Val I) := by
-  simp [Trm.eval, Trm.idFnOnFalse2, Trm.applyidFnOnItself, Trm.idFn, Trm.false,
-    Correspondence.rev_fwd]
+  simp
 
 end Eval
 
