@@ -23,7 +23,7 @@ end Val
 namespace Trm
 
 /-
-simple rig for generating a Handle for each Val! and cache the bijection
+simple rig for generating a Handle for each `ValAST` and cache the bijection
 
 this is only for sanity examples, not core syntax.
 
