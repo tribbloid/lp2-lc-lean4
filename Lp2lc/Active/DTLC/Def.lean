@@ -48,7 +48,6 @@ inductive Trm : Index where
 inductive Val : Index where
 | primitive (repr : ByteCode)
 | fn (body : (arg : I) -> Trm)
--- deriving DecidableEq
 
 end
 
@@ -71,6 +70,13 @@ def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Option (Val I) 
       match fn.eval fuel, arg.eval fuel with
       | some (.fn body), some value => (body (FBound.fwd value)).eval fuel
       | _, _ => none
+
+def Trm.compile {I : Index} [FBound I] (trm: Trm I) (typeAnnotation: Typ I) (fuel: Nat): Option (Trm I) :=
+  sorry
+
+def Trm.typing {I : Index} [FBound I] (trm: Trm I) (typeAnnotation: Typ I) (fuel: Nat): Prop :=
+  (trm.compile typeAnnotation fuel).isSome
+
 
 end DTLC
 
