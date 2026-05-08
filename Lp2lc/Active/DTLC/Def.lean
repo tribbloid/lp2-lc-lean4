@@ -55,36 +55,10 @@ end
 instance valIsTrm : Coe (Val I) (Trm I) where
   coe := (fun v => Trm.val v)
 
-abbrev Env := I -> Val I
-
-def Env.extend (self: Env) (k : I) (v : Val I) :=
-  fun _k => match _k with
-  | k => v
-  | _others => self (_others)
-
-
--- class Env  where
---   def get (k : I) Val I
---   def extend (k : I) (v : Val I) :
-
 end Syntax
 
 class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
   fwd: Val I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
-
--- abbrev Symbol : Index := sorry
-
-structure Symbol : Index where
-  self: Dynamic
-
-instance _canBind : FBound Symbol where
-  fwd : (Val Symbol -> Symbol) := sorry
-
--- structure FCorrespondence {I : Index} where
---   self: Val I
-
--- instance fc {I : Index} : FBound (Option I) where
---   fwd := fun _ => none
 
 class Correspondence (I : Index) extends FBound I where
   equiv: Val I = I
@@ -101,26 +75,35 @@ abbrev ValAST := {I : Index} -> [Correspondence I] -> Val I
 
 abbrev TrmAST := {I : Index} -> [Correspondence I] -> Trm I
 
-/-- Normalizes source terms to values while spending fuel at each semantic descent. -/
+/-- Normalizes source terms to values while spending fuel at each semantic descent -/
 def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Option (Val I) :=
   match fuel with
   | 0 => none
   | fuel + 1 =>
     match trm with
-    -- | .val (.depFn body) =>
-    --   -- TODO: HOAS body can only be evaluated into Val after an argument is supplied.
-    --   some (.depFn (body := fun arg =>
-    --     let result := body arg
-    --     match result.eval fuel with
-    --     | some value => .val value
-    --     | none => result))
     | .val value => some value
     | .depApply fn arg =>
       match fn.eval fuel, arg.eval fuel with
       | some (.depFn body), some value => (body (FBound.fwd value)).eval fuel
       | _, _ => none
 
-
+-- /-- TODO: this is the same eval with function body evaluation, nto sure if it is needed -/
+-- def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Option (Val I) :=
+--   match fuel with
+--   | 0 => none
+--   | fuel + 1 =>
+--     match trm with
+--     | .val (.depFn body) =>
+--       some (.depFn (body := fun arg =>
+--         let result := body arg
+--         match result.eval fuel with
+--         | some value => .val value
+--         | none => result))
+--     | .val value => some value
+--     | .depApply fn arg =>
+--       match fn.eval fuel, arg.eval fuel with
+--       | some (.depFn body), some value => (body (FBound.fwd value)).eval fuel
+--       | _, _ => none
 
 end DTLC
 

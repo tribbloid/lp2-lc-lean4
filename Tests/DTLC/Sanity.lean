@@ -19,6 +19,24 @@ def idFn : ValAST :=
 
 end Val
 
+namespace TrmWithHandle
+
+structure Handle where
+deriving Hashable, DecidableEq
+
+instance fb : FBound Handle where
+  fwd := Trm!.getHandle
+
+def Trm! := Trm Handle
+
+def Handle.getTrm (self: Handle) : Option Trm! :=
+  sorry
+
+def Trm!.getHandle (self: Trm!) : Handle :=
+  sorry
+
+end TrmWithHandle
+
 namespace Trm
 
 def false : TrmAST :=
