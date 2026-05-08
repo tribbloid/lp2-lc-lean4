@@ -24,16 +24,20 @@ namespace TrmWithHandle
 /-
 simple rig for generating a Handle for each Val! and cache the bijection
 
-this is only for sanity examples, not core syntax. It is possible to include an environment or cache inside the handle.
+this is only for sanity examples, not core syntax.
+
+It is possible to include an environment or cache inside the handle.
 
 functions don't have extensional equality. So for `fn`, `getHandle` should
 always return a new Handle, which can be used in `getTrm` to get the original
 `fn`. This should be tested in a case.
 
+both functions should retrieve in best effort is not allowed to give up prematurely.
+
 Your implementation:
 
 - cannot use mutable data structure or IO.
-- must include all test cases from "Trm" namespace
+- must include all test cases from "Trm" namespace.
 -/
 
 def Handle : Type := sorry
