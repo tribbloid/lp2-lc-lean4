@@ -21,19 +21,24 @@ end Val
 
 namespace TrmWithHandle
 
+-- simple rig for generating a Handle for each Val! and cache the bijection
+
 structure Handle where
 deriving Hashable, DecidableEq
 
+def Val! := Val Handle
+
+/-- generate a new handle if `self` is new, otherwise return the old handle -/
+def Val!.getHandle (self: Val!) : Handle :=
+  sorry
+
+/-- return some if it's handle has been generated before, otherwise return none -/
+def Handle.getTrm (self: Handle) : Option Val! :=
+  sorry
+
 instance fb : FBound Handle where
-  fwd := Trm!.getHandle
+  fwd := Val!.getHandle
 
-def Trm! := Trm Handle
-
-def Handle.getTrm (self: Handle) : Option Trm! :=
-  sorry
-
-def Trm!.getHandle (self: Trm!) : Handle :=
-  sorry
 
 end TrmWithHandle
 
