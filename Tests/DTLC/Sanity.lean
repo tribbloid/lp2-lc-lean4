@@ -12,10 +12,22 @@ in @SanityExample.scala
 namespace Tests.DTLC.Sanity
 open Lp2lc.Active.DTLC
 
+class FIso (I : Index) extends FBound I where
+  rev : I -> Val I
+  rev_fwd : (value : Val I) -> rev (fwd value) = value
+
+attribute [simp] FIso.rev_fwd
+
+abbrev TypAST := {I : Index} -> [FIso I] -> Typ I
+
+abbrev ValAST := {I : Index} -> [FIso I] -> Val I
+
+abbrev TrmAST := {I : Index} -> [FIso I] -> Trm I
+
 namespace Val
 
 def idFn : ValAST :=
-  .fn (body := fun x => Correspondence.rev x)
+  .fn (body := fun x => FIso.rev x)
 
 end Val
 
@@ -28,12 +40,12 @@ def true : TrmAST :=
   .val (.primitive "true")
 
 def idFn : TrmAST :=
-  .val (.fn (body := fun x => Correspondence.rev x))
+  .val (.fn (body := fun x => FIso.rev x))
 
 def idFnOnFalse : TrmAST :=
   .depApply idFn false
 
-example {I : Index} [Correspondence I] :
+example {I : Index} [FIso I] :
     (idFnOnFalse : Trm I) =
       .depApply (idFn : Trm I) (false : Trm I) := rfl
 
@@ -41,13 +53,13 @@ def get1st : TrmAST :=
   .val
     (.fn (body := fun x =>
       .val
-        (.fn (body := fun _y => Correspondence.rev x))))
+        (.fn (body := fun _y => FIso.rev x))))
 
 def get2nd : TrmAST :=
   .val
     (.fn (body := fun _x =>
       .val
-        (.fn (body := fun y => Correspondence.rev y))))
+        (.fn (body := fun y => FIso.rev y))))
 
 def get1stOnTuple : TrmAST :=
   .depApply
@@ -59,7 +71,7 @@ def get2ndOnTuple : TrmAST :=
     (.depApply get2nd false)
     true
 
-example {I : Index} [Correspondence I] :
+example {I : Index} [FIso I] :
     (get2ndOnTuple : Trm I) =
       .depApply (.depApply (get2nd : Trm I) (false : Trm I)) (true : Trm I) := rfl
 
@@ -67,15 +79,15 @@ def apply1stOn2ndFn : TrmAST :=
   .val (.fn (body := fun f =>
       .val (.fn (body := fun x =>
         .depApply
-          (Correspondence.rev f)
-          (Correspondence.rev x)))))
+          (FIso.rev f)
+          (FIso.rev x)))))
 
 def apply1stOn2ndFnOnTuple : TrmAST :=
   .depApply
     (.depApply apply1stOn2ndFn idFn)
     false
 
-example {I : Index} [Correspondence I] :
+example {I : Index} [FIso I] :
     (apply1stOn2ndFnOnTuple : Trm I) =
       .depApply
         (.depApply (apply1stOn2ndFn : Trm I) (idFn : Trm I))
@@ -114,7 +126,7 @@ end Typ
 
 namespace Eval
 
-variable {I : Index} [Correspondence I]
+variable {I : Index} [FIso I]
 
 attribute [local simp] Trm.eval Trm.false Trm.true Trm.idFn Trm.idFnOnFalse
 attribute [local simp] Trm.get1st Trm.get2nd Trm.get1stOnTuple Trm.get2ndOnTuple

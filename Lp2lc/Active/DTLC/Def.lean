@@ -60,23 +60,6 @@ end Syntax
 class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
   fwd: Val I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
 
-class Correspondence (I : Index) extends FBound I where
-  equiv: Val I = I
-  fwd := equiv.mp
-  rev := equiv.mpr
-  rev_fwd : (value : Val I) -> rev (fwd value) = value := by
-    intro value
-    cases equiv
-    rfl
-
-attribute [simp] Correspondence.rev_fwd
-
-abbrev TypAST := {I : Index} -> [Correspondence I] -> Typ I
-
-abbrev ValAST := {I : Index} -> [Correspondence I] -> Val I
-
-abbrev TrmAST := {I : Index} -> [Correspondence I] -> Trm I
-
 /-- Normalizes source terms to values while spending fuel at each semantic descent -/
 def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Option (Val I) :=
   match fuel with
@@ -88,24 +71,6 @@ def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Option (Val I) 
       match fn.eval fuel, arg.eval fuel with
       | some (.fn body), some value => (body (FBound.fwd value)).eval fuel
       | _, _ => none
-
--- /-- TODO: this is the same eval with function body evaluation, nto sure if it is needed -/
--- def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Option (Val I) :=
---   match fuel with
---   | 0 => none
---   | fuel + 1 =>
---     match trm with
---     | .val (.depFn body) =>
---       some (.depFn (body := fun arg =>
---         let result := body arg
---         match result.eval fuel with
---         | some value => .val value
---         | none => result))
---     | .val value => some value
---     | .depApply fn arg =>
---       match fn.eval fuel, arg.eval fuel with
---       | some (.depFn body), some value => (body (FBound.fwd value)).eval fuel
---       | _, _ => none
 
 end DTLC
 
