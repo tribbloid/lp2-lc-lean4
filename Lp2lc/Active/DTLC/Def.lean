@@ -84,7 +84,7 @@ def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Option (Val I) 
     | .val value => some value
     | .depApply fn arg =>
       match fn.eval fuel, arg.eval fuel with
-      | some (fn body), some value => (body (FBound.fwd value)).eval fuel
+      | some (.fn body), some value => (body (FBound.fwd value)).eval fuel
       | _, _ => none
 
 -- /-- TODO: this is the same eval with function body evaluation, nto sure if it is needed -/
