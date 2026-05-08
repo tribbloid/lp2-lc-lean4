@@ -15,13 +15,19 @@ open Lp2lc.Active.DTLC
 namespace Val
 
 def idFn : ValAST :=
-  .depFn (body := fun x => Correspondence.rev x)
+  fn (body := fun x => Correspondence.rev x)
 
 end Val
 
 namespace TrmWithHandle
 
--- simple rig for generating a Handle for each Val! and cache the bijection
+/-
+simple rig for generating a Handle for each Val! and cache the bijection
+
+this is only for sanity examples, not core syntax. Stateful environment or cache is tolerable here
+
+Your implementation must be able to cache & differentiate different functions
+-/
 
 structure Handle where
 deriving Hashable, DecidableEq
@@ -51,7 +57,7 @@ def true : TrmAST :=
   .val (.primitive "true")
 
 def idFn : TrmAST :=
-  .val (.depFn (body := fun x => Correspondence.rev x))
+  .val (fn (body := fun x => Correspondence.rev x))
 
 def idFnOnFalse : TrmAST :=
   .depApply idFn false
@@ -62,15 +68,15 @@ example {I : Index} [Correspondence I] :
 
 def get1st : TrmAST :=
   .val
-    (.depFn (body := fun x =>
+    (fn (body := fun x =>
       .val
-        (.depFn (body := fun _y => Correspondence.rev x))))
+        (fn (body := fun _y => Correspondence.rev x))))
 
 def get2nd : TrmAST :=
   .val
-    (.depFn (body := fun _x =>
+    (fn (body := fun _x =>
       .val
-        (.depFn (body := fun y => Correspondence.rev y))))
+        (fn (body := fun y => Correspondence.rev y))))
 
 def get1stOnTuple : TrmAST :=
   .depApply
@@ -87,8 +93,8 @@ example {I : Index} [Correspondence I] :
       .depApply (.depApply (get2nd : Trm I) (false : Trm I)) (true : Trm I) := rfl
 
 def apply1stOn2ndFn : TrmAST :=
-  .val (.depFn (body := fun f =>
-      .val (.depFn (body := fun x =>
+  .val (fn (body := fun f =>
+      .val (fn (body := fun x =>
         .depApply
           (Correspondence.rev f)
           (Correspondence.rev x)))))
