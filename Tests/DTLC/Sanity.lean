@@ -15,7 +15,7 @@ open Lp2lc.Active.DTLC
 namespace Val
 
 def idFn : ValAST :=
-  fn (body := fun x => Correspondence.rev x)
+  .fn (body := fun x => Correspondence.rev x)
 
 end Val
 
@@ -26,26 +26,62 @@ simple rig for generating a Handle for each Val! and cache the bijection
 
 this is only for sanity examples, not core syntax. It is possible to include an environment or cache inside the handle.
 
-functions don't have extensional equality and all of them should be perceived as new and different.
+functions don't have extensional equality. So for `fn`, `getHandle` should
+always return a new Handle, which can be used in `getTrm` to get the original
+`fn`. This should be tested in a case.
 
-Your implementation cannot use mutable data structure or IO
+Your implementation:
+
+- cannot use mutable data structure or IO.
+- must include all test cases from "Trm" namespace
 -/
 
-structure Handle where
+inductive Handle where
+| primitive (repr : String)
+| fn
 deriving Hashable, DecidableEq
 
 def Val! := Val Handle
 
 /-- generate a new handle if `self` is new, otherwise return the old handle -/
 def Val!.getHandle (self: Val!) : Handle :=
-  sorry
+  match self with
+  | .primitive repr => .primitive repr
+  | .fn _body => .fn
 
 /-- return some if it's handle has been generated before, otherwise return none -/
 def Handle.getTrm (self: Handle) : Option Val! :=
-  sorry
+  match self with
+  | .primitive repr => some (.primitive repr)
+  | .fn => none
 
 instance fb : FBound Handle where
   fwd := Val!.getHandle
+
+example :
+    Handle.getTrm (Val!.getHandle (.primitive "false")) =
+      some (.primitive "false") := rfl
+
+example :
+    Handle.getTrm (Val!.getHandle (.fn (body := fun _arg => .val (.primitive "false")))) =
+      none := rfl
+
+def false : Trm Handle :=\,,
+  .val (.primitive "false")
+
+def idFn : Trm Handle :=
+  .val
+    (.fn (body := fun arg =>
+      match arg.getTrm with
+      | some value => .val value
+      | none => .val (.primitive "stuck")))
+
+def idFnOnFalse : Trm Handle :=
+  .depApply idFn false
+
+example : false.eval 1 = some (.primitive "false") := rfl
+
+example : idFnOnFalse.eval 2 = some (.primitive "false") := rfl
 
 
 end TrmWithHandle
@@ -59,7 +95,7 @@ def true : TrmAST :=
   .val (.primitive "true")
 
 def idFn : TrmAST :=
-  .val (fn (body := fun x => Correspondence.rev x))
+  .val (.fn (body := fun x => Correspondence.rev x))
 
 def idFnOnFalse : TrmAST :=
   .depApply idFn false
@@ -70,15 +106,15 @@ example {I : Index} [Correspondence I] :
 
 def get1st : TrmAST :=
   .val
-    (fn (body := fun x =>
+    (.fn (body := fun x =>
       .val
-        (fn (body := fun _y => Correspondence.rev x))))
+        (.fn (body := fun _y => Correspondence.rev x))))
 
 def get2nd : TrmAST :=
   .val
-    (fn (body := fun _x =>
+    (.fn (body := fun _x =>
       .val
-        (fn (body := fun y => Correspondence.rev y))))
+        (.fn (body := fun y => Correspondence.rev y))))
 
 def get1stOnTuple : TrmAST :=
   .depApply
@@ -95,8 +131,8 @@ example {I : Index} [Correspondence I] :
       .depApply (.depApply (get2nd : Trm I) (false : Trm I)) (true : Trm I) := rfl
 
 def apply1stOn2ndFn : TrmAST :=
-  .val (fn (body := fun f =>
-      .val (fn (body := fun x =>
+  .val (.fn (body := fun f =>
+      .val (.fn (body := fun x =>
         .depApply
           (Correspondence.rev f)
           (Correspondence.rev x)))))
