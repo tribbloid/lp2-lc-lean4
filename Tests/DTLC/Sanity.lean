@@ -24,9 +24,11 @@ namespace TrmWithHandle
 /-
 simple rig for generating a Handle for each Val! and cache the bijection
 
-this is only for sanity examples, not core syntax. Stateful environment or cache is tolerable here
+this is only for sanity examples, not core syntax. It is possible to include an environment or cache inside the handle.
 
-Your implementation must be able to cache & differentiate different functions
+functions don't have extensional equality and all of them should be perceived as new and different.
+
+Your implementation cannot use mutable data structure or IO
 -/
 
 structure Handle where
