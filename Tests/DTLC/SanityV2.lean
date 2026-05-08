@@ -46,9 +46,7 @@ Your implementation:
 def Handle : Type := sorry
 
 def ValAST := Val Handle
-
 def TrmAST := Trm Handle
-
 /-- generate a new handle if `self` is new, otherwise return the old handle -/
 def Val!.getHandle (self: ValAST) : Handle := sorry
 
@@ -57,7 +55,19 @@ def Handle.getTrm (self: Handle) : Option ValAST := sorry
 
 instance : FBound Handle where
   fwd := Val!.getHandle
-
+def false : TrmAST := .val (.primitive "false")
+def true : TrmAST := .val (.primitive "true")
+def idFn : TrmAST := .val (Handle.id_fn).getTrm!
+def idFnOnFalse : TrmAST := .depApply idFn false
+def get1st : TrmAST := .val (Handle.get1st).getTrm!
+def get2nd : TrmAST := .val (Handle.get2nd).getTrm!
+def get1stOnTuple : TrmAST := .depApply (.depApply get1st false) true
+def get2ndOnTuple : TrmAST := .depApply (.depApply get2nd false) true
+def apply1stOn2ndFn : TrmAST := .val (Handle.apply1st_on_2nd_fn).getTrm!
+def apply1stOn2ndFnOnTuple : TrmAST := .depApply (.depApply apply1stOn2ndFn idFn) false
+def applyidFnOnItself : TrmAST := .depApply idFn idFn
+def idFnOnFalse2 : TrmAST := .depApply applyidFnOnItself false
+def malformedPrimitiveApply : TrmAST := .depApply false true
 end Trm
 
 namespace Eval
