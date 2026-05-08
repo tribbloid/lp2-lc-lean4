@@ -36,53 +36,18 @@ Your implementation:
 - must include all test cases from "Trm" namespace
 -/
 
-inductive Handle where
-| primitive (repr : String)
-| fn
-deriving Hashable, DecidableEq
+def Handle : Type := sorry
 
 def Val! := Val Handle
 
 /-- generate a new handle if `self` is new, otherwise return the old handle -/
-def Val!.getHandle (self: Val!) : Handle :=
-  match self with
-  | .primitive repr => .primitive repr
-  | .fn _body => .fn
+def Val!.getHandle (self: Val!) : Handle := sorry
 
 /-- return some if it's handle has been generated before, otherwise return none -/
-def Handle.getTrm (self: Handle) : Option Val! :=
-  match self with
-  | .primitive repr => some (.primitive repr)
-  | .fn => none
+def Handle.getTrm (self: Handle) : Option Val! := sorry
 
 instance fb : FBound Handle where
   fwd := Val!.getHandle
-
-example :
-    Handle.getTrm (Val!.getHandle (.primitive "false")) =
-      some (.primitive "false") := rfl
-
-example :
-    Handle.getTrm (Val!.getHandle (.fn (body := fun _arg => .val (.primitive "false")))) =
-      none := rfl
-
-def false : Trm Handle :=\,,
-  .val (.primitive "false")
-
-def idFn : Trm Handle :=
-  .val
-    (.fn (body := fun arg =>
-      match arg.getTrm with
-      | some value => .val value
-      | none => .val (.primitive "stuck")))
-
-def idFnOnFalse : Trm Handle :=
-  .depApply idFn false
-
-example : false.eval 1 = some (.primitive "false") := rfl
-
-example : idFnOnFalse.eval 2 = some (.primitive "false") := rfl
-
 
 end TrmWithHandle
 
