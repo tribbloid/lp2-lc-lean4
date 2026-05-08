@@ -19,42 +19,6 @@ def idFn : ValAST :=
 
 end Val
 
-namespace TrmWithHandle
-
-/-
-simple rig for generating a Handle for each Val! and cache the bijection
-
-this is only for sanity examples, not core syntax.
-
-It is possible to include an environment or cache inside the handle.
-
-functions don't have extensional equality. So for `fn`, `getHandle` should
-always return a new Handle, which can be used in `getTrm` to get the original
-`fn`. This should be tested in a case.
-
-both functions should retrieve in best effort is not allowed to give up prematurely.
-
-Your implementation:
-
-- cannot use mutable data structure or IO.
-- must include all test cases from "Trm" namespace.
--/
-
-def Handle : Type := sorry
-
-def Val! := Val Handle
-
-/-- generate a new handle if `self` is new, otherwise return the old handle -/
-def Val!.getHandle (self: Val!) : Handle := sorry
-
-/-- return some if it's handle has been generated before, otherwise return none -/
-def Handle.getTrm (self: Handle) : Option Val! := sorry
-
-instance fb : FBound Handle where
-  fwd := Val!.getHandle
-
-end TrmWithHandle
-
 namespace Trm
 
 def false : TrmAST :=
