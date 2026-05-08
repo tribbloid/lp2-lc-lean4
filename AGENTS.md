@@ -19,6 +19,7 @@ The project depends on MathLib and AESOP
 
 #### Don't
 
+- Do not use type-unsafe language features like noncomputable functioon, unsafe function, or unsafe block
 - Do not repeat yourself, every namespace/package that appears multiple times must be imported.
 - Do not ask questions like "what to do next", always follow the workflow by the numbers.
 - Do not proceed to the next step if there is a pending compiling error.
