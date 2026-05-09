@@ -59,23 +59,41 @@ end Syntax
 class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
   fwd: Val I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
 
+inductive EvalOutcome (T : Index)
+| some (v: T)
+| error
+| outOfFuel
+
 /-- Normalizes source terms to values while spending fuel at each semantic descent -/
-def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Option (Val I) :=
+def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : EvalOutcome (Val I) :=
   match fuel with
-  | 0 => none
+  | 0 => .outOfFuel
   | fuel + 1 =>
     match trm with
-    | .val value => some value
+    | .val value => .some value
     | .depApply fn arg =>
       match fn.eval fuel, arg.eval fuel with
-      | some (.fn body), some value => (body (FBound.fwd value)).eval fuel
-      | _, _ => none
+      | .some (.fn body), .some value => (body (FBound.fwd value)).eval fuel
+      | _, _ => .error
 
-def Trm.compile {I : Index} [FBound I] (trm: Trm I) (typeAnnotation: Typ I) (fuel: Nat): Option (Trm I) :=
+/--
+compiler API that verify a type-annotated term and:
+
+- if successful, generate a more specialised, executable term. This execution should always succeed (adequency lemma).
+- otherwise return none
+
+semantic typing (a predicate on ) is merely this API being successful
+
+this is a critical semantic rule used to proof:
+
+- adequecy lemma: execution of compiled term always succeed or
+-/
+def Trm.compile {I : Index} [FBound I] (trm: Trm I) (fuel: Nat) (typeAnnotation: Typ I): Option (Trm I) :=
   sorry
 
-def Trm.typing {I : Index} [FBound I] (trm: Trm I) (typeAnnotation: Typ I) (fuel: Nat): Prop :=
-  (trm.compile typeAnnotation fuel).isSome
+def Trm.typing {I : Index} [FBound I] (typeAnnotation: Typ I) (fuel: Nat)  (trm: Trm I) : Prop :=
+  (trm.compile fuel typeAnnotation).isSome
+
 
 
 end DTLC
