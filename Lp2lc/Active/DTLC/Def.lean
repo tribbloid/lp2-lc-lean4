@@ -82,6 +82,8 @@ def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Outcome (Val I)
     | .depApply fn arg =>
       match fn.eval fuel, arg.eval fuel with
       | .some (.fn body), .some value => (body (FBound.fwd value)).eval fuel
+      | .outOfFuel, _ => .outOfFuel
+      | _, .outOfFuel => .outOfFuel
       | _, _ => .error
 
 /--
