@@ -59,13 +59,21 @@ end Syntax
 class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
   fwd: Val I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
 
-inductive EvalOutcome (T : Index)
+inductive Outcome (T : Index)
 | some (v: T)
 | error
 | outOfFuel
 
+namespace Outcome
+
+def isSome : (self: Outcome T) -> Prop
+| .some _ => true
+| _ => false
+
+end Outcome
+
 /-- Normalizes source terms to values while spending fuel at each semantic descent -/
-def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : EvalOutcome (Val I) :=
+def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -77,18 +85,24 @@ def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : EvalOutcome (Va
       | _, _ => .error
 
 /--
-compiler API that verify a type-annotated term and:
+fuel-guarded compiler API that verify a type-annotated term and:
 
-- if successful, generate a more specialised, executable term. This execution should always succeed (adequency lemma).
-- otherwise return none
+- if semantic type-check succeeds, generate a more specialised, executable term. This execution should always succeed (adequency lemma).
+- else if type-check fails, return error
+- always return outOfFuel if fuel drops to 0
 
 semantic typing (a predicate on ) is merely this API being successful
 
-this is a critical semantic rule used to proof:
+this is a critical semantic rule for proving:
 
-- adequecy lemma: execution of compiled term always succeed or
+- adequecy lemma: a successfully compiled term can always be successfully executed (to
+  a value that can be type-checked by the same type) or run out of fuel.
+- fundamental lemma: if a type-annotated function and it's compatible argumennt
+  can both be successfully compiled, then their applied form can also be
+  successfull ccompiled.
+- finally, soundness theorem that uses the above 2 lemma
 -/
-def Trm.compile {I : Index} [FBound I] (trm: Trm I) (fuel: Nat) (typeAnnotation: Typ I): Option (Trm I) :=
+def Trm.compile {I : Index} [FBound I] (trm: Trm I) (fuel: Nat) (typeAnnotation: Typ I): Outcome (Trm I) :=
   sorry
 
 def Trm.typing {I : Index} [FBound I] (typeAnnotation: Typ I) (fuel: Nat)  (trm: Trm I) : Prop :=
