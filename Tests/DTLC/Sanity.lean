@@ -172,9 +172,50 @@ example : ((Trm.idFnOnFalse2 : Trm I).eval 3) =
 
 example : ((Trm.malformedPrimitiveApply : Trm I).eval 0) = .outOfFuel := rfl
 
-example : ((Trm.malformedPrimitiveApply : Trm I).eval 1) = .error := rfl
+example : ((Trm.malformedPrimitiveApply : Trm I).eval 1) = .outOfFuel := rfl
+
+example : ((Trm.malformedPrimitiveApply : Trm I).eval 2) = .error := rfl
 
 end Eval
+
+namespace Compile
+
+variable {I : Index} [FIso I]
+
+attribute [local simp] Trm.eval Trm.compile Trm.typing Outcome.isSome
+attribute [local simp] Trm.false Trm.true Trm.idFn Trm.idFnOnFalse
+attribute [local simp] Trm.malformedPrimitiveApply Typ.false Typ.idFn
+
+example : ((Trm.false : Trm I).compile 0 (Typ.false : Typ I)) = .outOfFuel := rfl
+
+example : ((Trm.false : Trm I).compile 1 (Typ.false : Typ I)) =
+    .some ((Trm.false : Trm I)) := rfl
+
+example : ((Trm.false : Trm I).compile 1 (.top : Typ I)) =
+    .some ((Trm.false : Trm I)) := rfl
+
+example : ((Trm.idFn : Trm I).compile 1 (Typ.idFn : Typ I)) =
+    .some ((Trm.idFn : Trm I)) := rfl
+
+example : ((Trm.idFnOnFalse : Trm I).compile 2 (Typ.false : Typ I)) =
+    .some ((Trm.false : Trm I)) := by
+  simp
+
+example : ((Trm.malformedPrimitiveApply : Trm I).compile 2 (Typ.false : Typ I)) = .error := rfl
+
+example : ((Trm.malformedPrimitiveApply : Trm I).compile 2 (.top : Typ I)) = .error := rfl
+
+example :
+    Trm.typing (typeAnnotation := (Typ.false : Typ I)) (fuel := 1)
+      (trm := (Trm.false : Trm I)) := by
+  simp
+
+example :
+    ¬ Trm.typing (typeAnnotation := (.top : Typ I)) (fuel := 2)
+      (trm := (Trm.malformedPrimitiveApply : Trm I)) := by
+  simp
+
+end Compile
 
 -- namespace Eval
 
