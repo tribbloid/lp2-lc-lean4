@@ -142,7 +142,7 @@ example : ((Trm.idFnOnFalse : Trm I).eval 2) =
     .some ((Val.primitive "false") : Val I) := by
   simp
 
-example : ((Trm.get1stOnTuple : Trm I).eval 1) = .error := rfl
+example : ((Trm.get1stOnTuple : Trm I).eval 1) = .outOfFuel := rfl
 
 example : ((Trm.get1stOnTuple : Trm I).eval 3) =
     .some ((Val.primitive "false") : Val I) := by
@@ -152,7 +152,7 @@ example : ((Trm.get2ndOnTuple : Trm I).eval 3) =
     .some ((Val.primitive "true") : Val I) := by
   simp
 
-example : ((Trm.apply1stOn2ndFnOnTuple : Trm I).eval 2) = .error := rfl
+example : ((Trm.apply1stOn2ndFnOnTuple : Trm I).eval 2) = .outOfFuel := rfl
 
 example : ((Trm.apply1stOn2ndFnOnTuple : Trm I).eval 4) =
     .some ((Val.primitive "false") : Val I) := by
@@ -164,11 +164,15 @@ example : ((Trm.applyidFnOnItself : Trm I).eval 2) =
     .some ((Val.idFn : Val I)) := by
   simp [Val.idFn]
 
-example : ((Trm.idFnOnFalse2 : Trm I).eval 1) = .error := rfl
+example : ((Trm.idFnOnFalse2 : Trm I).eval 1) = .outOfFuel := rfl
 
 example : ((Trm.idFnOnFalse2 : Trm I).eval 3) =
     .some ((Val.primitive "false") : Val I) := by
   simp
+
+example : ((Trm.malformedPrimitiveApply : Trm I).eval 0) = .outOfFuel := rfl
+
+example : ((Trm.malformedPrimitiveApply : Trm I).eval 1) = .error := rfl
 
 end Eval
 

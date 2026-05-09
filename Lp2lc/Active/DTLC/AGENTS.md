@@ -1,7 +1,10 @@
 
 # DTLC Soundness Proof
 
-This directory contain syntax, typing/semantic/evaluation rules and proof of soundness for DTLC (dependently-typed lambda calculus).
+This directory contain syntax, typing/semantic/evaluation rules and proof of soundness for DTLC (dependently-typed lambda calculus), it is like STLC but with 2 differences:
+
+- the inclusion of a "top" type (AKA any, wildcard)
+- return type of a function can depend on input value.
 
 ## Guardrails
 
