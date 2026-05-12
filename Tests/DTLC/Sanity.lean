@@ -21,7 +21,7 @@ abbrev TrmAST := {I : Index} -> Trm I
 namespace Val
 
 def idFn : ValAST :=
-  .fn (body := fun x => FBound.rev x)
+  .fn (body := fun x => .ref x)
 
 end Val
 
@@ -34,7 +34,7 @@ def true : TrmAST :=
   .val (.primitive "true")
 
 def idFn : TrmAST :=
-  .val (.fn (body := fun x => FBound.rev x))
+  .val (.fn (body := fun x => .ref x))
 
 def idFnOnFalse : TrmAST :=
   .depApply idFn false
@@ -47,13 +47,13 @@ def get1st : TrmAST :=
   .val
     (.fn (body := fun x =>
       .val
-        (.fn (body := fun _y => FBound.rev x))))
+        (.fn (body := fun _y => .ref x))))
 
 def get2nd : TrmAST :=
   .val
     (.fn (body := fun _x =>
       .val
-        (.fn (body := fun y => FBound.rev y))))
+        (.fn (body := fun y => .ref y))))
 
 def get1stOnTuple : TrmAST :=
   .depApply
@@ -73,8 +73,8 @@ def apply1stOn2ndFn : TrmAST :=
   .val (.fn (body := fun f =>
       .val (.fn (body := fun x =>
         .depApply
-          (FBound.rev f)
-          (FBound.rev x)))))
+          (.ref f)
+          (.ref x)))))
 
 def apply1stOn2ndFnOnTuple : TrmAST :=
   .depApply
@@ -166,7 +166,7 @@ example : ((Trm.idFnOnFalse2 : Trm I).eval 3) =
 
 example : ((Trm.malformedPrimitiveApply : Trm I).eval 0) = .outOfFuel := rfl
 
-example : ((Trm.malformedPrimitiveApply : Trm I).eval 1) = .error := rfl
+example : ((Trm.malformedPrimitiveApply : Trm I).eval 2) = .error := rfl
 
 end Eval
 
