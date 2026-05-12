@@ -12,18 +12,37 @@ in @SanityExample.scala
 namespace Tests.DTLC.Sanity
 open Lp2lc.Active.DTLC
 
-abbrev TypAST := {I : Index} -> Typ I
+instance : DecidableEq Lp2lc.Active.Util.ByteCode :=
+  String.decEq
 
-abbrev ValAST := {I : Index} -> Val I
+abbrev Handle := Nat
 
-abbrev TrmAST := {I : Index} -> Trm I
+abbrev TypAST := Typ Handle
+
+abbrev ValAST := Val Handle
+
+abbrev TrmAST := Trm Handle
 
 namespace Val
 
 def idFn : ValAST :=
-  .fn (body := fun x => FIso.rev x)
+  .fn (body := fun x => .ref x)
+
+def handle : ValAST -> Handle
+| .primitive "false" =>
+  0
+| .primitive "true" =>
+  1
+| .primitive _ =>
+  3
+| .fn _ =>
+  2
 
 end Val
+
+instance : FBound Handle where
+  beq := Nat.beq
+  fwd := Val.handle
 
 namespace Trm
 
@@ -34,26 +53,26 @@ def true : TrmAST :=
   .val (.primitive "true")
 
 def idFn : TrmAST :=
-  .val (.fn (body := fun x => FIso.rev x))
+  .val (.fn (body := fun x => .ref x))
 
 def idFnOnFalse : TrmAST :=
   .depApply idFn false
 
-example {I : Index} [FIso I] :
-    (idFnOnFalse : Trm I) =
-      .depApply (idFn : Trm I) (false : Trm I) := rfl
+example :
+    idFnOnFalse =
+      .depApply idFn false := rfl
 
 def get1st : TrmAST :=
   .val
     (.fn (body := fun x =>
       .val
-        (.fn (body := fun _y => FIso.rev x))))
+        (.fn (body := fun _y => .ref x))))
 
 def get2nd : TrmAST :=
   .val
     (.fn (body := fun _x =>
       .val
-        (.fn (body := fun y => FIso.rev y))))
+        (.fn (body := fun y => .ref y))))
 
 def get1stOnTuple : TrmAST :=
   .depApply
@@ -65,27 +84,27 @@ def get2ndOnTuple : TrmAST :=
     (.depApply get2nd false)
     true
 
-example {I : Index} [FIso I] :
-    (get2ndOnTuple : Trm I) =
-      .depApply (.depApply (get2nd : Trm I) (false : Trm I)) (true : Trm I) := rfl
+example :
+    get2ndOnTuple =
+      .depApply (.depApply get2nd false) true := rfl
 
 def apply1stOn2ndFn : TrmAST :=
   .val (.fn (body := fun f =>
       .val (.fn (body := fun x =>
         .depApply
-          (FIso.rev f)
-          (FIso.rev x)))))
+          (.ref f)
+          (.ref x)))))
 
 def apply1stOn2ndFnOnTuple : TrmAST :=
   .depApply
     (.depApply apply1stOn2ndFn idFn)
     false
 
-example {I : Index} [FIso I] :
-    (apply1stOn2ndFnOnTuple : Trm I) =
+example :
+    apply1stOn2ndFnOnTuple =
       .depApply
-        (.depApply (apply1stOn2ndFn : Trm I) (idFn : Trm I))
-        (false : Trm I) := rfl
+        (.depApply apply1stOn2ndFn idFn)
+        false := rfl
 
 def applyidFnOnItself : TrmAST :=
   .depApply idFn idFn
@@ -120,53 +139,55 @@ end Typ
 
 namespace Eval
 
-variable {I : Index} [FIso I]
-
 attribute [local simp] Trm.eval Trm.false Trm.true Trm.idFn Trm.idFnOnFalse
 attribute [local simp] Trm.get1st Trm.get2nd Trm.get1stOnTuple Trm.get2ndOnTuple
 attribute [local simp] Trm.apply1stOn2ndFn Trm.apply1stOn2ndFnOnTuple
 attribute [local simp] Trm.applyidFnOnItself Trm.idFnOnFalse2
+attribute [local simp] Val.handle FBound.fwd
+attribute [local simp] Trm.subst_ref Val.subst_ref
 
-example : ((Trm.false : Trm I).eval 0) = .outOfFuel := rfl
-example : ((Trm.false : Trm I).eval 1) = .some ((Val.primitive "false") : Val I) := rfl
-example : ((Trm.false : Trm I).eval 2) = .some ((Val.primitive "false") : Val I) := rfl
-example : ((Trm.idFnOnFalse : Trm I).eval 0) = .outOfFuel := rfl
+example : Trm.false.eval 0 = .outOfFuel := rfl
+example : Trm.false.eval 1 = .some (.primitive "false") := rfl
+example : Trm.false.eval 2 = .some (.primitive "false") := rfl
+example : Trm.idFnOnFalse.eval 0 = .outOfFuel := rfl
 
-example : ((Trm.idFnOnFalse : Trm I).eval 2) =
-    .some ((Val.primitive "false") : Val I) := by
+example : Trm.idFnOnFalse.eval 2 =
+    .some (.primitive "false") := by
   simp
 
-example : ((Trm.get1stOnTuple : Trm I).eval 1) = .outOfFuel := rfl
+example : Trm.get1stOnTuple.eval 1 = .outOfFuel := rfl
 
-example : ((Trm.get1stOnTuple : Trm I).eval 3) =
-    .some ((Val.primitive "false") : Val I) := by
+example : Trm.get1stOnTuple.eval 3 =
+    .some (.primitive "false") := by
   simp
 
-example : ((Trm.get2ndOnTuple : Trm I).eval 3) =
-    .some ((Val.primitive "true") : Val I) := by
+example : Trm.get2ndOnTuple.eval 3 =
+    .some (.primitive "true") := by
   simp
 
-example : ((Trm.apply1stOn2ndFnOnTuple : Trm I).eval 2) = .outOfFuel := rfl
+example : Trm.apply1stOn2ndFnOnTuple.eval 2 = .outOfFuel := rfl
 
-example : ((Trm.apply1stOn2ndFnOnTuple : Trm I).eval 4) =
-    .some ((Val.primitive "false") : Val I) := by
+example : Trm.apply1stOn2ndFnOnTuple.eval 4 =
+    .some (.primitive "false") := by
   simp
 
-example : ((Trm.applyidFnOnItself : Trm I).eval 0) = .outOfFuel := rfl
+example : Trm.applyidFnOnItself.eval 0 = .outOfFuel := rfl
 
-example : ((Trm.applyidFnOnItself : Trm I).eval 2) =
-    .some ((Val.idFn : Val I)) := by
+example : Trm.applyidFnOnItself.eval 2 =
+    .some Val.idFn := by
   simp [Val.idFn]
 
-example : ((Trm.idFnOnFalse2 : Trm I).eval 1) = .outOfFuel := rfl
+example : Trm.idFnOnFalse2.eval 1 = .outOfFuel := rfl
 
-example : ((Trm.idFnOnFalse2 : Trm I).eval 3) =
-    .some ((Val.primitive "false") : Val I) := by
+example : Trm.idFnOnFalse2.eval 3 =
+    .some (.primitive "false") := by
   simp
 
-example : ((Trm.malformedPrimitiveApply : Trm I).eval 0) = .outOfFuel := rfl
+example : Trm.malformedPrimitiveApply.eval 0 = .outOfFuel := rfl
 
-example : ((Trm.malformedPrimitiveApply : Trm I).eval 1) = .error := rfl
+example : Trm.malformedPrimitiveApply.eval 1 = .outOfFuel := rfl
+
+example : Trm.malformedPrimitiveApply.eval 2 = .error := rfl
 
 end Eval
 
