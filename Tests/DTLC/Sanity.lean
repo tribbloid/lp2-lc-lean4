@@ -21,7 +21,7 @@ abbrev TrmAST := {I : Index} -> Trm I
 namespace Val
 
 def idFn : ValAST :=
-  .fn (body := fun x => FIso.rev x)
+  .fn (body := fun x => FBound.rev x)
 
 end Val
 
@@ -34,12 +34,12 @@ def true : TrmAST :=
   .val (.primitive "true")
 
 def idFn : TrmAST :=
-  .val (.fn (body := fun x => FIso.rev x))
+  .val (.fn (body := fun x => FBound.rev x))
 
 def idFnOnFalse : TrmAST :=
   .depApply idFn false
 
-example {I : Index} [FIso I] :
+example {I : Index} [FBound I] :
     (idFnOnFalse : Trm I) =
       .depApply (idFn : Trm I) (false : Trm I) := rfl
 
@@ -47,13 +47,13 @@ def get1st : TrmAST :=
   .val
     (.fn (body := fun x =>
       .val
-        (.fn (body := fun _y => FIso.rev x))))
+        (.fn (body := fun _y => FBound.rev x))))
 
 def get2nd : TrmAST :=
   .val
     (.fn (body := fun _x =>
       .val
-        (.fn (body := fun y => FIso.rev y))))
+        (.fn (body := fun y => FBound.rev y))))
 
 def get1stOnTuple : TrmAST :=
   .depApply
@@ -65,7 +65,7 @@ def get2ndOnTuple : TrmAST :=
     (.depApply get2nd false)
     true
 
-example {I : Index} [FIso I] :
+example {I : Index} [FBound I] :
     (get2ndOnTuple : Trm I) =
       .depApply (.depApply (get2nd : Trm I) (false : Trm I)) (true : Trm I) := rfl
 
@@ -73,15 +73,15 @@ def apply1stOn2ndFn : TrmAST :=
   .val (.fn (body := fun f =>
       .val (.fn (body := fun x =>
         .depApply
-          (FIso.rev f)
-          (FIso.rev x)))))
+          (FBound.rev f)
+          (FBound.rev x)))))
 
 def apply1stOn2ndFnOnTuple : TrmAST :=
   .depApply
     (.depApply apply1stOn2ndFn idFn)
     false
 
-example {I : Index} [FIso I] :
+example {I : Index} [FBound I] :
     (apply1stOn2ndFnOnTuple : Trm I) =
       .depApply
         (.depApply (apply1stOn2ndFn : Trm I) (idFn : Trm I))
@@ -120,7 +120,7 @@ end Typ
 
 namespace Eval
 
-variable {I : Index} [FIso I]
+variable {I : Index} [FBound I]
 
 attribute [local simp] Trm.eval Trm.false Trm.true Trm.idFn Trm.idFnOnFalse
 attribute [local simp] Trm.get1st Trm.get2nd Trm.get1stOnTuple Trm.get2ndOnTuple
