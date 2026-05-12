@@ -44,6 +44,7 @@ inductive Typ : Index where
 inductive Trm : Index where
 | val (v : Val)
 | depApply (fn : Trm) (arg : Trm)
+| ref (s: I)
 
 inductive Val : Index where
 | primitive (repr : ByteCode)
@@ -57,7 +58,17 @@ instance valIsTrm : Coe (Val I) (Trm I) where
 end Syntax
 
 class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
-  fwd: Val I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
+  fwd : Val I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
+  rev : I -> Val I
+  fwdRoundtrip : (value : Val I) -> rev (fwd value) = value
+
+attribute [simp] FBound.fwdRoundtrip
+
+
+structure F0 where
+
+structure F1 where -- simple wrapper won't work here
+  self: Val F0
 
 inductive Outcome (T : Index)
 | some (v: T)
@@ -85,6 +96,8 @@ def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Outcome (Val I)
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .error
+    | .ref s =>
+      .some (FBound.rev s)
 
 /--
 fuel-guarded compiler API that verify a type-annotated term and:

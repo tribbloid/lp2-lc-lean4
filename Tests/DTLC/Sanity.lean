@@ -12,17 +12,11 @@ in @SanityExample.scala
 namespace Tests.DTLC.Sanity
 open Lp2lc.Active.DTLC
 
-class FIso (I : Index) extends FBound I where
-  rev : I -> Val I
-  rev_fwd : (value : Val I) -> rev (fwd value) = value
+abbrev TypAST := {I : Index} -> Typ I
 
-attribute [simp] FIso.rev_fwd
+abbrev ValAST := {I : Index} -> Val I
 
-abbrev TypAST := {I : Index} -> [FIso I] -> Typ I
-
-abbrev ValAST := {I : Index} -> [FIso I] -> Val I
-
-abbrev TrmAST := {I : Index} -> [FIso I] -> Trm I
+abbrev TrmAST := {I : Index} -> Trm I
 
 namespace Val
 
