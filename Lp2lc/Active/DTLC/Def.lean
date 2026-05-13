@@ -34,41 +34,95 @@ section Syntax
 
 variable (I : Index) -- index
 
+
 mutual
 
+/--
+Type AST
+-/
 inductive Typ : Index where
 | primitive
 | depFn (tIn : Typ) (tOut : (arg : I) -> Typ)
 | top -- type of anything, can bind both primitive and depFn.
 
-inductive Trm : Index where
-| val (v : Val)
-| depApply (fn : Trm) (arg : Trm)
-| ref (s: I)
+-- def TAnno := Option Typ -- doesn't work in mutual block
 
+/--
+Term AST
+
+Each AST can have optional type annotations, but they are only extra
+constraint used in type-checking.
+
+In HOAS there is no Context/Env to bind type to terms, so an optional type
+annotation is the only realistic alternative. It shouldn't be confused with
+intrinsic typing, which is impossible for Typ in the same mutual block.
+
+In runtime, type annotations are ideally erased.
+-/
+inductive Trm : Index where
+| val (v : Val) (t : Option Typ := by exact none)
+| apply (fn : Trm) (arg : Trm) (t : Option Typ := by exact none)
+| ref (s: I) (t : Option Typ := by exact none) -- binded reference, AKA variable/var
+
+/--
+Value AST, contains no ref and apply.
+
+Only eval target and only accepted input of ANF (atomic normal form)
+
+In runtime, type annotations are ideally erased.
+-/
 inductive Val : Index where
-| primitive (repr : ByteCode)
-| fn (body : (arg : I) -> Trm)
+| primitive (repr : ByteCode) -- most specific type is always `primitive`
+| fn (body : (arg : I) -> Trm)  (tIn : Option Typ := by exact none)-- most specific type is always `.depFn`
 
 end
+
+namespace Trm
+
+def IsTypeErased (self: Trm I): Prop :=
+  match self with
+  | .val (.primitive _) t => t = none
+  | .val (.fn body tIn) t => t = none ∧ tIn = none ∧ ∀ arg, IsTypeErased (body arg)
+  | .apply fn arg t => t = none ∧ IsTypeErased fn ∧ IsTypeErased arg
+  | .ref _ t => t = none
+
+/-- Removes all optional type annotations from a term. -/
+def eraseType (self: Trm I): Trm I :=
+  match self with
+  | .val (.primitive repr) _ => .val (.primitive repr) none
+  | .val (.fn body _) _ => .val (.fn (body := fun arg => (body arg).eraseType) (tIn := none)) none
+  | .apply fn arg _ => .apply fn.eraseType arg.eraseType none
+  | .ref s _ => .ref s none
+
+/-- Erasing annotations always produces a type-erased term. -/
+theorem eraseType_isErased : ∀ (self : Trm I), IsTypeErased I (eraseType I self)
+| .val (.primitive _) _ => rfl
+| .val (.fn body _) _ => ⟨rfl, rfl, fun arg => eraseType_isErased (body arg)⟩
+| .apply fn arg _ => ⟨rfl, eraseType_isErased fn, eraseType_isErased arg⟩
+| .ref _ _ => rfl
+
+end Trm
+
+namespace Val
+end Val
 
 instance valIsTrm : Coe (Val I) (Trm I) where
   coe := (fun v => Trm.val v)
 
 end Syntax
 
-class FBound (I : Index) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
-  fwd : Val I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
-  rev : I -> Val I
-  fwdRoundtrip : (value : Val I) -> rev (fwd value) = value
+abbrev TypAST := {I : Index} -> Typ I
+
+abbrev ValAST := {I : Index} -> Val I
+
+abbrev TrmAST := {I : Index} -> Trm I
+
+class FBound (I : Index) (K : Index -> Type) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
+  fwd : K I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
+  rev : I -> K I
+  fwdRoundtrip : (value : K I) -> rev (fwd value) = value
 
 attribute [simp] FBound.fwdRoundtrip
-
-
-structure F0 where
-
-structure F1 where -- simple wrapper won't work here
-  self: Val F0
 
 inductive Outcome (T : Index)
 | some (v: T)
@@ -84,27 +138,30 @@ def isSome : (self: Outcome T) -> Prop
 end Outcome
 
 /-- Normalizes source terms to values while spending fuel at each semantic descent -/
-def Trm.eval {I : Index} [FBound I] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
+def Trm.eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
     match trm with
-    | .val value => .some value
-    | .depApply fn arg =>
-      match fn.eval fuel, arg.eval fuel with
-      | .some (.fn body), .some value => (body (FBound.fwd value)).eval fuel
-      | .outOfFuel, _ => .outOfFuel
-      | _, .outOfFuel => .outOfFuel
-      | _, _ => .error
-    | .ref s =>
+    | .val value _ => .some value
+    | apply fn arg _ =>
+      let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
+      match anf with
+      | (.some (.fn body), .some value) => (body (FBound.fwd value)).eval fuel
+      | (.outOfFuel, _) | (_, .outOfFuel)  => .outOfFuel
+      | _ => .error
+    | .ref s _ =>
       .some (FBound.rev s)
 
 /--
-fuel-guarded compiler API that verify a type-annotated term and:
+fuel-guarded compiler API that verify a term (with optional type annotation),
+and generate a more specialised, executable, type-erased term. This execution should always succeed (adequency lemma).
 
-- if semantic type-check succeeds, generate a more specialised, executable term. This execution should always succeed (adequency lemma).
-- else if type-check fails, return error
+- compiling malformed term will fail
+- compiling term with wrong annotation will fail
 - always return outOfFuel if fuel drops to 0
+- no term/application should be evaluated during compilation. The `FBound I Trm` condition (representing compiletime bindings) is deliberately different
+  from `FBound I Val` (representing runtime binding) to avoid evaluation in compiletime.
 
 semantic typing (a predicate on ) is merely this API being successful
 
@@ -115,15 +172,13 @@ this is a critical semantic rule for proving:
 - fundamental lemma: if a type-annotated function and it's compatible argumennt
   can both be successfully compiled, then their applied form can also be
   successfull ccompiled.
-- finally, soundness theorem that uses the above 2 lemma
+- finally, soundness theorem that uses the above 2 lemma.
 -/
-def Trm.compile {I : Index} [FBound I] (trm: Trm I) (fuel: Nat) (typeAnnotation: Typ I): Outcome (Trm I) :=
+def Trm.compile {I : Index} [FBound I Trm] (trm: Trm I) (fuel: Nat): Outcome (Trm I) :=
   sorry
 
-def Trm.typing {I : Index} [FBound I] (typeAnnotation: Typ I) (fuel: Nat)  (trm: Trm I) : Prop :=
-  (trm.compile fuel typeAnnotation).isSome
-
-
+def Trm.typing {I : Index} [FBound I Trm](fuel: Nat)  (trm: Trm I) : Prop :=
+  (trm.compile fuel).isSome
 
 end DTLC
 
