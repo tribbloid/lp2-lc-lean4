@@ -16,6 +16,7 @@ This directory contain syntax, typing/semantic/evaluation rules and proof of sou
 - Do NOT repeat yourself, break repeated condition in pattern matching into multiple layers of pattern matchings if applicable.
 - Avoid leaky abstraction: top-level public APIs should only contain interpreter/compiler API (e.g. type-checking, evaluation).
 - Avoid generic universe, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2)
+- each namespace should only appear once.
 
 ## Conventions
 
