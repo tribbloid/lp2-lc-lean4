@@ -31,7 +31,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 
 #### Guardrails
 
-- Do not use `unsafe`, `noncomputable`, or `partial` declarations/blocks.
+- Do not use `unsafe`, `noncomputable`, or `partial` declarations/blocks unless it is test or example code.
 - All definition must be with a short docString explaining their necessity.
 - All function/constructor arguments must be named.
 - Multiple cases in pattern matching should never be in 1 line, each line should start with `|`.
