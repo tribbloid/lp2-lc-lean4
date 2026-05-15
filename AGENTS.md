@@ -32,7 +32,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 #### Guardrails
 
 - Do not use `unsafe`, `noncomputable`, or `partial` declarations/blocks unless it is test or example code.
-- All definition must be with a short docString explaining their necessity.
+- All non-trivial definition (longer than 3 lines) in syntax & semantic rules must be with a short docString explaining their necessity. This rule doesn't apply to test code.
 - All function/constructor arguments must be named.
 - Multiple cases in pattern matching should never be in 1 line, each line should start with `|`.
 - For repeated pattern-match conditions, prefer layered pattern matching.
