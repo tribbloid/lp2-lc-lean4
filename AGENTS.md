@@ -40,14 +40,15 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 - Avoid generic universe if possible, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2)
 - Field namespace/class (namespace/class supporting an existing type, where functions inside can be invoked with dot-notation) have special rules:
   - each namespace/class should only appear once.
+  - if the namespace contain multiple functions, the namespace shoudl be declared explicitly.
   - all functions under the namespace/class should be compatible with dot-notation, namely their first argument should be consistent.
   - all call-site should use dot-notation if possible (including test cases)
 
 #### Naming
 
 - When creating a new Lean file, do not include `.` in the file name.
-- Use snake_case for definitions and functions.
-- Use PascalCase for types and structures, first letter capitalized.
+- Use camelCase for definitions and functions that yield values.
+- Use PascalCase for types, propositions, properties, type constructors and predicates that yield `Type`/`Type u`/`Prop`/`Sort u`, first letter capitalized.
 
 #### Modules
 
