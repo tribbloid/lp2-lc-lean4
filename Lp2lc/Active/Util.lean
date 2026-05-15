@@ -28,7 +28,17 @@ def isSome : (self: Outcome T) -> Prop
 end Outcome
 
 def ByteCode := String
+universe u v
 
+-- 1. Implicitly lift a type to a higher universe using ULift
+/-- Coerce a lower-universe type into a higher universe through `ULift`. -/
+instance _autoUliftType : Coe (Type u) (Type (max u v)) where
+  coe := ULift
+
+-- 2. Implicitly lift the values of that type into the ULift wrapper, these 2 enabled universe cumulativity in rocq
+/-- Coerce a value into the `ULift` carrier chosen by the lifted type. -/
+instance _autoUliftValue {α : Type u} : Coe α (ULift.{v, u} α) where
+  coe := ULift.up
 abbrev Name := String
 
 end Util

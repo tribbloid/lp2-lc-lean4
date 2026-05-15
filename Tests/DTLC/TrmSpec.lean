@@ -75,6 +75,8 @@ def annotatedIdFn : TrmAST :=
 def annotatedIdFnOnFalse : TrmAST :=
   .apply annotatedIdFn annotatedFalse (some .primitive)
 
+section eraseType
+
 example {I : Index} :
     (annotatedFalse : Trm I).eraseType = (false : Trm I) := rfl
 
@@ -90,7 +92,9 @@ example {I : Index} :
     ((annotatedIdFnOnFalse : Trm I).eraseType).IsTypeErased :=
   Lp2lc.Active.DTLC.Trm.eraseType_isErased I (annotatedIdFnOnFalse : Trm I)
 
-section Evaluation
+end eraseType
+
+section eval
 
 unsafe inductive RuntimeRef where
 | val : Val RuntimeRef -> RuntimeRef
@@ -172,9 +176,9 @@ unsafe example : ((Trm.malformedPrimitiveApply : Trm RuntimeRef).eval 0) = .outO
 unsafe example : ((Trm.malformedPrimitiveApply : Trm RuntimeRef).eval 2) = .error := by
   rfl
 
-end Evaluation
+end eval
 
-section Compile
+section compile
 
 unsafe example : ((Trm.false : Trm RuntimeRef).compile 0) = .outOfFuel := by
   rfl
@@ -256,7 +260,7 @@ unsafe example :
     unfold Lp2lc.Active.DTLC.Trm.typing
     rfl)
 
-end Compile
+end compile
 
 end Trm
 
