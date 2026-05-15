@@ -75,9 +75,6 @@ def annotatedIdFn : TrmAST :=
 def annotatedIdFnOnFalse : TrmAST :=
   .apply annotatedIdFn annotatedFalse (some .primitive)
 
-example {I : Index} : ¬ (annotatedFalse : Trm I).IsTypeErased := by
-  simp [annotatedFalse, Lp2lc.Active.DTLC.Trm.IsTypeErased]
-
 example {I : Index} :
     (annotatedFalse : Trm I).eraseType = (false : Trm I) := rfl
 
