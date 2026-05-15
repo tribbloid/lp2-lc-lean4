@@ -248,6 +248,7 @@ unsafe example :
       Trm RuntimeRef).compile 1) = .error := by
   rfl
 
+ -- TODO: WTF is this?
 unsafe example :
     ∃ compiled,
       (Trm.false : Trm RuntimeRef).compile 1 = .some compiled ∧

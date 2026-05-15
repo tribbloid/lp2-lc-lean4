@@ -10,5 +10,4 @@ cd "$FWDIR"
 
 lake build
 
-cd "$FWDIR/Tests"
 sbt compile

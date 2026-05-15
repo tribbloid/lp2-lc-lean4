@@ -1,4 +1,6 @@
-package DOT
+package DOT.Example
+
+import Tests.Preamble
 
 object SanityExample extends Preamble {
 

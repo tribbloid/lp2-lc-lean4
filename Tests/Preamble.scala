@@ -1,3 +1,3 @@
-package DOT
+package Tests
 
 trait Preamble {}
