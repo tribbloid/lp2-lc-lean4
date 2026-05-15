@@ -21,10 +21,6 @@ instance _autoUliftType : Coe (Type u) (Type (max u v)) where
 instance _autoUliftValue {α : Type u} : Coe α (ULift.{v, u} α) where
   coe := ULift.up
 
-structure K : Type
-
-abbrev K1: Type 1 := K
-
 open Util
 
 section Syntax

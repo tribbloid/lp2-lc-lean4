@@ -1,1 +1,1 @@
-import Tests.package
+import «Tests».package

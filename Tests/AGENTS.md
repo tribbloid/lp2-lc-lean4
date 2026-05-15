@@ -12,3 +12,4 @@ section eraseType
 end eraseType
 ```
 - theorem/proposition/property should be excluded from testing.
+- test assertions should use `#guard` (always) and `rfl` tactic (if possible)
