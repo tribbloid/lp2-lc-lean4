@@ -78,18 +78,18 @@ def annotatedIdFnOnFalse : TrmAST :=
 section eraseType
 
 example {I : Index} :
-    (annotatedFalse : Trm I).eraseType = (false : Trm I) := rfl
+    Trm.type_eraseAll (annotatedFalse : Trm I) = (false : Trm I) := rfl
 
 example {I : Index} :
-    (annotatedIdFn : Trm I).eraseType =
+    Trm.type_eraseAll (annotatedIdFn : Trm I) =
       .val (.fn (body := fun x => .ref x) (tIn := none)) none := rfl
 
 example {I : Index} :
-    (annotatedIdFnOnFalse : Trm I).eraseType =
-      .apply (annotatedIdFn : Trm I).eraseType (false : Trm I) none := rfl
+    Trm.type_eraseAll (annotatedIdFnOnFalse : Trm I) =
+      .apply (Trm.type_eraseAll (annotatedIdFn : Trm I)) (false : Trm I) none := rfl
 
 example {I : Index} :
-    ((annotatedIdFnOnFalse : Trm I).eraseType).IsTypeErased :=
+    (Trm.type_eraseAll (annotatedIdFnOnFalse : Trm I)).type_IsErased :=
   Lp2lc.Active.DTLC.Trm.eraseType_isErased I (annotatedIdFnOnFalse : Trm I)
 
 end eraseType

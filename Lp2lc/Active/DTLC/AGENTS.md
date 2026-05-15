@@ -6,18 +6,6 @@ This directory contain syntax, typing/semantic/evaluation rules and proof of sou
 - the inclusion of a "top" type (AKA any, wildcard)
 - return type of a function can depend on input value.
 
-## Guardrails
-
-- absolute type safety, unsafe/noncomputable/partial definition is NOT allowed.
-- All definition must be with a short docString explaining their necessity.
-- All function/constructor arguments must be named.
-- Multiple cases in pattern matching should never be in 1 line, each line should start with `|`.
-- Prefer dot-notation for invoking multi-parameter functions and inductive destructors.
-- Do NOT repeat yourself, break repeated condition in pattern matching into multiple layers of pattern matchings if applicable.
-- Avoid leaky abstraction: top-level public APIs should only contain interpreter/compiler API (e.g. type-checking, evaluation).
-- Avoid generic universe, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2)
-- each namespace should only appear once.
-
 ## Conventions
 
 - Strong HOAS (higher order abstract syntx) + F-Bound: it's almost identical to raw Strong HOAS (see @Tests/STLC_syntax.scala for a Scala example), with one minor twist: a binded variable in a function is no longer a pending `Val`, but an unknown `{I : Index}` that can corresponds to a `Val` (through a `Correspondence` type-class axiom). Any concrete syntax rule or AST definition can only depends on any given `{I : Index}` and `Correspondence` instance.

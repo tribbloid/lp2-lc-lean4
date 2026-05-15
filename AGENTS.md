@@ -1,7 +1,6 @@
 ## Project Overview
 
-**lp2-lc-lean4** is a Lean 4 project to proof the soundness of various type theories. The project contains formal proofs
-and definitions converted from Coq 8.4 to Lean 4.
+**lp2-lc-lean4** is a Lean 4 project to proof the soundness of various type theories. The project contains formal proofs and definitions in Lean 4.
 
 The project depends on MathLib and AESOP
 
@@ -11,7 +10,6 @@ The project depends on MathLib and AESOP
 
 #### Do
 
-- Only ask questions during planning stage.
 - Build after every revision, build early and often, prioritize correctness over progress.
 - Eliminate compiler or LSP error as soon as possible.
 - Theorem types must be concrete, do not use "True"/"False" as theorem type.
@@ -35,6 +33,20 @@ The project depends on MathLib and AESOP
 See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 
 ### Lean Code Convention
+
+#### Guardrails
+
+- absolute type safety, unsafe/noncomputable/partial definition is NOT allowed.
+- All definition must be with a short docString explaining their necessity.
+- All function/constructor arguments must be named.
+- Multiple cases in pattern matching should never be in 1 line, each line should start with `|`.
+- Do NOT repeat yourself, break repeated condition in pattern matching into multiple layers of pattern matchings if applicable.
+- Avoid leaky abstraction: top-level public APIs should only contain interpreter/compiler API (e.g. type-checking, evaluation).
+- Avoid generic universe if possible, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2)
+- Field namespace/class (namespace/class supporting an existing type, where functions inside can be invoked with dot-notation) have special rules:
+  - each namespace/class should only appear once.
+  - all functions under the namespace/class should be compatible with dot-notation, namely their first argument should be consistent.
+  - all call-site should use dot-notation if possible (including test cases)
 
 #### Naming
 

@@ -12,38 +12,38 @@ namespace DTLC
 namespace Trm
 
 /-- Erasing annotations always produces a type-erased term. -/
-theorem eraseType_isErased (I : Index) : ∀ (self : Trm I), self.eraseType.IsTypeErased
+theorem eraseType_isErased (I : Index) : ∀ (self : Trm I), (type_eraseAll self).type_IsErased
 | .val (.primitive _) _ => rfl
 | .val (.fn body _) _ => ⟨rfl, rfl, fun arg => eraseType_isErased I (body arg)⟩
 | .apply fn arg _ => ⟨rfl, eraseType_isErased I fn, eraseType_isErased I arg⟩
 | .ref _ _ => rfl
 
 /-- Replacing the outer annotation makes that annotation visible to semantic checking. -/
-private theorem withType_typeAnnotation {I : Index} (self : Trm I) (type_annotation : Option (Typ I)) :
-    (self.withType type_annotation).typeAnnotation = type_annotation := by
+private theorem type_update_type_get {I : Index} (self : Trm I) (t : Option (Typ I)) :
+    type_get (type_update self t) = t := by
   cases self <;> rfl
 
 /-- Successful value compilation emits an erased value satisfying the requested annotation. -/
-private theorem compileValue_value {I : Index} {value : Val I} {type_annotation : Option (Typ I)}
+private theorem compileValue_value {I : Index} {value : Val I} {t : Option (Typ I)}
     {compiled : Trm I} :
-    compileValue value type_annotation = .some (v := compiled) ->
+    compileValue value t = .some (v := compiled) ->
       ∃ emitted, compiled = .val (v := emitted) (t := none) ∧
         ∀ checked_type,
-          type_annotation = some checked_type ->
+          t = some checked_type ->
             valueSatisfies emitted checked_type = true := by
-  cases type_annotation with
+  cases t with
   | none =>
     cases value with
     | primitive repr =>
       intro h_compile
-      simp [compileValue, eraseType] at h_compile
+      simp [compileValue, type_eraseAll] at h_compile
       subst compiled
       exact ⟨.primitive repr, rfl, by intro checked_type h_type; cases h_type⟩
     | fn body tIn =>
       intro h_compile
-      simp [compileValue, eraseType] at h_compile
+      simp [compileValue, type_eraseAll] at h_compile
       subst compiled
-      exact ⟨.fn (body := fun arg => (body arg).eraseType) (tIn := none), rfl, by
+      exact ⟨.fn (body := fun arg => type_eraseAll (body arg)) (tIn := none), rfl, by
         intro checked_type h_type
         cases h_type⟩
   | some checked_type =>
@@ -55,7 +55,7 @@ private theorem compileValue_value {I : Index} {value : Val I} {type_annotation 
       cases value with
       | primitive repr =>
         intro h_compile
-        simp [compileValue, h_satisfies, eraseType] at h_compile
+        simp [compileValue, h_satisfies, type_eraseAll] at h_compile
         subst compiled
         exact ⟨.primitive repr, rfl, by
           intro other_type h_type
@@ -63,9 +63,9 @@ private theorem compileValue_value {I : Index} {value : Val I} {type_annotation 
           exact h_satisfies⟩
       | fn body tIn =>
         intro h_compile
-        simp [compileValue, h_satisfies, eraseType] at h_compile
+        simp [compileValue, h_satisfies, type_eraseAll] at h_compile
         subst compiled
-        exact ⟨.fn (body := fun arg => (body arg).eraseType) (tIn := none), rfl, by
+        exact ⟨.fn (body := fun arg => type_eraseAll (body arg)) (tIn := none), rfl, by
           intro other_type h_type
           cases h_type
           cases checked_type with
@@ -82,7 +82,7 @@ private theorem compile_value {I : Index} [FBound I Trm] {source compiled : Trm 
     source.compile fuel = .some (v := compiled) ->
       ∃ value, compiled = .val (v := value) (t := none) ∧
         ∀ checked_type,
-          source.typeAnnotation = some checked_type ->
+          type_get source = some checked_type ->
             valueSatisfies value checked_type = true := by
   induction fuel generalizing source compiled with
   | zero =>
@@ -107,11 +107,11 @@ private theorem compile_value {I : Index} [FBound I Trm] {source compiled : Trm 
             | fn body fn_tIn =>
               simp [Trm.compile, h_fn, h_arg] at h_compile
               obtain ⟨value, h_value, h_checked⟩ :=
-                ih (source := (body (FBound.fwd compiled_arg)).withType type_annotation) h_compile
+                ih (source := type_update (body (FBound.fwd compiled_arg)) type_annotation) h_compile
               exact ⟨value, h_value, by
                 intro checked_type h_type
                 exact h_checked checked_type (by
-                  simpa [Trm.withType_typeAnnotation] using h_type)⟩
+                  simpa [Trm.type_update_type_get] using h_type)⟩
           | apply fn' arg' fn_type =>
             simp [Trm.compile, h_fn, h_arg] at h_compile
           | ref ref fn_type =>
@@ -128,12 +128,12 @@ private theorem compile_value {I : Index} [FBound I Trm] {source compiled : Trm 
     | ref ref_value type_annotation =>
       intro h_compile
       obtain ⟨value, h_value, h_checked⟩ :=
-        ih (source := Trm.withType (FBound.rev (K := Trm) ref_value) type_annotation)
+        ih (source := type_update (FBound.rev (K := Trm) ref_value) type_annotation)
           (by simpa [Trm.compile] using h_compile)
       exact ⟨value, h_value, by
         intro checked_type h_type
         exact h_checked checked_type (by
-          simpa [Trm.withType_typeAnnotation] using h_type)⟩
+          simpa [Trm.type_update_type_get] using h_type)⟩
 
 /-- Successful compilation is adequate for the fuel used by the compiler. -/
 theorem adequacy {I : Index} [FBound I Trm] [FBound I Val]
@@ -161,7 +161,7 @@ theorem fundamental {I : Index} [FBound I Trm] {fn arg compiled_arg compiled : T
       .some (v := .val (v := .fn (body := body) (tIn := none)) (t := none)))
     (arg_compile : arg.compile fuel = .some (v := compiled_arg))
     (body_compile :
-      ((body (FBound.fwd compiled_arg)).withType type_annotation).compile fuel =
+      (type_update (body (FBound.fwd compiled_arg)) type_annotation).compile fuel =
         .some (v := compiled)) :
     (Trm.apply (fn := fn) (arg := arg) (t := type_annotation)).compile (fuel + 1) =
       Outcome.some (v := compiled) := by
