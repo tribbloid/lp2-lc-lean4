@@ -50,6 +50,7 @@ lean
 **/.metals
 **/.gradle
 **.tasty
+**/metals.sbt
 
 **/.idea
 

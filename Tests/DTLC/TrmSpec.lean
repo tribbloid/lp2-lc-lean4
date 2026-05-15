@@ -1,6 +1,8 @@
 import Tests.DTLC.ValSpec
+import «Lp2lc».Active.DTLC.Proof
 
 namespace Tests.DTLC.Sanity
+open Lp2lc.Active.Util
 open Lp2lc.Active.DTLC
 
 namespace Trm
