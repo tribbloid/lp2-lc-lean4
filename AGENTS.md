@@ -10,21 +10,16 @@ The project depends on MathLib and AESOP
 
 #### Do
 
-- Build after every revision, build early and often, prioritize correctness over progress.
-- Eliminate compiler or LSP error as soon as possible.
+- Build after every revision. Do not proceed while compiler/LSP errors remain; final Lean changes must pass `lake build` without unused-variable warnings.
 - Theorem types must be concrete, do not use "True"/"False" as theorem type.
 - Tool scripts not part of the core project should be placed in `.agent/script` directory.
 
 #### Don't
 
-- Do not use type-unsafe language features like noncomputable functioon, unsafe function, or unsafe block
-- Do not repeat yourself, every namespace/package that appears multiple times must be imported.
+- Avoid duplicated implementation and repeated fully qualified names; import namespaces/packages used multiple times.
 - Do not ask questions like "what to do next", always follow the workflow by the numbers.
-- Do not proceed to the next step if there is a pending compiling error.
 - Do not create new branch in git.
-- Do not write duplicated or redundant implementation.
-- Do not remove comments.
-- Do not write comments to explain intention.
+- Preserve existing comments. Do not add explanatory comments unless required by conversion rules or Lean docString policy.
 - Do not add markdown files on your own.
 - Do not change build file unless asked to.
 
@@ -36,11 +31,11 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 
 #### Guardrails
 
-- absolute type safety, unsafe/noncomputable/partial definition is NOT allowed.
+- Do not use `unsafe`, `noncomputable`, or `partial` declarations/blocks.
 - All definition must be with a short docString explaining their necessity.
 - All function/constructor arguments must be named.
 - Multiple cases in pattern matching should never be in 1 line, each line should start with `|`.
-- Do NOT repeat yourself, break repeated condition in pattern matching into multiple layers of pattern matchings if applicable.
+- For repeated pattern-match conditions, prefer layered pattern matching.
 - Avoid leaky abstraction: top-level public APIs should only contain interpreter/compiler API (e.g. type-checking, evaluation).
 - Avoid generic universe if possible, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2)
 - Field namespace/class (namespace/class supporting an existing type, where functions inside can be invoked with dot-notation) have special rules:
@@ -63,12 +58,6 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 #### Conversion
 
 See [.agent/ConversionRules.md](.agent/ConversionRules.md)
-
-#### Quality Checks
-
-- Lean files build successfully with `lake build`.
-- [ ] All files compile without errors.
-- [ ] No unused variable warnings.
 
 ## Key Commands
 
