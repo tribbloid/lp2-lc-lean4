@@ -58,6 +58,14 @@ inductive Val : Index where
 
 end
 
+/-- Internal annotation erasure shared by term erasure and value compilation. -/
+private def eraseAnnotations {I : Index} (self : Trm I) : Trm I :=
+  match self with
+  | .val (.primitive repr) _ => .val (.primitive repr) none
+  | .val (.fn body _) _ => .val (.fn (body := fun arg => eraseAnnotations (body arg)) (tIn := none)) none
+  | .apply fn arg _ => .apply (eraseAnnotations fn) (eraseAnnotations arg) none
+  | .ref refValue _ => .ref refValue none
+
 namespace Typ
 
 /-- Checks whether one annotation is compatible with another at its semantic head form. -/
@@ -89,6 +97,17 @@ def satisfies {I : Index} (value : Val I) (typeAnnotation : Typ I) : Bool :=
     | .fn (body := _) (tIn := none) => true
     | .fn (body := _) (tIn := some actual) => actual.compatible tIn
 
+/-- Checks a value annotation and emits erased value syntax when it succeeds. -/
+def compile {I : Index} (value : Val I)
+    (typeAnnotation : Option (Typ I)) : Outcome (Trm I) :=
+  let erasedValue := eraseAnnotations (Trm.val value none)
+  match typeAnnotation with
+  | none => .some erasedValue
+  | some checkedType =>
+    match value.satisfies checkedType with
+    | true => .some erasedValue
+    | false => .error
+
 end Val
 
 namespace Trm
@@ -109,11 +128,7 @@ def typeUpdate {I : Index} (self : Trm I) (typeAnnotation : Option (Typ I)) : Tr
 
 /-- Removes all optional type annotations from a term. -/
 def typeEraseAll {I : Index} (self : Trm I) : Trm I :=
-  match self with
-  | .val (.primitive repr) _ => .val (.primitive repr) none
-  | .val (.fn body _) _ => .val (.fn (body := fun arg => (body arg).typeEraseAll) (tIn := none)) none
-  | .apply fn arg _ => .apply fn.typeEraseAll arg.typeEraseAll none
-  | .ref refValue _ => .ref refValue none
+  eraseAnnotations self
 
 /-- Predicate that all annotations have been removed from a term. -/
 def TypeErased {I : Index} (self : Trm I) : Prop :=
@@ -122,17 +137,6 @@ def TypeErased {I : Index} (self : Trm I) : Prop :=
   | .val (.fn body tIn) t => t = none ∧ tIn = none ∧ ∀ arg, (body arg).TypeErased
   | .apply fn arg t => t = none ∧ fn.TypeErased ∧ arg.TypeErased
   | .ref _ t => t = none
-
-/-- Checks a value annotation and emits erased value syntax when it succeeds. -/
-def _root_.Lp2lc.Active.DTLC.Val.compile {I : Index} (value : Val I)
-    (typeAnnotation : Option (Typ I)) : Outcome (Trm I) :=
-  let erasedValue := (Trm.val value none).typeEraseAll
-  match typeAnnotation with
-  | none => .some erasedValue
-  | some checkedType =>
-    match value.satisfies checkedType with
-    | true => .some erasedValue
-    | false => .error
 
 /-- Normalizes source terms to values while spending fuel at each semantic descent -/
 def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=

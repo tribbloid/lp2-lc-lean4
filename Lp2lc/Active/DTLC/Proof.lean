@@ -38,12 +38,12 @@ private theorem valCompile_value {I : Index} {value : Val I} {t : Option (Typ I)
     cases value with
     | primitive repr =>
       intro h_compile
-      simp [Val.compile, Trm.typeEraseAll] at h_compile
+      simp [Val.compile] at h_compile
       subst compiled
       exact ⟨.primitive repr, rfl, by intro checked_type h_type; cases h_type⟩
     | fn body tIn =>
       intro h_compile
-      simp [Val.compile, Trm.typeEraseAll] at h_compile
+      simp [Val.compile] at h_compile
       subst compiled
       exact ⟨.fn (body := fun arg => (body arg).typeEraseAll) (tIn := none), rfl, by
         intro checked_type h_type
@@ -57,7 +57,7 @@ private theorem valCompile_value {I : Index} {value : Val I} {t : Option (Typ I)
       cases value with
       | primitive repr =>
         intro h_compile
-        simp [Val.compile, h_satisfies, Trm.typeEraseAll] at h_compile
+        simp [Val.compile, h_satisfies] at h_compile
         subst compiled
         exact ⟨.primitive repr, rfl, by
           intro other_type h_type
@@ -65,7 +65,7 @@ private theorem valCompile_value {I : Index} {value : Val I} {t : Option (Typ I)
           exact h_satisfies⟩
       | fn body tIn =>
         intro h_compile
-        simp [Val.compile, h_satisfies, Trm.typeEraseAll] at h_compile
+        simp [Val.compile, h_satisfies] at h_compile
         subst compiled
         exact ⟨.fn (body := fun arg => (body arg).typeEraseAll) (tIn := none), rfl, by
           intro other_type h_type
