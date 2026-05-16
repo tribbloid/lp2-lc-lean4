@@ -58,68 +58,26 @@ inductive Val : Index where
 
 end
 
-namespace Trm
-
-/-- Reads the optional annotation attached to the outer term constructor. -/
-def type_get {I : Index} (self : Trm I) : Option (Typ I) :=
-  match self with
-  | .val (v := _) (t := type_annotation) => type_annotation
-  | .apply (fn := _) (arg := _) (t := type_annotation) => type_annotation
-  | Trm.ref _ type_annotation => type_annotation
-
-/-- Replaces only the outer annotation while preserving the underlying term. -/
-def type_update {I : Index} (self : Trm I) (type_annotation : Option (Typ I)) : Trm I :=
-  match self with
-  | .val (v := value) (t := _) => .val (v := value) (t := type_annotation)
-  | .apply (fn := fn) (arg := arg) (t := _) => .apply (fn := fn) (arg := arg) (t := type_annotation)
-  | Trm.ref ref_value _ => Trm.ref ref_value type_annotation
-
-/-- Removes all optional type annotations from a term. -/
-def type_eraseAll {I : Index} (self: Trm I): Trm I :=
-  match self with
-  | .val (.primitive repr) _ => .val (.primitive repr) none
-  | .val (.fn body _) _ => .val (.fn (body := fun arg => type_eraseAll (body arg)) (tIn := none)) none
-  | .apply fn arg _ => .apply (type_eraseAll fn) (type_eraseAll arg) none
-  | .ref s _ => .ref s none
-
-def type_IsErased {I : Index} (self: Trm I): Prop :=
-  match self with
-  | .val (.primitive _) t => t = none
-  | .val (.fn body tIn) t => t = none ∧ tIn = none ∧ ∀ arg, type_IsErased (body arg)
-  | .apply fn arg t => t = none ∧ type_IsErased fn ∧ type_IsErased arg
-  | .ref _ t => t = none
-
-/-- Normalizes source terms to values while spending fuel at each semantic descent -/
-def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
-  match fuel with
-  | 0 => .outOfFuel
-  | fuel + 1 =>
-    match trm with
-    | .val value _ => .some value
-    | apply fn arg _ =>
-      let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
-      match anf with
-      | (.some (.fn body), .some value) => (body (FBound.fwd value)).eval fuel
-      | (.outOfFuel, _) | (_, .outOfFuel)  => .outOfFuel
-      | _ => .error
-    | .ref s _ =>
-      .some (FBound.rev s)
-
+namespace Typ
 
 /-- Checks whether one annotation is compatible with another at its semantic head form. -/
-def typeCompatible {I : Index} (actual : Typ I) (expected : Typ I) : Bool :=
+def compatible {I : Index} (actual : Typ I) (expected : Typ I) : Bool :=
   match actual, expected with
   | _, .top => true
   | .primitive, .primitive => true
   | .depFn (tIn := _) (tOut := _), .depFn (tIn := _) (tOut := _) => true
   | _, _ => false
 
+end Typ
+
+namespace Val
+
 /--
 Decidable semantic membership of a value in a type annotation.
 Semantic typing predicate for values.
 -/
-def valueSatisfies {I : Index} (value : Val I) (type_annotation : Typ I) : Bool :=
-  match type_annotation with
+def satisfies {I : Index} (value : Val I) (typeAnnotation : Typ I) : Bool :=
+  match typeAnnotation with
   | .top => true
   | .primitive =>
     match value with
@@ -129,18 +87,70 @@ def valueSatisfies {I : Index} (value : Val I) (type_annotation : Typ I) : Bool 
     match value with
     | .primitive (repr := _) => false
     | .fn (body := _) (tIn := none) => true
-    | .fn (body := _) (tIn := some actual) => typeCompatible actual tIn
+    | .fn (body := _) (tIn := some actual) => actual.compatible tIn
 
+end Val
+
+namespace Trm
+
+/-- Reads the optional annotation attached to the outer term constructor. -/
+def typeGet {I : Index} (self : Trm I) : Option (Typ I) :=
+  match self with
+  | .val (v := _) (t := typeAnnotation) => typeAnnotation
+  | .apply (fn := _) (arg := _) (t := typeAnnotation) => typeAnnotation
+  | .ref _ typeAnnotation => typeAnnotation
+
+/-- Replaces only the outer annotation while preserving the underlying term. -/
+def typeUpdate {I : Index} (self : Trm I) (typeAnnotation : Option (Typ I)) : Trm I :=
+  match self with
+  | .val (v := value) (t := _) => .val (v := value) (t := typeAnnotation)
+  | .apply (fn := fn) (arg := arg) (t := _) => .apply (fn := fn) (arg := arg) (t := typeAnnotation)
+  | .ref refValue _ => .ref refValue typeAnnotation
+
+/-- Removes all optional type annotations from a term. -/
+def typeEraseAll {I : Index} (self : Trm I) : Trm I :=
+  match self with
+  | .val (.primitive repr) _ => .val (.primitive repr) none
+  | .val (.fn body _) _ => .val (.fn (body := fun arg => (body arg).typeEraseAll) (tIn := none)) none
+  | .apply fn arg _ => .apply fn.typeEraseAll arg.typeEraseAll none
+  | .ref refValue _ => .ref refValue none
+
+/-- Predicate that all annotations have been removed from a term. -/
+def TypeErased {I : Index} (self : Trm I) : Prop :=
+  match self with
+  | .val (.primitive _) t => t = none
+  | .val (.fn body tIn) t => t = none ∧ tIn = none ∧ ∀ arg, (body arg).TypeErased
+  | .apply fn arg t => t = none ∧ fn.TypeErased ∧ arg.TypeErased
+  | .ref _ t => t = none
 
 /-- Checks a value annotation and emits erased value syntax when it succeeds. -/
-def compileValue {I : Index} (value : Val I) (type_annotation : Option (Typ I)) : Outcome (Trm I) :=
-  match type_annotation with
-  | none => .some (v := type_eraseAll (Trm.val (v := value) (t := none)))
-  | some type_annotation =>
-    match valueSatisfies value type_annotation with
-    | true => .some (v := type_eraseAll (Trm.val (v := value) (t := none)))
+def _root_.Lp2lc.Active.DTLC.Val.compile {I : Index} (value : Val I)
+    (typeAnnotation : Option (Typ I)) : Outcome (Trm I) :=
+  let erasedValue := (Trm.val value none).typeEraseAll
+  match typeAnnotation with
+  | none => .some erasedValue
+  | some checkedType =>
+    match value.satisfies checkedType with
+    | true => .some erasedValue
     | false => .error
 
+/-- Normalizes source terms to values while spending fuel at each semantic descent -/
+def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
+  match fuel with
+  | 0 => .outOfFuel
+  | fuel + 1 =>
+    match trm with
+    | .val value _ => .some value
+    | .apply fn arg _ =>
+      let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
+      match anf with
+      | (.some (.fn body _), .some value) =>
+        (body (FBound.fwd value)).eval fuel
+      | (.outOfFuel, _) => .outOfFuel
+      | (_, .outOfFuel) => .outOfFuel
+      | _ => .error
+    | .ref refValue _ =>
+      .some (FBound.rev refValue)
 
 /--
 fuel-guarded compiler API that verify a term (with optional type annotation),
@@ -168,42 +178,47 @@ def compile {I : Index} [FBound I Trm] (trm: Trm I) (fuel: Nat): Outcome (Trm I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match trm with
-    | .val (v := value) (t := type_annotation) =>
-      compileValue value type_annotation
-    | .apply (fn := fn) (arg := arg) (t := type_annotation) =>
+    | .val value typeAnnotation =>
+      value.compile typeAnnotation
+    | .apply fn arg typeAnnotation =>
       let anf := (fn.compile fuel, arg.compile fuel)
       match anf with
-      | (.some (.val (.fn body _) _), .some compiled_arg) =>
-        (type_update (body (FBound.fwd compiled_arg)) type_annotation).compile fuel
+      | (.some (.val (.fn body _) _), .some compiledArg) =>
+        ((body (FBound.fwd compiledArg)).typeUpdate typeAnnotation).compile fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
-    | Trm.ref ref_value type_annotation =>
-      (type_update (FBound.rev (K := Trm) ref_value) type_annotation).compile fuel
+    | .ref refValue typeAnnotation =>
+      ((FBound.rev (K := Trm) refValue).typeUpdate typeAnnotation).compile fuel
 
-def typing {I : Index} [FBound I Trm](fuel: Nat)  (trm: Trm I) : Prop :=
+/-- Semantic typing predicate exposed as successful fuel-guarded compilation. -/
+def Typing {I : Index} [FBound I Trm] (trm : Trm I) (fuel : Nat) : Prop :=
   (trm.compile fuel).isSome
 
 /-- Adequacy predicate relating successful compilation to fuel-guarded execution. -/
-def adequate {I : Index} [FBound I Val] (source : Trm I) (compiled : Trm I)
+def Adequate {I : Index} [FBound I Val] (source : Trm I) (compiled : Trm I)
     (fuel : Nat) : Prop :=
   compiled.eval fuel ≠ .error ∧
     ∀ checked_type value,
-      type_get source = some checked_type ->
+      source.typeGet = some checked_type ->
       compiled.eval fuel = .some (v := value) ->
-        valueSatisfies value checked_type = true
+        value.satisfies checked_type = true
 
 end Trm
 
+/-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
 instance valIsTrm : Coe (Val I) (Trm I) where
-  coe := (fun v => Trm.val v)
+  coe := fun v => Trm.val v
 
 end Syntax
 
+/-- Closed polymorphic type syntax fixture over any PHOAS index. -/
 abbrev TypAST := {I : Index} -> Typ I
 
+/-- Closed polymorphic value syntax fixture over any PHOAS index. -/
 abbrev ValAST := {I : Index} -> Val I
 
+/-- Closed polymorphic term syntax fixture over any PHOAS index. -/
 abbrev TrmAST := {I : Index} -> Trm I
 
 end DTLC

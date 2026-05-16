@@ -1,4 +1,4 @@
-import Tests.DTLC.ValSpec
+import «Tests».DTLC.ValSpec
 import «Lp2lc».Active.DTLC.Proof
 
 namespace Tests.DTLC.Sanity
@@ -78,18 +78,18 @@ def annotatedIdFnOnFalse : TrmAST :=
 section eraseType
 
 example {I : Index} :
-    Trm.type_eraseAll (annotatedFalse : Trm I) = (false : Trm I) := rfl
+    Trm.typeEraseAll (annotatedFalse : Trm I) = (false : Trm I) := rfl
 
 example {I : Index} :
-    Trm.type_eraseAll (annotatedIdFn : Trm I) =
+    Trm.typeEraseAll (annotatedIdFn : Trm I) =
       .val (.fn (body := fun x => .ref x) (tIn := none)) none := rfl
 
 example {I : Index} :
-    Trm.type_eraseAll (annotatedIdFnOnFalse : Trm I) =
-      .apply (Trm.type_eraseAll (annotatedIdFn : Trm I)) (false : Trm I) none := rfl
+    Trm.typeEraseAll (annotatedIdFnOnFalse : Trm I) =
+      .apply (Trm.typeEraseAll (annotatedIdFn : Trm I)) (false : Trm I) none := rfl
 
 example {I : Index} :
-    (Trm.type_eraseAll (annotatedIdFnOnFalse : Trm I)).type_IsErased :=
+    (Trm.typeEraseAll (annotatedIdFnOnFalse : Trm I)).TypeErased :=
   Lp2lc.Active.DTLC.Trm.eraseType_isErased I (annotatedIdFnOnFalse : Trm I)
 
 end eraseType
@@ -251,14 +251,17 @@ unsafe example :
       Trm RuntimeRef).compile 1) = .error := by
   rfl
 
- -- TODO: WTF is this?
+section soundness
+
 unsafe example :
     ∃ compiled,
       (Trm.false : Trm RuntimeRef).compile 1 = .some compiled ∧
-        (Trm.false : Trm RuntimeRef).adequate compiled 1 :=
+        (Trm.false : Trm RuntimeRef).Adequate compiled 1 :=
   Trm.soundness (source := (Trm.false : Trm RuntimeRef)) (fuel := 1) (by
-    unfold Lp2lc.Active.DTLC.Trm.typing
+    unfold Lp2lc.Active.DTLC.Trm.Typing
     rfl)
+
+end soundness
 
 end compile
 

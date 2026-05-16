@@ -32,8 +32,8 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 #### Guardrails
 
 - Do not use `unsafe`, `noncomputable`, or `partial` declarations/blocks unless it is test or example code.
-- All non-trivial definition (longer than 3 lines) in syntax & semantic rules must be with a short docString explaining their necessity. This rule doesn't apply to test code.
-- All function/constructor arguments must be named.
+- All non-trivial definition (longer than 3 lines) in syntax & semantic rules must be with a short docString explaining their necessity. This rule doesn't apply to test code or abbreviation.
+- All function/constructor arguments must be named at define-site, call-site names are not necessary.
 - Multiple cases in pattern matching should never be in 1 line, each line should start with `|`.
 - For repeated pattern-match conditions, prefer layered pattern matching.
 - Avoid leaky abstraction: top-level public APIs should only contain interpreter/compiler API (e.g. type-checking, evaluation).
