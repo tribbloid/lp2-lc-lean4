@@ -24,7 +24,7 @@ Type AST
 inductive Typ : Index where
 | primitive
 | depFn (tIn : Typ) (tOut : (arg : I) -> Typ)
-| top -- type of anything, can bind both primitive and depFn.
+| top -- anything/wildcard type, can bind both primitive and depFn.
 
 -- def TAnno := Option Typ -- doesn't work in mutual block
 
