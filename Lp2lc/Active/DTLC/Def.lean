@@ -58,13 +58,9 @@ inductive Val : Index where
 
 end
 
-/-- Internal annotation erasure shared by term erasure and value compilation. -/
-private def eraseAnnotations {I : Index} (self : Trm I) : Trm I :=
-  match self with
-  | .val (.primitive repr) _ => .val (.primitive repr) none
-  | .val (.fn body _) _ => .val (.fn (body := fun arg => eraseAnnotations (body arg)) (tIn := none)) none
-  | .apply fn arg _ => .apply (eraseAnnotations fn) (eraseAnnotations arg) none
-  | .ref refValue _ => .ref refValue none
+/-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
+instance valIsTrm : Coe (Val I) (Trm I) where
+  coe := fun v => Trm.val v
 
 namespace Typ
 
@@ -97,17 +93,6 @@ def satisfies {I : Index} (value : Val I) (typeAnnotation : Typ I) : Bool :=
     | .fn (body := _) (tIn := none) => true
     | .fn (body := _) (tIn := some actual) => actual.compatible tIn
 
-/-- Checks a value annotation and emits erased value syntax when it succeeds. -/
-def compile {I : Index} (value : Val I)
-    (typeAnnotation : Option (Typ I)) : Outcome (Trm I) :=
-  let erasedValue := eraseAnnotations (Trm.val value none)
-  match typeAnnotation with
-  | none => .some erasedValue
-  | some checkedType =>
-    match value.satisfies checkedType with
-    | true => .some erasedValue
-    | false => .error
-
 end Val
 
 namespace Trm
@@ -128,7 +113,11 @@ def typeUpdate {I : Index} (self : Trm I) (typeAnnotation : Option (Typ I)) : Tr
 
 /-- Removes all optional type annotations from a term. -/
 def typeEraseAll {I : Index} (self : Trm I) : Trm I :=
-  eraseAnnotations self
+  match self with
+  | .val (.primitive repr) _ => .val (.primitive repr) none
+  | .val (.fn body _) _ => .val (.fn (body := fun arg => typeEraseAll (body arg)) (tIn := none)) none
+  | .apply fn arg _ => .apply (typeEraseAll fn) (typeEraseAll arg) none
+  | .ref refValue _ => .ref refValue none
 
 /-- Predicate that all annotations have been removed from a term. -/
 def TypeErased {I : Index} (self : Trm I) : Prop :=
@@ -177,42 +166,14 @@ this is a critical semantic rule for proving:
   successfull ccompiled.
 - finally, soundness theorem that uses the above 2 lemma.
 -/
-def compile {I : Index} [FBound I Trm] (trm: Trm I) (fuel: Nat): Outcome (Trm I) :=
-  match fuel with
-  | 0 => .outOfFuel
-  | fuel + 1 =>
-    match trm with
-    | .val value typeAnnotation =>
-      value.compile typeAnnotation
-    | .apply fn arg typeAnnotation =>
-      let anf := (fn.compile fuel, arg.compile fuel)
-      match anf with
-      | (.some (.val (.fn body _) _), .some compiledArg) =>
-        ((body (FBound.fwd compiledArg)).typeUpdate typeAnnotation).compile fuel
-      | (.outOfFuel, _) => .outOfFuel
-      | (_, .outOfFuel) => .outOfFuel
-      | _ => .error
-    | .ref refValue typeAnnotation =>
-      ((FBound.rev (K := Trm) refValue).typeUpdate typeAnnotation).compile fuel
+def compile {I : Index} [FBound I Trm] (trm: Trm I) (fuel: Nat): Outcome (Trm I) := sorry
 
 /-- Semantic typing predicate exposed as successful fuel-guarded compilation. -/
 def Typing {I : Index} [FBound I Trm] (trm : Trm I) (fuel : Nat) : Prop :=
   (trm.compile fuel).isSome
 
-/-- Adequacy predicate relating successful compilation to fuel-guarded execution. -/
-def Adequate {I : Index} [FBound I Val] (source : Trm I) (compiled : Trm I)
-    (fuel : Nat) : Prop :=
-  compiled.eval fuel ≠ .error ∧
-    ∀ checked_type value,
-      source.typeGet = some checked_type ->
-      compiled.eval fuel = .some (v := value) ->
-        value.satisfies checked_type = true
-
 end Trm
 
-/-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
-instance valIsTrm : Coe (Val I) (Trm I) where
-  coe := fun v => Trm.val v
 
 end Syntax
 
