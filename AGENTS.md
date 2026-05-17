@@ -41,15 +41,16 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 - For repeated pattern-match conditions, prefer layered pattern matching.
 - Avoid leaky abstraction: top-level public APIs should only contain interpreter/compiler API (e.g. type-checking, evaluation).
 - Avoid generic universe if possible, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2)
+- Avoid trivial wrapper function: if a function is very short it should be inlined.
 - Field namespace/class (namespace/class supporting an existing type, where functions inside can be invoked with dot-notation) have special rules:
-  - each namespace/class should only appear once.
-  - if the namespace contain multiple functions, the namespace should be declared explicitly.
-  - all functions under the namespace/class should be compatible with dot-notation, namely their first argument should be consistent.
-  - all call-site should use dot-notation if possible (including test cases)
+  - Avoid repetitive declaration of namespace unless it is to avoid forward reference in Lean.
+  - If the namespace contain multiple functions, the namespace should be declared explicitly.
+  - All functions under the namespace/class should be compatible with dot-notation, namely their first argument should be consistent.
+  - All call-site should use dot-notation if possible (including test cases)
 
-#### Stages
+#### Task Categories
 
-Every task can be classified into one of the following stages:
+Every task can be classified into one of the following Categories:
 
 - **Compliance Revision** is for making format & compliance revision. DO NOT introduce or update type signature, definition, or proof (even iff it is missing or `sorry`). Existing code structure should be preserved at all cost
 - **Conjecture Scaffolding** is for introducing new `Prop`/Predicate, either as a type or as a theorem with `sorry`, DO NOT write any proof.
