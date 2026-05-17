@@ -12,8 +12,9 @@ The project depends on Aesop through Lake.
 
 - Build after every revision. Do not proceed while compiler/LSP errors remain; final Lean changes must pass `lake build` without unused-variable warnings.
 - Theorem types must be concrete, do not use "True"/"False" as theorem type.
-- Tool scripts not part of the core project should be placed in `.agent/script` directory.
-- Only create new permanent file if required by `.agent/CodeStructure.md`. Other new files should be under a "__TEMP" subdirectory. 
+- Only create new permanent core file if required by `.agent/CodeStructure.md`.
+  - Agent tool scripts not part of the core project should be under `<project-dir>/.agent/script` directory.
+  - Other new files should be under any "__TEMP" subdirectory.
 
 #### Don't
 
@@ -25,7 +26,7 @@ The project depends on Aesop through Lake.
 
 ### Structure
 
-See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest nested `AGENTS.md`, including [Tests/AGENTS.md](Tests/AGENTS.md) and [Lp2lc/Active/DTLC/AGENTS.md](Lp2lc/Active/DTLC/AGENTS.md).
+See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest nested `AGENTS.md`, e.g. [Tests/AGENTS.md](Tests/AGENTS.md).
 
 ### Lean Code Convention
 
