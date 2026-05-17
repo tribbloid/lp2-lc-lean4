@@ -16,8 +16,9 @@ The project depends on MathLib and AESOP
 
 #### Don't
 
-- Avoid duplicated implementation and repeated fully qualified names; import namespaces/packages used multiple times.
 - Do not ask questions like "what to do next", always follow the workflow by the numbers.
+- Do not write axiom.
+- Avoid duplicated implementation and repeated fully qualified names; import namespaces/packages used multiple times.
 - Do not create new branch in git.
 - Preserve existing comments. Do not add explanatory comments unless required by conversion rules or Lean docString policy.
 - Do not add markdown files on your own.
@@ -31,6 +32,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 
 #### Guardrails
 
+- 
 - Do not use `unsafe`, `noncomputable`, or `partial` declarations/blocks unless it is test or example code.
 - All non-trivial definition (longer than 3 lines) in syntax & semantic rules must be with a short docString explaining their necessity. This rule doesn't apply to test code or abbreviation.
 - All function/constructor arguments must be named at define-site, call-site names are not necessary.
