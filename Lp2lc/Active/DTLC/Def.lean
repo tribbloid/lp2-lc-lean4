@@ -147,7 +147,7 @@ def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I)
 
 /--
 fuel-guarded compiler API that verify a term (with optional type annotation),
-and generate a more specialised, executable, type-erased term. This execution should always succeed (adequency lemma).
+and generate a more specialised, executable, type-erased term. Given enough fuel, this execution should always succeed (adequency lemma).
 
 - compiling malformed term will fail
 - compiling term with wrong annotation will fail
