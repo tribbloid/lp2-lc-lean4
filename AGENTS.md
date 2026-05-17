@@ -53,7 +53,7 @@ Every task can be classified into one of the following stages:
 
 - **Compliance Revision** is for making format & compliance revision. DO NOT introduce or update type signature, definition, or proof (even iff it is missing or `sorry`). Existing code structure should be preserved at all cost
 - **Conjecture Scaffolding** is for introducing new `Prop`/Predicate, either as a type or as a theorem with `sorry`, DO NOT write any proof.
-- **Example/Demo/Test** is for writing example & test case for existing definition in the Tests directory. DO NOT write or update production code. Theorem or lemma requires no example or test case.
+- **Example/Demo/Test** is for writing example & test case for existing definition in the Tests directory. DO NOT write or update production code except for explicitly educational tutorial/demo modules allowed by the Guardrails above. Theorem or lemma requires no example or test case.
 - **Proof Discharge** is for proving existing conjecture/lemma/theorem, DO NOT write new `sorry`, introducing new lemma is permitted if & only if they help proving the main theorem, but they have to be proven immediately. If a lemma or theorem is believed to be false, a counterexample should be added into Tests directory.
 
 #### Naming
@@ -72,7 +72,6 @@ Every task can be classified into one of the following stages:
 
 ### Build & Check
 
-- `lake build` - Build the entire project.
 - `lake build <file path>` - Build one file.
 
 ### Development
