@@ -10,7 +10,7 @@ The project depends on Aesop through Lake.
 
 #### Do
 
-- Build after every revision. Do not proceed while compiler/LSP errors remain; final Lean changes must pass `lake build` without unused-variable warnings.
+- Build after every revision. Do not proceed while compiler/LSP errors remain.
 - Theorem types must be concrete, do not use "True"/"False" as theorem type.
 - Tool scripts not part of the core project should be placed in `.agent/script` directory.
 - Only create new permanent file if required by `.agent/CodeStructure.md`. Other new files should be under a "__TEMP" subdirectory. 
@@ -21,7 +21,7 @@ The project depends on Aesop through Lake.
 - Avoid duplicated implementation and repeated fully qualified names; import namespaces/packages used multiple times.
 - Do not create new branch in git.
 - Preserve existing comments. Do not add explanatory comments unless required by Lean docString policy.
-- Do not change build file unless asked to.
+- Do not change lake & toolchain file unless asked to.
 
 ### Structure
 
@@ -54,7 +54,6 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 
 #### Modules
 
-- Import all lean files in module aggregator to be compiled by `lake build`.
 - Use quoted module names: `import «Lp2lc».module`.
 - Group imports logically (Lean core, external deps, local modules).
 
@@ -62,7 +61,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 
 ### Build & Check
 
-- `lake build` - Build the entire project.
+- `lake build` - Build the entire project. Your final code must succeed on it without error or warnings.
 - `lake build <file path>` - Build one file.
 
 ### Development
