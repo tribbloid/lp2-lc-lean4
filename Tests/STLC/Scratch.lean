@@ -1,4 +1,4 @@
-import Std
+import «Std»
 
 namespace Tests.STLC.Scratch
 

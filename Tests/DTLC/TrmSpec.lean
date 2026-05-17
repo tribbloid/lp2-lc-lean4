@@ -24,8 +24,8 @@ end eraseType
 section eval
 
 unsafe inductive RuntimeRef where
-| val : Val RuntimeRef -> RuntimeRef
-| trm : Trm RuntimeRef -> RuntimeRef
+| val (value : Val RuntimeRef) : RuntimeRef
+| trm (term : Trm RuntimeRef) : RuntimeRef
 
 unsafe instance : FBound RuntimeRef Val where
   fwd := RuntimeRef.val

@@ -31,4 +31,22 @@ object TrmSpec extends Preamble {
 
   val apply1stOn2ndFnOnTuple: Boolean =
     apply1stOn2ndFn(identityFn)(`false`)
+
+  val applyidFnOnItself: Boolean => Boolean =
+    ((f: Boolean => Boolean) => f)((x: Boolean) => x)
+
+  val idFnOnFalse2: Boolean =
+    applyidFnOnItself(`false`)
+
+  lazy val malformedPrimitiveApply: Boolean =
+    `false`.asInstanceOf[Boolean => Boolean](`true`)
+
+  val annotatedFalse: Boolean =
+    false
+
+  val annotatedIdFn: Boolean => Boolean =
+    (x: Boolean) => x
+
+  val annotatedIdFnOnFalse: Boolean =
+    annotatedIdFn(annotatedFalse)
 }

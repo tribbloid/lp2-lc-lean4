@@ -143,7 +143,7 @@ def structural1Typ : TypClosed :=
   .selfBinder (fun _this =>
     .oneMember (.typeAlias "A"))
 
-def EmptyTrait : TypClosed :=
+def emptyTrait : TypClosed :=
   .selfBinder (fun _this =>
     .oneMember (.typeAlias "class_EmptyTrait"))
 
@@ -157,9 +157,9 @@ def structural1Bounded : TypClosed :=
         (.oneMember
           (implicitSubtypeEntry
             (selfMemberTyp this "A")
-            EmptyTrait))))
+            emptyTrait))))
 
-def SubTrait : TypClosed :=
+def subTrait : TypClosed :=
   .selfBinder (fun this =>
     .and
       (.oneMember (.typeAlias "class_EmptyTrait"))

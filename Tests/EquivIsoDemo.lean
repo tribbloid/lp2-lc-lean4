@@ -2,21 +2,6 @@ namespace Tests.EquivIsoDemo
 
 universe u v
 
-def SameParity (m n : Nat) : Prop :=
-  m % 2 = n % 2
-
-theorem sameParityEquivalence : Equivalence SameParity := by
-  constructor
-  case refl =>
-    intro n
-    rfl
-  case symm =>
-    intro m n h
-    exact h.symm
-  case trans =>
-    intro m n k hmn hnk
-    exact hmn.trans hnk
-
 structure TypeEquiv (A : Type u) (B : Type v) where
   toFun : A -> B
   invFun : B -> A
