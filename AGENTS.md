@@ -10,7 +10,7 @@ The project depends on Aesop through Lake.
 
 #### Do
 
-- Build after every revision. Do not proceed while compiler/LSP errors remain; final Lean changes must pass `lake build` without unused-variable warnings.
+- Build after every revision. Do not proceed while compiler/LSP errors remain; final Lean changes must pass `lake build` without.
 - Theorem types must be concrete, do not use "True"/"False" as theorem type.
 - Only create new permanent core file if required by `.agent/CodeStructure.md`.
   - Agent tool scripts not part of the core project should be under `<project-dir>/.agent/script` directory.

@@ -13,8 +13,8 @@ namespace Tests.DOT.Sanity
 open Lp2lc.Active.DOT
 open Lp2lc.Active.Util
 
-private def emptyBody : {I : Type} → ObjectBody I
-  | _ => { lookup := fun _ => none }
+private def emptyBody {I : Type} : ObjectBody I :=
+  { lookup := fun _ => none }
 
 private def singletonBody {I : Type} (name : Name) (entry : MemberImpl I) :
     ObjectBody I :=

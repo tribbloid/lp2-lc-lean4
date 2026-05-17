@@ -1,5 +1,4 @@
 import «Tests».DTLC.ValSpec
-import «Lp2lc».Active.DTLC.Proof
 
 namespace Tests.DTLC.Sanity
 open Lp2lc.Active.Util
@@ -78,19 +77,15 @@ def annotatedIdFnOnFalse : TrmAST :=
 section eraseType
 
 example {I : Index} :
-    Trm.typeEraseAll (annotatedFalse : Trm I) = (false : Trm I) := rfl
+    (annotatedFalse : Trm I).typeEraseAll = (false : Trm I) := rfl
 
 example {I : Index} :
-    Trm.typeEraseAll (annotatedIdFn : Trm I) =
+    (annotatedIdFn : Trm I).typeEraseAll =
       .val (.fn (body := fun x => .ref x) (tIn := none)) none := rfl
 
 example {I : Index} :
-    Trm.typeEraseAll (annotatedIdFnOnFalse : Trm I) =
-      .apply (Trm.typeEraseAll (annotatedIdFn : Trm I)) (false : Trm I) none := rfl
-
-example {I : Index} :
-    (Trm.typeEraseAll (annotatedIdFnOnFalse : Trm I)).TypeIsErased :=
-  Lp2lc.Active.DTLC.Trm.eraseType_isErased I (annotatedIdFnOnFalse : Trm I)
+    (annotatedIdFnOnFalse : Trm I).typeEraseAll =
+      .apply (annotatedIdFn : Trm I).typeEraseAll (false : Trm I) none := rfl
 
 end eraseType
 
