@@ -1,8 +1,8 @@
 ## Project Overview
 
-**lp2-lc-lean4** is a Lean 4 project to proof the soundness of various type theories. The project contains formal proofs and definitions in Lean 4.
+**lp2-lc-lean4** is a Lean 4 project to prove the soundness of various type theories. The project contains formal proofs and definitions in Lean 4.
 
-The project depends on MathLib and AESOP
+The project depends on Aesop through Lake.
 
 ## Coding Rules
 
@@ -13,14 +13,14 @@ The project depends on MathLib and AESOP
 - Build after every revision. Do not proceed while compiler/LSP errors remain; final Lean changes must pass `lake build` without unused-variable warnings.
 - Theorem types must be concrete, do not use "True"/"False" as theorem type.
 - Tool scripts not part of the core project should be placed in `.agent/script` directory.
+- Only create new permanent file if required by `.agent/CodeStructure.md`. Other new files should be under a "__TEMP" subdirectory. 
 
 #### Don't
 
-- Do not ask questions like "what to do next", always follow the workflow by the numbers.
+- Do not ask questions like "what to do next".
 - Avoid duplicated implementation and repeated fully qualified names; import namespaces/packages used multiple times.
 - Do not create new branch in git.
-- Preserve existing comments. Do not add explanatory comments unless required by conversion rules or Lean docString policy.
-- Do not add markdown files on your own.
+- Preserve existing comments. Do not add explanatory comments unless required by Lean docString policy.
 - Do not change build file unless asked to.
 
 ### Structure
@@ -41,7 +41,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 - Avoid generic universe if possible, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2)
 - Field namespace/class (namespace/class supporting an existing type, where functions inside can be invoked with dot-notation) have special rules:
   - each namespace/class should only appear once.
-  - if the namespace contain multiple functions, the namespace shoudl be declared explicitly.
+  - if the namespace contain multiple functions, the namespace should be declared explicitly.
   - all functions under the namespace/class should be compatible with dot-notation, namely their first argument should be consistent.
   - all call-site should use dot-notation if possible (including test cases)
 
