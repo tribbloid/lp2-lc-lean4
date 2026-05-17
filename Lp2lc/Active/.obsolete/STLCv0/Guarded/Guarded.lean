@@ -9,7 +9,8 @@ structure Var where
 
 abbrev Vars := Finset Var
 
-axiom var_fresh : (L : Vars) → ∃ X : Var, X ∉ L
+theorem var_fresh : (L : Vars) → ∃ X : Var, X ∉ L := by
+  sorry
 
 structure Later (A : Type u) : Type u where
   next :: car : A

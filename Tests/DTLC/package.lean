@@ -1,3 +1,4 @@
-import «Tests».DTLC.ValSpec
+import «Tests».DTLC.ValDemo
+import «Tests».DTLC.TypDemo
+import «Tests».DTLC.TrmDemo
 import «Tests».DTLC.TrmSpec
-import «Tests».DTLC.TypSpec

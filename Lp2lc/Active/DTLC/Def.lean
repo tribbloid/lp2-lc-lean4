@@ -22,8 +22,8 @@ mutual
 Type AST
 -/
 inductive Typ : Index where
-| primitive
-| depFn (tIn : Typ) (tOut : (arg : I) -> Typ)
+| primitive -- `AnyVal` in Scala
+| depFn (tIn : Typ) (tOut : (arg : I) -> Typ) -- dependent function
 | top -- anything/wildcard type, can bind both primitive and depFn.
 
 -- def TAnno := Option Typ -- doesn't work in mutual block

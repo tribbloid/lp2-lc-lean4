@@ -24,11 +24,13 @@ variable (I: Type)[DecidableEq I] -- index
 mutual
 -- TODO: this huge block doesn't model type erasure, for that we need to define 2 blocks referring to runtime AST and compile-time AST respectively
 
+/-- Evidence syntax for subtype and type-congruence witnesses. -/
 inductive Evidence : Type where -- a thin wrapper of 2 "Typ", there is no co/contravariant evidence, which is just a function between 2 subtypeEv
 -- TODO: dependent subtypeEv? then maybe it can be merged into depFn?
 | subtypeEv (tUnder: Typ) (tOver: Typ) : Evidence -- subtype evidence, AKA coercion, `Under <:< Over`, notice that co/contravariance evidence are just higher-kind subtype evidence: `K[-T]` means `(X <:< Y) <:< (K[Y] <:< K[X])`
 | congruenceEv (tL: Typ) (tR: Typ) : Evidence -- congruence evidence, if `L === R` then all their inhabitats are equal (namely `∀ (l: L, r: R), l.T =:= r.T`), not in core DOT but a critical improvement.
 
+/-- Core DOT type syntax, including dependent functions, records, paths, recursive binders, and bounds. -/
 inductive Typ : Type where
 -- | later (raw: Typ) : Typ -- don't know how to use it in iris yet.
 | primitive : Typ -- `AnyVal`, won't differentiate Int/Float/Byte.
@@ -46,17 +48,21 @@ inductive Typ : Type where
 -- below are not part of core DOT
 -- | genericApply (ctor: TypCtor) (arg: TypCtor): Typ
 
+/-- Object member declarations used by type-level record/object shapes. -/
 inductive MemberDeclaration: Type where -- member of an object/record, this is only the type-level declaration, not definition/implementation
 | typeAlias (tName: Name) : MemberDeclaration -- `{type Name}`, it deliberately contain no type assigment or bound, they are evidence terms in the same object
 | term (name: Option Name) (isImplicit: Bool) (annotation: Typ) : MemberDeclaration -- `{term name = Tm}`, they are multi-indexed after compilation: by name (if name exists) and by "tUnder" (if "isGiven" and is a "subtypeEv"")
 
+/-- Runtime member implementations paired with their type-level schema. -/
 inductive MemberImpl: Type where -- AKA member definition, runtime only but carries type-tag & schema
 | typeAlias (tName: Name) : MemberImpl -- same as MemberImpl
 | term (name: Option Name) (body: Trm) (annotation: Typ) : MemberImpl -- different, body is only visible at runtime
 
+/-- Runtime object body as a member lookup function. -/
 structure ObjectBody where
   lookup : Name → Option MemberImpl
 
+/-- DOT term syntax for variables, values, selections, and applications. -/
 inductive Trm : Type where -- AKA expression, expr
 | var (symbol: I) (tOver: Typ) : Trm -- variable, `x`, almost always bounded & never free (In PHOAS it is imposible to construct wildcard "(symbol: I)"), `tOver` is the upper-bound of "x"
 | val (v : Val) : Trm -- value, AKA literal
@@ -64,6 +70,7 @@ inductive Trm : Type where -- AKA expression, expr
 | depApply (fn: Trm) (arg: Trm) : Trm -- application of (dependent?) function, execution requires constructing subtyping lattice from AST (which contains many "Evidence")
 
 -- { theoretically everything in this section should have type erased to be used in runtime, but this is not enforced
+/-- Runtime value syntax used as ANF evaluation results and arguments. -/
 inductive Val : Type where -- evaluation results and args of Atomic Normal Form (ANF), `Typ` CANNOT be carried! they are erased at runtime!
 | primitive (repr: ByteCode) : Val -- `3`, `3.2`, `true` etc. Type is always ".primitive"
 | evidence (ev: Evidence) : Val -- ev can be both type & value
@@ -72,6 +79,7 @@ inductive Val : Type where -- evaluation results and args of Atomic Normal Form 
 | object (body : (this: I) -> ObjectBody) : Val -- object/record with a member lookup that can refer to `this`, DOT only uses structural typing so Trait has to carry an extra hidden type member
 -- }
 
+/-- Type-constructor syntax for higher-level DOT experiments outside the core calculus. -/
 inductive TypCtor : Type where -- type constructor! not type! not in core DOT!
 | tVar (symbol: I): TypCtor
 | ctor (body: ((arg : I) -> TypCtor)): TypCtor
