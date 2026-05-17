@@ -1,5 +1,3 @@
-import Mathlib.Tactic
-import Mathlib.Data.Finset.Basic
 import Std
 import Iris.Algebra.OFE
 

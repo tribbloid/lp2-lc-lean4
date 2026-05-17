@@ -46,6 +46,16 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
   - all functions under the namespace/class should be compatible with dot-notation, namely their first argument should be consistent.
   - all call-site should use dot-notation if possible (including test cases)
 
+#### Stages
+
+Every task can be classified into one of the following stages:
+
+- **Refactoring/Revision** is for making format & compliance revision. DO NOT introduce or update type signature, definition, or proof (even iff it is missing or `sorry`). Existing code structure should be preserved at all cost
+- **Conjecture Scaffolding** is for introducing new `Prop`/Predicate, either as a type or as a theorem with `sorry`, DO NOT write any proof.
+- **Example/Demo/Test** is for writing example & test case for existing definition in the Tests directory. DO NOT write or update production code. Theorem or lemma requires no example or test case.
+- **Proof Discharge** is for proving existing conjecture/lemma/theorem, DO NOT write new `sorry`, introducing new lemma is permitted if & only if they help proving the main theorem, but they have to be tested & proven immediately. If a lemma or theorem is believed to be false, a counterexample should be added into Tests directory.
+- **Demonstration/Evaluation**: 
+
 #### Naming
 
 - When creating a new Lean file, do not include `.` in the file name.

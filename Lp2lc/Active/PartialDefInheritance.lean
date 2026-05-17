@@ -6,7 +6,7 @@ inductive BaseCmd where
   | halt : Nat → BaseCmd
   | tick : BaseCmd → BaseCmd
 
-partial def run_base_cmd : BaseCmd → Nat
+def run_base_cmd : BaseCmd → Nat
   | .halt n => n
   | .tick next => run_base_cmd next + 1
 
@@ -14,7 +14,7 @@ inductive ExtendedCmd where
   | base : BaseCmd → ExtendedCmd
   | twice : ExtendedCmd → ExtendedCmd
 
-partial def run_extended_cmd : ExtendedCmd → Nat
+def run_extended_cmd : ExtendedCmd → Nat
   | .base cmd => run_base_cmd cmd
   | .twice cmd => run_extended_cmd cmd * 2
 
