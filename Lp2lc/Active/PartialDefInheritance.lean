@@ -2,24 +2,26 @@ namespace Lp2lc.Active
 
 namespace PartialDefInheritance
 
+/-- Base command syntax used to demonstrate inheritance by embedding a smaller language. -/
 inductive BaseCmd where
   | halt : Nat → BaseCmd
   | tick : BaseCmd → BaseCmd
 
-def run_base_cmd : BaseCmd → Nat
+def runBaseCmd : BaseCmd → Nat
   | .halt n => n
-  | .tick next => run_base_cmd next + 1
+  | .tick next => runBaseCmd next + 1
 
+/-- Extended command syntax that embeds base commands and adds a second operation. -/
 inductive ExtendedCmd where
   | base : BaseCmd → ExtendedCmd
   | twice : ExtendedCmd → ExtendedCmd
 
-def run_extended_cmd : ExtendedCmd → Nat
-  | .base cmd => run_base_cmd cmd
-  | .twice cmd => run_extended_cmd cmd * 2
+def runExtendedCmd : ExtendedCmd → Nat
+  | .base cmd => runBaseCmd cmd
+  | .twice cmd => runExtendedCmd cmd * 2
 
-def inherited_arartial_def_example : Nat :=
-  run_extended_cmd (ExtendedCmd.twice (ExtendedCmd.base (BaseCmd.tick (BaseCmd.halt 3))))
+def inheritedPartialDefExample : Nat :=
+  runExtendedCmd (ExtendedCmd.twice (ExtendedCmd.base (BaseCmd.tick (BaseCmd.halt 3))))
 
 end PartialDefInheritance
 

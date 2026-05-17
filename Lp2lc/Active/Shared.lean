@@ -2,6 +2,7 @@ import Std
 
 namespace Lp2lc.Active
 
+/-- Tags the syntactic families that a shared representation can expose. -/
 inductive Which : Type -- only a tag/index for AST of different nature
 | typ
 | trm

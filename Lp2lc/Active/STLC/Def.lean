@@ -6,6 +6,7 @@ namespace Lp2lc.Active
 
 namespace STLC
 
+/-- Shared STLC syntax family, currently exposing function types over the common representation. -/
 inductive AST(F: Rep) : Rep
 | fnT: (I: F .typ) -> (O: F .typ) -> AST F .typ -- {x => out(x)} : I => O
 

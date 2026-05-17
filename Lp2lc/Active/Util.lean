@@ -7,6 +7,7 @@ namespace Lp2lc.Active.Util
 /-- Universe-1 carrier for PHOAS indices. -/
 abbrev Index := Type
 
+/-- Fixed-bound bridge between a PHOAS carrier and the syntax family it represents. -/
 class FBound (I : Index) (K : Index -> Type) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
   fwd : K I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
   rev : I -> K I
@@ -14,6 +15,7 @@ class FBound (I : Index) (K : Index -> Type) where -- fixed-point cast, looks li
 
 attribute [simp] FBound.fwdRoundtrip
 
+/-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
 inductive Outcome (T : Index)
 | some (v: T)
 | error

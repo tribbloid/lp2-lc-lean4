@@ -10,7 +10,7 @@ The project depends on Aesop through Lake.
 
 #### Do
 
-- Build after every revision. Do not proceed while compiler/LSP errors remain; final Lean changes must pass `lake build` without.
+- Build after every revision. Do not proceed while compiler/LSP errors remain; final Lean changes must pass `lake build` without errors. Existing `sorry`-backed scaffolds may remain only when the current task is not discharging them; do not introduce new production `sorry` unless the task is explicitly Conjecture Scaffolding.
 - Theorem types must be concrete, do not use "True"/"False" as theorem type.
 - Only create new permanent core file if required by `.agent/CodeStructure.md`.
   - Agent tool scripts not part of the core project should be under `<project-dir>/.agent/script` directory.
@@ -34,7 +34,8 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 
 - Do not use `unsafe`, `noncomputable`, or `partial` declarations/blocks unless it is test or example code.
 - Do not write axiom.
-- All non-trivial definition (longer than 3 lines) in syntax & semantic rules must be with a short docString explaining their necessity. This rule doesn't apply to test code or abbreviation.
+- All non-trivial definition (longer than 3 lines) in syntax & semantic rules must be with a short docString explaining their necessity. This rule doesn't apply to test code, abbreviation, or explicitly educational tutorial/demo modules.
+- Tutorial/demo modules may contain `example`, `#eval`, `#check`, or `#rfl` commands when those commands are the point of the demonstration. Core proof and calculus modules should move executable checks to `Tests`.
 - All function/constructor arguments must be named at define-site, call-site names are not necessary.
 - Multiple cases in pattern matching should never be in 1 line, each line should start with `|`.
 - For repeated pattern-match conditions, prefer layered pattern matching.
