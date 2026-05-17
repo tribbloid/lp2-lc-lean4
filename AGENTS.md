@@ -17,7 +17,6 @@ The project depends on MathLib and AESOP
 #### Don't
 
 - Do not ask questions like "what to do next", always follow the workflow by the numbers.
-- Do not write axiom.
 - Avoid duplicated implementation and repeated fully qualified names; import namespaces/packages used multiple times.
 - Do not create new branch in git.
 - Preserve existing comments. Do not add explanatory comments unless required by conversion rules or Lean docString policy.
@@ -32,8 +31,8 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 
 #### Guardrails
 
-- 
 - Do not use `unsafe`, `noncomputable`, or `partial` declarations/blocks unless it is test or example code.
+- Do not write axiom.
 - All non-trivial definition (longer than 3 lines) in syntax & semantic rules must be with a short docString explaining their necessity. This rule doesn't apply to test code or abbreviation.
 - All function/constructor arguments must be named at define-site, call-site names are not necessary.
 - Multiple cases in pattern matching should never be in 1 line, each line should start with `|`.
@@ -57,10 +56,6 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 - Import all lean files in module aggregator to be compiled by `lake build`.
 - Use quoted module names: `import «Lp2lc».module`.
 - Group imports logically (Lean core, external deps, local modules).
-
-#### Conversion
-
-See [.agent/ConversionRules.md](.agent/ConversionRules.md)
 
 ## Key Commands
 

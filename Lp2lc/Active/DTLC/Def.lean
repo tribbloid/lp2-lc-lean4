@@ -120,11 +120,11 @@ def typeEraseAll {I : Index} (self : Trm I) : Trm I :=
   | .ref refValue _ => .ref refValue none
 
 /-- Predicate that all annotations have been removed from a term. -/
-def TypeErased {I : Index} (self : Trm I) : Prop :=
+def TypeIsErased {I : Index} (self : Trm I) : Prop :=
   match self with
   | .val (.primitive _) t => t = none
-  | .val (.fn body tIn) t => t = none ∧ tIn = none ∧ ∀ arg, (body arg).TypeErased
-  | .apply fn arg t => t = none ∧ fn.TypeErased ∧ arg.TypeErased
+  | .val (.fn body tIn) t => t = none ∧ tIn = none ∧ ∀ arg, (body arg).TypeIsErased
+  | .apply fn arg t => t = none ∧ fn.TypeIsErased ∧ arg.TypeIsErased
   | .ref _ t => t = none
 
 /-- Normalizes source terms to values while spending fuel at each semantic descent -/

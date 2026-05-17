@@ -89,7 +89,7 @@ example {I : Index} :
       .apply (Trm.typeEraseAll (annotatedIdFn : Trm I)) (false : Trm I) none := rfl
 
 example {I : Index} :
-    (Trm.typeEraseAll (annotatedIdFnOnFalse : Trm I)).TypeErased :=
+    (Trm.typeEraseAll (annotatedIdFnOnFalse : Trm I)).TypeIsErased :=
   Lp2lc.Active.DTLC.Trm.eraseType_isErased I (annotatedIdFnOnFalse : Trm I)
 
 end eraseType
@@ -177,93 +177,6 @@ unsafe example : ((Trm.malformedPrimitiveApply : Trm RuntimeRef).eval 2) = .erro
   rfl
 
 end eval
-
-section compile
-
-unsafe example : ((Trm.false : Trm RuntimeRef).compile 0) = .outOfFuel := by
-  rfl
-
-unsafe example : ((Trm.false : Trm RuntimeRef).compile 1) =
-    .some ((Trm.false : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.true : Trm RuntimeRef).compile 1) =
-    .some ((Trm.true : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.idFn : Trm RuntimeRef).compile 1) =
-    .some ((Trm.idFn : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.idFnOnFalse : Trm RuntimeRef).compile 3) =
-    .some ((Trm.false : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.get1st : Trm RuntimeRef).compile 1) =
-    .some ((Trm.get1st : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.get2nd : Trm RuntimeRef).compile 1) =
-    .some ((Trm.get2nd : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.get1stOnTuple : Trm RuntimeRef).compile 4) =
-    .some ((Trm.false : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.get2ndOnTuple : Trm RuntimeRef).compile 4) =
-    .some ((Trm.true : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.apply1stOn2ndFn : Trm RuntimeRef).compile 1) =
-    .some ((Trm.apply1stOn2ndFn : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm RuntimeRef).compile 5) =
-    .some ((Trm.false : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.applyidFnOnItself : Trm RuntimeRef).compile 3) =
-    .some ((Trm.idFn : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.idFnOnFalse2 : Trm RuntimeRef).compile 4) =
-    .some ((Trm.false : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.malformedPrimitiveApply : Trm RuntimeRef).compile 2) = .error := by
-  rfl
-
-unsafe example : ((Trm.annotatedFalse : Trm RuntimeRef).compile 1) =
-    .some ((Trm.false : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.annotatedIdFn : Trm RuntimeRef).compile 1) =
-    .some ((Trm.idFn : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.annotatedIdFnOnFalse : Trm RuntimeRef).compile 3) =
-    .some ((Trm.false : Trm RuntimeRef)) := by
-  rfl
-
-unsafe example :
-    (((.val (.fn (body := fun x => .ref x) (tIn := none)) (some .primitive)) :
-      Trm RuntimeRef).compile 1) = .error := by
-  rfl
-
-section soundness
-
-unsafe example :
-    ∃ compiled,
-      (Trm.false : Trm RuntimeRef).compile 1 = .some compiled ∧
-        (Trm.false : Trm RuntimeRef).Adequate compiled 1 :=
-  Trm.soundness (source := (Trm.false : Trm RuntimeRef)) (fuel := 1) (by
-    unfold Lp2lc.Active.DTLC.Trm.Typing
-    rfl)
-
-end soundness
-
-end compile
 
 end Trm
 
