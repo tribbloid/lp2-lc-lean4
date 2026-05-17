@@ -50,6 +50,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md)
 - When creating a new Lean file, do not include `.` in the file name.
 - Use camelCase for definitions and functions that yield values.
 - Use PascalCase for types, propositions, properties, type constructors and predicates that yield `Type`/`Type u`/`Prop`/`Sort u`, first letter capitalized.
+- Variable name of `Prop` or `Bool` type should contain "is"/"Is" 
 
 #### Modules
 
