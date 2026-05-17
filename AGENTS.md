@@ -26,7 +26,7 @@ The project depends on Aesop through Lake.
 
 ### Structure
 
-See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest nested `AGENTS.md`, e.g. [Tests/AGENTS.md](Tests/AGENTS.md).
+See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest nested `AGENTS.md`; examples such as [Tests/AGENTS.md](Tests/AGENTS.md) are not exhaustive.
 
 ### Lean Code Convention
 
@@ -50,11 +50,10 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 
 Every task can be classified into one of the following stages:
 
-- **Refactoring/Revision** is for making format & compliance revision. DO NOT introduce or update type signature, definition, or proof (even iff it is missing or `sorry`). Existing code structure should be preserved at all cost
+- **Compliance Revision** is for making format & compliance revision. DO NOT introduce or update type signature, definition, or proof (even iff it is missing or `sorry`). Existing code structure should be preserved at all cost
 - **Conjecture Scaffolding** is for introducing new `Prop`/Predicate, either as a type or as a theorem with `sorry`, DO NOT write any proof.
 - **Example/Demo/Test** is for writing example & test case for existing definition in the Tests directory. DO NOT write or update production code. Theorem or lemma requires no example or test case.
-- **Proof Discharge** is for proving existing conjecture/lemma/theorem, DO NOT write new `sorry`, introducing new lemma is permitted if & only if they help proving the main theorem, but they have to be tested & proven immediately. If a lemma or theorem is believed to be false, a counterexample should be added into Tests directory.
-- **Demonstration/Evaluation**: 
+- **Proof Discharge** is for proving existing conjecture/lemma/theorem, DO NOT write new `sorry`, introducing new lemma is permitted if & only if they help proving the main theorem, but they have to be proven immediately. If a lemma or theorem is believed to be false, a counterexample should be added into Tests directory.
 
 #### Naming
 
