@@ -48,7 +48,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
   - All functions under the namespace/class should be compatible with dot-notation, namely their first argument should be consistent.
   - All call-site should use dot-notation if possible (including test cases)
 
-#### Task Categories
+#### Task-specific Guardrails
 
 Every task can be classified into one of the following Categories:
 
