@@ -62,7 +62,7 @@ programs.
 -/
 inductive Val : Index where
 | primitive (repr : ByteCode) -- most specific type is always `primitive`
-| fn (body : (arg : I) → Trm)  (tIn : Option Typ := by exact none)-- most specific type is always `.depFn`
+| fn (body : (arg : I) → Trm) -- most specific type is always `.depFn`
 
 end
 
@@ -97,12 +97,11 @@ def satisfies {I : Index} (value : Val I) (type : Typ I) : Bool :=
   | .primitive =>
     match value with
     | .primitive (repr := _) => true
-    | .fn (body := _) (tIn := _) => false
-  | .depFn (tIn := tIn) (tOut := _) =>
+    | .fn (body := _) => false
+  | .depFn (tIn := _) (tOut := _) =>
     match value with
     | .primitive (repr := _) => false
-    | .fn (body := _) (tIn := none) => true
-    | .fn (body := _) (tIn := some actual) => actual.compatible tIn
+    | .fn _ => true
 
 end Val
 
@@ -126,7 +125,7 @@ def typeUpdate {I : Index} (self : Trm I) (typeAnnotation : Option (Typ I)) : Tr
 def typeEraseAll {I : Index} (self : Trm I) : Trm I :=
   match self with
   | .val (.primitive repr) _ => .val (.primitive repr) none
-  | .val (.fn body _) _ => .val (.fn (body := fun arg => typeEraseAll (body arg)) (tIn := none)) none
+  | .val (.fn body) _ => .val (.fn (body := fun arg => typeEraseAll (body arg))) none
   | .apply fn arg _ => .apply (typeEraseAll fn) (typeEraseAll arg) none
   | .ref refValue _ => .ref refValue none
 
@@ -134,7 +133,7 @@ def typeEraseAll {I : Index} (self : Trm I) : Trm I :=
 def TypeIsErased {I : Index} (self : Trm I) : Prop :=
   match self with
   | .val (.primitive _) t => t = none
-  | .val (.fn body tIn) t => t = none ∧ tIn = none ∧ ∀ arg, (body arg).TypeIsErased
+  | .val (.fn body) t => t = none ∧ ∀ arg, (body arg).TypeIsErased
   | .apply fn arg t => t = none ∧ fn.TypeIsErased ∧ arg.TypeIsErased
   | .ref _ t => t = none
 
@@ -152,7 +151,7 @@ def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I)
     | .apply fn arg _ =>
       let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
-      | (.some (.fn body _), .some value) =>
+      | (.some (.fn body), .some value) =>
         (body (FBound.fwd value)).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
