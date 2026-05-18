@@ -146,34 +146,31 @@ def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I)
       .some (FBound.rev refValue)
 
 /--
-fuel-guarded compiler API that verify a term (with optional type annotation),
-and generate a more specialised, executable, type-erased term. Given enough
-fuel, this execution should always succeed (adequency lemma).
+Fuel-guarded compiler API that verifies a term with optional type annotations and
+emits a specialized, executable, type-erased program.
 
-- compiling malformed term will fail
-- compiling term with wrong annotation will fail
-- always return outOfFuel if fuel drops to 0
-- evaluation in compiletime is strictly forbidden, and compilation must not call
-  `eval`. Application compilation may use the compile-time `FBound I Trm`
-  binding to compile-check the substituted function body, and it emits the
-  resulting type-erased program; that emitted program may itself contain
-  `Trm.apply`, but application compilation is not required to preserve `.apply`
-  as the root constructor.
-- The `FBound I Trm` condition (representing compile-time bindings) is
-  deliberately different from `FBound I Val` (representing runtime bindings) to
-  avoid calling `eval` during compilation.
+- compiling malformed terms fails
+- compiling terms with wrong annotations fails
+- fuel `0` always returns `outOfFuel`
+- evaluation in compiletime is strictly forbidden, compilation must not call `eval`
+- application compilation may use the compile-time `FBound I Trm` binding to
+  compile-check the substituted function body, then emit the resulting
+  type-erased program; the emitted program may contain `Trm.apply`, but
+  application compilation is not required to preserve `.apply` as the root
+  constructor
+- when a compiled function carries an input annotation, application compilation
+  must check that the compiled argument value satisfies that input annotation
+- `FBound I Trm` represents compile-time bindings and is deliberately separate
+  from `FBound I Val`, which represents runtime bindings
 
-semantic typing (a predicate on ) is merely this API being successful
+Semantic typing is successful fuel-guarded compilation.
 
-this is a critical semantic rule for proving:
-
-- adequecy lemma: a successfully compiled term can always be successfully
-  executed (to a value that can be type-checked by the same type) or run out of
-  fuel.
-- fundamental lemma: if a type-annotated function and it's compatible argumennt
-  can both be successfully compiled, then their applied form can also be
-  successfull ccompiled.
-- finally, soundness theorem that uses the above 2 lemma.
+This rule supports:
+- adequacy: a successfully compiled term executes without runtime error, either
+  producing a value satisfying the source annotation or running out of fuel
+- fundamental lemma: compatible compiled function application preserves
+  successful compilation
+- soundness: semantic typing implies existence of an adequate compiled program
 -/
 def compile {I : Index} [FBound I Trm] (trm : Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
 
