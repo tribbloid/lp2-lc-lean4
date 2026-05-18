@@ -6,7 +6,7 @@ The project depends on Aesop through Lake.
 
 ## Coding Rules
 
-### General
+### Guardrails
 
 #### Do
 
@@ -32,21 +32,26 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 
 #### Guardrails
 
-- Do not use `unsafe`, `noncomputable`, or `partial` declarations/blocks unless it is test or example code.
-- Do not write axiom.
+##### Do
+
 - All non-trivial definition (longer than 3 lines) in syntax & semantic rules must be with a short docString explaining their necessity. This rule doesn't apply to test code, abbreviation, or explicitly educational tutorial/demo modules.
-- Tutorial/demo modules may contain `example`, `#eval`, `#check`, or `#rfl` commands when those commands are the point of the demonstration. Core proof and calculus modules should move executable checks to `Tests`.
+- Core proof and calculus modules should move executable checks to `Tests`. Tutorial/demo modules may contain `example`, `#eval`, `#check`, or `#rfl` commands when those commands are the point of the demonstration.
 - All function/constructor arguments must be named at define-site, call-site names are not necessary.
-- Multiple cases in pattern matching should never be in 1 line, each line should start with `|`.
-- For repeated pattern-match conditions, prefer layered pattern matching.
-- Avoid leaky abstraction: top-level public APIs should only contain interpreter/compiler API (e.g. type-checking, evaluation).
-- Avoid generic universe if possible, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2)
-- Avoid trivial wrapper function: if a function is very short it should be inlined.
+- Repeated pattern-match conditions should be split into layers.
 - Field namespace/class (namespace/class supporting an existing type, where functions inside can be invoked with dot-notation) have special rules:
-  - Avoid repetitive declaration of namespace unless it is to avoid forward reference in Lean.
   - If the namespace contain multiple functions, the namespace should be declared explicitly.
   - All functions under the namespace/class should be compatible with dot-notation, namely their first argument should be consistent.
   - All call-site should use dot-notation if possible (including test cases)
+  - Avoid repetitive declaration of namespace unless it is to avoid forward reference in Lean.
+
+##### Don't
+
+- Do not use `unsafe`, `noncomputable`, or `partial` declarations/blocks unless it is test or example code.
+- Do not write axiom.
+- Do not write multiple cases in pattern matching in 1 line; each case should be in its own line starting with `|`.
+- Do not add compiler public API for already-defined feature (e.g. type-checking, evaluation). Each feature should only have 1 public definition.
+- Do not use generic universe if possible, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2).
+- Do not write trivial, short wrapper function: its body should be inlined.
 
 #### Task-specific Guardrails
 
