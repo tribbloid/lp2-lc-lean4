@@ -19,26 +19,27 @@ variable (I : Index) -- index
 mutual
 
 /--
-Type AST
+Source type definition.
 -/
 inductive Typ : Index where
-| primitive -- `AnyVal` in Scala
+| primitive -- `AnyVal` in Scala, accepts only primitive values
 | depFn (tIn : Typ) (tOut : (arg : I) → Typ) -- dependent function
-| top -- anything/wildcard type, can bind both primitive and depFn.
+| top -- anything/wildcard type, can accept any value.
 
--- def TAnno := Option Typ -- doesn't work in mutual block
+-- def TAnno := Option Typ -- doesn't work in mutual block TODO: notation
 
 /--
-Term AST
+Source term syntax.
 
-Each AST can have optional type annotations, but they are only extra
-constraint used in type-checking.
+Each constructor may carry an optional type annotation. Annotations are
+compile-time constraints only: compilation checks them and runtime evaluation
+ignores them.
 
 In HOAS there is no Context/Env to bind type to terms, so an optional type
 annotation is the only realistic alternative. It shouldn't be confused with
 intrinsic typing, which is impossible for Typ in the same mutual block.
 
-In runtime, type annotations are ideally erased.
+Trm.compile erase annotations of a programs before runtime execution.
 -/
 inductive Trm : Index where
 | val (v : Val) (t : Option Typ := by exact none)
@@ -46,11 +47,13 @@ inductive Trm : Index where
 | ref (s: I) (t : Option Typ := by exact none) -- binded reference, AKA variable/var
 
 /--
-Value AST, contains no ref and apply.
+Value syntax, containing neither references nor applications.
 
-Only eval target and only accepted input of ANF (atomic normal form)
+Values are the successful result of evaluation and the atomic argument form
+used by function application after both sides have been evaluated.
 
-In runtime, type annotations are ideally erased.
+Function input annotations are compile-time constraints and are erased from
+compiled programs.
 -/
 inductive Val : Index where
 | primitive (repr : ByteCode) -- most specific type is always `primitive`
@@ -64,7 +67,7 @@ instance valIsTrm : Coe (Val I) (Trm I) where
 
 namespace Typ
 
-/-- Checks whether one annotation is compatible with another at its semantic head form. -/
+/-- Checks whether an actual annotation may stand in for an expected annotation. -/
 def compatible {I : Index} (actual : Typ I) (expected : Typ I) : Bool :=
   match actual, expected with
   | _, .top => true
@@ -78,10 +81,13 @@ namespace Val
 
 /--
 Decidable semantic membership of a value in a type annotation.
-Semantic typing predicate for values.
+
+This checks only the value head form and a function input annotation, because
+the dependent output annotation is validated when the function body is compiled
+with a concrete argument.
 -/
-def satisfies {I : Index} (value : Val I) (typeAnnotation : Typ I) : Bool :=
-  match typeAnnotation with
+def satisfies {I : Index} (value : Val I) (type : Typ I) : Bool :=
+  match type with
   | .top => true
   | .primitive =>
     match value with
@@ -127,7 +133,7 @@ def TypeIsErased {I : Index} (self : Trm I) : Prop :=
   | .apply fn arg t => t = none ∧ fn.TypeIsErased ∧ arg.TypeIsErased
   | .ref _ t => t = none
 
-/-- Normalizes source terms to values while spending fuel at each semantic descent -/
+/-- Evaluates a source program by spending 1 fuel at each semantic descent. -/
 def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
   match fuel with
   | 0 => .outOfFuel
@@ -146,8 +152,10 @@ def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I)
       .some (FBound.rev refValue)
 
 /--
-Fuel-guarded compiler API that verifies a term with optional type annotations and
-emits a specialized, executable, type-erased program.
+Fuel-guarded compiler API for semantic typing.
+
+Compilation checks optional annotations and emits a type-erased program for
+runtime evaluation.
 
 - compiling malformed terms fails
 - compiling terms with wrong annotations fails
@@ -163,7 +171,8 @@ emits a specialized, executable, type-erased program.
 - `FBound I Trm` represents compile-time bindings and is deliberately separate
   from `FBound I Val`, which represents runtime bindings
 
-Semantic typing is successful fuel-guarded compilation.
+Semantic typing is successful fuel-guarded compilation, so the compiler is the
+definition of the semantic typing rule.
 
 This rule supports:
 - adequacy: a successfully compiled term executes without runtime error, either
@@ -174,7 +183,7 @@ This rule supports:
 -/
 def compile {I : Index} [FBound I Trm] (trm : Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
 
-/-- Semantic typing predicate exposed as successful fuel-guarded compilation. -/
+/-- Semantic typing predicate, exposed as successful compilation. -/
 def Typing {I : Index} [FBound I Trm] (trm : Trm I) (fuel : Nat) : Prop :=
   (trm.compile fuel).isSome
 
