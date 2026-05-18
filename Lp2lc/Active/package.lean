@@ -9,4 +9,3 @@ import «Lp2lc».Active.DTLC.Def
 import «Lp2lc».Active.DTLC.Proof
 
 import «Lp2lc».Active.DOT.Def
-import «Lp2lc».Active.phoas
