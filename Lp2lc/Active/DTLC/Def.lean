@@ -161,7 +161,13 @@ def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I)
       .some (FBound.rev refValue)
 
 /--
-Fuel-guarded compiler API for semantic typing.
+Fuel-guarded compiler API for compiling any `Trm` with optional type annotations
+into semantic program (also a `Trm`, but type info are removed).
+
+It does not evaluate the program! compiling a `Trm.apply` should only results
+the same or a slightly different `Trm.apply`.
+
+This is the only public API for compilation, every other functions must be private.
 
 Compilation checks optional annotations and emits a type-erased program for
 runtime evaluation.
