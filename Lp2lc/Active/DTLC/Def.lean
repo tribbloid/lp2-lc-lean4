@@ -147,21 +147,29 @@ def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I)
 
 /--
 fuel-guarded compiler API that verify a term (with optional type annotation),
-and generate a more specialised, executable, type-erased term. Given enough fuel, this execution should always succeed (adequency lemma).
+and generate a more specialised, executable, type-erased term. Given enough
+fuel, this execution should always succeed (adequency lemma).
 
 - compiling malformed term will fail
 - compiling term with wrong annotation will fail
 - always return outOfFuel if fuel drops to 0
-- evaluation in compiletime is strictly forbidden: compiling Trm.app should only results in Trm.app.
-- The `FBound I Trm` condition (representing compiletime bindings) is deliberately different
-  from `FBound I Val` (representing runtime binding) to avoid calling "eval" function.
+- evaluation in compiletime is strictly forbidden, and compilation must not call
+  `eval`. Application compilation may use the compile-time `FBound I Trm`
+  binding to compile-check the substituted function body, and it emits the
+  resulting type-erased program; that emitted program may itself contain
+  `Trm.apply`, but application compilation is not required to preserve `.apply`
+  as the root constructor.
+- The `FBound I Trm` condition (representing compile-time bindings) is
+  deliberately different from `FBound I Val` (representing runtime bindings) to
+  avoid calling `eval` during compilation.
 
 semantic typing (a predicate on ) is merely this API being successful
 
 this is a critical semantic rule for proving:
 
-- adequecy lemma: a successfully compiled term can always be successfully executed (to
-  a value that can be type-checked by the same type) or run out of fuel.
+- adequecy lemma: a successfully compiled term can always be successfully
+  executed (to a value that can be type-checked by the same type) or run out of
+  fuel.
 - fundamental lemma: if a type-annotated function and it's compatible argumennt
   can both be successfully compiled, then their applied form can also be
   successfull ccompiled.
