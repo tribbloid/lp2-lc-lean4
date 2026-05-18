@@ -152,8 +152,9 @@ and generate a more specialised, executable, type-erased term. Given enough fuel
 - compiling malformed term will fail
 - compiling term with wrong annotation will fail
 - always return outOfFuel if fuel drops to 0
-- no term/application should be evaluated during compilation. The `FBound I Trm` condition (representing compiletime bindings) is deliberately different
-  from `FBound I Val` (representing runtime binding) to avoid evaluation in compiletime.
+- evaluation in compiletime is strictly forbidden: compiling Trm.app should only results in Trm.app.
+- The `FBound I Trm` condition (representing compiletime bindings) is deliberately different
+  from `FBound I Val` (representing runtime binding) to avoid calling "eval" function.
 
 semantic typing (a predicate on ) is merely this API being successful
 
