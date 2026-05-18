@@ -35,11 +35,11 @@ inductive Typ : Type where
 -- | later (raw: Typ) : Typ -- don't know how to use it in iris yet.
 | primitive : Typ -- `AnyVal`, won't differentiate Int/Float/Byte.
 | evidence (ev: Evidence) : Typ -- ev can be both type & value
-| depFn (tIn : Typ) (tOut: (arg: I) -> Typ) : Typ -- function `In => Out` or dependent function (if "tOut" uses "arg")
+| depFn (tIn : Typ) (tOut : (arg : I) → Typ) : Typ -- function `In => Out` or dependent function (if "tOut" uses "arg")
 | oneMember (_ : MemberDeclaration) : Typ -- AKA object1, record1, 1 member only
 | depSelectTyp (base: Trm) (tK: Name) : Typ -- `base.K`
 -- TODO: this "body" definition assumes polymorphic output schema depending on input, is it true?
-| selfBinder (body: (this: I) -> Typ) : Typ -- AKA Mu-type, body can refer to `this` (If de Bruijn serial is used instead of PHOAS, `this` would have serial "0")
+| selfBinder (body : (this : I) → Typ) : Typ -- AKA Mu-type, body can refer to `this` (If de Bruijn serial is used instead of PHOAS, `this` would have serial "0")
 | singleton (v: Trm) : Typ -- path singleton type, v can only be a "var" (`x.type`) or "depSelectTrm" (`x.name.type`), otherwise compilation fail
 | and (tX: Typ) (tY: Typ) : Typ -- AKA intersection, `X & Y`
 | or (tX: Typ) (tY: Typ) : Typ -- AKA union, `X | Y`
@@ -60,7 +60,7 @@ inductive MemberImpl: Type where -- AKA member definition, runtime only but carr
 
 /-- Runtime object body as a member lookup function. -/
 structure ObjectBody where
-  lookup : Name → Option MemberImpl
+  lookup : (name : Name) → Option MemberImpl
 
 /-- DOT term syntax for variables, values, selections, and applications. -/
 inductive Trm : Type where -- AKA expression, expr
@@ -75,14 +75,14 @@ inductive Val : Type where -- evaluation results and args of Atomic Normal Form 
 | primitive (repr: ByteCode) : Val -- `3`, `3.2`, `true` etc. Type is always ".primitive"
 | evidence (ev: Evidence) : Val -- ev can be both type & value
 -- TODO: does it really need a body? Why can't it be merged into subtypeEv ?
-| depFn (body : (arg: I) -> Trm) : Val -- see "Typ.depFn"
-| object (body : (this: I) -> ObjectBody) : Val -- object/record with a member lookup that can refer to `this`, DOT only uses structural typing so Trait has to carry an extra hidden type member
+| depFn (body : (arg : I) → Trm) : Val -- see "Typ.depFn"
+| object (body : (this : I) → ObjectBody) : Val -- object/record with a member lookup that can refer to `this`, DOT only uses structural typing so Trait has to carry an extra hidden type member
 -- }
 
 /-- Type-constructor syntax for higher-level DOT experiments outside the core calculus. -/
 inductive TypCtor : Type where -- type constructor! not type! not in core DOT!
 | tVar (symbol: I): TypCtor
-| ctor (body: ((arg : I) -> TypCtor)): TypCtor
+| ctor (body : ((arg : I) → TypCtor)) : TypCtor
 -- | higherCtor (body: (arg: I) -> TypCtor) : TypCtor
 | apply (ctor: TypCtor) (arg: TypCtor): TypCtor
 
@@ -119,8 +119,8 @@ doesn't block it), can we avoid repetitive definitions?
 
 end Syntax
 
-abbrev TrmClosed := {I : Type} -> Trm I
+abbrev TrmClosed := {I : Type} → Trm I
 
-abbrev TypClosed := {I : Type} -> Typ I
+abbrev TypClosed := {I : Type} → Typ I
 
 end DOT

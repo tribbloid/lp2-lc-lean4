@@ -8,4 +8,4 @@ inductive Which : Type -- only a tag/index for AST of different nature
 | trm
 deriving DecidableEq, Repr
 
-def Rep := Which -> Type -- both types and terms are represented by a type family from `Which`
+def Rep := (which : Which) → Type -- both types and terms are represented by a type family from `Which`

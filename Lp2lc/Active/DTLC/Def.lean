@@ -23,7 +23,7 @@ Type AST
 -/
 inductive Typ : Index where
 | primitive -- `AnyVal` in Scala
-| depFn (tIn : Typ) (tOut : (arg : I) -> Typ) -- dependent function
+| depFn (tIn : Typ) (tOut : (arg : I) → Typ) -- dependent function
 | top -- anything/wildcard type, can bind both primitive and depFn.
 
 -- def TAnno := Option Typ -- doesn't work in mutual block
@@ -54,7 +54,7 @@ In runtime, type annotations are ideally erased.
 -/
 inductive Val : Index where
 | primitive (repr : ByteCode) -- most specific type is always `primitive`
-| fn (body : (arg : I) -> Trm)  (tIn : Option Typ := by exact none)-- most specific type is always `.depFn`
+| fn (body : (arg : I) → Trm)  (tIn : Option Typ := by exact none)-- most specific type is always `.depFn`
 
 end
 
@@ -167,7 +167,7 @@ this is a critical semantic rule for proving:
   successfull ccompiled.
 - finally, soundness theorem that uses the above 2 lemma.
 -/
-def compile {I : Index} [FBound I Trm] (trm: Trm I) (fuel: Nat): Outcome (Trm I) := sorry
+def compile {I : Index} [FBound I Trm] (trm : Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
 
 /-- Semantic typing predicate exposed as successful fuel-guarded compilation. -/
 def Typing {I : Index} [FBound I Trm] (trm : Trm I) (fuel : Nat) : Prop :=
@@ -179,13 +179,13 @@ end Trm
 end Syntax
 
 /-- Closed polymorphic type syntax fixture over any PHOAS index. -/
-abbrev TypAST := {I : Index} -> Typ I
+abbrev TypAST := {I : Index} → Typ I
 
 /-- Closed polymorphic value syntax fixture over any PHOAS index. -/
-abbrev ValAST := {I : Index} -> Val I
+abbrev ValAST := {I : Index} → Val I
 
 /-- Closed polymorphic term syntax fixture over any PHOAS index. -/
-abbrev TrmAST := {I : Index} -> Trm I
+abbrev TrmAST := {I : Index} → Trm I
 
 end DTLC
 

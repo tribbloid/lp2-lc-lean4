@@ -4,19 +4,19 @@ namespace PartialDefInheritance
 
 /-- Base command syntax used to demonstrate inheritance by embedding a smaller language. -/
 inductive BaseCmd where
-  | halt : Nat → BaseCmd
-  | tick : BaseCmd → BaseCmd
+  | halt (value : Nat) : BaseCmd
+  | tick (next : BaseCmd) : BaseCmd
 
-def runBaseCmd : BaseCmd → Nat
+def runBaseCmd : (cmd : BaseCmd) → Nat
   | .halt n => n
   | .tick next => runBaseCmd next + 1
 
 /-- Extended command syntax that embeds base commands and adds a second operation. -/
 inductive ExtendedCmd where
-  | base : BaseCmd → ExtendedCmd
-  | twice : ExtendedCmd → ExtendedCmd
+  | base (cmd : BaseCmd) : ExtendedCmd
+  | twice (cmd : ExtendedCmd) : ExtendedCmd
 
-def runExtendedCmd : ExtendedCmd → Nat
+def runExtendedCmd : (cmd : ExtendedCmd) → Nat
   | .base cmd => runBaseCmd cmd
   | .twice cmd => runExtendedCmd cmd * 2
 

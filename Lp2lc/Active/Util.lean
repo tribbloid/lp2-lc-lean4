@@ -8,10 +8,10 @@ namespace Lp2lc.Active.Util
 abbrev Index := Type
 
 /-- Fixed-bound bridge between a PHOAS carrier and the syntax family it represents. -/
-class FBound (I : Index) (K : Index -> Type) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
-  fwd : K I -> I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
-  rev : I -> K I
-  fwdRoundtrip : (value : K I) -> rev (fwd value) = value
+class FBound (I : Index) (K : (index : Index) → Type) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
+  fwd : (value : K I) → I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
+  rev : (index : I) → K I
+  fwdRoundtrip : (value : K I) → rev (fwd value) = value
 
 attribute [simp] FBound.fwdRoundtrip
 
@@ -23,7 +23,7 @@ inductive Outcome (T : Index)
 
 namespace Outcome
 
-def isSome : (self: Outcome T) -> Prop
+def isSome : (self : Outcome T) → Prop
 | .some _ => true
 | _ => false
 

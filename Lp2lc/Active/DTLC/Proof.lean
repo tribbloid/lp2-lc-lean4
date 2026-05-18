@@ -23,3 +23,5 @@ theorem eraseType_isErased {I : Index} : ∀ (self : Trm I), self.typeEraseAll.T
 end Trm
 
 end DTLC
+
+end Lp2lc.Active
