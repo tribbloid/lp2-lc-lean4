@@ -45,6 +45,9 @@ are not intrinsic typing indices on terms.
 
 `Trm.compile` checks annotations and emits an annotation-erased runtime program.
 -/
+
+-- TODO: this definition has 2 problems: can eval at compiletime, cannot express
+-- primitive fn that modify bytecode
 inductive Trm : Index where
 | val (v : Val) (t : Option Typ := by exact none)
 | apply (fn : Trm) (arg : Trm) (t : Option Typ := by exact none)

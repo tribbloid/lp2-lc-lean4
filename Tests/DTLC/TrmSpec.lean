@@ -13,7 +13,7 @@ example {I : Index} :
 
 example {I : Index} :
     (annotatedIdFn : Trm I).typeEraseAll =
-      .val (.fn (body := fun x => .ref x) (tIn := none)) none := rfl
+      .val (.fn (body := fun x => .ref x)) none := rfl
 
 example {I : Index} :
     (annotatedIdFnOnFalse : Trm I).typeEraseAll =

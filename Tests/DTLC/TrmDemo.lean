@@ -67,8 +67,7 @@ def annotatedFalse : TrmAST :=
 def annotatedIdFn : TrmAST :=
   .val
     (.fn
-      (body := fun x => .ref x (some .primitive))
-      (tIn := some .primitive))
+      (body := fun x => .ref x (some .primitive)))
     (some (.depFn .primitive (fun _x => .primitive)))
 
 def annotatedIdFnOnFalse : TrmAST :=

@@ -4,7 +4,6 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Util
 
-/-- Universe-1 carrier for PHOAS indices. -/
 abbrev Index := Type
 
 /-- Fixed-bound bridge between a PHOAS carrier and the syntax family it represents. -/
