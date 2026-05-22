@@ -130,11 +130,11 @@ def typeEraseRecursively {I : Index} (self : Trm I) : Trm I :=
 
 /-- Predicate that all annotations have been removed from a term. -/
 def TypeIsErased {I : Index} (self : Trm I) : Prop :=
+  let prior := typeGet self = none
   match self with
-  | .val (.primitive _) t => t = none
-  | .val (.fn body) t => t = none ∧ ∀ arg, (body arg).TypeIsErased
-  | .apply fn arg t => t = none ∧ fn.TypeIsErased ∧ arg.TypeIsErased
-  | .ref _ t => t = none
+  | .val (.fn body) => prior ∧ ∀ arg, (body arg).TypeIsErased
+  | .apply fn arg => prior ∧ fn.TypeIsErased ∧ arg.TypeIsErased
+  | _ => prior
 
 /--
 Evaluates a source or compiled program by spending 1 fuel at each semantic
