@@ -10,7 +10,7 @@ inductive HLam where
 
 /-
 explanation:
-- f: fuunction
+- f: function
 - d: de bruijn index
 - Ctx: context
 - Lam: lambda
