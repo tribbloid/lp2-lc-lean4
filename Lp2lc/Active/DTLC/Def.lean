@@ -124,7 +124,6 @@ def typeUpdate {I : Index} (self : Trm I) (typeAnnotation : Option (Typ I)) : Tr
 /-- Removes all optional type annotations from a term. -/
 def typeEraseRecursively {I : Index} (self : Trm I) : Trm I :=
   match self with
-  | .val (.primitive repr) _ => .val (.primitive repr) none
   | .val (.fn body) _ => .val (.fn (body := fun arg => typeEraseRecursively (body arg))) none
   | .apply fn arg _ => .apply (typeEraseRecursively fn) (typeEraseRecursively arg) none
   | _ => typeUpdate self .none
