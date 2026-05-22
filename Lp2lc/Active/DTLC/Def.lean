@@ -75,15 +75,12 @@ instance valIsTrm : Coe (Val I) (Trm I) where
 
 namespace Typ
 
-/-- Checks whether an actual annotation is accepted by an expected annotation. -/
-def compatible {I : Index} (actual : Typ I) (expected : Typ I) : Bool :=
-  match actual, expected with
-  | _, .top => true
-  | .primitive, .primitive => true
-  | .depFn (tIn := _) (tOut := _), .depFn (tIn := _) (tOut := _) => true
-  | _, _ => false
+inductive SubtypeEv : (left: Typ I) -> (right: Typ I) -> Prop
+| x2x (same: Typ I) : SubtypeEv same same
+| x2Top (left : Typ I) : SubtypeEv left Typ.top
 
 end Typ
+
 
 namespace Val
 

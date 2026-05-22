@@ -58,6 +58,7 @@ def Outcome.isSome : (self : Outcome T) → Prop
 namespace Typ
 
 inductive SubtypeEv : (left: Typ I) -> (right: Typ I) -> Prop
+| x2x (same: Typ I) : SubtypeEv same same
 | x2Top (left : Typ I) : SubtypeEv left Typ.top
 
 end Typ
