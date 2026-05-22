@@ -9,15 +9,15 @@ namespace Trm
 section eraseType
 
 example {I : Index} :
-    (annotatedFalse : Trm I).typeEraseAll = (false : Trm I) := rfl
+    (annotatedFalse : Trm I).typeEraseRecursively = (false : Trm I) := rfl
 
 example {I : Index} :
-    (annotatedIdFn : Trm I).typeEraseAll =
+    (annotatedIdFn : Trm I).typeEraseRecursively =
       .val (.fn (body := fun x => .ref x)) none := rfl
 
 example {I : Index} :
-    (annotatedIdFnOnFalse : Trm I).typeEraseAll =
-      .apply (annotatedIdFn : Trm I).typeEraseAll (false : Trm I) none := rfl
+    (annotatedIdFnOnFalse : Trm I).typeEraseRecursively =
+      .apply (annotatedIdFn : Trm I).typeEraseRecursively (false : Trm I) none := rfl
 
 end eraseType
 

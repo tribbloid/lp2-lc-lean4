@@ -75,9 +75,9 @@ instance valIsTrm : Coe (Val I) (Trm I) where
 
 namespace Typ
 
-inductive SubtypeEv : (left: Typ I) -> (right: Typ I) -> Prop
-| x2x (same: Typ I) : SubtypeEv same same
-| x2Top (left : Typ I) : SubtypeEv left Typ.top
+inductive SubtypeEv : (under: Typ I) -> (over: Typ I) -> Prop
+| x2x (t: Typ I) : SubtypeEv t t
+| x2Top (t : Typ I) : SubtypeEv t Typ.top
 
 end Typ
 
@@ -122,12 +122,12 @@ def typeUpdate {I : Index} (self : Trm I) (typeAnnotation : Option (Typ I)) : Tr
   | .ref refValue _ => .ref refValue typeAnnotation
 
 /-- Removes all optional type annotations from a term. -/
-def typeEraseAll {I : Index} (self : Trm I) : Trm I :=
+def typeEraseRecursively {I : Index} (self : Trm I) : Trm I :=
   match self with
   | .val (.primitive repr) _ => .val (.primitive repr) none
-  | .val (.fn body) _ => .val (.fn (body := fun arg => typeEraseAll (body arg))) none
-  | .apply fn arg _ => .apply (typeEraseAll fn) (typeEraseAll arg) none
-  | .ref refValue _ => .ref refValue none
+  | .val (.fn body) _ => .val (.fn (body := fun arg => typeEraseRecursively (body arg))) none
+  | .apply fn arg _ => .apply (typeEraseRecursively fn) (typeEraseRecursively arg) none
+  | _ => typeUpdate self .none
 
 /-- Predicate that all annotations have been removed from a term. -/
 def TypeIsErased {I : Index} (self : Trm I) : Prop :=
