@@ -1,17 +1,19 @@
 
 structure Var : Type where
-  d: Nat
+  d : Nat
 
-abbrev Function := Var -> Unit
+inductive LLam : Type where
+  | mk (f : Var -> LLam)
 
-inductive LLam : Function -> Type where
+inductive HLam (Ctx : Type) : Type where
+  | mk (f : Ctx -> Option (HLam Ctx))
 
-inductive HLam where
+abbrev Function (Ctx : Type) := (c : Ctx) -> (v : Var) -> Option (HLam Ctx)
 
 /-
 explanation:
 - f: function
-- d: de bruijn index
+- d: de bruijn index ?
 - Ctx: context
 - Lam: lambda
 - HOAS: higher-order abstract syntax
@@ -33,4 +35,11 @@ toHOAS d (LLam f) ctx =
   let (ctx,f) = toHOAS (d+1) (f (Var d)) (x : ctx)
   in (HLam \x -> f)
 -/
-def toHOAS (fuel: Nat)(d: Nat) (l: LLam f) (Ctx: Type) : (Type) × (Function)  := sorry
+def toHOAS (fuel : Nat) (d : Nat) (l : LLam) (Ctx : Type) : Type × Function Ctx :=
+  match fuel with
+  | 0 => (Ctx, fun _ _ => none)
+  | fuel + 1 =>
+      match l with
+      | .mk f =>
+          let (ctx, body) := toHOAS fuel (d + 1) (f { d := d }) Ctx
+          (ctx, fun _ v => some (HLam.mk (fun c => body c v)))
