@@ -1,8 +1,12 @@
 
+structure Var : Type where
+  d: Nat
 
-structure LLam where
+abbrev Function := Var -> Unit
 
-structure HLam where
+inductive LLam : Function -> Type where
+
+inductive HLam where
 
 /-
 toHOAS d (LLam f) ctx =
@@ -11,14 +15,18 @@ toHOAS d (LLam f) ctx =
 
 explanation:
 - f: fuunction
-- d: depth
-- ctx: context
+- d: de bruijn index
+- Ctx: context
 - Lam: lambda
 - HOAS: higher-order abstract syntax
 - Var: variable
+- LLam: Low Lambda ???
+- HLam: High Lambda ???
 
-(LLam f) should become a pattern matching
+`toHOAS` should return the same input Ctx and a new function
 
-to circumvent positivity constraint in Lean4, type parameters at negative position can be introduced
+for Lean4 prover:
+- to circumvent termination constraint, introduce fuel
+- to circumvent positivity constraint in Lean4, type parameters at negative position can be introduced
 -/
-def toHOAS (d: Nat) (l: LLam) (Ctx: Type) := sorry
+def toHOAS (fuel: Nat)(d: Nat) (l: LLam f) (Ctx: Type) : (Type) × (Function)  := sorry
