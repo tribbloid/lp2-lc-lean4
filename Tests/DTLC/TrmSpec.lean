@@ -28,22 +28,22 @@ unsafe inductive RuntimeRef where
 | trm (term : Trm RuntimeRef) : RuntimeRef
 
 unsafe instance : FBound RuntimeRef Val where
-  fwd := RuntimeRef.val
-  rev := fun ref =>
+  save := RuntimeRef.val
+  load := fun ref =>
     match ref with
     | .val value => value
     | .trm _ => .primitive "invalid-ref"
-  fwdRoundtrip := by
+  roundtrip := by
     intro value
     rfl
 
 unsafe instance : FBound RuntimeRef Trm where
-  fwd := RuntimeRef.trm
-  rev := fun ref =>
+  save := RuntimeRef.trm
+  load := fun ref =>
     match ref with
     | .val _ => .val (.primitive "invalid-ref")
     | .trm trm => trm
-  fwdRoundtrip := by
+  roundtrip := by
     intro trm
     rfl
 

@@ -8,11 +8,11 @@ abbrev Index := Type
 
 /-- Fixed-bound bridge between a PHOAS carrier and the syntax family it represents. -/
 class FBound (I : Index) (K : (index : Index) → Type) where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
-  fwd : (value : K I) → I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
-  rev : (index : I) → K I
-  fwdRoundtrip : (value : K I) → rev (fwd value) = value
+  save : (value : K I) → I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
+  load : (index : I) → K I
+  roundtrip : (value : K I) → load (save value) = value
 
-attribute [simp] FBound.fwdRoundtrip
+attribute [simp] FBound.roundtrip
 
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
 inductive Outcome (T : Index)
