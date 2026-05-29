@@ -25,30 +25,17 @@ section eval
 
 unsafe inductive RuntimeRef where
 | val (value : Val RuntimeRef) : RuntimeRef
-| trm (term : Trm RuntimeRef) : RuntimeRef
 
-unsafe def runtimeCanEval (value : Val RuntimeRef) : Permission.Eval RuntimeRef value :=
+@[reducible] unsafe def runtimeCanEval (value : Val RuntimeRef) : Permission.Eval value :=
   unsafeCast ()
 
-unsafe instance : FBound RuntimeRef Val (Permission.Eval RuntimeRef) where
+unsafe instance : FBound RuntimeRef Val Permission.Eval where
   save := fun value _permission => RuntimeRef.val value
   load := fun ref =>
     match ref with
     | .val value => value
-    | .trm _ => .primitive "invalid-ref"
   roundtrip := by
     intro value
-    intro permission
-    rfl
-
-unsafe instance : FBound RuntimeRef Trm Permission.NotRequired where
-  save := fun term _permission => RuntimeRef.trm term
-  load := fun ref =>
-    match ref with
-    | .val _ => .val (.primitive "invalid-ref")
-    | .trm trm => trm
-  roundtrip := by
-    intro trm
     intro permission
     rfl
 

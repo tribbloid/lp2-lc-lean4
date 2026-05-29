@@ -83,17 +83,16 @@ end Typ
 
 namespace Permission
 
-def NotRequired {T : Type} : Permission T := fun (_: T) => true
+class NotRequired {V : Type} (v: V) : Prop -- mk constructor can be used freely for any v
 
-inductive Eval (I : Index) : Permission (Val I)
-
--- def evalToNotRequired (v: Eval I) : NotRequired := v
+class Eval {I : Index} (v : Val I) : Prop where
+  private mk ::
 
 end Permission
 
 class EvalEnv (I : Index) where
-  forVals: FBound I Val (Permission.Eval I)
-  canEvalAny: (v: Val I) -> Permission.Eval I v
+  forVals: FBound I Val Permission.Eval
+  canEvalAny: (v: Val I) -> Permission.Eval v
 
 /--
 only contains FBound for types
