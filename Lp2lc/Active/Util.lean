@@ -29,9 +29,9 @@ def Permission (T : Type) := (v: T) -> Prop -- no instance will be provided ever
 -- end Permission
 
 /-- Fixed-bound bridge between a PHOAS carrier and the syntax family it represents. -/
-class FBound (I : Index) (K : (index : Index) → Type) (P : Permission (K I)): Type where -- fixed-point cast, looks like a reversed Env, it cast `Trm I` into something Val.depFn can accept
-  save : (value : K I) -> (permission: P value) → I -- useful in eval, definition uses the inverse but interpreter is not allowed to see it.
-  load : (index : I) → K I
+class FBound (I : Index) (K : (index : Index) → Type) (P : Permission (K I)): Type where -- fixed-point bound axiom, a crossover between de-bruijn Env/Store & PHOAS repr carrier.
+  save : (value : K I) -> (permission: P value) → I -- `I` is unknown & there is no way to get `I` (required by HOAS binder) except submitting a `K I`.
+  load : (index : I) → K I -- inverse of save
   roundtrip : ∀ (value : K I), (permission : P value) → load (save value permission) = value
 
 -- class Env (P: Index) (I : Index) (K : (index : Index) → Type) where

@@ -83,18 +83,26 @@ end Typ
 
 namespace Permission
 
-def NotRequired {T : Type} : Permission T := fun (v: T) => true
+def NotRequired {T : Type} : Permission T := fun (_: T) => true
 
-inductive Eval {I : Index} : Permission (Val I)
+inductive Eval (I : Index) : Permission (Val I)
+
+-- def evalToNotRequired (v: Eval I) : NotRequired := v
 
 end Permission
 
 class EvalEnv (I : Index) where
-  fBound4Vals: FBound I Val (Permission.Eval)
-  canEval: (v: Val I) -> (Permission.Eval v)
+  forVals: FBound I Val (Permission.Eval)
+  canEvalAny: (v: Val I) -> (Permission.Eval v)
 
+/--
+only contains FBound for types
+
+in the future we may have FBound for terms or values and a permission granter
+for transparent fn only
+-/
 class TypingEnv (I : Index) where
-  fBound4Typs: FBound I Typ Permission.NotRequired
+  forTyps: FBound I Typ Permission.NotRequired
 
 namespace Val
 
@@ -165,13 +173,13 @@ def eval {I : Index} [EvalEnv I] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
       let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
       | (.some (.fn body), .some value) =>
-        let fBound := EvalEnv.fBound4Vals (I := I)
-        (body (fBound.save value (EvalEnv.canEval value))).eval fuel
+        let fBound := forVals (I := I)
+        (body (fBound.save value (canEvalAny value))).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref refValue _ =>
-      .some ((EvalEnv.fBound4Vals (I := I)).load refValue)
+      .some ((forVals (I := I)).load refValue)
 
 /--
 Fuel-guarded compiler API for compiling any `Trm` with optional type annotations

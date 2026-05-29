@@ -53,8 +53,8 @@ unsafe instance : FBound RuntimeRef Trm Permission.NotRequired where
     rfl
 
 unsafe instance : EvalEnv RuntimeRef where
-  fBound4Vals := inferInstance
-  canEval := runtimeCanEval
+  forVals := inferInstance
+  canEvalAny := runtimeCanEval
 
 unsafe example : ((Trm.false : Trm RuntimeRef).eval 0) = .outOfFuel := by
   rfl
