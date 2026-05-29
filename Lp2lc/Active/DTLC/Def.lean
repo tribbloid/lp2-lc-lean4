@@ -81,6 +81,20 @@ inductive SubtypeEv : (under: Typ I) -> (over: Typ I) -> Prop
 
 end Typ
 
+namespace Permission
+
+def NotRequired {T : Type} : Permission T := fun (v: T) => true
+
+inductive Eval {I : Index} : Permission (Val I)
+
+end Permission
+
+class EvalEnv (I : Index) where
+  fBound4Vals: FBound I Val (Permission.Eval)
+  canEval: (v: Val I) -> (Permission.Eval v)
+
+class TypingEnv (I : Index) where
+  fBound4Typs: FBound I Typ Permission.NotRequired
 
 namespace Val
 
@@ -141,7 +155,7 @@ Evaluates a source or compiled program by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
+def eval {I : Index} [EvalEnv I] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -194,10 +208,10 @@ This rule supports:
 - soundness: semantic typing implies existence of a type-erased adequate
   compiled program
 -/
-def compile {I : Index} [FBound I Trm] (trm : Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
+def compile {I : Index} [TypingEnv I] (trm : Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
-def Typing {I : Index} [FBound I Trm] (trm : Trm I) (fuel : Nat) : Prop :=
+def Typing {I : Index} [TypingEnv I] (trm : Trm I) (fuel : Nat) : Prop :=
   (trm.compile fuel).isSome
 
 end Trm
