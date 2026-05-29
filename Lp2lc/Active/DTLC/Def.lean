@@ -92,8 +92,8 @@ inductive Eval (I : Index) : Permission (Val I)
 end Permission
 
 class EvalEnv (I : Index) where
-  forVals: FBound I Val (Permission.Eval)
-  canEvalAny: (v: Val I) -> (Permission.Eval v)
+  forVals: FBound I Val (Permission.Eval I)
+  canEvalAny: (v: Val I) -> Permission.Eval I v
 
 /--
 only contains FBound for types
@@ -173,13 +173,13 @@ def eval {I : Index} [EvalEnv I] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
       let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
       | (.some (.fn body), .some value) =>
-        let fBound := forVals (I := I)
-        (body (fBound.save value (canEvalAny value))).eval fuel
+        let fBound := EvalEnv.forVals (I := I)
+        (body (fBound.save value (EvalEnv.canEvalAny (I := I) value))).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref refValue _ =>
-      .some ((forVals (I := I)).load refValue)
+      .some ((EvalEnv.forVals (I := I)).load refValue)
 
 /--
 Fuel-guarded compiler API for compiling any `Trm` with optional type annotations

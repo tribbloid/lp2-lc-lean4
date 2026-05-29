@@ -27,10 +27,10 @@ unsafe inductive RuntimeRef where
 | val (value : Val RuntimeRef) : RuntimeRef
 | trm (term : Trm RuntimeRef) : RuntimeRef
 
-unsafe def runtimeCanEval (value : Val RuntimeRef) : Permission.Eval value :=
+unsafe def runtimeCanEval (value : Val RuntimeRef) : Permission.Eval RuntimeRef value :=
   unsafeCast ()
 
-unsafe instance : FBound RuntimeRef Val Permission.Eval where
+unsafe instance : FBound RuntimeRef Val (Permission.Eval RuntimeRef) where
   save := fun value _permission => RuntimeRef.val value
   load := fun ref =>
     match ref with
