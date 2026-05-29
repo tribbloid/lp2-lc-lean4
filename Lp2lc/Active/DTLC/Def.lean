@@ -11,10 +11,10 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 
 open Util
 
-section Syntax
+namespace AST
+section
 
 variable (I : Index) -- index
-
 
 mutual
 
@@ -29,8 +29,6 @@ inductive Typ : Index where
 | primitive -- `AnyVal` in Scala, accepts only primitive values
 | depFn (tIn : Typ) (tOut : (arg : I) → Typ) -- dependent function
 | top -- anything/wildcard type, can accept any value.
-
--- def TAnno := Option Typ -- doesn't work in mutual block TODO: notation
 
 /--
 Source term syntax.
@@ -80,28 +78,6 @@ inductive SubtypeEv : (under: Typ I) -> (over: Typ I) -> Prop
 | x2Top (t : Typ I) : SubtypeEv t Typ.top
 
 end Typ
-
-namespace Permission
-
-class NotRequired {V : Type} (v: V) : Prop -- mk constructor can be used freely for any v
-
-class Eval {I : Index} (v : Val I) : Prop where
-  private mk ::
-
-end Permission
-
-class EvalEnv (I : Index) where
-  forVals: FBound I Val Permission.Eval
-  canEvalAny: (v: Val I) -> Permission.Eval v
-
-/--
-only contains FBound for types
-
-in the future we may have FBound for terms or values and a permission granter
-for transparent fn only
--/
-class TypingEnv (I : Index) where
-  forTyps: FBound I Typ Permission.NotRequired
 
 namespace Val
 
@@ -157,12 +133,52 @@ def TypeIsErased {I : Index} (self : Trm I) : Prop :=
   | .apply fn arg => prior ∧ fn.TypeIsErased ∧ arg.TypeIsErased
   | _ => prior
 
+end Trm
+end
+end AST
+
+namespace Closed
+
+/-- Closed polymorphic type syntax fixture over any PHOAS index. -/
+abbrev TypAST := {I : Index} → AST.Typ I
+
+/-- Closed polymorphic value syntax fixture over any PHOAS index. -/
+abbrev ValAST := {I : Index} → AST.Val I
+
+/-- Closed polymorphic term syntax fixture over any PHOAS index. -/
+abbrev TrmAST := {I : Index} → AST.Trm I
+
+
+end Closed
+
+namespace Permission
+
+class NotRequired {V : Type} (v: V) : Prop -- mk constructor can be used freely for any v
+
+class Eval {I : Index} (v : AST.Val I) : Prop where
+  private mk ::
+
+end Permission
+
+
+namespace Runtime
+
+abbrev Trm I := AST.Trm I
+abbrev Val I := AST.Val I
+
+class EvalEnv (I : Index) where
+  forVals: FBound I Val Permission.Eval
+  canEvalAny: (v: Val I) -> Permission.Eval v
+
+section
+variable {I : Index} [EvalEnv I]
+
 /--
 Evaluates a source or compiled program by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval {I : Index} [EvalEnv I] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
+def eval (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -179,6 +195,25 @@ def eval {I : Index} [EvalEnv I] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
       | _ => .error
     | .ref refValue _ =>
       .some ((EvalEnv.forVals (I := I)).load refValue)
+
+end
+
+end Runtime
+
+namespace Compiletime
+
+abbrev Trm I := AST.Trm I
+abbrev Val I := AST.Val I
+abbrev Typ I := AST.Typ I
+
+/--
+only contains FBound for types
+
+in the future we may have FBound for terms or values and a permission granter
+for transparent fn only
+-/
+class TypingEnv (I : Index) where
+  forTyps: FBound I Typ Permission.NotRequired
 
 /--
 Fuel-guarded compiler API for compiling any `Trm` with optional type annotations
@@ -222,19 +257,8 @@ def compile {I : Index} [TypingEnv I] (trm : Trm I) (fuel : Nat) : Outcome (Trm 
 def Typing {I : Index} [TypingEnv I] (trm : Trm I) (fuel : Nat) : Prop :=
   (trm.compile fuel).isSome
 
-end Trm
+end Compiletime
 
-
-end Syntax
-
-/-- Closed polymorphic type syntax fixture over any PHOAS index. -/
-abbrev TypAST := {I : Index} → Typ I
-
-/-- Closed polymorphic value syntax fixture over any PHOAS index. -/
-abbrev ValAST := {I : Index} → Val I
-
-/-- Closed polymorphic term syntax fixture over any PHOAS index. -/
-abbrev TrmAST := {I : Index} → Trm I
 
 end DTLC
 
