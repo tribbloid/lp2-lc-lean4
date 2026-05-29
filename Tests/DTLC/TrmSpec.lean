@@ -8,14 +8,14 @@ namespace Trm
 
 section eraseType
 
-example {I : AstIn} :
+example {I : Index} :
     (annotatedFalse : Trm I).typeEraseRecursively = (false : Trm I) := rfl
 
-example {I : AstIn} :
+example {I : Index} :
     (annotatedIdFn : Trm I).typeEraseRecursively =
       .val (.fn (body := fun x => .ref x)) none := rfl
 
-example {I : AstIn} :
+example {I : Index} :
     (annotatedIdFnOnFalse : Trm I).typeEraseRecursively =
       .apply (annotatedIdFn : Trm I).typeEraseRecursively (false : Trm I) none := rfl
 
@@ -27,25 +27,34 @@ unsafe inductive RuntimeRef where
 | val (value : Val RuntimeRef) : RuntimeRef
 | trm (term : Trm RuntimeRef) : RuntimeRef
 
-unsafe instance : FBound RuntimeRef Val where
-  save := RuntimeRef.val
+unsafe def runtimeCanEval (value : Val RuntimeRef) : Permission.Eval value :=
+  unsafeCast ()
+
+unsafe instance : FBound RuntimeRef Val Permission.Eval where
+  save := fun value _permission => RuntimeRef.val value
   load := fun ref =>
     match ref with
     | .val value => value
     | .trm _ => .primitive "invalid-ref"
   roundtrip := by
     intro value
+    intro permission
     rfl
 
-unsafe instance : FBound RuntimeRef Trm where
-  save := RuntimeRef.trm
+unsafe instance : FBound RuntimeRef Trm Permission.NotRequired where
+  save := fun term _permission => RuntimeRef.trm term
   load := fun ref =>
     match ref with
     | .val _ => .val (.primitive "invalid-ref")
     | .trm trm => trm
   roundtrip := by
     intro trm
+    intro permission
     rfl
+
+unsafe instance : EvalEnv RuntimeRef where
+  fBound4Vals := inferInstance
+  canEval := runtimeCanEval
 
 unsafe example : ((Trm.false : Trm RuntimeRef).eval 0) = .outOfFuel := by
   rfl

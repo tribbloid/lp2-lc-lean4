@@ -12,10 +12,10 @@ namespace Trm
 open Util
 
 /-- Erasing annotations always produces a type-erased term. -/
-theorem eraseType_isErased {I : AstK} : ∀ (self : Trm I), self.typeEraseRecursively.TypeIsErased
+theorem eraseType_isErased {I : Index} : ∀ (self : Trm I), self.typeEraseRecursively.TypeIsErased
 | .val (.primitive _) _ => rfl
 | .val (.fn body) _ =>
-  ⟨rfl, fun arg => eraseType_isErased (body arg)
+  ⟨rfl, fun arg => eraseType_isErased (body arg)⟩
 | .apply fn arg _ =>
   ⟨rfl, eraseType_isErased fn, eraseType_isErased arg⟩
 | .ref _ _ => rfl

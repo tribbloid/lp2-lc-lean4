@@ -165,12 +165,13 @@ def eval {I : Index} [EvalEnv I] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
       let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
       | (.some (.fn body), .some value) =>
-        (body (FBound.save value)).eval fuel
+        let fBound := EvalEnv.fBound4Vals (I := I)
+        (body (fBound.save value (EvalEnv.canEval value))).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref refValue _ =>
-      .some (FBound.load refValue)
+      .some ((EvalEnv.fBound4Vals (I := I)).load refValue)
 
 /--
 Fuel-guarded compiler API for compiling any `Trm` with optional type annotations
