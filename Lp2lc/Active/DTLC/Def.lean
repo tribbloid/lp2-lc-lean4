@@ -175,6 +175,16 @@ class EvalEnv (I : Index) where
   forVals: FBound I AST.Val (Permission.Eval (I := I))
   canEvalAny: (v: AST.Val I) -> Permission.Eval v
 
+section
+variable {I : Index} [Runtime.EvalEnv I]
+
+class _Trm (self : AST.Trm I) where
+
+  eval (fuel : Nat) : Outcome (AST.Val I)
+
+
+end
+
 end Runtime
 
 namespace AST.Trm
