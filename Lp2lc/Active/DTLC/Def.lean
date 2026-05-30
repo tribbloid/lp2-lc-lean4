@@ -176,8 +176,9 @@ class EvalEnv (I : Index) where
 
 end Runtime
 
-section RuntimeAPI
+section Running
 variable {I : Index} [EvalEnv I]
+open AST
 
 /--
 Evaluates a source or compiled program by spending 1 fuel at each semantic
@@ -202,7 +203,7 @@ def eval (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
     | .ref refValue _ =>
       .some ((EvalEnv.forVals (I := I)).load refValue)
 
-end RuntimeAPI
+end Running
 
 namespace Compiletime
 
@@ -222,7 +223,7 @@ class TypingEnv (I : Index) where
 end Compiletime
 
 
-section RuntimeAPI
+section Compiling
 open AST
 
 variable {I : Index} [TypingEnv I]
@@ -268,7 +269,7 @@ def compile (trm : AST.Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
 def Typing (trm : Trm I) (fuel : Nat) : Prop :=
   (compile trm fuel).isSome
 
-end RuntimeAPI
+end Compiling
 
 end DTLC
 
