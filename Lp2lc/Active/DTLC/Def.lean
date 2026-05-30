@@ -80,28 +80,6 @@ inductive SubtypeEv : (under: Typ I) -> (over: Typ I) -> Prop
 
 end Typ
 
-namespace Val
-
-/--
-Decidable semantic membership of a value in a type annotation.
-
-This checks the value head form and, for function values, the input annotation.
-Dependent output annotations are checked later by compiling the function body
-with a concrete compile-time argument reference.
--/
-def satisfies {I : Index} (value : Val I) (type : Typ I) : Bool :=
-  match type with
-  | .top => true
-  | .primitive =>
-    match value with
-    | .primitive (repr := _) => true
-    | .fn (body := _) => false
-  | .depFn (tIn := _) (tOut := _) =>
-    match value with
-    | .primitive (repr := _) => false
-    | .fn _ => true
-
-end Val
 
 namespace Trm
 
@@ -175,16 +153,6 @@ class Env (I : Index) where
   forVals: FBound I AST.Val (Permission.Eval (I := I))
   canEvalAny: (v: AST.Val I) -> Permission.Eval v
 
-section
-variable {I : Index} [Env I]
-
-class _Trm (self : AST.Trm I) where
-
-  eval (fuel : Nat) : Outcome (AST.Val I)
-
-
-end
-
 end Runtime
 
 section
@@ -240,6 +208,30 @@ open AST
 
 variable {I : Index} [Compiletime.Env I]
 
+
+namespace AST.Val
+
+/--
+Decidable semantic membership of a value in a type annotation.
+
+This checks the value head form and, for function values, the input annotation.
+Dependent output annotations are checked later by compiling the function body
+with a concrete compile-time argument reference.
+-/
+def satisfies {I : Index} (value : Val I) (type : Typ I) : Bool :=
+  match type with
+  | .top => true
+  | .primitive =>
+    match value with
+    | .primitive (repr := _) => true
+    | .fn (body := _) => false
+  | .depFn (tIn := _) (tOut := _) =>
+    match value with
+    | .primitive (repr := _) => false
+    | .fn _ => true
+
+end AST.Val
+
 namespace AST.Trm
 /--
 Fuel-guarded compiler API for compiling any `Trm` with optional type annotations
@@ -277,7 +269,7 @@ This rule supports:
 - soundness: semantic typing implies existence of a type-erased adequate
   compiled program
 -/
-def compile (trm : AST.Trm I) (fuel : Nat) : Outcome (Trm I) :=
+def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -286,10 +278,10 @@ def compile (trm : AST.Trm I) (fuel : Nat) : Outcome (Trm I) :=
       match typeAnnotation with
       | some type =>
         if value.satisfies type then
-          .some ((AST.Trm.val value none).typeEraseRecursively)
+          .some ((Trm.val value none).typeEraseRecursively)
         else
           .error
-      | none => .some ((AST.Trm.val value none).typeEraseRecursively)
+      | none => .some ((Trm.val value none).typeEraseRecursively)
     | .apply fn arg _ =>
       match compile fn fuel, compile arg fuel with
       | .some (.val (.primitive _) _), .some _ => .error
