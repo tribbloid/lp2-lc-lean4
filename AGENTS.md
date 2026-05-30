@@ -52,6 +52,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 - Do not add compiler public API for already-defined feature (e.g. type-checking, evaluation). Each feature should only have 1 public definition.
 - Do not use generic universe if possible, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2).
 - Do not write trivial, short wrapper function: its body should be inlined.
+- Do not export definition, only open at callsite.
 
 #### Task-specific Guardrails
 

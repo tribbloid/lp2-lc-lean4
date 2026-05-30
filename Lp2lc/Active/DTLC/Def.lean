@@ -66,6 +66,7 @@ inductive Val : Index where
 | fn (body : (arg : I) → Trm) -- most specific type is always `.depFn`
 
 end
+end
 
 /-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
 instance valIsTrm : Coe (Val I) (Trm I) where
@@ -134,8 +135,8 @@ def TypeIsErased {I : Index} (self : Trm I) : Prop :=
   | _ => prior
 
 end Trm
-end
 end AST
+
 
 namespace Closed
 
@@ -150,6 +151,12 @@ abbrev TrmAST := {I : Index} → AST.Trm I
 
 
 end Closed
+
+
+namespace Val
+
+
+end Val
 
 namespace Permission
 
@@ -185,11 +192,11 @@ def eval (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
     match trm with
     | .val value _ => .some value
     | .apply fn arg _ =>
-      let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
+      let anf := (eval fn fuel, eval arg fuel) -- ANF, atomic normal form
       match anf with
       | (.some (.fn body), .some value) =>
         let fBound := EvalEnv.forVals (I := I)
-        (body (fBound.save value (EvalEnv.canEvalAny (I := I) value))).eval fuel
+        eval (body (fBound.save value (EvalEnv.canEvalAny (I := I) value))) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
@@ -255,7 +262,7 @@ def compile {I : Index} [TypingEnv I] (trm : Trm I) (fuel : Nat) : Outcome (Trm 
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
 def Typing {I : Index} [TypingEnv I] (trm : Trm I) (fuel : Nat) : Prop :=
-  (trm.compile fuel).isSome
+  (compile trm fuel).isSome
 
 end Compiletime
 

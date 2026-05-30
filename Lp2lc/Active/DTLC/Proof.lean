@@ -7,6 +7,8 @@ namespace Lp2lc.Active
 
 namespace DTLC
 
+open AST
+
 namespace Trm
 
 open Util

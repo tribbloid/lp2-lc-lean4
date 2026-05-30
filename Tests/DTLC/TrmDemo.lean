@@ -3,6 +3,7 @@ import «Tests».DTLC.ValDemo
 namespace Tests.DTLC.Sanity
 open Lp2lc.Active.Util
 open Lp2lc.Active.DTLC
+open Lp2lc.Active.DTLC.Closed
 
 namespace Trm
 
