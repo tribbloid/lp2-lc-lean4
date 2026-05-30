@@ -6,6 +6,7 @@ namespace Trm
 
 open Lp2lc.Active.Util
 open Lp2lc.Active.DTLC
+open Lp2lc.Active.DTLC.AST
 open Lp2lc.Active.DTLC.Runtime
 
 section eraseType

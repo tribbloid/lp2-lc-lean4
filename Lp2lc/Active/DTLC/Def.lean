@@ -169,41 +169,42 @@ end Permission
 
 
 namespace Runtime
+open AST
 
 class EvalEnv (I : Index) where
-  forVals: FBound I Val Permission.Eval
-  canEvalAny: (v: Val I) -> Permission.Eval v
+  forVals: FBound I AST.Val (Permission.Eval (I := I))
+  canEvalAny: (v: AST.Val I) -> Permission.Eval v
 
 end Runtime
 
-section Running
-variable {I : Index} [EvalEnv I]
-open AST
+namespace AST.Trm
 
 /--
 Evaluates a source or compiled program by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
+def eval {I : Index} [Runtime.EvalEnv I] (self : AST.Trm I) (fuel : Nat) : Outcome (AST.Val I) :=
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
-    match trm with
+    match self with
     | .val value _ => .some value
     | .apply fn arg _ =>
       let anf := (eval fn fuel, eval arg fuel) -- ANF, atomic normal form
       match anf with
       | (.some (.fn body), .some value) =>
-        let fBound := EvalEnv.forVals (I := I)
-        eval (body (fBound.save value (EvalEnv.canEvalAny (I := I) value))) fuel
+        let fBound := Runtime.EvalEnv.forVals (I := I)
+        eval (body (fBound.save value (Runtime.EvalEnv.canEvalAny (I := I) value))) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref refValue _ =>
-      .some ((EvalEnv.forVals (I := I)).load refValue)
+      .some ((Runtime.EvalEnv.forVals (I := I)).load refValue)
 
-end Running
+end AST.Trm
+
+
 
 namespace Compiletime
 
@@ -223,53 +224,53 @@ class TypingEnv (I : Index) where
 end Compiletime
 
 
-section Compiling
-open AST
+-- section Compiling
+-- open AST
 
-variable {I : Index} [TypingEnv I]
-/--
-Fuel-guarded compiler API for compiling any `Trm` with optional type annotations
-into semantic program (also a `Trm`, but type info are removed).
+-- variable {I : Index} [Compiletime.TypingEnv I]
+-- /--
+-- Fuel-guarded compiler API for compiling any `Trm` with optional type annotations
+-- into semantic program (also a `Trm`, but type info are removed).
 
-It does not evaluate the program! compiling a `Trm.apply` should only results
-the same or a slightly different `Trm.apply`.
+-- It does not evaluate the program! compiling a `Trm.apply` should only results
+-- the same or a slightly different `Trm.apply`.
 
-This is the only public API for compilation, every other functions must be private.
+-- This is the only public API for compilation, every other functions must be private.
 
-Compilation checks optional annotations and emits a type-erased program for
-runtime evaluation.
+-- Compilation checks optional annotations and emits a type-erased program for
+-- runtime evaluation.
 
-- compiling malformed terms fails
-- compiling terms with wrong annotations fails
-- fuel `0` always returns `outOfFuel`
-- compile-time checking must not call runtime `eval`
-- application compilation may use the compile-time `FBound I Trm` binding to
-  check the substituted function body
-- the emitted program is required to be type-erased, but application compilation
-  is not required to preserve `.apply` as the root constructor
-- when a compiled function carries an input annotation, application compilation
-  checks that the compiled argument value satisfies that input annotation
-- `FBound I Trm` represents compile-time bindings and is deliberately separate
-  from `FBound I Val`, which represents runtime bindings
+-- - compiling malformed terms fails
+-- - compiling terms with wrong annotations fails
+-- - fuel `0` always returns `outOfFuel`
+-- - compile-time checking must not call runtime `eval`
+-- - application compilation may use the compile-time `FBound I Trm` binding to
+--   check the substituted function body
+-- - the emitted program is required to be type-erased, but application compilation
+--   is not required to preserve `.apply` as the root constructor
+-- - when a compiled function carries an input annotation, application compilation
+--   checks that the compiled argument value satisfies that input annotation
+-- - `FBound I Trm` represents compile-time bindings and is deliberately separate
+--   from `FBound I Val`, which represents runtime bindings
 
-Semantic typing is successful fuel-guarded compilation, so this compiler is the
-definition of the semantic typing rule.
+-- Semantic typing is successful fuel-guarded compilation, so this compiler is the
+-- definition of the semantic typing rule.
 
-This rule supports:
-- adequacy: a successfully compiled term executes without runtime error, either
-  producing a value satisfying the source annotation or running out of fuel
-- fundamental lemma: compatible compiled function application preserves
-  successful compilation
-- soundness: semantic typing implies existence of a type-erased adequate
-  compiled program
--/
-def compile (trm : AST.Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
+-- This rule supports:
+-- - adequacy: a successfully compiled term executes without runtime error, either
+--   producing a value satisfying the source annotation or running out of fuel
+-- - fundamental lemma: compatible compiled function application preserves
+--   successful compilation
+-- - soundness: semantic typing implies existence of a type-erased adequate
+--   compiled program
+-- -/
+-- def compile (trm : AST.Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
 
-/-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
-def Typing (trm : Trm I) (fuel : Nat) : Prop :=
-  (compile trm fuel).isSome
+-- /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
+-- def Typing (trm : Trm I) (fuel : Nat) : Prop :=
+--   (compile trm fuel).isSome
 
-end Compiling
+-- end Compiling
 
 end DTLC
 
