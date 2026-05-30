@@ -170,14 +170,13 @@ end Permission
 
 namespace Runtime
 
-@[reducible] def Trm I := AST.Trm I
-@[reducible] def Val I := AST.Val I
-
 class EvalEnv (I : Index) where
   forVals: FBound I Val Permission.Eval
   canEvalAny: (v: Val I) -> Permission.Eval v
 
-section
+end Runtime
+
+section RuntimeAPI
 variable {I : Index} [EvalEnv I]
 
 /--
@@ -203,9 +202,7 @@ def eval (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
     | .ref refValue _ =>
       .some ((EvalEnv.forVals (I := I)).load refValue)
 
-end
-
-end Runtime
+end RuntimeAPI
 
 namespace Compiletime
 
@@ -222,6 +219,13 @@ for transparent fn only
 class TypingEnv (I : Index) where
   forTyps: FBound I Typ Permission.NotRequired
 
+end Compiletime
+
+
+section RuntimeAPI
+open AST
+
+variable {I : Index} [TypingEnv I]
 /--
 Fuel-guarded compiler API for compiling any `Trm` with optional type annotations
 into semantic program (also a `Trm`, but type info are removed).
@@ -258,14 +262,13 @@ This rule supports:
 - soundness: semantic typing implies existence of a type-erased adequate
   compiled program
 -/
-def compile {I : Index} [TypingEnv I] (trm : Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
+def compile (trm : AST.Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
-def Typing {I : Index} [TypingEnv I] (trm : Trm I) (fuel : Nat) : Prop :=
+def Typing (trm : Trm I) (fuel : Nat) : Prop :=
   (compile trm fuel).isSome
 
-end Compiletime
-
+end RuntimeAPI
 
 end DTLC
 
