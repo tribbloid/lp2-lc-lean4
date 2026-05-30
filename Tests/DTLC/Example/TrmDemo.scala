@@ -2,7 +2,7 @@ package DTLC.Example
 
 import Tests.Preamble
 
-object TrmSpec extends Preamble {
+object TrmDemo extends Preamble {
 
   val `false`: Boolean = false
 

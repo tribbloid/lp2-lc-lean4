@@ -170,8 +170,8 @@ end Permission
 
 namespace Runtime
 
-abbrev Trm I := AST.Trm I
-abbrev Val I := AST.Val I
+@[reducible] def Trm I := AST.Trm I
+@[reducible] def Val I := AST.Val I
 
 class EvalEnv (I : Index) where
   forVals: FBound I Val Permission.Eval
