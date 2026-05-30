@@ -62,6 +62,11 @@ def idFnOnFalse2 : TrmAST :=
 def malformedPrimitiveApply : TrmAST :=
   .apply false true
 
+def malformedApply1 : TrmAST :=
+  .apply
+    (.apply idFn false)
+    true
+
 def annotatedFalse : TrmAST :=
   .val (.primitive "false") (some .primitive)
 
