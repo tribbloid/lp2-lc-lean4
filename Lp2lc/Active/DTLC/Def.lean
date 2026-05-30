@@ -207,13 +207,14 @@ def eval (self : AST.Trm I) (fuel : Nat) : Outcome (AST.Val I) :=
       let anf := (eval fn fuel, eval arg fuel) -- ANF, atomic normal form
       match anf with
       | (.some (.fn body), .some value) =>
-        let fBound := Runtime.EvalEnv.forVals (I := I)
-        eval (body (fBound.save value (Runtime.EvalEnv.canEvalAny (I := I) value))) fuel
+        let fBound := Runtime.Env.forVals (I := I)
+        eval (body (fBound.save value (Runtime.Env.canEvalAny (I := I) value))) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref refValue _ =>
-      .some ((Runtime.EvalEnv.forVals (I := I)).load refValue)
+      let fBound := Runtime.Env.forVals (I := I)
+      .some (fBound.load refValue)
 
 end AST.Trm
 end
