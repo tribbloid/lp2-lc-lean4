@@ -42,7 +42,7 @@ unsafe instance : FBound RuntimeRef Val Permission.Eval where
     intro permission
     rfl
 
-unsafe instance : EvalEnv RuntimeRef where
+unsafe instance : Env RuntimeRef where
   forVals := inferInstance
   canEvalAny := runtimeCanEval
 

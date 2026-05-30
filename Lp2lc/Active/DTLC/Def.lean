@@ -171,12 +171,12 @@ end Permission
 namespace Runtime
 open AST
 
-class EvalEnv (I : Index) where
+class Env (I : Index) where
   forVals: FBound I AST.Val (Permission.Eval (I := I))
   canEvalAny: (v: AST.Val I) -> Permission.Eval v
 
 section
-variable {I : Index} [Runtime.EvalEnv I]
+variable {I : Index} [Env I]
 
 class _Trm (self : AST.Trm I) where
 
@@ -188,7 +188,7 @@ end
 end Runtime
 
 section
-variable {I : Index} [Runtime.EvalEnv I]
+variable {I : Index} [Runtime.Env I]
 
 namespace AST.Trm
 
@@ -222,17 +222,13 @@ end
 
 namespace Compiletime
 
-abbrev Trm I := AST.Trm I
-abbrev Val I := AST.Val I
-abbrev Typ I := AST.Typ I
-
 /--
 only contains FBound for types
 
 in the future we may have FBound for terms or values and a permission granter
 for transparent fn only
 -/
-class TypingEnv (I : Index) where
+class Env (I : Index) where
   forTyps: FBound I Typ Permission.NotRequired
 
 end Compiletime
@@ -241,7 +237,7 @@ end Compiletime
 section
 open AST
 
-variable {I : Index} [Compiletime.TypingEnv I]
+variable {I : Index} [Compiletime.Env I]
 
 namespace AST.Trm
 /--
