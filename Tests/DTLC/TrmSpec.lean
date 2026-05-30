@@ -9,6 +9,11 @@ open Lp2lc.Active.DTLC
 open Lp2lc.Active.DTLC.AST
 open Lp2lc.Active.DTLC.Runtime
 
+def soundnessCounterexample {I : Index} : Trm I :=
+  .apply
+    (.apply idFn false)
+    true
+
 section eraseType
 
 example {I : Index} :
@@ -80,6 +85,17 @@ example {I : Index} [Compiletime.Env I] :
 example {I : Index} [Compiletime.Env I] :
     ((idFnOnFalse2 : Trm I).compile 3) =
       .some ((idFnOnFalse2 : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((soundnessCounterexample : Trm I).compile 4) =
+      .some
+        (.apply
+          (.apply
+            (idFn : Trm I).typeEraseRecursively
+            (false : Trm I).typeEraseRecursively
+            none)
+          (true : Trm I).typeEraseRecursively
+          none) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((malformedPrimitiveApply : Trm I).compile 2) = .error := rfl
@@ -180,6 +196,9 @@ unsafe example : ((Trm.idFnOnFalse2 : Trm RuntimeRef).eval 1) = .outOfFuel := by
 
 unsafe example : ((Trm.idFnOnFalse2 : Trm RuntimeRef).eval 3) =
     .some ((Val.primitive "false") : Val RuntimeRef) := by
+  rfl
+
+unsafe example : ((Trm.soundnessCounterexample : Trm RuntimeRef).eval 4) = .error := by
   rfl
 
 unsafe example : ((Trm.malformedPrimitiveApply : Trm RuntimeRef).eval 0) = .outOfFuel := by
