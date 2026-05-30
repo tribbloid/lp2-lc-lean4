@@ -24,6 +24,92 @@ example {I : Index} :
 
 end eraseType
 
+section compile
+
+example {I : Index} [Compiletime.Env I] :
+    ((false : Trm I).compile 0) = .outOfFuel := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((false : Trm I).compile 1) =
+      .some ((false : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((true : Trm I).compile 1) =
+      .some ((true : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((idFn : Trm I).compile 1) =
+      .some ((idFn : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((idFnOnFalse : Trm I).compile 2) =
+      .some
+        (.apply
+          (idFn : Trm I).typeEraseRecursively
+          (false : Trm I).typeEraseRecursively
+          none) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((get1st : Trm I).compile 1) =
+      .some ((get1st : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((get2nd : Trm I).compile 1) =
+      .some ((get2nd : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((get1stOnTuple : Trm I).compile 3) =
+      .some ((get1stOnTuple : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((get2ndOnTuple : Trm I).compile 3) =
+      .some ((get2ndOnTuple : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((apply1stOn2ndFn : Trm I).compile 1) =
+      .some ((apply1stOn2ndFn : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((apply1stOn2ndFnOnTuple : Trm I).compile 3) =
+      .some ((apply1stOn2ndFnOnTuple : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((applyidFnOnItself : Trm I).compile 2) =
+      .some ((applyidFnOnItself : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((idFnOnFalse2 : Trm I).compile 3) =
+      .some ((idFnOnFalse2 : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((malformedPrimitiveApply : Trm I).compile 2) = .error := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((annotatedFalse : Trm I).compile 1) =
+      .some ((annotatedFalse : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((annotatedIdFn : Trm I).compile 1) =
+      .some ((annotatedIdFn : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((annotatedIdFnOnFalse : Trm I).compile 2) =
+      .some ((annotatedIdFnOnFalse : Trm I).typeEraseRecursively) := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((.val
+      (.primitive "false")
+      (some (.depFn .primitive (fun _ => .primitive))) : Trm I).compile 1) =
+      .error := rfl
+
+example {I : Index} [Compiletime.Env I] :
+    ((.val
+      (.fn (body := fun x => .ref x))
+      (some .primitive) : Trm I).compile 1) =
+      .error := rfl
+
+end compile
+
 section eval
 
 unsafe inductive RuntimeRef where

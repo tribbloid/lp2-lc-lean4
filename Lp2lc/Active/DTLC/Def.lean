@@ -277,7 +277,39 @@ This rule supports:
 - soundness: semantic typing implies existence of a type-erased adequate
   compiled program
 -/
-def compile (trm : AST.Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
+def compile (trm : AST.Trm I) (fuel : Nat) : Outcome (Trm I) :=
+  match fuel with
+  | 0 => .outOfFuel
+  | fuel + 1 =>
+    match trm with
+    | .val value typeAnnotation =>
+      match typeAnnotation with
+      | some type =>
+        if value.satisfies type then
+          .some ((AST.Trm.val value none).typeEraseRecursively)
+        else
+          .error
+      | none => .some ((AST.Trm.val value none).typeEraseRecursively)
+    | .apply fn arg _ =>
+      match compile fn fuel, compile arg fuel with
+      | .some (.val (.primitive _) _), .some _ => .error
+      | .some compiledFn, .some compiledArg =>
+        match fn.typeGet with
+        | some .primitive => .error
+        | some .top => .error
+        | some (.depFn tIn _) =>
+          match compiledArg with
+          | .val value _ =>
+            if value.satisfies tIn then
+              .some (.apply compiledFn compiledArg none)
+            else
+              .error
+          | _ => .some (.apply compiledFn compiledArg none)
+        | none => .some (.apply compiledFn compiledArg none)
+      | .outOfFuel, _ => .outOfFuel
+      | _, .outOfFuel => .outOfFuel
+      | _, _ => .error
+    | .ref refValue _ => .some (.ref refValue none)
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
 def Typing (trm : Trm I) (fuel : Nat) : Prop :=
