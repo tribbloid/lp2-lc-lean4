@@ -7,7 +7,7 @@ open Lp2lc.Active.DTLC.Closed
 namespace Val
 
 def idFn : ValAST :=
-  .fn (body := fun x => .ref x)
+  .fn fun x => .ref x
 
 end Val
 

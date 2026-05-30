@@ -14,22 +14,22 @@ def true : TrmAST :=
   .val (.primitive "true")
 
 def idFn : TrmAST :=
-  .val (.fn (body := fun x => .ref x))
+  .val (.fn (fun x => .ref x))
 
 def idFnOnFalse : TrmAST :=
   .apply idFn false
 
 def get1st : TrmAST :=
   .val
-    (.fn (body := fun x =>
+    (.fn (fun x =>
       .val
-        (.fn (body := fun _y => .ref x))))
+        (.fn (fun _y => .ref x))))
 
 def get2nd : TrmAST :=
   .val
-    (.fn (body := fun _x =>
+    (.fn (fun _x =>
       .val
-        (.fn (body := fun y => .ref y))))
+        (.fn (fun y => .ref y))))
 
 def get1stOnTuple : TrmAST :=
   .apply
@@ -42,8 +42,8 @@ def get2ndOnTuple : TrmAST :=
     true
 
 def apply1stOn2ndFn : TrmAST :=
-  .val (.fn (body := fun f =>
-      .val (.fn (body := fun x =>
+  .val (.fn (fun f =>
+      .val (.fn (fun x =>
         .apply
           (.ref f)
           (.ref x)))))
@@ -68,7 +68,7 @@ def annotatedFalse : TrmAST :=
 def annotatedIdFn : TrmAST :=
   .val
     (.fn
-      (body := fun x => .ref x (some .primitive)))
+      (fun x => .ref x (some .primitive)))
     (some (.depFn .primitive (fun _x => .primitive)))
 
 def annotatedIdFnOnFalse : TrmAST :=

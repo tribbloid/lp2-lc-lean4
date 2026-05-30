@@ -16,7 +16,7 @@ example {I : Index} :
 
 example {I : Index} :
     (annotatedIdFn : Trm I).typeEraseRecursively =
-      .val (.fn (body := fun x => .ref x)) none := rfl
+      .val (.fn fun x => .ref x) none := rfl
 
 example {I : Index} :
     (annotatedIdFnOnFalse : Trm I).typeEraseRecursively =
@@ -104,7 +104,7 @@ example {I : Index} [Compiletime.Env I] :
 
 example {I : Index} [Compiletime.Env I] :
     ((.val
-      (.fn (body := fun x => .ref x))
+      (.fn (fun x => .ref x))
       (some .primitive) : Trm I).compile 1) =
       .error := rfl
 

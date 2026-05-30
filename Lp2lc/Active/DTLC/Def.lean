@@ -86,21 +86,21 @@ namespace Trm
 /-- Reads the optional annotation attached to the outer term constructor. -/
 def typeGet {I : Index} (self : Trm I) : Option (Typ I) :=
   match self with
-  | .val (v := _) (t := typeAnnotation) => typeAnnotation
-  | .apply (fn := _) (arg := _) (t := typeAnnotation) => typeAnnotation
+  | .val _ typeAnnotation => typeAnnotation
+  | .apply _ _ typeAnnotation => typeAnnotation
   | .ref _ typeAnnotation => typeAnnotation
 
 /-- Replaces only the outer annotation while preserving the underlying term. -/
 def typeUpdate {I : Index} (self : Trm I) (typeAnnotation : Option (Typ I)) : Trm I :=
   match self with
-  | .val (v := value) (t := _) => .val (v := value) (t := typeAnnotation)
-  | .apply (fn := fn) (arg := arg) (t := _) => .apply (fn := fn) (arg := arg) (t := typeAnnotation)
+  | .val value _ => .val value typeAnnotation
+  | .apply fn arg _ => .apply fn arg typeAnnotation
   | .ref refValue _ => .ref refValue typeAnnotation
 
 /-- Removes all optional type annotations from a term. -/
 def typeEraseRecursively {I : Index} (self : Trm I) : Trm I :=
   match self with
-  | .val (.fn body) _ => .val (.fn (body := fun arg => typeEraseRecursively (body arg))) none
+  | .val (.fn body) _ => .val (.fn fun arg => typeEraseRecursively (body arg)) none
   | .apply fn arg _ => .apply (typeEraseRecursively fn) (typeEraseRecursively arg) none
   | _ => typeUpdate self .none
 
@@ -223,11 +223,11 @@ def satisfies {I : Index} (value : Val I) (type : Typ I) : Bool :=
   | .top => true
   | .primitive =>
     match value with
-    | .primitive (repr := _) => true
-    | .fn (body := _) => false
-  | .depFn (tIn := _) (tOut := _) =>
+    | .primitive _ => true
+    | .fn _ => false
+  | .depFn _ _ =>
     match value with
-    | .primitive (repr := _) => false
+    | .primitive _ => false
     | .fn _ => true
 
 end AST.Val
