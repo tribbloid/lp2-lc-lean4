@@ -13,8 +13,7 @@ open Util
 
 namespace AST
 section
-
-variable (I : Index) -- index
+variable (I : Index) -- AKA Symbol/Name/ID/Key
 
 mutual
 
@@ -66,7 +65,11 @@ inductive Val : Index where
 | fn (body : (arg : I) → Trm) -- most specific type is always `.depFn`
 
 end
+
 end
+
+section
+variable {I : Index} -- I as an implicit type argument, due to lean limitation the previous section cannot be merged into it without serious bloat, this is very lame
 
 /-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
 instance valIsTrm : Coe (Val I) (Trm I) where
@@ -80,32 +83,39 @@ inductive SubtypeEv : (under: Typ I) -> (over: Typ I) -> Prop
 
 end Typ
 
-
 namespace Trm
 
+structure TypeView where (self: Trm I)
+
+def type (self: Trm I) := TypeView.mk self
+
+namespace TypeView
+
+end TypeView
+
 /-- Reads the optional annotation attached to the outer term constructor. -/
-def typeGet {I : Index} (self : Trm I) : Option (Typ I) :=
+def typeGet (self : Trm I) : Option (Typ I) :=
   match self with
   | .val _ typeAnnotation => typeAnnotation
   | .apply _ _ typeAnnotation => typeAnnotation
   | .ref _ typeAnnotation => typeAnnotation
 
 /-- Replaces only the outer annotation while preserving the underlying term. -/
-def typeUpdate {I : Index} (self : Trm I) (typeAnnotation : Option (Typ I)) : Trm I :=
+def typeUpdate (self : Trm I) (typeAnnotation : Option (Typ I)) : Trm I :=
   match self with
   | .val value _ => .val value typeAnnotation
   | .apply fn arg _ => .apply fn arg typeAnnotation
   | .ref refValue _ => .ref refValue typeAnnotation
 
 /-- Removes all optional type annotations from a term. -/
-def typeEraseRecursively {I : Index} (self : Trm I) : Trm I :=
+def typeEraseRecursively (self : Trm I) : Trm I :=
   match self with
   | .val (.fn body) _ => .val (.fn fun arg => typeEraseRecursively (body arg)) none
   | .apply fn arg _ => .apply (typeEraseRecursively fn) (typeEraseRecursively arg) none
   | _ => typeUpdate self .none
 
 /-- Predicate that all annotations have been removed from a term. -/
-def TypeIsErased {I : Index} (self : Trm I) : Prop :=
+def TypeIsErased (self : Trm I) : Prop :=
   let prior := typeGet self = none
   match self with
   | .val (.fn body) => prior ∧ ∀ arg, (body arg).TypeIsErased
@@ -113,8 +123,10 @@ def TypeIsErased {I : Index} (self : Trm I) : Prop :=
   | _ => prior
 
 end Trm
-end AST
 
+end
+
+end AST
 
 namespace Closed
 

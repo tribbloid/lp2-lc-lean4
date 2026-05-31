@@ -12,15 +12,15 @@ open Lp2lc.Active.DTLC.Runtime
 section eraseType
 
 example {I : Index} :
-    (annotatedFalse : Trm I).typeEraseRecursively = (false : Trm I) := rfl
+    (annotatedFalse : Trm I).type.eraseRecursively = (false : Trm I) := rfl
 
 example {I : Index} :
-    (annotatedIdFn : Trm I).typeEraseRecursively =
+    (annotatedIdFn : Trm I).type.eraseRecursively =
       .val (.fn fun x => .ref x) none := rfl
 
 example {I : Index} :
-    (annotatedIdFnOnFalse : Trm I).typeEraseRecursively =
-      .apply (annotatedIdFn : Trm I).typeEraseRecursively (false : Trm I) none := rfl
+    (annotatedIdFnOnFalse : Trm I).type.eraseRecursively =
+      .apply (annotatedIdFn : Trm I).type.eraseRecursively (false : Trm I) none := rfl
 
 end eraseType
 
@@ -31,55 +31,55 @@ example {I : Index} [Compiletime.Env I] :
 
 example {I : Index} [Compiletime.Env I] :
     ((false : Trm I).compile 1) =
-      .some ((false : Trm I).typeEraseRecursively) := rfl
+      .some ((false : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((true : Trm I).compile 1) =
-      .some ((true : Trm I).typeEraseRecursively) := rfl
+      .some ((true : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((idFn : Trm I).compile 1) =
-      .some ((idFn : Trm I).typeEraseRecursively) := rfl
+      .some ((idFn : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((idFnOnFalse : Trm I).compile 2) =
       .some
         (.apply
-          (idFn : Trm I).typeEraseRecursively
-          (false : Trm I).typeEraseRecursively
+          (idFn : Trm I).type.eraseRecursively
+          (false : Trm I).type.eraseRecursively
           none) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((get1st : Trm I).compile 1) =
-      .some ((get1st : Trm I).typeEraseRecursively) := rfl
+      .some ((get1st : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((get2nd : Trm I).compile 1) =
-      .some ((get2nd : Trm I).typeEraseRecursively) := rfl
+      .some ((get2nd : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((get1stOnTuple : Trm I).compile 3) =
-      .some ((get1stOnTuple : Trm I).typeEraseRecursively) := rfl
+      .some ((get1stOnTuple : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((get2ndOnTuple : Trm I).compile 3) =
-      .some ((get2ndOnTuple : Trm I).typeEraseRecursively) := rfl
+      .some ((get2ndOnTuple : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((apply1stOn2ndFn : Trm I).compile 1) =
-      .some ((apply1stOn2ndFn : Trm I).typeEraseRecursively) := rfl
+      .some ((apply1stOn2ndFn : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((apply1stOn2ndFnOnTuple : Trm I).compile 3) =
-      .some ((apply1stOn2ndFnOnTuple : Trm I).typeEraseRecursively) := rfl
+      .some ((apply1stOn2ndFnOnTuple : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((applyidFnOnItself : Trm I).compile 2) =
-      .some ((applyidFnOnItself : Trm I).typeEraseRecursively) := rfl
+      .some ((applyidFnOnItself : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((idFnOnFalse2 : Trm I).compile 3) =
-      .some ((idFnOnFalse2 : Trm I).typeEraseRecursively) := rfl
+      .some ((idFnOnFalse2 : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((malformedApply1 : Trm I).compile 4) =
@@ -90,15 +90,15 @@ example {I : Index} [Compiletime.Env I] :
 
 example {I : Index} [Compiletime.Env I] :
     ((annotatedFalse : Trm I).compile 1) =
-      .some ((annotatedFalse : Trm I).typeEraseRecursively) := rfl
+      .some ((annotatedFalse : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((annotatedIdFn : Trm I).compile 2) =
-      .some ((annotatedIdFn : Trm I).typeEraseRecursively) := rfl
+      .some ((annotatedIdFn : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((annotatedIdFnOnFalse : Trm I).compile 3) =
-      .some ((annotatedIdFnOnFalse : Trm I).typeEraseRecursively) := rfl
+      .some ((annotatedIdFnOnFalse : Trm I).type.eraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((.val
@@ -193,6 +193,12 @@ unsafe example : ((Trm.malformedPrimitiveApply : Trm RuntimeRef).eval 0) = .outO
   rfl
 
 unsafe example : ((Trm.malformedPrimitiveApply : Trm RuntimeRef).eval 2) = .error := by
+  rfl
+
+unsafe example : ((Trm.malformedApply1 : Trm RuntimeRef).eval 1) = .outOfFuel := by
+  rfl
+
+unsafe example : ((Trm.malformedApply1 : Trm RuntimeRef).eval 3) = .error := by
   rfl
 
 end eval
