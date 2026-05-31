@@ -68,6 +68,75 @@ theorem eraseType_isErased {I : Index} : ∀ (self : Trm I), self.typeEraseRecur
   ⟨rfl, eraseType_isErased fn, eraseType_isErased arg⟩
 | .ref _ _ => rfl
 
+/-- A compiled term is adequate at a fuel when evaluation does not return runtime error. -/
+theorem adequacyLemma {I : Index} [Runtime.Env I] {compiledTrm : Trm I} {fuel : Nat}
+    (isNotError : compiledTrm.eval fuel ≠ .error) :
+    Adequate compiledTrm fuel := by
+  cases fuel with
+  | zero =>
+    rfl
+  | succ fuel =>
+    unfold Adequate
+    cases evalResult : compiledTrm.eval (fuel + 1) with
+    | some value =>
+      exact Or.inl ⟨value, evalResult⟩
+    | error =>
+      exact False.elim (isNotError evalResult)
+    | outOfFuel =>
+      exact Or.inr evalResult
+
+/-- Fundamental lemma at zero compile fuel follows from the compiler fuel guard. -/
+theorem fundamentalLemma_zero {I : Index} [Compiletime.Env I] [Runtime.Env I]
+    {sourceTrm compiledTrm : Trm I} {runtimeFuel : Nat} :
+    Fundamental
+      (sourceTrm := sourceTrm)
+      (compiledTrm := compiledTrm)
+      (compileFuel := 0)
+      (runtimeFuel := runtimeFuel) := by
+  unfold Fundamental
+  cases sourceTrm <;> rfl
+
+/-- Fundamental lemma at successor compile fuel packages compilation, erasure, and adequacy. -/
+theorem fundamentalLemma_succ {I : Index} [Compiletime.Env I] [Runtime.Env I]
+    {sourceTrm compiledTrm : Trm I} {compileFuel runtimeFuel : Nat}
+    (isCompiled : sourceTrm.compile (compileFuel + 1) = .some compiledTrm)
+    (isErased : compiledTrm.TypeIsErased)
+    (isAdequate : Adequate compiledTrm runtimeFuel) :
+    Fundamental sourceTrm compiledTrm (compileFuel + 1) runtimeFuel := by
+  exact ⟨isCompiled, isErased, isAdequate⟩
+
+/-- Soundness at zero compile fuel follows from the compiler fuel guard. -/
+theorem soundness_zero {I : Index} [Compiletime.Env I] [Runtime.Env I]
+    {sourceTrm : Trm I} {runtimeFuel : Nat} :
+    Sound (sourceTrm := sourceTrm) (compileFuel := 0) (runtimeFuel := runtimeFuel) := by
+  unfold Sound
+  cases sourceTrm <;> rfl
+
+/-- Soundness at successor compile fuel follows from a fundamental result. -/
+theorem soundness_succ {I : Index} [Compiletime.Env I] [Runtime.Env I]
+    {sourceTrm compiledTrm : Trm I} {compileFuel runtimeFuel : Nat}
+    (isFundamental : Fundamental sourceTrm compiledTrm (compileFuel + 1) runtimeFuel) :
+    Sound sourceTrm (compileFuel + 1) runtimeFuel := by
+  exact ⟨compiledTrm, isFundamental⟩
+
+/-- Semantic typing is sound when every successful compilation is fundamental. -/
+theorem soundness {I : Index} [Compiletime.Env I] [Runtime.Env I]
+    {sourceTrm : Trm I} {compileFuel runtimeFuel : Nat}
+    (isTyped : AST.Trm.Typing sourceTrm (compileFuel + 1))
+    (isFundamental :
+      ∀ compiledTrm,
+        sourceTrm.compile (compileFuel + 1) = .some compiledTrm →
+          Fundamental sourceTrm compiledTrm (compileFuel + 1) runtimeFuel) :
+    Sound sourceTrm (compileFuel + 1) runtimeFuel := by
+  unfold AST.Trm.Typing at isTyped
+  cases compileResult : sourceTrm.compile (compileFuel + 1) with
+  | some compiledTrm =>
+    exact soundness_succ (isFundamental compiledTrm compileResult)
+  | error =>
+    simp [Outcome.isSome, compileResult] at isTyped
+  | outOfFuel =>
+    simp [Outcome.isSome, compileResult] at isTyped
+
 end Trm
 
 end DTLC
