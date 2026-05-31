@@ -91,36 +91,36 @@ def type (self: Trm I) := TypeView.mk self
 
 namespace TypeView
 
-end TypeView
-
 /-- Reads the optional annotation attached to the outer term constructor. -/
-def typeGet (self : Trm I) : Option (Typ I) :=
-  match self with
-  | .val _ typeAnnotation => typeAnnotation
-  | .apply _ _ typeAnnotation => typeAnnotation
-  | .ref _ typeAnnotation => typeAnnotation
+def get (view : @TypeView I) : Option (Typ I) :=
+  match view.self with
+  | .val _ t => t
+  | .apply _ _ t => t
+  | .ref _ t => t
 
 /-- Replaces only the outer annotation while preserving the underlying term. -/
-def typeUpdate (self : Trm I) (typeAnnotation : Option (Typ I)) : Trm I :=
-  match self with
-  | .val value _ => .val value typeAnnotation
-  | .apply fn arg _ => .apply fn arg typeAnnotation
-  | .ref refValue _ => .ref refValue typeAnnotation
+def update (view : @TypeView I) (t : Option (Typ I)) : Trm I :=
+  match view.self with
+  | .val value _ => .val value t
+  | .apply fn arg _ => .apply fn arg t
+  | .ref refValue _ => .ref refValue t
 
 /-- Removes all optional type annotations from a term. -/
-def typeEraseRecursively (self : Trm I) : Trm I :=
+def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
   match self with
-  | .val (.fn body) _ => .val (.fn fun arg => typeEraseRecursively (body arg)) none
-  | .apply fn arg _ => .apply (typeEraseRecursively fn) (typeEraseRecursively arg) none
-  | _ => typeUpdate self .none
+  | .val (.fn body) _ => .val (.fn fun arg => (body arg).type.eraseRecursively (body arg)) none
+  | .apply fn arg _ => .apply (fn.type.eraseRecursively fn) (arg.type.eraseRecursively arg) none
+  | _ => self.type.update .none
 
 /-- Predicate that all annotations have been removed from a term. -/
-def TypeIsErased (self : Trm I) : Prop :=
-  let prior := typeGet self = none
+def IsErased (view : @TypeView I) (self : Trm I := view.self) : Prop :=
+  let prior := self.type.get = none
   match self with
-  | .val (.fn body) => prior ∧ ∀ arg, (body arg).TypeIsErased
-  | .apply fn arg => prior ∧ fn.TypeIsErased ∧ arg.TypeIsErased
+  | .val (.fn body) => prior ∧ ∀ arg, (body arg).type.IsErased (body arg)
+  | .apply fn arg => prior ∧ fn.type.IsErased fn ∧ arg.type.IsErased arg
   | _ => prior
+
+end TypeView
 
 end Trm
 
@@ -314,17 +314,17 @@ def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
             match compileWithType (some tIn) (body argRef) fuel with
             | .some (_, bodyType) =>
               if typeCompatible bodyType (tOut argRef) then
-                .some ((Trm.val value none).typeEraseRecursively, type)
+                .some ((Trm.val value none).type.eraseRecursively, type)
               else
                 .error
             | .outOfFuel => .outOfFuel
             | .error => .error
           | _, _ =>
             if value.satisfies type then
-              .some ((Trm.val value none).typeEraseRecursively, type)
+              .some ((Trm.val value none).type.eraseRecursively, type)
             else
               .error
-        | none => .some ((Trm.val value none).typeEraseRecursively, inferredType)
+        | none => .some ((Trm.val value none).type.eraseRecursively, inferredType)
       | .apply fn arg _ =>
         match compileWithType boundType fn fuel, compileWithType boundType arg fuel with
         | .some (compiledFn, fnType), .some (compiledArg, argType) =>
