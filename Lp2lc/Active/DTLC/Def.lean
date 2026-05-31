@@ -270,38 +270,65 @@ This rule supports:
   compiled program
 -/
 def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
-  match fuel with
-  | 0 => .outOfFuel
-  | fuel + 1 =>
-    match trm with
-    | .val value typeAnnotation =>
-      match typeAnnotation with
-      | some type =>
-        if value.satisfies type then
-          .some ((Trm.val value none).typeEraseRecursively)
-        else
-          .error
-      | none => .some ((Trm.val value none).typeEraseRecursively)
-    | .apply fn arg _ =>
-      match compile fn fuel, compile arg fuel with
-      | .some (.val (.primitive _) _), .some _ => .error
-      | .some compiledFn, .some compiledArg =>
-        match fn.typeGet with
-        | some .primitive => .error
-        | some .top => .error
-        | some (.depFn tIn _) =>
-          match compiledArg with
-          | .val value _ =>
-            if value.satisfies tIn then
-              .some (.apply compiledFn compiledArg none)
+  let typeCompatible (under : Typ I) (over : Typ I) : Bool :=
+    match under, over with
+    | _, .top => true
+    | .primitive, .primitive => true
+    | .depFn _ _, .depFn _ _ => true
+    | _, _ => false
+  let rec compileWithType (boundType : Option (Typ I)) (trm : Trm I) (fuel : Nat) :
+      Outcome (Trm I × Typ I) :=
+    match fuel with
+    | 0 => .outOfFuel
+    | fuel + 1 =>
+      match trm with
+      | .val value typeAnnotation =>
+        let inferredType :=
+          match value with
+          | .primitive _ => Typ.primitive
+          | .fn body =>
+            Typ.depFn
+              Typ.top
+              (fun arg =>
+                match compileWithType none (body arg) fuel with
+                | .some (_, type) => type
+                | _ => Typ.top)
+        match typeAnnotation with
+        | some type =>
+          if value.satisfies type then
+            .some ((Trm.val value none).typeEraseRecursively, type)
+          else
+            .error
+        | none => .some ((Trm.val value none).typeEraseRecursively, inferredType)
+      | .apply fn arg _ =>
+        match compileWithType boundType fn fuel, compileWithType boundType arg fuel with
+        | .some (compiledFn, fnType), .some (compiledArg, argType) =>
+          match fnType with
+          | .primitive => .error
+          | .top => .error
+          | .depFn tIn tOut =>
+            if typeCompatible argType tIn then
+              let fBound := Compiletime.Env.forTyps (I := I)
+              let argRef := fBound.save argType Permission.NotRequired.mk
+              let resultType :=
+                match fn with
+                | .val (.fn body) _ =>
+                  match compileWithType (some argType) (body argRef) fuel with
+                  | .some (_, type) => type
+                  | _ => tOut argRef
+                | _ => tOut argRef
+              .some (.apply compiledFn compiledArg none, resultType)
             else
               .error
-          | _ => .some (.apply compiledFn compiledArg none)
-        | none => .some (.apply compiledFn compiledArg none)
-      | .outOfFuel, _ => .outOfFuel
-      | _, .outOfFuel => .outOfFuel
-      | _, _ => .error
-    | .ref refValue _ => .some (.ref refValue none)
+        | .outOfFuel, _ => .outOfFuel
+        | _, .outOfFuel => .outOfFuel
+        | _, _ => .error
+      | .ref refValue _ =>
+        .some (Trm.ref refValue none, boundType.getD Typ.top)
+  match compileWithType none trm fuel with
+  | .some (compiledTrm, _) => .some compiledTrm
+  | .error => .error
+  | .outOfFuel => .outOfFuel
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
 def Typing (trm : Trm I) (fuel : Nat) : Prop :=

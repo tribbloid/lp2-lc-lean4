@@ -83,14 +83,7 @@ example {I : Index} [Compiletime.Env I] :
 
 example {I : Index} [Compiletime.Env I] :
     ((malformedApply1 : Trm I).compile 4) =
-      .some
-        (.apply
-          (.apply
-            (idFn : Trm I).typeEraseRecursively
-            (false : Trm I).typeEraseRecursively
-            none)
-          (true : Trm I).typeEraseRecursively
-          none) := rfl
+      .error := rfl
 
 example {I : Index} [Compiletime.Env I] :
     ((malformedPrimitiveApply : Trm I).compile 2) = .error := rfl
