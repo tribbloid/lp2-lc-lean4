@@ -295,10 +295,23 @@ def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
                 | _ => Typ.top)
         match typeAnnotation with
         | some type =>
-          if value.satisfies type then
-            .some ((Trm.val value none).typeEraseRecursively, type)
-          else
-            .error
+          match value, type with
+          | .fn body, .depFn tIn tOut =>
+            let fBound := Compiletime.Env.forTyps (I := I)
+            let argRef := fBound.save tIn Permission.NotRequired.mk
+            match compileWithType (some tIn) (body argRef) fuel with
+            | .some (_, bodyType) =>
+              if typeCompatible bodyType (tOut argRef) then
+                .some ((Trm.val value none).typeEraseRecursively, type)
+              else
+                .error
+            | .outOfFuel => .outOfFuel
+            | .error => .error
+          | _, _ =>
+            if value.satisfies type then
+              .some ((Trm.val value none).typeEraseRecursively, type)
+            else
+              .error
         | none => .some ((Trm.val value none).typeEraseRecursively, inferredType)
       | .apply fn arg _ =>
         match compileWithType boundType fn fuel, compileWithType boundType arg fuel with
@@ -310,14 +323,16 @@ def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
             if typeCompatible argType tIn then
               let fBound := Compiletime.Env.forTyps (I := I)
               let argRef := fBound.save argType Permission.NotRequired.mk
-              let resultType :=
-                match fn with
-                | .val (.fn body) _ =>
-                  match compileWithType (some argType) (body argRef) fuel with
-                  | .some (_, type) => type
-                  | _ => tOut argRef
-                | _ => tOut argRef
-              .some (.apply compiledFn compiledArg none, resultType)
+              match fn with
+              | .val (.fn body) _ =>
+                match compileWithType (some argType) (body argRef) fuel with
+                | .some (_, resultType) =>
+                  .some (.apply compiledFn compiledArg none, resultType)
+                | .outOfFuel =>
+                  .some (.apply compiledFn compiledArg none, tOut argRef)
+                | .error => .error
+              | _ =>
+                .some (.apply compiledFn compiledArg none, tOut argRef)
             else
               .error
         | .outOfFuel, _ => .outOfFuel

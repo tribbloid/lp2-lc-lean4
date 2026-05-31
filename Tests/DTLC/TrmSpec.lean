@@ -93,11 +93,11 @@ example {I : Index} [Compiletime.Env I] :
       .some ((annotatedFalse : Trm I).typeEraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
-    ((annotatedIdFn : Trm I).compile 1) =
+    ((annotatedIdFn : Trm I).compile 2) =
       .some ((annotatedIdFn : Trm I).typeEraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
-    ((annotatedIdFnOnFalse : Trm I).compile 2) =
+    ((annotatedIdFnOnFalse : Trm I).compile 3) =
       .some ((annotatedIdFnOnFalse : Trm I).typeEraseRecursively) := rfl
 
 example {I : Index} [Compiletime.Env I] :
