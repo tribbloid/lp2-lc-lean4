@@ -349,10 +349,14 @@ namespace AST.Trm
 
 /--
 An safe program may run out of runtime fuel, but it must not reach runtime
-`error`.
+`error`. When a runtime value is produced with a type hint, the value must
+compile under that hint.
 -/
-def IsSafe [Runtime.Env I] (program : Trm I) (fuel: Nat) : Prop :=
-  (program.eval fuel).isSemiDecidable
+def IsSafe [Compiletime.Env I] [Runtime.Env I]
+    (program : Trm I) (typeHint : Option (Typ I)) (fuel: Nat) : Prop :=
+  match program.eval fuel, typeHint with
+  | .result value, some type => ((Trm.typeHinted (.val value) type).compile fuel).isDecidable
+  | result, _ => result.isSemiDecidable
 
 /--
 The adequacy conjecture of logical relation:
@@ -363,7 +367,7 @@ This conjecture is independent from type erasure.
 -/
 def IsAdequate [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : Prop :=
   match src.compile fuel with
-  | .result program => program.IsSafe fuel
+  | .result program => program.IsSafe src.type.get fuel
   | _ => true
 
 /--
