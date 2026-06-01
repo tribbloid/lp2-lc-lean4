@@ -282,7 +282,80 @@ This rule supports:
 - soundness: semantic typing implies existence of a type-erased adequate
   compiled program
 -/
-def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
+def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
+  let typeCompatible (under : Typ I) (over : Typ I) : Bool :=
+    match under, over with
+    | _, .top => true
+    | .primitive, .primitive => true
+    | .depFn _ _, .depFn _ _ => true
+    | _, _ => false
+  let rec compileWithType (boundType : Option (Typ I)) (trm : Trm I) (fuel : Nat) :
+      Outcome (Trm I × Typ I) :=
+    match fuel with
+    | 0 => .outOfFuel
+    | fuel + 1 =>
+      match trm with
+      | typeHinted self typeAnnotation =>
+        match compileWithType boundType self fuel with
+        | .result (compiledTrm, inferredType) =>
+          if typeCompatible inferredType typeAnnotation then
+            .result (compiledTrm, typeAnnotation)
+          else
+            .error
+        | .outOfFuel => .outOfFuel
+        | .error => .error
+      | .val value =>
+        let erasedValue :=
+          match value with
+          | .primitive _ => value
+          | .primitiveFn body =>
+            Val.primitiveFn fun arg => (body arg).type.eraseRecursively (body arg)
+          | .fn body =>
+            Val.fn fun arg => (body arg).type.eraseRecursively (body arg)
+        let inferredType :=
+          match value with
+          | .primitive _ => Typ.primitive
+          | .primitiveFn _ =>
+            Typ.depFn Typ.primitive (fun _arg => Typ.primitive)
+          | .fn body =>
+            Typ.depFn
+              Typ.top
+              (fun arg =>
+                match compileWithType none (body arg) fuel with
+                | .result (_, type) => type
+                | _ => Typ.top)
+        .result (Trm.val erasedValue, inferredType)
+      | .apply fn arg =>
+        match compileWithType boundType fn fuel, compileWithType boundType arg fuel with
+        | .result (compiledFn, fnType), .result (compiledArg, argType) =>
+          match fnType with
+          | .primitive => .error
+          | .top => .error
+          | .depFn tIn tOut =>
+            if typeCompatible argType tIn then
+              let fBound := Compiletime.Env.forTyps (I := I)
+              let argRef := fBound.save argType Permission.NotRequired.mk
+              match fn with
+              | .val (.fn body) =>
+                match compileWithType (some argType) (body argRef) fuel with
+                | .result (_, resultType) =>
+                  .result (.apply compiledFn compiledArg, resultType)
+                | .outOfFuel =>
+                  .result (.apply compiledFn compiledArg, tOut argRef)
+                | .error => .error
+              | _ =>
+                .result (.apply compiledFn compiledArg, tOut argRef)
+            else
+              .error
+        | .outOfFuel, _ => .outOfFuel
+        | _, .outOfFuel => .outOfFuel
+        | _, _ => .error
+      | .ref refValue =>
+        .result (Trm.ref refValue, boundType.getD Typ.top)
+  match compileWithType none trm fuel with
+  | .result (compiledTrm, _) => .result compiledTrm
+  | .error => .error
+  | .outOfFuel => .outOfFuel
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
 def Typing (typ: Typ I) (trm : Trm I) (fuel : Nat) : Prop := -- TOOD: move trm to be after colon
