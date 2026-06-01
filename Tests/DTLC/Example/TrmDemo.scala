@@ -41,6 +41,12 @@ object TrmDemo extends Preamble {
   lazy val malformedPrimitiveApply: Boolean =
     `false`.asInstanceOf[Boolean => Boolean](`true`)
 
+  val primitiveTrueFn: Boolean => Boolean =
+    _ => true
+
+  val primitiveTrueFnOnFalse: Boolean =
+    primitiveTrueFn(`false`)
+
   val annotatedFalse: Boolean =
     false
 

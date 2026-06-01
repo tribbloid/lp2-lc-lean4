@@ -67,17 +67,33 @@ def malformedApply1 : Trm :=
     (.apply idFn false)
     true
 
+def primitiveTrueFn : Trm :=
+  .val
+    (.primitiveFn (fun _repr =>
+      .val (.primitive "true")))
+
+def primitiveTrueFnOnFalse : Trm :=
+  .apply primitiveTrueFn false
+
 def annotatedFalse : Trm :=
-  .val (.primitive "false") (some .primitive)
+  .typeHint
+    (.val (.primitive "false"))
+    .primitive
 
 def annotatedIdFn : Trm :=
-  .val
-    (.fn
-      (fun x => .ref x (some .primitive)))
-    (some (.depFn .primitive (fun _x => .primitive)))
+  .typeHint
+    (.val
+      (.fn
+        (fun x =>
+          .typeHint
+            (.ref x)
+            .primitive)))
+    (.depFn .primitive (fun _x => .primitive))
 
 def annotatedIdFnOnFalse : Trm :=
-  .apply annotatedIdFn annotatedFalse (some .primitive)
+  .typeHint
+    (.apply annotatedIdFn annotatedFalse)
+    .primitive
 
 end Trm
 
