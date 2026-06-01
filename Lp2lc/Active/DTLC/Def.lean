@@ -46,9 +46,10 @@ are not intrinsic typing indices on terms.
 -- TODO: this definition has 2 problems: can eval at compiletime, cannot express
 -- primitive fn that modify bytecode
 inductive Trm : Index where
-| val (v : Val) (t : Option Typ := by exact none)
-| apply (fn : Trm) (arg : Trm) (t : Option Typ := by exact none)
-| ref (s: I) (t : Option Typ := by exact none) -- binded reference, AKA variable/var
+| typeHint (self : Trm) (hint : Typ) -- AKA type annotation, each term can have 0, 1, or many hints (e.g. `((1: Tuple): Product): AnyRef`), required for fundamental/composability theorem
+| val (v : Val) -- AKA literal
+| apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
+| ref (s: I) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
 /--
 Value syntax, containing neither references nor applications.
@@ -62,7 +63,8 @@ programs.
 -/
 inductive Val : Index where
 | primitive (repr : ByteCode) -- most specific type is always `primitive`
-| fn (body : (arg : I) → Trm) -- most specific type is always `.depFn`
+| primitiveFn (body: (arg: ByteCode) -> Trm ) -- most specific type is always `.depFn .primitive _`
+| fn (body : (arg : I) → Trm) -- most specific type is always `.depFn _ _`
 
 end
 
