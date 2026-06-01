@@ -37,7 +37,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 - All non-trivial definition (longer than 3 lines) in syntax & semantic rules must be with a short docString explaining their necessity. This rule doesn't apply to test code, abbreviation, or explicitly educational tutorial/demo modules.
 - Core proof and calculus modules should move executable checks to `Tests`. Tutorial/demo modules may contain `example`, `#eval`, `#check`, or `#rfl` commands when those commands are the point of the demonstration.
 - All function/constructor arguments must be named at define-site, call-site names are not necessary.
-- Repeated pattern-match conditions should be split into layers.
+- Do not repeated pattern-match conditions, they should be as short as possible
 - Field namespace/class (namespace/class supporting an existing type, where functions inside can be invoked with dot-notation) have special rules:
   - If the namespace contain multiple functions, the namespace should be declared explicitly.
   - All functions under the namespace/class should be compatible with dot-notation, namely their first argument should be consistent.
