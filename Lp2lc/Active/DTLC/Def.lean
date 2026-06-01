@@ -380,13 +380,14 @@ output type.
 This conjecture is independent from adequacy & type erasure.
 -/
 def IsComposable [Compiletime.Env I]
- (fn : Trm I) (arg: Val I) (tIn tOut : Typ I) (fuel : Nat) : Prop :=
-  let fnHinted := Trm.typeHinted fn (.depFn tIn (fun _ => tOut))
+ (fn : Trm I) (arg: Val I) (tIn : Typ I) (tOut : I → Typ I) (fuel : Nat) : Prop :=
+  let fnHinted := Trm.typeHinted fn (.depFn tIn tOut)
   let argHinted := Trm.typeHinted (.val arg) tIn
   match fnHinted.compile fuel, argHinted.compile fuel with
-  | .result pineapple, .result pen =>
-    let pineapplePen := Trm.typeHinted (Trm.apply pineapple pen) tOut
-
+  | .result compiledFn, .result compiledArg =>
+    let fBound := Compiletime.Env.forTyps (I := I)
+    let argRef := fBound.save tIn Permission.NotRequired.mk
+    let pineapplePen := Trm.typeHinted (Trm.apply compiledFn compiledArg) (tOut argRef)
     ∃ moreFuel, (pineapplePen.compile moreFuel).isDecidable
   | _, _ => true
 
