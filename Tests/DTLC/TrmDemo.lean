@@ -68,22 +68,22 @@ def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn false
 
 def annotatedFalse : Trm :=
-  .typeHint
+  .typeHinted
     (.val (.primitive "false"))
     .primitive
 
 def annotatedIdFn : Trm :=
-  .typeHint
+  .typeHinted
     (.val
       (.fn
         (fun x =>
-          .typeHint
+          .typeHinted
             (.ref x)
             .primitive)))
     (.depFn .primitive (fun _x => .primitive))
 
 def annotatedIdFnOnFalse : Trm :=
-  .typeHint
+  .typeHinted
     (.apply annotatedIdFn annotatedFalse)
     .primitive
 

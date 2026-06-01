@@ -42,15 +42,19 @@ attribute [simp] FBound.roundtrip
 
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
 inductive Outcome (T : Index)
-| some (v: T)
+| result (v: T)
 | error
 | outOfFuel
 
 namespace Outcome
 
-def isSome : (self : Outcome T) → Prop
-| .some _ => true
+def isDecidable : (self : Outcome T) → Prop
+| result _ => true
 | _ => false
+
+def isSemiDecidable : (self : Outcome T) → Prop
+| error  => false
+| _ => true
 
 end Outcome
 

@@ -11,6 +11,16 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 
 open Util
 
+namespace Permission
+
+class NotRequired (V : Type) (v: V) : Prop -- mk constructor can be used freely for any v
+
+class Eval (V : Type) (v: V) : Prop where
+  private mk ::
+
+end Permission
+
+
 namespace AST
 section
 variable (I : Index) -- AKA Symbol/Name/ID/Key
@@ -46,7 +56,7 @@ are not intrinsic typing indices on terms.
 -- TODO: this definition has 2 problems: can eval at compiletime, cannot express
 -- primitive fn that modify bytecode
 inductive Trm : Index where
-| typeHint (self : Trm) (hint : Typ) -- AKA type annotation, each term can have 0, 1, or many hints (e.g. `((1: Tuple): Product): AnyRef`), required for fundamental/composability theorem
+| typeHinted (self : Trm) (hint : Typ) -- AKA type annotation, each term can have 0, 1, or many hints (e.g. `((1: Tuple): Product): AnyRef`), required for fundamental/composability theorem
 | val (v : Val) -- AKA literal
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
 | ref (s: I) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
@@ -96,7 +106,7 @@ namespace TypeView
 /-- Reads the optional annotation attached to the outer term constructor. -/
 def get (view : @TypeView I) : Option (Typ I) :=
   match view.self with
-  | .typeHint _ t => some t
+  | typeHinted _ t => some t
   | _ => none
 
 /-- Replaces only the outer annotation while preserving the underlying term. -/
@@ -104,17 +114,17 @@ def update (view : @TypeView I) (t : Option (Typ I)) : Trm I :=
   match t with
   | some t =>
     match view.self with
-    | .typeHint self _ => .typeHint self t
-    | _ => .typeHint view.self t
+    | typeHinted self _ => typeHinted self t
+    | _ => typeHinted view.self t
   | none =>
     match view.self with
-    | .typeHint self _ => self
+    | typeHinted self _ => self
     | _ => view.self
 
 /-- Removes all optional type annotations from a term. -/
 def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
   match self with
-  | .typeHint self _ => self.type.eraseRecursively self
+  | typeHinted self _ => self.type.eraseRecursively self
   | .val (.primitiveFn body) => .val (.primitiveFn fun arg => (body arg).type.eraseRecursively (body arg))
   | .val (.fn body) => .val (.fn fun arg => (body arg).type.eraseRecursively (body arg))
   | .apply fn arg => .apply (fn.type.eraseRecursively fn) (arg.type.eraseRecursively arg)
@@ -124,7 +134,7 @@ def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
 def IsErased (view : @TypeView I) (self : Trm I := view.self) : Prop :=
   let prior := self.type.get = none
   match self with
-  | .typeHint _ _ => prior
+  | typeHinted _ _ => prior
   | .val (.primitiveFn body) => prior ∧ ∀ arg, (body arg).type.IsErased (body arg)
   | .val (.fn body) => prior ∧ ∀ arg, (body arg).type.IsErased (body arg)
   | .apply fn arg => prior ∧ fn.type.IsErased fn ∧ arg.type.IsErased arg
@@ -148,15 +158,6 @@ abbrev Val := AST.Val Symbol
 abbrev Trm := AST.Trm Symbol
 
 end Symbolic
-
-namespace Permission
-
-class NotRequired {V : Type} (v: V) : Prop -- mk constructor can be used freely for any v
-
-class Eval {I : Index} (v : AST.Val I) : Prop where
-  private mk ::
-
-end Permission
 
 namespace AST.Val
 
@@ -188,8 +189,8 @@ open AST
 
 class Env (I : Index) where
   -- fuel: Nat -- this can't be used, ewww
-  forVals: FBound I AST.Val (Permission.Eval (I := I))
-  canEvalAny: (v: AST.Val I) -> Permission.Eval v
+  forVals: FBound I AST.Val (Permission.Eval (AST.Val I))
+  canEvalAny: (v: AST.Val I) -> Permission.Eval (AST.Val I) v
 
 end Runtime
 
@@ -208,14 +209,14 @@ def eval (self : AST.Trm I) (fuel : Nat) : Outcome (AST.Val I) :=
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .typeHint self _ => eval self fuel
-    | .val value => .some value
+    | typeHinted self _ => eval self fuel
+    | .val value => .result value
     | .apply fn arg =>
       let anf := (eval fn fuel, eval arg fuel) -- ANF, atomic normal form
       match anf with
-      | (.some (.primitiveFn body), .some (.primitive repr)) =>
+      | (.result (.primitiveFn body), .result (.primitive repr)) =>
         eval (body repr) fuel
-      | (.some (.fn body), .some value) =>
+      | (.result (.fn body), .result value) =>
         let fBound := Runtime.Env.forVals (I := I)
         eval (body (fBound.save value (Runtime.Env.canEvalAny (I := I) value))) fuel
       | (.outOfFuel, _) => .outOfFuel
@@ -223,7 +224,7 @@ def eval (self : AST.Trm I) (fuel : Nat) : Outcome (AST.Val I) :=
       | _ => .error
     | .ref refValue =>
       let fBound := Runtime.Env.forVals (I := I)
-      .some (fBound.load refValue)
+      .result (fBound.load refValue)
 
 end AST.Trm
 end
@@ -295,11 +296,11 @@ def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
     | 0 => .outOfFuel
     | fuel + 1 =>
       match trm with
-      | .typeHint self typeAnnotation =>
+      | typeHinted self typeAnnotation =>
         match compileWithType boundType self fuel with
-        | .some (compiledTrm, inferredType) =>
+        | .result (compiledTrm, inferredType) =>
           if typeCompatible inferredType typeAnnotation then
-            .some (compiledTrm, typeAnnotation)
+            .result (compiledTrm, typeAnnotation)
           else
             .error
         | .outOfFuel => .outOfFuel
@@ -322,12 +323,12 @@ def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
               Typ.top
               (fun arg =>
                 match compileWithType none (body arg) fuel with
-                | .some (_, type) => type
+                | .result (_, type) => type
                 | _ => Typ.top)
-        .some (Trm.val erasedValue, inferredType)
+        .result (Trm.val erasedValue, inferredType)
       | .apply fn arg =>
         match compileWithType boundType fn fuel, compileWithType boundType arg fuel with
-        | .some (compiledFn, fnType), .some (compiledArg, argType) =>
+        | .result (compiledFn, fnType), .result (compiledArg, argType) =>
           match fnType with
           | .primitive => .error
           | .top => .error
@@ -339,25 +340,26 @@ def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
                 match fn with
                 | .val (.fn body) =>
                   match compileWithType (some argType) (body argRef) fuel with
-                  | .some (_, type) => type
+                  | .result (_, type) => type
                   | _ => tOut argRef
                 | _ => tOut argRef
-              .some (.apply compiledFn compiledArg, resultType)
+              .result (.apply compiledFn compiledArg, resultType)
             else
               .error
         | .outOfFuel, _ => .outOfFuel
         | _, .outOfFuel => .outOfFuel
         | _, _ => .error
       | .ref refValue =>
-        .some (Trm.ref refValue, boundType.getD Typ.top)
+        .result (Trm.ref refValue, boundType.getD Typ.top)
   match compileWithType none trm fuel with
-  | .some (compiledTrm, _) => .some compiledTrm
+  | .result (compiledTrm, _) => .result compiledTrm
   | .error => .error
   | .outOfFuel => .outOfFuel
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
-def Typing (trm : Trm I) (fuel : Nat) : Prop :=
-  (compile trm fuel).isSome
+def Typing (typ: Typ I) (trm : Trm I) (fuel : Nat) : Prop := -- TOOD: move trm to be after colon
+    let _trm := Trm.typeHinted trm typ
+    (compile _trm fuel).isDecidable
 
 end AST.Trm
 
@@ -370,14 +372,14 @@ An adequate program may run out of runtime fuel, but it must not reach runtime
 `error`. When runtime evaluation produces a value, that value must satisfy the
 source annotation checked by compilation.
 -/
-private def IsAdequate_Runtime {I : Index} [Runtime.Env I] (program : Trm I) (fuel: Nat) : Prop :=
+private def IsSafe {I : Index} [Runtime.Env I] (program : Trm I) (fuel: Nat) : Prop :=
   match program.eval fuel with
-  | .outOfFuel => true
-  | .some result =>
+  | .result result =>
     match program.type.get with
     | .some t => result.satisfies t -- result must satisfy type
     | .none => true -- program doesn't have type annotation, no need to verify the result
-  | .error => false
+  | .outOfFuel => true
+  | _ => false
 
 /--
 adequacy conjecture of logical relationship:
@@ -385,22 +387,24 @@ adequacy conjecture of logical relationship:
 a successfully compiled term executes without runtime error, either
   producing a value satisfying the source annotation or running out of fuel
 -/
-def IsAdequate_Compiletime {I : Index} [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : Prop :=
+def IsAdequate {I : Index} [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : Prop :=
   match src.compile fuel with
-  | .some compiled =>
-    compiled.IsAdequate_Runtime fuel
+  | .result program =>
+    program.IsSafe fuel
   | _ => true
 
 /--
 AKA the fundamental theorem of logical relation: compiled function
 must fulfil it's semantic obligation: given a compiled argument with compatible type, it
-must be able to execute on it and produce a
+must be able to apply on it to produce a new compiled term
 -/
 def IsComposable {I : Index} [Compiletime.Env I]
- (pineapple pen : Trm I) (fuel : Nat) : Prop :=
-  match pineapple.compile fuel, pen.compile fuel with
-  | .some compiledFn, .some compiledArg =>
-    (Trm.apply compiledFn compiledArg).compile fuel |>.isSome
+ (pineapple pen : Trm I) (tIn tOut : Typ I) (fuel : Nat) : Prop :=
+  let _pineapple := Trm.typeHinted pineapple (.depFn tIn (fun _ => tOut))
+  let _pen := Trm.typeHinted pen tIn
+  match _pineapple.compile fuel, _pen.compile fuel with
+  | .result compiledFn, .result compiledArg =>
+    (Trm.apply compiledFn compiledArg).compile fuel |>.isDecidable
   | _, _ => false
 
 end AST.Trm

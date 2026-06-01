@@ -34,54 +34,54 @@ example [Compiletime.Env Symbol] :
 
 example [Compiletime.Env Symbol] :
     ((false : Trm).compile 1) =
-      .some ((false : Trm).type.eraseRecursively) := rfl
+      .result ((false : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((true : Trm).compile 1) =
-      .some ((true : Trm).type.eraseRecursively) := rfl
+      .result ((true : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((idFn : Trm).compile 1) =
-      .some ((idFn : Trm).type.eraseRecursively) := rfl
+      .result ((idFn : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((idFnOnFalse : Trm).compile 2) =
-      .some
+      .result
         (.apply
           (idFn : Trm).type.eraseRecursively
           (false : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((get1st : Trm).compile 1) =
-      .some ((get1st : Trm).type.eraseRecursively) := rfl
+      .result ((get1st : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((get2nd : Trm).compile 1) =
-      .some ((get2nd : Trm).type.eraseRecursively) := rfl
+      .result ((get2nd : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((get1stOnTuple : Trm).compile 3) =
-      .some ((get1stOnTuple : Trm).type.eraseRecursively) := rfl
+      .result ((get1stOnTuple : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((get2ndOnTuple : Trm).compile 3) =
-      .some ((get2ndOnTuple : Trm).type.eraseRecursively) := rfl
+      .result ((get2ndOnTuple : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((apply1stOn2ndFn : Trm).compile 1) =
-      .some ((apply1stOn2ndFn : Trm).type.eraseRecursively) := rfl
+      .result ((apply1stOn2ndFn : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((apply1stOn2ndFnOnTuple : Trm).compile 3) =
-      .some ((apply1stOn2ndFnOnTuple : Trm).type.eraseRecursively) := rfl
+      .result ((apply1stOn2ndFnOnTuple : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((applyidFnOnItself : Trm).compile 2) =
-      .some ((applyidFnOnItself : Trm).type.eraseRecursively) := rfl
+      .result ((applyidFnOnItself : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((idFnOnFalse2 : Trm).compile 3) =
-      .some ((idFnOnFalse2 : Trm).type.eraseRecursively) := rfl
+      .result ((idFnOnFalse2 : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((Malformed.apply1 : Trm).compile 4) =
@@ -92,32 +92,32 @@ example [Compiletime.Env Symbol] :
 
 example [Compiletime.Env Symbol] :
     ((primitiveTrueFn : Trm).compile 1) =
-      .some ((primitiveTrueFn : Trm).type.eraseRecursively) := rfl
+      .result ((primitiveTrueFn : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((primitiveTrueFnOnFalse : Trm).compile 2) =
-      .some ((primitiveTrueFnOnFalse : Trm).type.eraseRecursively) := rfl
+      .result ((primitiveTrueFnOnFalse : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((annotatedFalse : Trm).compile 2) =
-      .some ((annotatedFalse : Trm).type.eraseRecursively) := rfl
+      .result ((annotatedFalse : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((annotatedIdFn : Trm).compile 2) =
-      .some ((annotatedIdFn : Trm).type.eraseRecursively) := rfl
+      .result ((annotatedIdFn : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
     ((annotatedIdFnOnFalse : Trm).compile 4) =
-      .some ((annotatedIdFnOnFalse : Trm).type.eraseRecursively) := rfl
+      .result ((annotatedIdFnOnFalse : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
-    ((.typeHint
+    ((.typeHinted
       (.val (.primitive "false"))
       (.depFn .primitive (fun _ => .primitive)) : Trm).compile 2) =
       .error := rfl
 
 example [Compiletime.Env Symbol] :
-    ((.typeHint
+    ((.typeHinted
       (.val (.fn (fun x => .ref x)))
       .primitive : Trm).compile 2) =
       .error := rfl
@@ -144,50 +144,50 @@ unsafe example : ((Trm.false : Trm).eval 0) = .outOfFuel := by
   rfl
 
 unsafe example : ((Trm.false : Trm).eval 1) =
-    .some ((.primitive "false") : Val) := by
+    .result ((.primitive "false") : Val) := by
   rfl
 
 unsafe example : ((Trm.false : Trm).eval 2) =
-    .some ((.primitive "false") : Val) := by
+    .result ((.primitive "false") : Val) := by
   rfl
 
 unsafe example : ((Trm.idFnOnFalse : Trm).eval 0) = .outOfFuel := by
   rfl
 
 unsafe example : ((Trm.idFnOnFalse : Trm).eval 2) =
-    .some ((.primitive "false") : Val) := by
+    .result ((.primitive "false") : Val) := by
   exact unsafeCast True.intro
 
 unsafe example : ((Trm.get1stOnTuple : Trm).eval 1) = .outOfFuel := by
   rfl
 
 unsafe example : ((Trm.get1stOnTuple : Trm).eval 3) =
-    .some ((.primitive "false") : Val) := by
+    .result ((.primitive "false") : Val) := by
   exact unsafeCast True.intro
 
 unsafe example : ((Trm.get2ndOnTuple : Trm).eval 3) =
-    .some ((.primitive "true") : Val) := by
+    .result ((.primitive "true") : Val) := by
   exact unsafeCast True.intro
 
 unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 2) = .outOfFuel := by
   rfl
 
 unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 4) =
-    .some ((.primitive "false") : Val) := by
+    .result ((.primitive "false") : Val) := by
   exact unsafeCast True.intro
 
 unsafe example : ((Trm.applyidFnOnItself : Trm).eval 0) = .outOfFuel := by
   rfl
 
 unsafe example : ((Trm.applyidFnOnItself : Trm).eval 2) =
-    .some ((Val.idFn : Val)) := by
+    .result ((Val.idFn : Val)) := by
   exact unsafeCast True.intro
 
 unsafe example : ((Trm.idFnOnFalse2 : Trm).eval 1) = .outOfFuel := by
   rfl
 
 unsafe example : ((Trm.idFnOnFalse2 : Trm).eval 3) =
-    .some ((.primitive "false") : Val) := by
+    .result ((.primitive "false") : Val) := by
   exact unsafeCast True.intro
 
 unsafe example : ((Trm.Malformed.apply1 : Trm).eval 4) = .error := by
@@ -206,7 +206,7 @@ unsafe example : ((Trm.Malformed.apply1 : Trm).eval 3) = .error := by
   exact unsafeCast True.intro
 
 unsafe example : ((Trm.primitiveTrueFnOnFalse : Trm).eval 2) =
-    .some ((.primitive "true") : Val) := by
+    .result ((.primitive "true") : Val) := by
   rfl
 
 end eval
