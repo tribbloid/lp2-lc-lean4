@@ -7,9 +7,6 @@ namespace Lp2lc.Active
 
 namespace DTLC
 
-open AST
-
-
 end DTLC
 
 end Lp2lc.Active

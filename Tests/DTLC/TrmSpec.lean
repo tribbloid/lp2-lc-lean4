@@ -6,21 +6,25 @@ namespace Trm
 
 open Lp2lc.Active.Util
 open Lp2lc.Active.DTLC
-open Lp2lc.Active.DTLC.AST
+open Lp2lc.Active.DTLC.Symbolic
 open Lp2lc.Active.DTLC.Runtime
 
 section eraseType
 
-example {I : Index} :
-    (annotatedFalse : Trm I).type.eraseRecursively = (false : Trm I) := rfl
+example :
+    (annotatedFalse : Trm).type.eraseRecursively =
+      (false : Trm) := rfl
 
-example {I : Index} :
-    (annotatedIdFn : Trm I).type.eraseRecursively =
+example :
+    (annotatedIdFn : Trm).type.eraseRecursively =
       .val (.fn fun x => .ref x) none := rfl
 
-example {I : Index} :
-    (annotatedIdFnOnFalse : Trm I).type.eraseRecursively =
-      .apply (annotatedIdFn : Trm I).type.eraseRecursively (false : Trm I) none := rfl
+example :
+    (annotatedIdFnOnFalse : Trm).type.eraseRecursively =
+      .apply
+        (annotatedIdFn : Trm).type.eraseRecursively
+        (false : Trm)
+        none := rfl
 
 end eraseType
 
@@ -116,90 +120,84 @@ end eraseType
 
 section eval
 
-unsafe inductive RuntimeRef where
-| val (value : Val RuntimeRef) : RuntimeRef
-
-@[reducible] unsafe def runtimeCanEval (value : Val RuntimeRef) : Permission.Eval value :=
+@[reducible] unsafe def runtimeCanEval (value : Val) : Permission.Eval value :=
   unsafeCast ()
 
-unsafe instance : FBound RuntimeRef Val Permission.Eval where
-  save := fun value _permission => RuntimeRef.val value
-  load := fun ref =>
-    match ref with
-    | .val value => value
-  roundtrip := by
-    intro value
-    intro permission
-    rfl
-
-unsafe instance : Env RuntimeRef where
-  forVals := inferInstance
+unsafe instance : Env Symbol where
+  forVals := {
+    save := fun value _permission => unsafeCast value
+    load := fun ref => unsafeCast ref
+    roundtrip := by
+      intro value
+      intro permission
+      exact unsafeCast True.intro
+  }
   canEvalAny := runtimeCanEval
 
-unsafe example : ((Trm.false : Trm RuntimeRef).eval 0) = .outOfFuel := by
+unsafe example : ((Trm.false : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.false : Trm RuntimeRef).eval 1) =
-    .some ((Val.primitive "false") : Val RuntimeRef) := by
+unsafe example : ((Trm.false : Trm).eval 1) =
+    .some ((.primitive "false") : Val) := by
   rfl
 
-unsafe example : ((Trm.false : Trm RuntimeRef).eval 2) =
-    .some ((Val.primitive "false") : Val RuntimeRef) := by
+unsafe example : ((Trm.false : Trm).eval 2) =
+    .some ((.primitive "false") : Val) := by
   rfl
 
-unsafe example : ((Trm.idFnOnFalse : Trm RuntimeRef).eval 0) = .outOfFuel := by
+unsafe example : ((Trm.idFnOnFalse : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.idFnOnFalse : Trm RuntimeRef).eval 2) =
-    .some ((Val.primitive "false") : Val RuntimeRef) := by
+unsafe example : ((Trm.idFnOnFalse : Trm).eval 2) =
+    .some ((.primitive "false") : Val) := by
+  exact unsafeCast True.intro
+
+unsafe example : ((Trm.get1stOnTuple : Trm).eval 1) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.get1stOnTuple : Trm RuntimeRef).eval 1) = .outOfFuel := by
+unsafe example : ((Trm.get1stOnTuple : Trm).eval 3) =
+    .some ((.primitive "false") : Val) := by
+  exact unsafeCast True.intro
+
+unsafe example : ((Trm.get2ndOnTuple : Trm).eval 3) =
+    .some ((.primitive "true") : Val) := by
+  exact unsafeCast True.intro
+
+unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 2) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.get1stOnTuple : Trm RuntimeRef).eval 3) =
-    .some ((Val.primitive "false") : Val RuntimeRef) := by
+unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 4) =
+    .some ((.primitive "false") : Val) := by
+  exact unsafeCast True.intro
+
+unsafe example : ((Trm.applyidFnOnItself : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.get2ndOnTuple : Trm RuntimeRef).eval 3) =
-    .some ((Val.primitive "true") : Val RuntimeRef) := by
+unsafe example : ((Trm.applyidFnOnItself : Trm).eval 2) =
+    .some ((Val.idFn : Val)) := by
+  exact unsafeCast True.intro
+
+unsafe example : ((Trm.idFnOnFalse2 : Trm).eval 1) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm RuntimeRef).eval 2) = .outOfFuel := by
+unsafe example : ((Trm.idFnOnFalse2 : Trm).eval 3) =
+    .some ((.primitive "false") : Val) := by
+  exact unsafeCast True.intro
+
+unsafe example : ((Trm.malformedApply1 : Trm).eval 4) = .error := by
+  exact unsafeCast True.intro
+
+unsafe example : ((Trm.malformedPrimitiveApply : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm RuntimeRef).eval 4) =
-    .some ((Val.primitive "false") : Val RuntimeRef) := by
+unsafe example : ((Trm.malformedPrimitiveApply : Trm).eval 2) = .error := by
   rfl
 
-unsafe example : ((Trm.applyidFnOnItself : Trm RuntimeRef).eval 0) = .outOfFuel := by
+unsafe example : ((Trm.malformedApply1 : Trm).eval 1) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.applyidFnOnItself : Trm RuntimeRef).eval 2) =
-    .some ((Val.idFn : Val RuntimeRef)) := by
-  rfl
-
-unsafe example : ((Trm.idFnOnFalse2 : Trm RuntimeRef).eval 1) = .outOfFuel := by
-  rfl
-
-unsafe example : ((Trm.idFnOnFalse2 : Trm RuntimeRef).eval 3) =
-    .some ((Val.primitive "false") : Val RuntimeRef) := by
-  rfl
-
-unsafe example : ((Trm.malformedApply1 : Trm RuntimeRef).eval 4) = .error := by
-  rfl
-
-unsafe example : ((Trm.malformedPrimitiveApply : Trm RuntimeRef).eval 0) = .outOfFuel := by
-  rfl
-
-unsafe example : ((Trm.malformedPrimitiveApply : Trm RuntimeRef).eval 2) = .error := by
-  rfl
-
-unsafe example : ((Trm.malformedApply1 : Trm RuntimeRef).eval 1) = .outOfFuel := by
-  rfl
-
-unsafe example : ((Trm.malformedApply1 : Trm RuntimeRef).eval 3) = .error := by
-  rfl
+unsafe example : ((Trm.malformedApply1 : Trm).eval 3) = .error := by
+  exact unsafeCast True.intro
 
 end eval
 

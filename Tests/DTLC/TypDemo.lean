@@ -2,21 +2,21 @@ import «Lp2lc».Active.DTLC.Def
 
 namespace Tests.DTLC.Sanity
 open Lp2lc.Active.DTLC
-open Lp2lc.Active.DTLC.Closed
+open Lp2lc.Active.DTLC.Symbolic
 
 namespace Typ
 
-def false : TypAST :=
+def false : Typ :=
   .primitive
 
-def idFn : TypAST :=
+def idFn : Typ :=
   .depFn .primitive (fun _x => .primitive)
 
-def get1st : TypAST :=
+def get1st : Typ :=
   .depFn .primitive (fun _x =>
     .depFn .primitive (fun _y => .primitive))
 
-def apply1stOn2ndFn : TypAST :=
+def apply1stOn2ndFn : Typ :=
   .depFn
     (.depFn .primitive (fun _x => .primitive))
     (fun _f =>

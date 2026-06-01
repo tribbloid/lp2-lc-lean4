@@ -3,80 +3,80 @@ import «Tests».DTLC.ValDemo
 namespace Tests.DTLC.Sanity
 open Lp2lc.Active.Util
 open Lp2lc.Active.DTLC
-open Lp2lc.Active.DTLC.Closed
+open Lp2lc.Active.DTLC.Symbolic
 
 namespace Trm
 
-def false : TrmAST :=
+def false : Trm :=
   .val (.primitive "false")
 
-def true : TrmAST :=
+def true : Trm :=
   .val (.primitive "true")
 
-def idFn : TrmAST :=
+def idFn : Trm :=
   .val (.fn (fun x => .ref x))
 
-def idFnOnFalse : TrmAST :=
+def idFnOnFalse : Trm :=
   .apply idFn false
 
-def get1st : TrmAST :=
+def get1st : Trm :=
   .val
     (.fn (fun x =>
       .val
         (.fn (fun _y => .ref x))))
 
-def get2nd : TrmAST :=
+def get2nd : Trm :=
   .val
     (.fn (fun _x =>
       .val
         (.fn (fun y => .ref y))))
 
-def get1stOnTuple : TrmAST :=
+def get1stOnTuple : Trm :=
   .apply
     (.apply get1st false)
     true
 
-def get2ndOnTuple : TrmAST :=
+def get2ndOnTuple : Trm :=
   .apply
     (.apply get2nd false)
     true
 
-def apply1stOn2ndFn : TrmAST :=
+def apply1stOn2ndFn : Trm :=
   .val (.fn (fun f =>
       .val (.fn (fun x =>
         .apply
           (.ref f)
           (.ref x)))))
 
-def apply1stOn2ndFnOnTuple : TrmAST :=
+def apply1stOn2ndFnOnTuple : Trm :=
   .apply
     (.apply apply1stOn2ndFn idFn)
     false
 
-def applyidFnOnItself : TrmAST :=
+def applyidFnOnItself : Trm :=
   .apply idFn idFn
 
-def idFnOnFalse2 : TrmAST :=
+def idFnOnFalse2 : Trm :=
   .apply applyidFnOnItself false
 
-def malformedPrimitiveApply : TrmAST :=
+def malformedPrimitiveApply : Trm :=
   .apply false true
 
-def malformedApply1 : TrmAST :=
+def malformedApply1 : Trm :=
   .apply
     (.apply idFn false)
     true
 
-def annotatedFalse : TrmAST :=
+def annotatedFalse : Trm :=
   .val (.primitive "false") (some .primitive)
 
-def annotatedIdFn : TrmAST :=
+def annotatedIdFn : Trm :=
   .val
     (.fn
       (fun x => .ref x (some .primitive)))
     (some (.depFn .primitive (fun _x => .primitive)))
 
-def annotatedIdFnOnFalse : TrmAST :=
+def annotatedIdFnOnFalse : Trm :=
   .apply annotatedIdFn annotatedFalse (some .primitive)
 
 end Trm
