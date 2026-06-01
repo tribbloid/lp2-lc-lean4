@@ -118,6 +118,81 @@ example {I : Index} [Compiletime.Env I] :
 
 end compile
 
+section adequacyGoal
+
+inductive AdequacyRef where
+| compileArg
+| runtimeArg
+| other
+
+@[reducible] unsafe def adequacyCanEval (value : AST.Val AdequacyRef) :
+    Permission.Eval value :=
+  unsafeCast ()
+
+unsafe instance : Compiletime.Env AdequacyRef where
+  forTyps := {
+    save := fun _type _permission => AdequacyRef.compileArg
+    load := fun _ref => unsafeCast ()
+    roundtrip := by
+      intro type
+      intro permission
+      exact unsafeCast True.intro
+  }
+
+unsafe instance : Runtime.Env AdequacyRef where
+  forVals := {
+    save := fun _value _permission => AdequacyRef.runtimeArg
+    load := fun _ref => .primitive "loaded"
+    roundtrip := by
+      intro value
+      intro permission
+      exact unsafeCast True.intro
+  }
+  canEvalAny := adequacyCanEval
+
+def adequacyFalse : AST.Trm AdequacyRef :=
+  .val (.primitive "false")
+
+def adequacyTrue : AST.Trm AdequacyRef :=
+  .val (.primitive "true")
+
+def adequacyBad : AST.Trm AdequacyRef :=
+  .apply adequacyFalse adequacyTrue
+
+def adequacyBranchFn : AST.Trm AdequacyRef :=
+  .val
+    (.fn fun x =>
+      match x with
+      | .compileArg => adequacyFalse
+      | .runtimeArg => adequacyBad
+      | .other => adequacyFalse)
+    (some (.depFn .primitive (fun _ => .primitive)))
+
+def adequacyBranchApp : AST.Trm AdequacyRef :=
+  .apply adequacyBranchFn adequacyTrue (some .primitive)
+
+unsafe example :
+    adequacyBranchApp.compile 3 =
+      .some adequacyBranchApp.type.eraseRecursively := by
+  rfl
+
+unsafe example :
+    adequacyBranchApp.type.eraseRecursively.eval 3 = .error := by
+  rfl
+
+unsafe example :
+    ¬ AST.Trm.AdequacyGoal adequacyBranchApp 3 := by
+  unfold AST.Trm.AdequacyGoal
+  change adequacyBranchApp.type.eraseRecursively.IsAdequate 3 → False
+  unfold AST.Trm.IsAdequate
+  have hEval : adequacyBranchApp.type.eraseRecursively.eval 3 = .error := by
+    rfl
+  rw [hEval]
+  intro isAdequate
+  simp at isAdequate
+
+end adequacyGoal
+
 section eval
 
 @[reducible] unsafe def runtimeCanEval (value : Val) : Permission.Eval value :=
