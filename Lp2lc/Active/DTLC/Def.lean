@@ -277,84 +277,13 @@ Semantic typing is successful fuel-guarded compilation, so this compiler is the
 definition of the semantic typing rule.
 
 This rule supports:
-- adequacy lemma: (see `AdequacyGoal` definition)
+- adequacy lemma: (see `def IsAdequate`)
 - fundamental lemma: compatible compiled function and argument can be composed
   into program that preserves successful compilation
 - soundness: semantic typing implies existence of a type-erased adequate
   compiled program
 -/
-def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
-  let typeCompatible (under : Typ I) (over : Typ I) : Bool :=
-    match under, over with
-    | _, .top => true
-    | .primitive, .primitive => true
-    | .depFn _ _, .depFn _ _ => true
-    | _, _ => false
-  let rec compileWithType (boundType : Option (Typ I)) (trm : Trm I) (fuel : Nat) :
-      Outcome (Trm I × Typ I) :=
-    match fuel with
-    | 0 => .outOfFuel
-    | fuel + 1 =>
-      match trm with
-      | typeHinted self typeAnnotation =>
-        match compileWithType boundType self fuel with
-        | .result (compiledTrm, inferredType) =>
-          if typeCompatible inferredType typeAnnotation then
-            .result (compiledTrm, typeAnnotation)
-          else
-            .error
-        | .outOfFuel => .outOfFuel
-        | .error => .error
-      | .val value =>
-        let erasedValue :=
-          match value with
-          | .primitive _ => value
-          | .primitiveFn body =>
-            Val.primitiveFn fun arg => (body arg).type.eraseRecursively (body arg)
-          | .fn body =>
-            Val.fn fun arg => (body arg).type.eraseRecursively (body arg)
-        let inferredType :=
-          match value with
-          | .primitive _ => Typ.primitive
-          | .primitiveFn _ =>
-            Typ.depFn Typ.primitive (fun _arg => Typ.primitive)
-          | .fn body =>
-            Typ.depFn
-              Typ.top
-              (fun arg =>
-                match compileWithType none (body arg) fuel with
-                | .result (_, type) => type
-                | _ => Typ.top)
-        .result (Trm.val erasedValue, inferredType)
-      | .apply fn arg =>
-        match compileWithType boundType fn fuel, compileWithType boundType arg fuel with
-        | .result (compiledFn, fnType), .result (compiledArg, argType) =>
-          match fnType with
-          | .primitive => .error
-          | .top => .error
-          | .depFn tIn tOut =>
-            if typeCompatible argType tIn then
-              let fBound := Compiletime.Env.forTyps (I := I)
-              let argRef := fBound.save argType Permission.NotRequired.mk
-              let resultType :=
-                match fn with
-                | .val (.fn body) =>
-                  match compileWithType (some argType) (body argRef) fuel with
-                  | .result (_, type) => type
-                  | _ => tOut argRef
-                | _ => tOut argRef
-              .result (.apply compiledFn compiledArg, resultType)
-            else
-              .error
-        | .outOfFuel, _ => .outOfFuel
-        | _, .outOfFuel => .outOfFuel
-        | _, _ => .error
-      | .ref refValue =>
-        .result (Trm.ref refValue, boundType.getD Typ.top)
-  match compileWithType none trm fuel with
-  | .result (compiledTrm, _) => .result compiledTrm
-  | .error => .error
-  | .outOfFuel => .outOfFuel
+def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
 def Typing (typ: Typ I) (trm : Trm I) (fuel : Nat) : Prop := -- TOOD: move trm to be after colon
@@ -395,17 +324,18 @@ def IsAdequate {I : Index} [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fu
 
 /--
 AKA the fundamental theorem of logical relation: compiled function
-must fulfil it's semantic obligation: given a compiled argument with compatible type, it
-must be able to apply on it to produce a new compiled term
+must fulfil it's semantic obligation: given a compiled argument with compatible
+input type, it must be able to apply on it to produce a new compiled term
 -/
 def IsComposable {I : Index} [Compiletime.Env I]
- (fn arg : Trm I) (tIn tOut : Typ I) (fuel : Nat) : Prop :=
+ (fn : Trm I) (arg: Val I) (tIn tOut : Typ I) (fuel : Nat) : Prop :=
   let fnHinted := Trm.typeHinted fn (.depFn tIn (fun _ => tOut))
-  let argHinted := Trm.typeHinted arg tIn
+  let argHinted := Trm.typeHinted (.val arg) tIn
   match fnHinted.compile fuel, argHinted.compile fuel with
   | .result pineapple, .result pen =>
     let pineapplePen := (Trm.apply pineapple pen)
-    (pineapplePen.compile fuel).isDecidable
+
+    ∃ moreFuel, (pineapplePen.compile moreFuel).isDecidable
   | _, _ => true
 
 end AST.Trm
