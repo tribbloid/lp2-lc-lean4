@@ -128,15 +128,16 @@ end
 
 end AST
 
-namespace Canonical
 
 inductive Symbol where -- no constructor, it can only be retrieved from FBound
+
+namespace Symbolic
 
 abbrev Typ := AST.Typ Symbol
 abbrev Val := AST.Val Symbol
 abbrev Trm := AST.Trm Symbol
 
-end Canonical
+end Symbolic
 
 namespace Permission
 
