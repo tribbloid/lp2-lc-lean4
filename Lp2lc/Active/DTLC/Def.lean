@@ -175,6 +175,7 @@ namespace Runtime
 open AST
 
 class Env (I : Index) where
+  -- fuel: Nat -- this can't be used, ewww
   forVals: FBound I AST.Val (Permission.Eval (I := I))
   canEvalAny: (v: AST.Val I) -> Permission.Eval v
 
@@ -221,7 +222,7 @@ in the future we may have FBound for terms or values and a permission granter
 for transparent fn only
 -/
 class Env (I : Index) where
-  forTyps: FBound I Typ Permission.NotRequired
+  forTyps: FBound I AST.Typ Permission.NotRequired
 
 end Compiletime
 
@@ -278,15 +279,12 @@ end
 
 namespace AST.Trm
 
-
 /--
-Runtime adequacy predicate for compiled programs.
-
 An adequate program may run out of runtime fuel, but it must not reach runtime
 `error`. When runtime evaluation produces a value, that value must satisfy the
 source annotation checked by compilation.
 -/
-def IsAdequate {I : Index} [Runtime.Env I] (program : Trm I) (fuel : Nat) : Prop :=
+private def IsAdequate_Runtime {I : Index} [Runtime.Env I] (program : Trm I) (fuel: Nat) : Prop :=
   match program.eval fuel with
   | .outOfFuel => true
   | .some result =>
@@ -296,16 +294,25 @@ def IsAdequate {I : Index} [Runtime.Env I] (program : Trm I) (fuel : Nat) : Prop
   | .error => false
 
 /--
-adequacy conjecturee of logical relationship:
+adequacy conjecture of logical relationship:
 
 a successfully compiled term executes without runtime error, either
   producing a value satisfying the source annotation or running out of fuel
 -/
-def AdequacyGoal {I : Index} [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : Prop :=
+def IsAdequate_Compiletime {I : Index} [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : Prop :=
   match src.compile fuel with
   | .some compiled =>
-    compiled.IsAdequate fuel
+    compiled.IsAdequate_Runtime fuel
   | _ => true
+
+/--
+AKA the fundamental theorem of logical relation: compiled function
+must fulfil it's semantic obligation: given a compiled argument with compatible type, it
+must be able to execute on it and produce a
+-/
+def IsComposable {I : Index} [Compiletime.Env I]
+ (pineapple pen : Trm I) (fuel : Nat) : Prop :=
+
 
 
 end AST.Trm
