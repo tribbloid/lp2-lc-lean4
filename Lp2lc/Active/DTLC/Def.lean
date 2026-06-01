@@ -128,19 +128,15 @@ end
 
 end AST
 
-namespace Closed
+namespace Canonical
 
-/-- Closed polymorphic type syntax fixture over any PHOAS index. -/
-abbrev TypAST := {I : Index} → AST.Typ I
+inductive Symbol where -- no constructor, it can only be retrieved from FBound
 
-/-- Closed polymorphic value syntax fixture over any PHOAS index. -/
-abbrev ValAST := {I : Index} → AST.Val I
+abbrev Typ := AST.Typ Symbol
+abbrev Val := AST.Val Symbol
+abbrev Trm := AST.Trm Symbol
 
-/-- Closed polymorphic term syntax fixture over any PHOAS index. -/
-abbrev TrmAST := {I : Index} → AST.Trm I
-
-
-end Closed
+end Canonical
 
 namespace Permission
 
@@ -227,7 +223,6 @@ class Env (I : Index) where
   forTyps: FBound I Typ Permission.NotRequired
 
 end Compiletime
-
 
 section
 open AST
