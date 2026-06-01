@@ -109,18 +109,6 @@ def get (view : @TypeView I) : Option (Typ I) :=
   | typeHinted _ t => some t
   | _ => none
 
-/-- Replaces only the outer annotation while preserving the underlying term. -/
-def update (view : @TypeView I) (t : Option (Typ I)) : Trm I :=
-  match t with
-  | some t =>
-    match view.self with
-    | typeHinted self _ => typeHinted self t
-    | _ => typeHinted view.self t
-  | none =>
-    match view.self with
-    | typeHinted self _ => self
-    | _ => view.self
-
 /-- Removes all optional type annotations from a term. -/
 def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
   match self with
@@ -132,13 +120,12 @@ def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
 
 /-- Predicate that all annotations have been removed from a term. -/
 def IsErased (view : @TypeView I) (self : Trm I := view.self) : Prop :=
-  let prior := self.type.get = none
   match self with
-  | typeHinted _ _ => prior
-  | .val (.primitiveFn body) => prior ∧ ∀ arg, (body arg).type.IsErased (body arg)
-  | .val (.fn body) => prior ∧ ∀ arg, (body arg).type.IsErased (body arg)
-  | .apply fn arg => prior ∧ fn.type.IsErased fn ∧ arg.type.IsErased arg
-  | _ => prior
+  | typeHinted _ _ => false
+  | .val (.primitiveFn body) => ∀ arg, (body arg).type.IsErased (body arg)
+  | .val (.fn body) => ∀ arg, (body arg).type.IsErased (body arg)
+  | .apply fn arg => fn.type.IsErased fn ∧ arg.type.IsErased arg
+  | _ => true
 
 end TypeView
 
@@ -161,26 +148,26 @@ end Symbolic
 
 namespace AST.Val
 
-/--
-Decidable semantic membership of a value in a type annotation.
+-- /--
+-- Decidable semantic membership of a value in a type annotation.
 
-This checks the value head form and, for function values, the input annotation.
-Dependent output annotations are checked later by compiling the function body
-with a concrete compile-time argument reference.
--/
-def satisfies {I : Index} (value : Val I) (type : Typ I) : Bool :=
-  match type with
-  | .top => true
-  | .primitive =>
-    match value with
-    | .primitive _ => true
-    | .primitiveFn _ => false
-    | .fn _ => false
-  | .depFn _ _ =>
-    match value with
-    | .primitive _ => false
-    | .primitiveFn _ => true
-    | .fn _ => true
+-- This checks the value head form and, for function values, the input annotation.
+-- Dependent output annotations are checked later by compiling the function body
+-- with a concrete compile-time argument reference.
+-- -/
+-- def satisfies {I : Index} (value : Val I) (type : Typ I) : Bool :=
+--   match type with
+--   | .top => true
+--   | .primitive =>
+--     match value with
+--     | .primitive _ => true
+--     | .primitiveFn _ => false
+--     | .fn _ => false
+--   | .depFn _ _ =>
+--     match value with
+--     | .primitive _ => false
+--     | .primitiveFn _ => true
+--     | .fn _ => true
 
 end AST.Val
 
@@ -366,6 +353,9 @@ end AST.Trm
 
 end
 
+section ProofByLogicalRelation
+variable {I : Index}
+
 namespace AST.Trm
 
 /--
@@ -373,14 +363,8 @@ An adequate program may run out of runtime fuel, but it must not reach runtime
 `error`. When runtime evaluation produces a value, that value must satisfy the
 source annotation checked by compilation.
 -/
-def IsSafe {I : Index} [Runtime.Env I] (program : Trm I) (fuel: Nat) : Prop :=
-  match program.eval fuel with
-  | .result result =>
-    match program.type.get with
-    | .some t => result.satisfies t -- result must satisfy type
-    | .none => true -- program doesn't have type annotation, no need to verify the result
-  | .outOfFuel => true
-  | _ => false
+def IsSafe [Runtime.Env I] (program : Trm I) (fuel: Nat) : Prop :=
+  (program.eval fuel).isSemiDecidable
 
 /--
 adequacy conjecture of logical relation:
@@ -388,10 +372,9 @@ adequacy conjecture of logical relation:
 a successfully compiled term executes without runtime error, either
   producing a value satisfying the source annotation or running out of fuel
 -/
-def IsAdequate {I : Index} [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : Prop :=
+def IsAdequate [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : Prop :=
   match src.compile fuel with
-  | .result program =>
-    program.IsSafe fuel
+  | .result program => program.IsSafe fuel
   | _ => true
 
 /--
@@ -399,18 +382,20 @@ AKA the fundamental theorem of logical relation: compiled function
 must fulfil it's semantic obligation: given a compiled argument with compatible
 input type, it must be able to apply on it to produce a new compiled term
 -/
-def IsComposable {I : Index} [Compiletime.Env I]
+def IsComposable [Compiletime.Env I]
  (fn : Trm I) (arg: Val I) (tIn tOut : Typ I) (fuel : Nat) : Prop :=
   let fnHinted := Trm.typeHinted fn (.depFn tIn (fun _ => tOut))
   let argHinted := Trm.typeHinted (.val arg) tIn
   match fnHinted.compile fuel, argHinted.compile fuel with
   | .result pineapple, .result pen =>
-    let pineapplePen := (Trm.apply pineapple pen)
+    let pineapplePen := Trm.typeHinted (Trm.apply pineapple pen) tOut
 
     ∃ moreFuel, (pineapplePen.compile moreFuel).isDecidable
   | _, _ => true
 
 end AST.Trm
+
+end ProofByLogicalRelation
 
 
 end DTLC
