@@ -38,9 +38,6 @@ object TrmDemo extends Preamble {
   val idFnOnFalse2: Boolean =
     applyidFnOnItself(`false`)
 
-  lazy val malformedPrimitiveApply: Boolean =
-    `false`.asInstanceOf[Boolean => Boolean](`true`)
-
   val primitiveTrueFn: Boolean => Boolean =
     _ => true
 
@@ -55,4 +52,13 @@ object TrmDemo extends Preamble {
 
   val annotatedIdFnOnFalse: Boolean =
     annotatedIdFn(annotatedFalse)
+
+  object Malformed {
+
+    lazy val primitiveApply: Boolean =
+      `false`.asInstanceOf[Boolean => Boolean](`true`)
+
+    lazy val apply1: Boolean =
+      identityFn(`false`).asInstanceOf[Boolean => Boolean](`true`)
+  }
 }

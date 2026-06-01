@@ -59,14 +59,6 @@ def applyidFnOnItself : Trm :=
 def idFnOnFalse2 : Trm :=
   .apply applyidFnOnItself false
 
-def malformedPrimitiveApply : Trm :=
-  .apply false true
-
-def malformedApply1 : Trm :=
-  .apply
-    (.apply idFn false)
-    true
-
 def primitiveTrueFn : Trm :=
   .val
     (.primitiveFn (fun _repr =>
@@ -94,6 +86,18 @@ def annotatedIdFnOnFalse : Trm :=
   .typeHint
     (.apply annotatedIdFn annotatedFalse)
     .primitive
+
+namespace Malformed
+
+def primitiveApply : Trm :=
+  .apply false true
+
+def apply1 : Trm :=
+  .apply
+    (.apply idFn false)
+    true
+
+end Malformed
 
 end Trm
 

@@ -84,11 +84,11 @@ example [Compiletime.Env Symbol] :
       .some ((idFnOnFalse2 : Trm).type.eraseRecursively) := rfl
 
 example [Compiletime.Env Symbol] :
-    ((malformedApply1 : Trm).compile 4) =
+    ((Malformed.apply1 : Trm).compile 4) =
       .error := rfl
 
 example [Compiletime.Env Symbol] :
-    ((malformedPrimitiveApply : Trm).compile 2) = .error := rfl
+    ((Malformed.primitiveApply : Trm).compile 2) = .error := rfl
 
 example [Compiletime.Env Symbol] :
     ((primitiveTrueFn : Trm).compile 1) =
@@ -190,19 +190,19 @@ unsafe example : ((Trm.idFnOnFalse2 : Trm).eval 3) =
     .some ((.primitive "false") : Val) := by
   exact unsafeCast True.intro
 
-unsafe example : ((Trm.malformedApply1 : Trm).eval 4) = .error := by
+unsafe example : ((Trm.Malformed.apply1 : Trm).eval 4) = .error := by
   exact unsafeCast True.intro
 
-unsafe example : ((Trm.malformedPrimitiveApply : Trm).eval 0) = .outOfFuel := by
+unsafe example : ((Trm.Malformed.primitiveApply : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.malformedPrimitiveApply : Trm).eval 2) = .error := by
+unsafe example : ((Trm.Malformed.primitiveApply : Trm).eval 2) = .error := by
   rfl
 
-unsafe example : ((Trm.malformedApply1 : Trm).eval 1) = .outOfFuel := by
+unsafe example : ((Trm.Malformed.apply1 : Trm).eval 1) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.malformedApply1 : Trm).eval 3) = .error := by
+unsafe example : ((Trm.Malformed.apply1 : Trm).eval 3) = .error := by
   exact unsafeCast True.intro
 
 unsafe example : ((Trm.primitiveTrueFnOnFalse : Trm).eval 2) =
