@@ -359,18 +359,16 @@ variable {I : Index}
 namespace AST.Trm
 
 /--
-An adequate program may run out of runtime fuel, but it must not reach runtime
-`error`. When runtime evaluation produces a value, that value must satisfy the
-source annotation checked by compilation.
+An safe program may run out of runtime fuel, but it must not reach runtime
+`error`.
 -/
 def IsSafe [Runtime.Env I] (program : Trm I) (fuel: Nat) : Prop :=
   (program.eval fuel).isSemiDecidable
 
 /--
-adequacy conjecture of logical relation:
+The adequacy conjecture of logical relation:
 
-a successfully compiled term executes without runtime error, either
-  producing a value satisfying the source annotation or running out of fuel
+a successfully compiled term should always be safe
 -/
 def IsAdequate [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : Prop :=
   match src.compile fuel with
@@ -378,9 +376,11 @@ def IsAdequate [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : 
   | _ => true
 
 /--
-AKA the fundamental theorem of logical relation: compiled function
-must fulfil it's semantic obligation: given a compiled argument with compatible
-input type, it must be able to apply on it to produce a new compiled term
+The fundamental theorem of logical relation:
+
+Compiled function must fulfil it's semantic obligation: given a compiled argument with compatible
+input type, it must be able to apply on it to produce a new compiled term with
+output type.
 -/
 def IsComposable [Compiletime.Env I]
  (fn : Trm I) (arg: Val I) (tIn tOut : Typ I) (fuel : Nat) : Prop :=
