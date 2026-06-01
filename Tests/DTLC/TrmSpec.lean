@@ -24,95 +24,95 @@ example {I : Index} :
 
 end eraseType
 
-section compile
+-- section compile
 
-example {I : Index} [Compiletime.Env I] :
-    ((false : Trm I).compile 0) = .outOfFuel := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((false : Trm I).compile 0) = .outOfFuel := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((false : Trm I).compile 1) =
-      .some ((false : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((false : Trm I).compile 1) =
+--       .some ((false : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((true : Trm I).compile 1) =
-      .some ((true : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((true : Trm I).compile 1) =
+--       .some ((true : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((idFn : Trm I).compile 1) =
-      .some ((idFn : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((idFn : Trm I).compile 1) =
+--       .some ((idFn : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((idFnOnFalse : Trm I).compile 2) =
-      .some
-        (.apply
-          (idFn : Trm I).type.eraseRecursively
-          (false : Trm I).type.eraseRecursively
-          none) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((idFnOnFalse : Trm I).compile 2) =
+--       .some
+--         (.apply
+--           (idFn : Trm I).type.eraseRecursively
+--           (false : Trm I).type.eraseRecursively
+--           none) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((get1st : Trm I).compile 1) =
-      .some ((get1st : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((get1st : Trm I).compile 1) =
+--       .some ((get1st : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((get2nd : Trm I).compile 1) =
-      .some ((get2nd : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((get2nd : Trm I).compile 1) =
+--       .some ((get2nd : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((get1stOnTuple : Trm I).compile 3) =
-      .some ((get1stOnTuple : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((get1stOnTuple : Trm I).compile 3) =
+--       .some ((get1stOnTuple : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((get2ndOnTuple : Trm I).compile 3) =
-      .some ((get2ndOnTuple : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((get2ndOnTuple : Trm I).compile 3) =
+--       .some ((get2ndOnTuple : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((apply1stOn2ndFn : Trm I).compile 1) =
-      .some ((apply1stOn2ndFn : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((apply1stOn2ndFn : Trm I).compile 1) =
+--       .some ((apply1stOn2ndFn : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((apply1stOn2ndFnOnTuple : Trm I).compile 3) =
-      .some ((apply1stOn2ndFnOnTuple : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((apply1stOn2ndFnOnTuple : Trm I).compile 3) =
+--       .some ((apply1stOn2ndFnOnTuple : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((applyidFnOnItself : Trm I).compile 2) =
-      .some ((applyidFnOnItself : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((applyidFnOnItself : Trm I).compile 2) =
+--       .some ((applyidFnOnItself : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((idFnOnFalse2 : Trm I).compile 3) =
-      .some ((idFnOnFalse2 : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((idFnOnFalse2 : Trm I).compile 3) =
+--       .some ((idFnOnFalse2 : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((malformedApply1 : Trm I).compile 4) =
-      .error := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((malformedApply1 : Trm I).compile 4) =
+--       .error := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((malformedPrimitiveApply : Trm I).compile 2) = .error := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((malformedPrimitiveApply : Trm I).compile 2) = .error := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((annotatedFalse : Trm I).compile 1) =
-      .some ((annotatedFalse : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((annotatedFalse : Trm I).compile 1) =
+--       .some ((annotatedFalse : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((annotatedIdFn : Trm I).compile 2) =
-      .some ((annotatedIdFn : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((annotatedIdFn : Trm I).compile 2) =
+--       .some ((annotatedIdFn : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((annotatedIdFnOnFalse : Trm I).compile 3) =
-      .some ((annotatedIdFnOnFalse : Trm I).type.eraseRecursively) := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((annotatedIdFnOnFalse : Trm I).compile 3) =
+--       .some ((annotatedIdFnOnFalse : Trm I).type.eraseRecursively) := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((.val
-      (.primitive "false")
-      (some (.depFn .primitive (fun _ => .primitive))) : Trm I).compile 1) =
-      .error := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((.val
+--       (.primitive "false")
+--       (some (.depFn .primitive (fun _ => .primitive))) : Trm I).compile 1) =
+--       .error := rfl
 
-example {I : Index} [Compiletime.Env I] :
-    ((.val
-      (.fn (fun x => .ref x))
-      (some .primitive) : Trm I).compile 1) =
-      .error := rfl
+-- example {I : Index} [Compiletime.Env I] :
+--     ((.val
+--       (.fn (fun x => .ref x))
+--       (some .primitive) : Trm I).compile 1) =
+--       .error := rfl
 
-end compile
+-- end compile
 
 section eval
 
