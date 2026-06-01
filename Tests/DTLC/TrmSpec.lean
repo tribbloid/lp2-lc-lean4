@@ -168,24 +168,27 @@ def splitBindingBranchFn : AST.Trm SplitBindingRef :=
       | .otherArg => splitBindingFalse)
     (some (.depFn .primitive (fun _ => .primitive)))
 
-def splitBindingAdequacyCounterexample : AST.Trm SplitBindingRef :=
+def splitBindingAdequacyGoalCounterexample : AST.Trm SplitBindingRef :=
   .apply splitBindingBranchFn splitBindingTrue (some .primitive)
 
+unsafe def SplitBindingAdequacyGoalFails : Prop :=
+  ¬ AST.Trm.AdequacyGoal splitBindingAdequacyGoalCounterexample 3
+
 unsafe example :
-    splitBindingAdequacyCounterexample.compile 3 =
-      .some splitBindingAdequacyCounterexample.type.eraseRecursively := by
+    splitBindingAdequacyGoalCounterexample.compile 3 =
+      .some splitBindingAdequacyGoalCounterexample.type.eraseRecursively := by
   rfl
 
 unsafe example :
-    splitBindingAdequacyCounterexample.type.eraseRecursively.eval 3 = .error := by
+    splitBindingAdequacyGoalCounterexample.type.eraseRecursively.eval 3 = .error := by
   rfl
 
-unsafe example :
-    ¬ AST.Trm.AdequacyGoal splitBindingAdequacyCounterexample 3 := by
+unsafe example : SplitBindingAdequacyGoalFails := by
+  unfold SplitBindingAdequacyGoalFails
   unfold AST.Trm.AdequacyGoal
-  change splitBindingAdequacyCounterexample.type.eraseRecursively.IsAdequate 3 → False
+  change splitBindingAdequacyGoalCounterexample.type.eraseRecursively.IsAdequate 3 → False
   unfold AST.Trm.IsAdequate
-  have hEval : splitBindingAdequacyCounterexample.type.eraseRecursively.eval 3 = .error := by
+  have hEval : splitBindingAdequacyGoalCounterexample.type.eraseRecursively.eval 3 = .error := by
     rfl
   rw [hEval]
   intro isAdequate
