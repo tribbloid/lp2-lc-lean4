@@ -118,20 +118,20 @@ example {I : Index} [Compiletime.Env I] :
 
 end compile
 
-section adequacyGoal
+section adequacyCounterexample
 
-inductive AdequacyRef where
-| compileArg
+inductive SplitBindingRef where
+| compiletimeArg
 | runtimeArg
-| other
+| otherArg
 
-@[reducible] unsafe def adequacyCanEval (value : AST.Val AdequacyRef) :
+@[reducible] unsafe def splitBindingCanEval (value : AST.Val SplitBindingRef) :
     Permission.Eval value :=
   unsafeCast ()
 
-unsafe instance : Compiletime.Env AdequacyRef where
+unsafe instance : Compiletime.Env SplitBindingRef where
   forTyps := {
-    save := fun _type _permission => AdequacyRef.compileArg
+    save := fun _type _permission => SplitBindingRef.compiletimeArg
     load := fun _ref => unsafeCast ()
     roundtrip := by
       intro type
@@ -139,59 +139,59 @@ unsafe instance : Compiletime.Env AdequacyRef where
       exact unsafeCast True.intro
   }
 
-unsafe instance : Runtime.Env AdequacyRef where
+unsafe instance : Runtime.Env SplitBindingRef where
   forVals := {
-    save := fun _value _permission => AdequacyRef.runtimeArg
+    save := fun _value _permission => SplitBindingRef.runtimeArg
     load := fun _ref => .primitive "loaded"
     roundtrip := by
       intro value
       intro permission
       exact unsafeCast True.intro
   }
-  canEvalAny := adequacyCanEval
+  canEvalAny := splitBindingCanEval
 
-def adequacyFalse : AST.Trm AdequacyRef :=
+def splitBindingFalse : AST.Trm SplitBindingRef :=
   .val (.primitive "false")
 
-def adequacyTrue : AST.Trm AdequacyRef :=
+def splitBindingTrue : AST.Trm SplitBindingRef :=
   .val (.primitive "true")
 
-def adequacyBad : AST.Trm AdequacyRef :=
-  .apply adequacyFalse adequacyTrue
+def splitBindingRuntimeError : AST.Trm SplitBindingRef :=
+  .apply splitBindingFalse splitBindingTrue
 
-def adequacyBranchFn : AST.Trm AdequacyRef :=
+def splitBindingBranchFn : AST.Trm SplitBindingRef :=
   .val
     (.fn fun x =>
       match x with
-      | .compileArg => adequacyFalse
-      | .runtimeArg => adequacyBad
-      | .other => adequacyFalse)
+      | .compiletimeArg => splitBindingFalse
+      | .runtimeArg => splitBindingRuntimeError
+      | .otherArg => splitBindingFalse)
     (some (.depFn .primitive (fun _ => .primitive)))
 
-def adequacyBranchApp : AST.Trm AdequacyRef :=
-  .apply adequacyBranchFn adequacyTrue (some .primitive)
+def splitBindingAdequacyCounterexample : AST.Trm SplitBindingRef :=
+  .apply splitBindingBranchFn splitBindingTrue (some .primitive)
 
 unsafe example :
-    adequacyBranchApp.compile 3 =
-      .some adequacyBranchApp.type.eraseRecursively := by
+    splitBindingAdequacyCounterexample.compile 3 =
+      .some splitBindingAdequacyCounterexample.type.eraseRecursively := by
   rfl
 
 unsafe example :
-    adequacyBranchApp.type.eraseRecursively.eval 3 = .error := by
+    splitBindingAdequacyCounterexample.type.eraseRecursively.eval 3 = .error := by
   rfl
 
 unsafe example :
-    ¬ AST.Trm.AdequacyGoal adequacyBranchApp 3 := by
+    ¬ AST.Trm.AdequacyGoal splitBindingAdequacyCounterexample 3 := by
   unfold AST.Trm.AdequacyGoal
-  change adequacyBranchApp.type.eraseRecursively.IsAdequate 3 → False
+  change splitBindingAdequacyCounterexample.type.eraseRecursively.IsAdequate 3 → False
   unfold AST.Trm.IsAdequate
-  have hEval : adequacyBranchApp.type.eraseRecursively.eval 3 = .error := by
+  have hEval : splitBindingAdequacyCounterexample.type.eraseRecursively.eval 3 = .error := by
     rfl
   rw [hEval]
   intro isAdequate
   simp at isAdequate
 
-end adequacyGoal
+end adequacyCounterexample
 
 section eval
 
