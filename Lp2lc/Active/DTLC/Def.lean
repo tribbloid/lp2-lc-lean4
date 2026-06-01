@@ -278,8 +278,7 @@ definition of the semantic typing rule.
 
 This rule supports:
 - adequacy lemma: (see `def IsAdequate`)
-- fundamental lemma: compatible compiled function and argument can be composed
-  into program that preserves successful compilation
+- fundamental lemma: (see `def IsComposable`)
 - soundness: semantic typing implies existence of a type-erased adequate
   compiled program
 -/
@@ -301,7 +300,7 @@ An adequate program may run out of runtime fuel, but it must not reach runtime
 `error`. When runtime evaluation produces a value, that value must satisfy the
 source annotation checked by compilation.
 -/
-private def IsSafe {I : Index} [Runtime.Env I] (program : Trm I) (fuel: Nat) : Prop :=
+def IsSafe {I : Index} [Runtime.Env I] (program : Trm I) (fuel: Nat) : Prop :=
   match program.eval fuel with
   | .result result =>
     match program.type.get with
@@ -311,7 +310,7 @@ private def IsSafe {I : Index} [Runtime.Env I] (program : Trm I) (fuel: Nat) : P
   | _ => false
 
 /--
-adequacy conjecture of logical relationship:
+adequacy conjecture of logical relation:
 
 a successfully compiled term executes without runtime error, either
   producing a value satisfying the source annotation or running out of fuel
