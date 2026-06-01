@@ -49,8 +49,6 @@ ignores them.
 In HOAS there is no context or environment binding terms to types, so optional
 annotations are the extrinsic typing evidence available to the compiler. They
 are not intrinsic typing indices on terms.
-
-`Trm.compile` checks annotations and emits an annotation-erased runtime program.
 -/
 
 -- TODO: this definition has 2 problems: can eval at compiletime, cannot express
@@ -66,10 +64,6 @@ Value syntax, containing neither references nor applications.
 
 Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
-
-Function input annotations are compile-time constraints. They are checked by
-compilation, may guide application checking, and are erased from compiled
-programs.
 -/
 inductive Val : Index where
 | primitive (repr : ByteCode) -- most specific type is always `primitive`
@@ -237,15 +231,13 @@ variable {I : Index} [Compiletime.Env I]
 namespace AST.Trm
 /--
 Fuel-guarded compiler API for compiling any `Trm` with optional type annotations
-into semantic program (also a `Trm`, but type info are removed).
+into semantic program (also a `Trm`, but type info are removed). Emits a runtime program that may or may not
+be different.
 
 It does not evaluate the program! compiling a `Trm.apply` should only results
 the same or a slightly different `Trm.apply`.
 
 This is the only public API for compilation, every other functions must be private.
-
-Compilation checks optional annotations and emits a type-erased program for
-runtime evaluation.
 
 - compiling malformed terms fails
 - compiling terms with wrong annotations fails
@@ -253,8 +245,6 @@ runtime evaluation.
 - compile-time checking must not call runtime `eval`
 - application compilation may use the compile-time `FBound I Trm` binding to
   check the substituted function body
-- the emitted program is required to be type-erased, but application compilation
-  is not required to preserve `.apply` as the root constructor
 - when a compiled function carries an input annotation, application compilation
   checks that the compiled argument value satisfies that input annotation
 - `FBound I Trm` represents compile-time bindings and is deliberately separate
@@ -266,8 +256,7 @@ definition of the semantic typing rule.
 This rule supports:
 - adequacy lemma: (see `def IsAdequate`)
 - fundamental lemma: (see `def IsComposable`)
-- soundness: semantic typing implies existence of a type-erased adequate
-  compiled program
+- soundness theorem
 -/
 def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
   let typeCompatible (under : Typ I) (over : Typ I) : Bool :=
@@ -368,7 +357,9 @@ def IsSafe [Runtime.Env I] (program : Trm I) (fuel: Nat) : Prop :=
 /--
 The adequacy conjecture of logical relation:
 
-a successfully compiled term should always be safe
+a successfully compiled term should always be safe.
+
+This conjecture is independent from type erasure.
 -/
 def IsAdequate [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : Prop :=
   match src.compile fuel with
@@ -376,11 +367,13 @@ def IsAdequate [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : 
   | _ => true
 
 /--
-The fundamental theorem of logical relation:
+The fundamental conjecture of logical relation:
 
 Compiled function must fulfil it's semantic obligation: given a compiled argument with compatible
 input type, it must be able to apply on it to produce a new compiled term with
 output type.
+
+This conjecture is independent from adequacy & type erasure.
 -/
 def IsComposable [Compiletime.Env I]
  (fn : Trm I) (arg: Val I) (tIn tOut : Typ I) (fuel : Nat) : Prop :=
