@@ -238,7 +238,7 @@ in the future we may have FBound for terms or values and a permission granter
 for transparent fn only
 -/
 class Env (I : Index) where
-  forTyps: FBound I AST.Typ Permission.NotRequired
+  forTyps: FBound I AST.Typ (Permission.NotRequired (AST.Typ I))
 
 end Compiletime
 
@@ -399,13 +399,14 @@ must fulfil it's semantic obligation: given a compiled argument with compatible 
 must be able to apply on it to produce a new compiled term
 -/
 def IsComposable {I : Index} [Compiletime.Env I]
- (pineapple pen : Trm I) (tIn tOut : Typ I) (fuel : Nat) : Prop :=
-  let _pineapple := Trm.typeHinted pineapple (.depFn tIn (fun _ => tOut))
-  let _pen := Trm.typeHinted pen tIn
-  match _pineapple.compile fuel, _pen.compile fuel with
-  | .result compiledFn, .result compiledArg =>
-    (Trm.apply compiledFn compiledArg).compile fuel |>.isDecidable
-  | _, _ => false
+ (fn arg : Trm I) (tIn tOut : Typ I) (fuel : Nat) : Prop :=
+  let fnHinted := Trm.typeHinted fn (.depFn tIn (fun _ => tOut))
+  let argHinted := Trm.typeHinted arg tIn
+  match fnHinted.compile fuel, argHinted.compile fuel with
+  | .result pineapple, .result pen =>
+    let pineapplePen := (Trm.apply pineapple pen)
+    (pineapplePen.compile fuel).isDecidable
+  | _, _ => true
 
 end AST.Trm
 

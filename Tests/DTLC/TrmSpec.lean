@@ -126,7 +126,7 @@ end compile
 
 section eval
 
-@[reducible] unsafe def runtimeCanEval (value : Val) : Permission.Eval value :=
+@[reducible] unsafe def runtimeCanEval (value : Val) : Permission.Eval Val value :=
   unsafeCast ()
 
 unsafe instance : Env Symbol where
