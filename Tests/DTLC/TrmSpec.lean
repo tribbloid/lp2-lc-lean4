@@ -11,17 +11,17 @@ open Lp2lc.Active.DTLC.Symbolic
 section eraseType
 
 example :
-    hintedFalse.typeHint.eraseRecursively =
+    TypeHinted.hintedFalse.typeHint.eraseRecursively =
       (false : Trm) := rfl
 
 example :
-    hintedIdFn.typeHint.eraseRecursively =
+    TypeHinted.hintedIdFn.typeHint.eraseRecursively =
       .val (.fn fun x => .ref x) := rfl
 
 example :
-    hintedIdFnOnFalse.typeHint.eraseRecursively =
+    TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively =
       .apply
-        hintedIdFn.typeHint.eraseRecursively
+        TypeHinted.hintedIdFn.typeHint.eraseRecursively
         (false : Trm) := rfl
 
 end eraseType
@@ -179,14 +179,6 @@ example [Compiletime.Env Symbol] :
       .result idFnOnFalse2 := by
   sorry
 
-example [Compiletime.Env Symbol] :
-    Malformed.apply1.compile 4 =
-      .error := by
-  sorry
-
-example [Compiletime.Env Symbol] :
-    Malformed.primitiveApply.compile 2 = .error := by
-  sorry
 
 example [Compiletime.Env Symbol] :
     primitiveTrueFn.compile 1 =
@@ -211,6 +203,15 @@ example [Compiletime.Env Symbol] :
 example [Compiletime.Env Symbol] :
     TypeHinted.hintedIdFnOnFalse.compile 4 =
       .result TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively := by
+  sorry
+
+example [Compiletime.Env Symbol] :
+    Malformed.apply1.compile 4 =
+      .error := by
+  sorry
+
+example [Compiletime.Env Symbol] :
+    Malformed.primitiveApply.compile 2 = .error := by
   sorry
 
 example [Compiletime.Env Symbol] :
