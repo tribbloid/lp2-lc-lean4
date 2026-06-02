@@ -12,7 +12,7 @@ section eraseType
 
 example :
     TypeHinted.hintedFalse.typeHint.eraseRecursively =
-      (false : Trm) := rfl
+      (vFalse : Trm) := rfl
 
 example :
     TypeHinted.hintedIdFn.typeHint.eraseRecursively =
@@ -22,7 +22,7 @@ example :
     TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively =
       .apply
         TypeHinted.hintedIdFn.typeHint.eraseRecursively
-        (false : Trm) := rfl
+        (vFalse : Trm) := rfl
 
 end eraseType
 
@@ -45,14 +45,14 @@ unsafe instance : Runtime.Env Symbol String where
   }
   canEvalAny := runtimeCanEval
 
-unsafe example : ((Trm.false : Trm).eval 0) = .outOfFuel := by
+unsafe example : ((Trm.vFalse : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.false : Trm).eval 1) =
+unsafe example : ((Trm.vFalse : Trm).eval 1) =
     .result ((.primitive "false") : Val) := by
   rfl
 
-unsafe example : ((Trm.false : Trm).eval 2) =
+unsafe example : ((Trm.vFalse : Trm).eval 2) =
     .result ((.primitive "false") : Val) := by
   rfl
 
@@ -121,17 +121,17 @@ section compile
 variable [Compiletime.Env Symbol String]
 
 example :
-    false.compile 0 = .outOfFuel := by
+    vFalse.compile 0 = .outOfFuel := by
   sorry
 
 example :
-    false.compile 1 =
-      .result false := by
+    vFalse.compile 1 =
+      .result vFalse := by
   sorry
 
 example :
-    true.compile 1 =
-      .result true := by
+    vTrue.compile 1 =
+      .result vTrue := by
   sorry
 
 example :

@@ -7,17 +7,17 @@ open Lp2lc.Active.DTLC.Symbolic
 
 namespace Trm
 
-def false : Trm :=
+def vFalse : Trm :=
   .val (.primitive "false")
 
-def true : Trm :=
+def vTrue : Trm :=
   .val (.primitive "true")
 
 def idFn : Trm :=
   .val (.fn (fun x => .ref x))
 
 def idFnOnFalse : Trm :=
-  .apply idFn false
+  .apply idFn vFalse
 
 def get1st : Trm :=
   .val
@@ -33,13 +33,13 @@ def get2nd : Trm :=
 
 def get1stOnTuple : Trm :=
   .apply
-    (.apply get1st false)
-    true
+    (.apply get1st vFalse)
+    vTrue
 
 def get2ndOnTuple : Trm :=
   .apply
-    (.apply get2nd false)
-    true
+    (.apply get2nd vFalse)
+    vTrue
 
 def apply1stOn2ndFn : Trm :=
   .val (.fn (fun f =>
@@ -51,13 +51,13 @@ def apply1stOn2ndFn : Trm :=
 def apply1stOn2ndFnOnTuple : Trm :=
   .apply
     (.apply apply1stOn2ndFn idFn)
-    false
+    vFalse
 
 def applyidFnOnItself : Trm :=
   .apply idFn idFn
 
 def idFnOnFalse2 : Trm :=
-  .apply applyidFnOnItself false
+  .apply applyidFnOnItself vFalse
 
 def primitiveTrueFn : Trm :=
   .val
@@ -65,7 +65,7 @@ def primitiveTrueFn : Trm :=
       .val (.primitive "true")))
 
 def primitiveTrueFnOnFalse : Trm :=
-  .apply primitiveTrueFn false
+  .apply primitiveTrueFn vFalse
 
 namespace TypeHinted
 
@@ -94,12 +94,12 @@ end TypeHinted
 namespace Malformed
 
 def primitiveApply : Trm :=
-  .apply false true
+  .apply vFalse vTrue
 
 def apply1 : Trm :=
   .apply
-    (.apply idFn false)
-    true
+    (.apply idFn vFalse)
+    vTrue
 
 def primitiveFalseAsFn : Trm :=
   .typeHinted
