@@ -7,22 +7,21 @@ namespace Trm
 open Lp2lc.Active.Util
 open Lp2lc.Active.DTLC
 open Lp2lc.Active.DTLC.Symbolic
-open TypeHinted
 
 section eraseType
 
 example :
-    (annotatedFalse : Trm).typeHint.eraseRecursively =
+    hintedFalse.typeHint.eraseRecursively =
       (false : Trm) := rfl
 
 example :
-    (annotatedIdFn : Trm).typeHint.eraseRecursively =
+    hintedIdFn.typeHint.eraseRecursively =
       .val (.fn fun x => .ref x) := rfl
 
 example :
-    (annotatedIdFnOnFalse : Trm).typeHint.eraseRecursively =
+    hintedIdFnOnFalse.typeHint.eraseRecursively =
       .apply
-        (annotatedIdFn : Trm).typeHint.eraseRecursively
+        hintedIdFn.typeHint.eraseRecursively
         (false : Trm) := rfl
 
 end eraseType
@@ -200,31 +199,27 @@ example [Compiletime.Env Symbol] :
   sorry
 
 example [Compiletime.Env Symbol] :
-    annotatedFalse.compile 2 =
-      .result annotatedFalse.typeHint.eraseRecursively := by
+    TypeHinted.hintedFalse.compile 2 =
+      .result TypeHinted.hintedFalse.typeHint.eraseRecursively := by
   sorry
 
 example [Compiletime.Env Symbol] :
-    annotatedIdFn.compile 2 =
-      .result annotatedIdFn.typeHint.eraseRecursively := by
+    TypeHinted.hintedIdFn.compile 2 =
+      .result TypeHinted.hintedIdFn.typeHint.eraseRecursively := by
   sorry
 
 example [Compiletime.Env Symbol] :
-    annotatedIdFnOnFalse.compile 4 =
-      .result annotatedIdFnOnFalse.typeHint.eraseRecursively := by
+    TypeHinted.hintedIdFnOnFalse.compile 4 =
+      .result TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively := by
   sorry
 
 example [Compiletime.Env Symbol] :
-    ((.typeHinted
-      (.val (.primitive "false"))
-      (.depFn .primitive (fun _ => .primitive)) : Trm).compile 2) =
+    Malformed.primitiveFalseAsFn.compile 2 =
       .error := by
   sorry
 
 example [Compiletime.Env Symbol] :
-    ((.typeHinted
-      (.val (.fn (fun x => .ref x)))
-      .primitive : Trm).compile 2) =
+    Malformed.idFnAsPrimitive.compile 2 =
       .error := by
   sorry
 

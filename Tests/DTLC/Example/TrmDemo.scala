@@ -8,11 +8,11 @@ object TrmDemo extends Preamble {
 
   val `true`: Boolean = true
 
-  val identityFn: Boolean => Boolean =
+  val idFn: (v: Boolean) => v.type =
     x => x
 
-  val identityFnOnFalse: Boolean =
-    identityFn(`false`)
+  val idFnOnFalse: Boolean =
+    idFn(`false`)
 
   val get1st: Boolean => Boolean => Boolean =
     x => _y => x
@@ -30,7 +30,7 @@ object TrmDemo extends Preamble {
     f => x => f(x)
 
   val apply1stOn2ndFnOnTuple: Boolean =
-    apply1stOn2ndFn(identityFn)(`false`)
+    apply1stOn2ndFn(idFn)(`false`)
 
   val applyidFnOnItself: Boolean => Boolean =
     ((f: Boolean => Boolean) => f)((x: Boolean) => x)
@@ -44,14 +44,16 @@ object TrmDemo extends Preamble {
   val primitiveTrueFnOnFalse: Boolean =
     primitiveTrueFn(`false`)
 
-  val annotatedFalse: Boolean =
-    false
+  object TypeHinted {
 
-  val annotatedIdFn: Boolean => Boolean =
-    (x: Boolean) => x
+    val hintedFalse: Boolean =
+      false
 
-  val annotatedIdFnOnFalse: Boolean =
-    annotatedIdFn(annotatedFalse)
+    val hintedIdFn: Boolean => Boolean = { x => x }
+
+    val hintedIdFnOnFalse: Boolean =
+      hintedIdFn(hintedFalse)
+  }
 
   object Malformed {
 
@@ -59,6 +61,12 @@ object TrmDemo extends Preamble {
       `false`.asInstanceOf[Boolean => Boolean](`true`)
 
     lazy val apply1: Boolean =
-      identityFn(`false`).asInstanceOf[Boolean => Boolean](`true`)
+      idFn(`false`).asInstanceOf[Boolean => Boolean](`true`)
+
+    lazy val primitiveFalseAsFn: Boolean => Boolean =
+      `false`.asInstanceOf[Boolean => Boolean]
+
+    lazy val idFnAsPrimitive: Boolean =
+      idFn.asInstanceOf[Boolean]
   }
 }

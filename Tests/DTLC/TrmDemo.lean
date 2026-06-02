@@ -69,12 +69,12 @@ def primitiveTrueFnOnFalse : Trm :=
 
 namespace TypeHinted
 
-def annotatedFalse : Trm :=
+def hintedFalse : Trm :=
   .typeHinted
     (.val (.primitive "false"))
     .primitive
 
-def annotatedIdFn : Trm :=
+def hintedIdFn : Trm :=
   .typeHinted
     (.val
       (.fn
@@ -84,13 +84,12 @@ def annotatedIdFn : Trm :=
             .primitive)))
     (.depFn .primitive (fun _x => .primitive))
 
-def annotatedIdFnOnFalse : Trm :=
+def hintedIdFnOnFalse : Trm :=
   .typeHinted
-    (.apply annotatedIdFn annotatedFalse)
+    (.apply hintedIdFn hintedFalse)
     .primitive
 
 end TypeHinted
-
 
 namespace Malformed
 
@@ -101,6 +100,16 @@ def apply1 : Trm :=
   .apply
     (.apply idFn false)
     true
+
+def primitiveFalseAsFn : Trm :=
+  .typeHinted
+    (.val (.primitive "false"))
+    (.depFn .primitive (fun _ => .primitive))
+
+def idFnAsPrimitive : Trm :=
+  .typeHinted
+    (.val (.fn (fun x => .ref x)))
+    .primitive
 
 end Malformed
 
