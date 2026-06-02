@@ -258,7 +258,127 @@ This rule supports:
 - fundamental lemma: (see `def IsComposable`)
 - soundness theorem
 -/
-def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
+def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) :=
+  let rec eraseHints : Trm I → Trm I
+  | typeHinted self _ => eraseHints self
+  | self => self
+  let rec typeCompatible (actual expected : Typ I) : Bool :=
+    match expected with
+    | .top => true
+    | .primitive =>
+      match actual with
+      | .primitive => true
+      | _ => false
+    | .depFn _ _ =>
+      match actual with
+      | .depFn _ _ => true
+      | _ => false
+  let finish (expected : Option (Typ I)) (compiled : Trm I) (actual : Typ I) :
+      Outcome (Trm I × Typ I) :=
+    match expected with
+    | none => .result (compiled, actual)
+    | some expected =>
+      if typeCompatible actual expected then
+        .result (compiled, expected)
+      else
+        .error
+  let rec compileWith (boundType expected : Option (Typ I)) (self : Trm I) :
+      Nat → Outcome (Trm I × Typ I)
+  | 0 => .outOfFuel
+  | fuel + 1 =>
+    match self with
+    | typeHinted self hint =>
+      match compileWith boundType (some hint) self fuel with
+      | .result (compiled, _) => finish expected compiled hint
+      | .error => .error
+      | .outOfFuel => .outOfFuel
+    | .val (.primitive repr) =>
+      finish expected (.val (.primitive repr)) .primitive
+    | .val (.primitiveFn body) =>
+      match expected with
+      | some (.depFn .primitive tOut) =>
+        finish expected (.val (.primitiveFn fun arg => (body arg).type.eraseRecursively (body arg)))
+          (.depFn .primitive tOut)
+      | some _ => .error
+      | none =>
+        finish expected (.val (.primitiveFn fun arg => (body arg).type.eraseRecursively (body arg)))
+          (.depFn .primitive (fun _ => .top))
+    | .val (.fn body) =>
+      match expected with
+      | some (.depFn tIn tOut) =>
+        let fBound := Compiletime.Env.forTyps (I := I)
+        let argRef := fBound.save tIn Permission.NotRequired.mk
+        match compileWith (some tIn) (some (tOut argRef)) (body argRef) fuel with
+        | .result _ =>
+          finish expected (.val (.fn fun arg => (body arg).type.eraseRecursively (body arg)))
+            (.depFn tIn tOut)
+        | .error => .error
+        | .outOfFuel => .outOfFuel
+      | some _ => .error
+      | none =>
+        finish expected (.val (.fn fun arg => (body arg).type.eraseRecursively (body arg)))
+          (.depFn .top (fun _ => .top))
+    | .apply fn arg =>
+      match compileWith boundType none fn fuel, compileWith boundType none arg fuel with
+      | .result (compiledFn, fnType), .result (compiledArg, argType) =>
+        match eraseHints fn with
+        | .val (.fn body) =>
+          let (tIn, tOut) :=
+            match fn.type.get with
+            | some (.depFn tIn tOut) => (tIn, some tOut)
+            | _ => (argType, none)
+          if typeCompatible argType tIn then
+            let fBound := Compiletime.Env.forTyps (I := I)
+            let argRef := fBound.save tIn Permission.NotRequired.mk
+            let bodyExpected := tOut.map (fun tOut => tOut argRef)
+            match compileWith (some tIn) bodyExpected (body argRef) fuel with
+            | .result (_, bodyType) =>
+              finish expected (.apply compiledFn compiledArg) bodyType
+            | .error => .error
+            | .outOfFuel => .outOfFuel
+          else
+            .error
+        | .val (.primitiveFn body) =>
+          match compiledArg with
+          | .val (.primitive repr) =>
+            match fn.type.get with
+            | some (.depFn tIn tOut) =>
+              if typeCompatible argType tIn && typeCompatible .primitive tIn then
+                let fBound := Compiletime.Env.forTyps (I := I)
+                let argRef := fBound.save tIn Permission.NotRequired.mk
+                match compileWith boundType (some (tOut argRef)) (body repr) fuel with
+                | .result (_, bodyType) =>
+                  finish expected (.apply compiledFn compiledArg) bodyType
+                | .error => .error
+                | .outOfFuel => .outOfFuel
+              else
+                .error
+            | _ =>
+              match compileWith boundType none (body repr) fuel with
+              | .result (_, bodyType) =>
+                finish expected (.apply compiledFn compiledArg) bodyType
+              | .error => .error
+              | .outOfFuel => .outOfFuel
+          | _ => .error
+        | _ =>
+          match fnType with
+          | .depFn tIn tOut =>
+            if typeCompatible argType tIn then
+              let fBound := Compiletime.Env.forTyps (I := I)
+              let argRef := fBound.save tIn Permission.NotRequired.mk
+              finish expected (.apply compiledFn compiledArg) (tOut argRef)
+            else
+              .error
+          | _ => .error
+      | .outOfFuel, _ => .outOfFuel
+      | _, .outOfFuel => .outOfFuel
+      | _, _ => .error
+    | .ref refValue =>
+      finish expected (.ref refValue) (boundType.getD .top)
+  match compileWith none none trm fuel with
+  | .result (compiled, _) => .result compiled
+  | .error => .error
+  | .outOfFuel => .outOfFuel
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
 def Typing (typ: Typ I) (trm : Trm I) (fuel : Nat) : Prop := -- TOOD: move trm to be after colon
