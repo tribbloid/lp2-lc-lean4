@@ -1,5 +1,5 @@
-import «Lp2lc».Active.DOT.DOTDef
-import «Lp2lc».WadlerFest2016.Dot.Auxiliary
+import «Lp2lc».Active.DOT.Def
+import «Lp2lc».Active.DOT.Auxiliary
 
 namespace Lp2lc.Active.DOT
 

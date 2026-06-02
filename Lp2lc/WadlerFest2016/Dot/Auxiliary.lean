@@ -1,7 +1,7 @@
 import Std
 import Aesop
 import «Lp2lc».Active.Shared
-import «Lp2lc».Active.DOT.DOTDef
+import «Lp2lc».Active.DOT.Def
 
 namespace Lp2lc.Active.DOT
 
