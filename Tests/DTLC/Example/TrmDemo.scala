@@ -3,9 +3,13 @@ package DTLC.Example
 import Tests.Preamble
 
 /**
-  * Everything here should have a [[../TrmDemo.lean]] counterpart
+  * Everything here should have a [[../TrmDemo.lean]] counterpart.
+  *
+  * both terms and type hints should be consistent
   */
 object TrmDemo extends Preamble {
+
+  type Primitive = Boolean
 
   val `false`: Boolean = false
 
