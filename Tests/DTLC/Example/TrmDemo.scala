@@ -2,6 +2,9 @@ package DTLC.Example
 
 import Tests.Preamble
 
+/**
+  * Everything here should have a [[../TrmDemo.lean]] counterpart
+  */
 object TrmDemo extends Preamble {
 
   val `false`: Boolean = false
