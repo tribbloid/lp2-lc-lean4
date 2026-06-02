@@ -20,6 +20,7 @@ It is:
 section Syntax
 
 variable (I: Type)[DecidableEq I] -- index
+variable (ByteCode : Type)
 
 mutual
 -- TODO: this huge block doesn't model type erasure, for that we need to define 2 blocks referring to runtime AST and compile-time AST respectively
@@ -119,8 +120,8 @@ doesn't block it), can we avoid repetitive definitions?
 
 end Syntax
 
-abbrev TrmClosed := {I : Type} → Trm I
+abbrev TrmClosed (ByteCode : Type) := {I : Type} → Trm I ByteCode
 
-abbrev TypClosed := {I : Type} → Typ I
+abbrev TypClosed (ByteCode : Type) := {I : Type} → Typ I ByteCode
 
 end DOT

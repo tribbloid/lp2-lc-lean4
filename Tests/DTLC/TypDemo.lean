@@ -6,17 +6,17 @@ open Lp2lc.Active.DTLC.Symbolic
 
 namespace Typ
 
-def false : Typ :=
+def false : Typ String :=
   .primitive
 
-def idFn : Typ :=
+def idFn : Typ String :=
   .depFn .primitive (fun _x => .primitive)
 
-def get1st : Typ :=
+def get1st : Typ String :=
   .depFn .primitive (fun _x =>
     .depFn .primitive (fun _y => .primitive))
 
-def apply1stOn2ndFn : Typ :=
+def apply1stOn2ndFn : Typ String :=
   .depFn
     (.depFn .primitive (fun _x => .primitive))
     (fun _f =>

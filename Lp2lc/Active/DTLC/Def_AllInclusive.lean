@@ -6,11 +6,11 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 -/
 
 abbrev Index := Type -- AKA symbol, PHOAS carrier
-def ByteCode := String
 
 section Syntax -- uses weak HOAS/PHOAS convention
 
 variable (I : Index) -- index
+variable (ByteCode : Type)
 
 mutual
 
@@ -34,7 +34,7 @@ end
 notation "Hint" => Option Typ
 
 /-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
-instance valIsTrm : Coe (Val I) (Trm I) where
+instance valIsTrm : Coe (Val I ByteCode) (Trm I ByteCode) where
   coe := fun v => Trm.val v
 
 /-- Fixed-point bound, a bidirectional lookup between `Index` and actual compiletime/runtime representation -/
@@ -57,9 +57,9 @@ def Outcome.isSome : (self : Outcome T) → Prop
 
 namespace Typ
 
-inductive SubtypeEv : (left: Typ I) -> (right: Typ I) -> Prop
-| x2x (same: Typ I) : SubtypeEv same same
-| x2Top (left : Typ I) : SubtypeEv left Typ.top
+inductive SubtypeEv : (left: Typ I ByteCode) -> (right: Typ I ByteCode) -> Prop
+| x2x (same: Typ I ByteCode) : SubtypeEv same same
+| x2Top (left : Typ I ByteCode) : SubtypeEv left Typ.top
 
 end Typ
 
@@ -70,7 +70,7 @@ Evaluates a source or compiled program by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I) :=
+def eval {I : Index} {ByteCode : Type} [FBound I (fun I => Val I ByteCode)] (trm : Trm I ByteCode) (fuel : Nat) : Outcome (Val I ByteCode) :=
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -80,17 +80,19 @@ def eval {I : Index} [FBound I Val] (trm : Trm I) (fuel : Nat) : Outcome (Val I)
       let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
       | (.some (.fn body), .some value) =>
-        (body (FBound.fwd value)).eval fuel
+        let fBound : FBound I (fun I => Val I ByteCode) := inferInstance
+        (body (fBound.fwd value)).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref refValue _ =>
-      .some (FBound.rev refValue)
+      let fBound : FBound I (fun I => Val I ByteCode) := inferInstance
+      .some (fBound.rev refValue)
 
-def compile {I : Index} [FBound I Trm] (trm : Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
+def compile {I : Index} {ByteCode : Type} [FBound I (fun I => Trm I ByteCode)] (trm : Trm I ByteCode) (fuel : Nat) : Outcome (Trm I ByteCode) := sorry
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
-def Typing {I : Index} [FBound I Trm] (trm : Trm I) (fuel : Nat) : Prop :=
+def Typing {I : Index} {ByteCode : Type} [FBound I (fun I => Trm I ByteCode)] (trm : Trm I ByteCode) (fuel : Nat) : Prop :=
   (trm.compile fuel).isSome
 
 end Trm
@@ -98,13 +100,13 @@ end Trm
 end Syntax
 
 /-- Closed polymorphic type syntax fixture over any PHOAS index. -/
-abbrev TypAST := {I : Index} → Typ I
+abbrev TypAST (ByteCode : Type) := {I : Index} → Typ I ByteCode
 
 /-- Closed polymorphic value syntax fixture over any PHOAS index. -/
-abbrev ValAST := {I : Index} → Val I
+abbrev ValAST (ByteCode : Type) := {I : Index} → Val I ByteCode
 
 /-- Closed polymorphic term syntax fixture over any PHOAS index. -/
-abbrev TrmAST := {I : Index} → Trm I
+abbrev TrmAST (ByteCode : Type) := {I : Index} → Trm I ByteCode
 
 end DTLC
 

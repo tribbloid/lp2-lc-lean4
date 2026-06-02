@@ -24,6 +24,7 @@ end Permission
 namespace AST
 section
 variable (I : Index) -- AKA Symbol/Name/ID/Key
+variable (ByteCode : Type)
 
 mutual
 
@@ -75,36 +76,36 @@ end
 end
 
 section
-variable {I : Index} -- I as an implicit type argument, due to lean limitation the previous section cannot be merged into it without serious bloat, this is very lame
+variable {I : Index} {ByteCode : Type} -- I as an implicit type argument, due to lean limitation the previous section cannot be merged into it without serious bloat, this is very lame
 
 /-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
-instance valIsTrm : Coe (Val I) (Trm I) where
+instance valIsTrm : Coe (Val I ByteCode) (Trm I ByteCode) where
   coe := fun v => Trm.val v
 
 namespace Typ
 
-inductive SubtypeEv : (under: Typ I) -> (over: Typ I) -> Prop
-| x2x (t: Typ I) : SubtypeEv t t
-| x2Top (t : Typ I) : SubtypeEv t Typ.top
+inductive SubtypeEv : (under: Typ I ByteCode) -> (over: Typ I ByteCode) -> Prop
+| x2x (t: Typ I ByteCode) : SubtypeEv t t
+| x2Top (t : Typ I ByteCode) : SubtypeEv t Typ.top
 
 end Typ
 
 namespace Trm
 
-structure TypeView where (self: Trm I)
+structure TypeView where (self: Trm I ByteCode)
 
-def typeHint (self: Trm I) := TypeView.mk self
+def typeHint (self: Trm I ByteCode) := TypeView.mk self
 
 namespace TypeView
 
 /-- Reads the optional annotation attached to the outer term constructor. -/
-def get (view : @TypeView I) : Option (Typ I) :=
+def get (view : @TypeView I ByteCode) : Option (Typ I ByteCode) :=
   match view.self with
   | typeHinted _ t => some t
   | _ => none
 
 /-- Removes all optional type annotations from a term. -/
-def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
+def eraseRecursively (view : @TypeView I ByteCode) (self : Trm I ByteCode := view.self) : Trm I ByteCode :=
   match self with
   | typeHinted self _ => self.typeHint.eraseRecursively self
   | .val (.primitiveFn body) => .val (.primitiveFn fun arg => (body arg).typeHint.eraseRecursively (body arg))
@@ -113,7 +114,7 @@ def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
   | _ => self
 
 /-- Predicate that all annotations have been removed from a term. -/
-def IsErased (view : @TypeView I) (self : Trm I := view.self) : Prop :=
+def IsErased (view : @TypeView I ByteCode) (self : Trm I ByteCode := view.self) : Prop :=
   match self with
   | typeHinted _ _ => false
   | .val (.primitiveFn body) => ∀ arg, (body arg).typeHint.IsErased (body arg)
@@ -134,9 +135,9 @@ inductive Symbol where -- no constructor, it can only be retrieved from FBound
 
 namespace Symbolic
 
-abbrev Typ := AST.Typ Symbol
-abbrev Val := AST.Val Symbol
-abbrev Trm := AST.Trm Symbol
+abbrev Typ (ByteCode : Type) := AST.Typ Symbol ByteCode
+abbrev Val (ByteCode : Type) := AST.Val Symbol ByteCode
+abbrev Trm (ByteCode : Type) := AST.Trm Symbol ByteCode
 
 end Symbolic
 
@@ -168,15 +169,15 @@ end AST.Val
 namespace Runtime
 open AST
 
-class Env (I : Index) where
+class Env (I : Index) (ByteCode : Type) where
   -- fuel: Nat -- this can't be used, ewww
-  forVals: FBound I AST.Val (Permission.Eval (AST.Val I))
-  canEvalAny: (v: AST.Val I) -> Permission.Eval (AST.Val I) v
+  forVals: FBound I (fun I => AST.Val I ByteCode) (Permission.Eval (AST.Val I ByteCode))
+  canEvalAny: (v: AST.Val I ByteCode) -> Permission.Eval (AST.Val I ByteCode) v
 
 end Runtime
 
 section
-variable {I : Index} [Runtime.Env I]
+variable {I : Index} {ByteCode : Type} [Runtime.Env I ByteCode]
 
 namespace AST.Trm
 
@@ -185,7 +186,7 @@ Evaluates a source or compiled program by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm I) (fuel : Nat) : Outcome (AST.Val I) :=
+def eval (self : AST.Trm I ByteCode) (fuel : Nat) : Outcome (AST.Val I ByteCode) :=
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -198,13 +199,13 @@ def eval (self : AST.Trm I) (fuel : Nat) : Outcome (AST.Val I) :=
       | (.result (.primitiveFn body), .result (.primitive repr)) =>
         eval (body repr) fuel
       | (.result (.fn body), .result value) =>
-        let fBound := Runtime.Env.forVals (I := I)
-        eval (body (fBound.save value (Runtime.Env.canEvalAny (I := I) value))) fuel
+        let fBound := Runtime.Env.forVals (I := I) (ByteCode := ByteCode)
+        eval (body (fBound.save value (Runtime.Env.canEvalAny (I := I) (ByteCode := ByteCode) value))) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref refValue =>
-      let fBound := Runtime.Env.forVals (I := I)
+      let fBound := Runtime.Env.forVals (I := I) (ByteCode := ByteCode)
       .result (fBound.load refValue)
 
 end AST.Trm
@@ -218,15 +219,15 @@ only contains FBound for types
 in the future we may have FBound for terms or values and a permission granter
 for transparent fn only
 -/
-class Env (I : Index) where
-  forTyps: FBound I AST.Typ (Permission.NotRequired (AST.Typ I))
+class Env (I : Index) (ByteCode : Type) where
+  forTyps: FBound I (fun I => AST.Typ I ByteCode) (Permission.NotRequired (AST.Typ I ByteCode))
 
 end Compiletime
 
 section
 open AST
 
-variable {I : Index} [Compiletime.Env I]
+variable {I : Index} {ByteCode : Type} [Compiletime.Env I ByteCode]
 
 namespace AST.Trm
 /--
@@ -258,10 +259,10 @@ This rule supports:
 - fundamental lemma: (see `def IsComposable`)
 - soundness theorem
 -/
-def compile (trm : Trm I) (fuel : Nat) : Outcome (Trm I) := sorry
+def compile (trm : Trm I ByteCode) (fuel : Nat) : Outcome (Trm I ByteCode) := sorry
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
-def Typing (typ: Typ I) (trm : Trm I) (fuel : Nat) : Prop := -- TOOD: move trm to be after colon
+def Typing (typ: Typ I ByteCode) (trm : Trm I ByteCode) (fuel : Nat) : Prop := -- TOOD: move trm to be after colon
     let _trm := Trm.typeHinted trm typ
     (compile _trm fuel).isDecidable
 
@@ -270,7 +271,7 @@ end AST.Trm
 end
 
 section ProofByLogicalRelation
-variable {I : Index}
+variable {I : Index} {ByteCode : Type}
 
 namespace AST.Trm
 
@@ -279,8 +280,8 @@ An safe program may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced with a type hint, the value must
 compile under that hint.
 -/
-def IsSafe [Compiletime.Env I] [Runtime.Env I]
-    (program : Trm I) (typeHint : Option (Typ I)) (fuel: Nat) : Prop :=
+def IsSafe [Compiletime.Env I ByteCode] [Runtime.Env I ByteCode]
+    (program : Trm I ByteCode) (typeHint : Option (Typ I ByteCode)) (fuel: Nat) : Prop :=
   match program.eval fuel, typeHint with
   | .result value, some type => ((Trm.typeHinted (.val value) type).compile fuel).isDecidable
   | result, _ => result.isSemiDecidable
@@ -292,7 +293,7 @@ a successfully compiled term should always be safe.
 
 This conjecture is independent from type erasure.
 -/
-def IsAdequate [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : Prop :=
+def IsAdequate [Compiletime.Env I ByteCode] [Runtime.Env I ByteCode] (src : Trm I ByteCode) (fuel : Nat) : Prop :=
   match src.compile fuel with
   | .result program => program.IsSafe src.typeHint.get fuel
   | _ => true
@@ -306,13 +307,13 @@ output type.
 
 This conjecture is independent from adequacy & type erasure.
 -/
-def IsComposable [Compiletime.Env I]
- (fn : Trm I) (arg: Val I) (tIn : Typ I) (tOut : I → Typ I) (fuel : Nat) : Prop :=
+def IsComposable [Compiletime.Env I ByteCode]
+ (fn : Trm I ByteCode) (arg: Val I ByteCode) (tIn : Typ I ByteCode) (tOut : I → Typ I ByteCode) (fuel : Nat) : Prop :=
   let fnHinted := Trm.typeHinted fn (.depFn tIn tOut)
   let argHinted := Trm.typeHinted (.val arg) tIn
   match fnHinted.compile fuel, argHinted.compile fuel with
   | .result compiledFn, .result compiledArg =>
-    let fBound := Compiletime.Env.forTyps (I := I)
+    let fBound := Compiletime.Env.forTyps (I := I) (ByteCode := ByteCode)
     let argRef := fBound.save tIn Permission.NotRequired.mk
     let pineapplePen := Trm.typeHinted (Trm.apply compiledFn compiledArg) (tOut argRef)
     ∃ moreFuel, (pineapplePen.compile moreFuel).isDecidable

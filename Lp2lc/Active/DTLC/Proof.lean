@@ -10,8 +10,9 @@ namespace DTLC
 open AST
 open Util
 
-theorem AdequacyLemma {I : Index} [Compiletime.Env I] [Runtime.Env I]
-    (src : Trm I) (fuel : Nat) :
+theorem AdequacyLemma {I : Index} {ByteCode : Type}
+    [Compiletime.Env I ByteCode] [Runtime.Env I ByteCode]
+    (src : Trm I ByteCode) (fuel : Nat) :
     src.IsAdequate fuel := sorry
 
 
