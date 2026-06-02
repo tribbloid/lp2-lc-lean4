@@ -11,7 +11,7 @@ object TrmDemo extends Preamble {
 
   val `true`: Boolean = true
 
-  val idFn: (v: Boolean) => v.type =
+  val idFn: (v: Any) => v.type =
     x => x
 
   val idFnOnFalse: Boolean =

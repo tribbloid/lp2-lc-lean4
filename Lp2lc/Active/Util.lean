@@ -59,6 +59,7 @@ def isSemiDecidable : (self : Outcome T) → Prop
 end Outcome
 
 def ByteCode := String
+
 universe u v
 
 -- 1. Implicitly lift a type to a higher universe using ULift
