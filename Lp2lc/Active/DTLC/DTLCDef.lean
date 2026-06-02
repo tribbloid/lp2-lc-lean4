@@ -130,17 +130,6 @@ end
 
 end AST
 
-
-inductive Symbol where -- no constructor, it can only be retrieved from FBound
-
-namespace Symbolic
-
-abbrev Typ (ByteCode : Type) := AST.Typ Symbol ByteCode
-abbrev Val (ByteCode : Type) := AST.Val Symbol ByteCode
-abbrev Trm (ByteCode : Type) := AST.Trm Symbol ByteCode
-
-end Symbolic
-
 namespace AST.Val
 
 -- /--
