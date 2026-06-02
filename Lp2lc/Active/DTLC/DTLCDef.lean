@@ -9,7 +9,7 @@ namespace DTLC
 dependently typed lambda calculus (similar to STLC but function output type can depend on input term) with a top/wildcard type.
 -/
 
-open Util
+open Lp2lc.Active.Util
 
 namespace Permission
 

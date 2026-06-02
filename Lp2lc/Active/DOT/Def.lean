@@ -5,7 +5,7 @@ import «Lp2lc».Active.Util
 
 namespace Lp2lc.Active.DOT
 
-open Util
+open Lp2lc.Active.Util
 
 /-
 here is the self-contained syntax for the latest DOT (System D-Diamond with

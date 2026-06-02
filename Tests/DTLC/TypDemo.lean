@@ -1,4 +1,4 @@
-import «Lp2lc».Active.DTLC.Def
+import «Lp2lc».Active.DTLC.DTLCDef
 
 namespace Tests.DTLC.Sanity
 open Lp2lc.Active.DTLC
