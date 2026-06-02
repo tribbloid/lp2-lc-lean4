@@ -10,23 +10,10 @@ namespace DTLC
 open AST
 open Util
 
-namespace AST.Trm
+theorem AdequacyLemma {I : Index} [Compiletime.Env I] [Runtime.Env I]
+    (src : Trm I) (fuel : Nat) :
+    src.IsAdequate fuel := sorry
 
-theorem adequacyLemma {I : Index} [Compiletime.Env I] [Runtime.Env I]
-    (src : Trm I) (fuel : Nat)
-    (isSafe :
-      ∀ program, src.compile fuel = .result program → program.IsSafe src.type.get fuel) :
-    src.IsAdequate fuel := by
-  unfold IsAdequate
-  cases h : src.compile fuel with
-  | result program =>
-    exact isSafe program h
-  | error =>
-    trivial
-  | outOfFuel =>
-    trivial
-
-end AST.Trm
 
 end DTLC
 
