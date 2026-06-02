@@ -11,15 +11,6 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 
 open Lp2lc.Active.Util
 
-namespace Permission
-
-class NotRequired (V : Type) (v: V) : Prop -- mk constructor can be used freely for any v
-
-class Eval (V : Type) (v: V) : Prop where
-  private mk ::
-
-end Permission
-
 
 namespace AST
 section
@@ -159,14 +150,16 @@ namespace Runtime
 open AST
 
 class Env (I : Index) (ByteCode : Type) where
+  EvalPermission : Permission (AST.Val I ByteCode)
   -- fuel: Nat -- this can't be used, ewww
-  forVals: FBound I (fun I => AST.Val I ByteCode) (Permission.Eval (AST.Val I ByteCode))
-  canEvalAny: (v: AST.Val I ByteCode) -> Permission.Eval (AST.Val I ByteCode) v
+  forVals: FBound I (fun I => AST.Val I ByteCode) EvalPermission
+  canEvalAny: (v: AST.Val I ByteCode) -> EvalPermission v
 
 end Runtime
 
 section
-variable {I : Index} {ByteCode : Type} [Runtime.Env I ByteCode]
+variable {I : Index} {ByteCode : Type}
+variable [Runtime.Env I ByteCode]
 
 namespace AST.Trm
 
@@ -189,7 +182,8 @@ def eval (self : AST.Trm I ByteCode) (fuel : Nat) : Outcome (AST.Val I ByteCode)
         eval (body repr) fuel
       | (.result (.fn body), .result value) =>
         let fBound := Runtime.Env.forVals (I := I) (ByteCode := ByteCode)
-        eval (body (fBound.save value (Runtime.Env.canEvalAny (I := I) (ByteCode := ByteCode) value))) fuel
+        let evalPermission := Runtime.Env.canEvalAny (I := I) (ByteCode := ByteCode) value
+        eval (body (fBound.save value evalPermission)) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
@@ -209,14 +203,17 @@ in the future we may have FBound for terms or values and a permission granter
 for transparent fn only
 -/
 class Env (I : Index) (ByteCode : Type) where
-  forTyps: FBound I (fun I => AST.Typ I ByteCode) (Permission.NotRequired (AST.Typ I ByteCode))
+  TypPermission : Permission (AST.Typ I ByteCode)
+  forTyps: FBound I (fun I => AST.Typ I ByteCode) TypPermission
+  canSaveTypAny: (typ: AST.Typ I ByteCode) -> TypPermission typ
 
 end Compiletime
 
 section
 open AST
 
-variable {I : Index} {ByteCode : Type} [Compiletime.Env I ByteCode]
+variable {I : Index} {ByteCode : Type}
+variable [Compiletime.Env I ByteCode]
 
 namespace AST.Trm
 /--
@@ -248,12 +245,14 @@ This rule supports:
 - fundamental lemma: (see `def IsComposable`)
 - soundness theorem
 -/
-def compile (trm : Trm I ByteCode) (fuel : Nat) : Outcome (Trm I ByteCode) := sorry
+def compile [Compiletime.Env I ByteCode]
+    (trm : Trm I ByteCode) (fuel : Nat) : Outcome (Trm I ByteCode) := sorry
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
-def Typing (typ: Typ I ByteCode) (trm : Trm I ByteCode) (fuel : Nat) : Prop := -- TOOD: move trm to be after colon
+def Typing [Compiletime.Env I ByteCode]
+    (typ: Typ I ByteCode) (trm : Trm I ByteCode) (fuel : Nat) : Prop := -- TOOD: move trm to be after colon
     let _trm := Trm.typeHinted trm typ
-    (compile _trm fuel).isDecidable
+    (compile (I := I) (ByteCode := ByteCode) _trm fuel).isDecidable
 
 end AST.Trm
 
@@ -271,8 +270,11 @@ compile under that hint.
 -/
 def IsSafe [Compiletime.Env I ByteCode] [Runtime.Env I ByteCode]
     (program : Trm I ByteCode) (typeHint : Option (Typ I ByteCode)) (fuel: Nat) : Prop :=
-  match program.eval fuel, typeHint with
-  | .result value, some type => ((Trm.typeHinted (.val value) type).compile fuel).isDecidable
+  let result := AST.Trm.eval (I := I) (ByteCode := ByteCode) program fuel
+  match result, typeHint with
+  | .result value, some type =>
+    let hinted := Trm.typeHinted (.val value) type
+    (AST.Trm.compile (I := I) (ByteCode := ByteCode) hinted fuel).isDecidable
   | result, _ => result.isSemiDecidable
 
 /--
@@ -282,9 +284,10 @@ a successfully compiled term should always be safe.
 
 This conjecture is independent from type erasure.
 -/
-def IsAdequate [Compiletime.Env I ByteCode] [Runtime.Env I ByteCode] (src : Trm I ByteCode) (fuel : Nat) : Prop :=
-  match src.compile fuel with
-  | .result program => program.IsSafe src.typeHint.get fuel
+def IsAdequate [Compiletime.Env I ByteCode] [Runtime.Env I ByteCode]
+    (src : Trm I ByteCode) (fuel : Nat) : Prop :=
+  match AST.Trm.compile (I := I) (ByteCode := ByteCode) src fuel with
+  | .result program => AST.Trm.IsSafe (I := I) (ByteCode := ByteCode) program src.typeHint.get fuel
   | _ => true
 
 /--
@@ -300,12 +303,16 @@ def IsComposable [Compiletime.Env I ByteCode]
  (fn : Trm I ByteCode) (arg: Val I ByteCode) (tIn : Typ I ByteCode) (tOut : I → Typ I ByteCode) (fuel : Nat) : Prop :=
   let fnHinted := Trm.typeHinted fn (.depFn tIn tOut)
   let argHinted := Trm.typeHinted (.val arg) tIn
-  match fnHinted.compile fuel, argHinted.compile fuel with
+  let fnResult := AST.Trm.compile (I := I) (ByteCode := ByteCode) fnHinted fuel
+  let argResult := AST.Trm.compile (I := I) (ByteCode := ByteCode) argHinted fuel
+  match fnResult, argResult with
   | .result compiledFn, .result compiledArg =>
     let fBound := Compiletime.Env.forTyps (I := I) (ByteCode := ByteCode)
-    let argRef := fBound.save tIn Permission.NotRequired.mk
+    let typPermission := Compiletime.Env.canSaveTypAny (I := I) (ByteCode := ByteCode) tIn
+    let argRef := fBound.save tIn typPermission
     let pineapplePen := Trm.typeHinted (Trm.apply compiledFn compiledArg) (tOut argRef)
-    ∃ moreFuel, (pineapplePen.compile moreFuel).isDecidable
+    ∃ moreFuel,
+      (AST.Trm.compile (I := I) (ByteCode := ByteCode) pineapplePen moreFuel).isDecidable
   | _, _ => true
 
 end AST.Trm

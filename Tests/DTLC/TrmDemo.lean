@@ -7,74 +7,74 @@ open Lp2lc.Active.DTLC.Symbolic
 
 namespace Trm
 
-def false : Trm String :=
+def false : Trm :=
   .val (.primitive "false")
 
-def true : Trm String :=
+def true : Trm :=
   .val (.primitive "true")
 
-def idFn : Trm String :=
+def idFn : Trm :=
   .val (.fn (fun x => .ref x))
 
-def idFnOnFalse : Trm String :=
+def idFnOnFalse : Trm :=
   .apply idFn false
 
-def get1st : Trm String :=
+def get1st : Trm :=
   .val
     (.fn (fun x =>
       .val
         (.fn (fun _y => .ref x))))
 
-def get2nd : Trm String :=
+def get2nd : Trm :=
   .val
     (.fn (fun _x =>
       .val
         (.fn (fun y => .ref y))))
 
-def get1stOnTuple : Trm String :=
+def get1stOnTuple : Trm :=
   .apply
     (.apply get1st false)
     true
 
-def get2ndOnTuple : Trm String :=
+def get2ndOnTuple : Trm :=
   .apply
     (.apply get2nd false)
     true
 
-def apply1stOn2ndFn : Trm String :=
+def apply1stOn2ndFn : Trm :=
   .val (.fn (fun f =>
       .val (.fn (fun x =>
         .apply
           (.ref f)
           (.ref x)))))
 
-def apply1stOn2ndFnOnTuple : Trm String :=
+def apply1stOn2ndFnOnTuple : Trm :=
   .apply
     (.apply apply1stOn2ndFn idFn)
     false
 
-def applyidFnOnItself : Trm String :=
+def applyidFnOnItself : Trm :=
   .apply idFn idFn
 
-def idFnOnFalse2 : Trm String :=
+def idFnOnFalse2 : Trm :=
   .apply applyidFnOnItself false
 
-def primitiveTrueFn : Trm String :=
+def primitiveTrueFn : Trm :=
   .val
     (.primitiveFn (fun _repr =>
       .val (.primitive "true")))
 
-def primitiveTrueFnOnFalse : Trm String :=
+def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn false
 
 namespace TypeHinted
 
-def hintedFalse : Trm String :=
+def hintedFalse : Trm :=
   .typeHinted
     (.val (.primitive "false"))
     .primitive
 
-def hintedIdFn : Trm String :=
+def hintedIdFn : Trm :=
   .typeHinted
     (.val
       (.fn
@@ -84,7 +84,7 @@ def hintedIdFn : Trm String :=
             .primitive)))
     (.depFn .primitive (fun _x => .primitive))
 
-def hintedIdFnOnFalse : Trm String :=
+def hintedIdFnOnFalse : Trm :=
   .typeHinted
     (.apply hintedIdFn hintedFalse)
     .primitive
@@ -93,20 +93,20 @@ end TypeHinted
 
 namespace Malformed
 
-def primitiveApply : Trm String :=
+def primitiveApply : Trm :=
   .apply false true
 
-def apply1 : Trm String :=
+def apply1 : Trm :=
   .apply
     (.apply idFn false)
     true
 
-def primitiveFalseAsFn : Trm String :=
+def primitiveFalseAsFn : Trm :=
   .typeHinted
     (.val (.primitive "false"))
     (.depFn .primitive (fun _ => .primitive))
 
-def idFnAsPrimitive : Trm String :=
+def idFnAsPrimitive : Trm :=
   .typeHinted
     (.val (.fn (fun x => .ref x)))
     .primitive

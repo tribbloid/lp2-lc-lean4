@@ -12,7 +12,7 @@ section eraseType
 
 example :
     TypeHinted.hintedFalse.typeHint.eraseRecursively =
-      (false : Trm String) := rfl
+      (false : Trm) := rfl
 
 example :
     TypeHinted.hintedIdFn.typeHint.eraseRecursively =
@@ -22,16 +22,19 @@ example :
     TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively =
       .apply
         TypeHinted.hintedIdFn.typeHint.eraseRecursively
-        (false : Trm String) := rfl
+        (false : Trm) := rfl
 
 end eraseType
 
 section eval
 
-@[reducible] unsafe def runtimeCanEval (value : Val String) : Permission.Eval (Val String) value :=
-  unsafeCast ()
+@[reducible] def RuntimeCanEval : Permission Val := fun _value => True
+
+def runtimeCanEval (value : Val) : RuntimeCanEval value :=
+  True.intro
 
 unsafe instance : Runtime.Env Symbol String where
+  EvalPermission := RuntimeCanEval
   forVals := {
     save := fun value _permission => unsafeCast value
     load := fun ref => unsafeCast ref
@@ -42,184 +45,186 @@ unsafe instance : Runtime.Env Symbol String where
   }
   canEvalAny := runtimeCanEval
 
-unsafe example : ((Trm.false : Trm String).eval 0) = .outOfFuel := by
+unsafe example : ((Trm.false : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.false : Trm String).eval 1) =
-    .result ((.primitive "false") : Val String) := by
+unsafe example : ((Trm.false : Trm).eval 1) =
+    .result ((.primitive "false") : Val) := by
   rfl
 
-unsafe example : ((Trm.false : Trm String).eval 2) =
-    .result ((.primitive "false") : Val String) := by
+unsafe example : ((Trm.false : Trm).eval 2) =
+    .result ((.primitive "false") : Val) := by
   rfl
 
-unsafe example : ((Trm.idFnOnFalse : Trm String).eval 0) = .outOfFuel := by
+unsafe example : ((Trm.idFnOnFalse : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.idFnOnFalse : Trm String).eval 2) =
-    .result ((.primitive "false") : Val String) := by
+unsafe example : ((Trm.idFnOnFalse : Trm).eval 2) =
+    .result ((.primitive "false") : Val) := by
   exact unsafeCast True.intro
 
-unsafe example : ((Trm.get1stOnTuple : Trm String).eval 1) = .outOfFuel := by
+unsafe example : ((Trm.get1stOnTuple : Trm).eval 1) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.get1stOnTuple : Trm String).eval 3) =
-    .result ((.primitive "false") : Val String) := by
+unsafe example : ((Trm.get1stOnTuple : Trm).eval 3) =
+    .result ((.primitive "false") : Val) := by
   exact unsafeCast True.intro
 
-unsafe example : ((Trm.get2ndOnTuple : Trm String).eval 3) =
-    .result ((.primitive "true") : Val String) := by
+unsafe example : ((Trm.get2ndOnTuple : Trm).eval 3) =
+    .result ((.primitive "true") : Val) := by
   exact unsafeCast True.intro
 
-unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm String).eval 2) = .outOfFuel := by
+unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 2) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm String).eval 4) =
-    .result ((.primitive "false") : Val String) := by
+unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 4) =
+    .result ((.primitive "false") : Val) := by
   exact unsafeCast True.intro
 
-unsafe example : ((Trm.applyidFnOnItself : Trm String).eval 0) = .outOfFuel := by
+unsafe example : ((Trm.applyidFnOnItself : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.applyidFnOnItself : Trm String).eval 2) =
-    .result ((Val.idFn : Val String)) := by
+unsafe example : ((Trm.applyidFnOnItself : Trm).eval 2) =
+    .result ((Val.idFn : Val)) := by
   exact unsafeCast True.intro
 
-unsafe example : ((Trm.idFnOnFalse2 : Trm String).eval 1) = .outOfFuel := by
+unsafe example : ((Trm.idFnOnFalse2 : Trm).eval 1) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.idFnOnFalse2 : Trm String).eval 3) =
-    .result ((.primitive "false") : Val String) := by
+unsafe example : ((Trm.idFnOnFalse2 : Trm).eval 3) =
+    .result ((.primitive "false") : Val) := by
   exact unsafeCast True.intro
 
-unsafe example : ((Trm.Malformed.apply1 : Trm String).eval 4) = .error := by
+unsafe example : ((Trm.Malformed.apply1 : Trm).eval 4) = .error := by
   exact unsafeCast True.intro
 
-unsafe example : ((Trm.Malformed.primitiveApply : Trm String).eval 0) = .outOfFuel := by
+unsafe example : ((Trm.Malformed.primitiveApply : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.Malformed.primitiveApply : Trm String).eval 2) = .error := by
+unsafe example : ((Trm.Malformed.primitiveApply : Trm).eval 2) = .error := by
   rfl
 
-unsafe example : ((Trm.Malformed.apply1 : Trm String).eval 1) = .outOfFuel := by
+unsafe example : ((Trm.Malformed.apply1 : Trm).eval 1) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.Malformed.apply1 : Trm String).eval 3) = .error := by
+unsafe example : ((Trm.Malformed.apply1 : Trm).eval 3) = .error := by
   exact unsafeCast True.intro
 
-unsafe example : ((Trm.primitiveTrueFnOnFalse : Trm String).eval 2) =
-    .result ((.primitive "true") : Val String) := by
+unsafe example : ((Trm.primitiveTrueFnOnFalse : Trm).eval 2) =
+    .result ((.primitive "true") : Val) := by
   rfl
 
 end eval
 
 section compile
 
-example [Compiletime.Env Symbol String] :
+variable [Compiletime.Env Symbol String]
+
+example :
     false.compile 0 = .outOfFuel := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     false.compile 1 =
       .result false := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     true.compile 1 =
       .result true := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     idFn.compile 1 =
       .result idFn := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     idFnOnFalse.compile 2 =
       .result idFnOnFalse := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     get1st.compile 1 =
       .result get1st := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     get2nd.compile 1 =
       .result get2nd := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     get1stOnTuple.compile 3 =
       .result get1stOnTuple := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     get2ndOnTuple.compile 3 =
       .result get2ndOnTuple := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     apply1stOn2ndFn.compile 1 =
       .result apply1stOn2ndFn := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     apply1stOn2ndFnOnTuple.compile 3 =
       .result apply1stOn2ndFnOnTuple := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     applyidFnOnItself.compile 2 =
       .result applyidFnOnItself := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     idFnOnFalse2.compile 3 =
       .result idFnOnFalse2 := by
   sorry
 
 
-example [Compiletime.Env Symbol String] :
+example :
     primitiveTrueFn.compile 1 =
       .result primitiveTrueFn := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     primitiveTrueFnOnFalse.compile 2 =
       .result primitiveTrueFnOnFalse := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     TypeHinted.hintedFalse.compile 2 =
       .result TypeHinted.hintedFalse.typeHint.eraseRecursively := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     TypeHinted.hintedIdFn.compile 2 =
       .result TypeHinted.hintedIdFn.typeHint.eraseRecursively := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     TypeHinted.hintedIdFnOnFalse.compile 4 =
       .result TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     Malformed.apply1.compile 4 =
       .error := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     Malformed.primitiveApply.compile 2 = .error := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     Malformed.primitiveFalseAsFn.compile 2 =
       .error := by
   sorry
 
-example [Compiletime.Env Symbol String] :
+example :
     Malformed.idFnAsPrimitive.compile 2 =
       .error := by
   sorry

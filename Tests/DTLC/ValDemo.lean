@@ -6,7 +6,7 @@ open Lp2lc.Active.DTLC.Symbolic
 
 namespace Val
 
-def idFn : Val String :=
+def idFn : Val :=
   .fn fun x => .ref x
 
 end Val
