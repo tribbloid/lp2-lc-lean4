@@ -8,4 +8,4 @@ import «Lp2lc».Active.STLC.Def
 import «Lp2lc».Active.DTLC.DTLCDef
 import «Lp2lc».Active.DTLC.Proof
 
-import «Lp2lc».Active.DOT.Def
+import «Lp2lc».Active.DOT.DOTDef

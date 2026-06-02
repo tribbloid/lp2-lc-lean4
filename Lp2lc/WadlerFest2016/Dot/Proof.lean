@@ -1,7 +1,7 @@
-import «Lp2lc».Active.Dot.Def
-import «Lp2lc».Active.Dot.Auxiliary
+import «Lp2lc».Active.DOT.DOTDef
+import «Lp2lc».WadlerFest2016.Dot.Auxiliary
 
-namespace Lp2lc.Active.Dot
+namespace Lp2lc.Active.DOT
 
 -- Scaffolds for Dot lemmas and theorems. Do not introduce axioms; use sorry.
 -- We will populate this file in original Coq order, each with a Coq line comment.
@@ -23,21 +23,21 @@ namespace Lp2lc.Active.Dot
 -- Opening and records
 
 -- [Coq: Dot.v line 1320]
-/-- Opening a declaration preserves its Label. -/ 
+/-- Opening a declaration preserves its Label. -/
 @[simp] theorem open_dec_preserves_label (D : Dec) (x : Var) (i : Nat) :
   label_of_dec D = label_of_dec (open_rec_dec i x D) := by
   -- TODO: by cases D; simp
   sorry
 
 -- [Coq: Dot.v line 1326]
-/-- Opening a record declaration yields a record declaration. -/ 
+/-- Opening a record declaration yields a record declaration. -/
 @[simp] theorem open_record_dec (D : Dec) (x : Var) :
   RecordDec D → RecordDec (open_dec x D) := by
   -- TODO: by cases D
   intro _; sorry
 
 -- [Coq: Dot.v line 1332]
-/-- Opening a record type preserves its record shape and labels. -/ 
+/-- Opening a record type preserves its record shape and labels. -/
 @[simp] theorem open_record_typ (T : Typ) (x : Var) (ls : Finset Label) :
   RecordTyp T ls → RecordTyp (open_typ x T) ls := by
   -- TODO: by induction on RecordTyp
@@ -384,4 +384,4 @@ theorem safety
      := by
   intro _ _; sorry
 
-end Lp2lc.Active.Dot
+end Lp2lc.Active.DOT

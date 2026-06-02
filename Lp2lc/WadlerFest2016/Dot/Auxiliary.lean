@@ -1,9 +1,9 @@
 import Std
 import Aesop
 import «Lp2lc».Active.Shared
-import «Lp2lc».Active.Dot.Def
+import «Lp2lc».Active.DOT.DOTDef
 
-namespace Lp2lc.Active.Dot
+namespace Lp2lc.Active.DOT
 
 -- Register constructors to emulate Coq Hint Constructors
 attribute [aesop safe] Label.label_typ Label.label_trm
@@ -40,4 +40,4 @@ attribute [aesop safe] HasMemberRules.has_bnd HasMemberRules.has_sel
 
 -- TODO: add tactic macros as needed (no axioms)
 
-end Lp2lc.Active.Dot
+end Lp2lc.Active.DOT

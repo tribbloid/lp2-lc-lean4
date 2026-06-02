@@ -1,4 +1,4 @@
-import «Lp2lc».Active.DOT.Def
+import «Lp2lc».Active.DOT.DOTDef
 
 
 
