@@ -93,7 +93,7 @@ namespace Trm
 
 structure TypeView where (self: Trm I)
 
-def type (self: Trm I) := TypeView.mk self
+def typeHint (self: Trm I) := TypeView.mk self
 
 namespace TypeView
 
@@ -106,19 +106,19 @@ def get (view : @TypeView I) : Option (Typ I) :=
 /-- Removes all optional type annotations from a term. -/
 def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
   match self with
-  | typeHinted self _ => self.type.eraseRecursively self
-  | .val (.primitiveFn body) => .val (.primitiveFn fun arg => (body arg).type.eraseRecursively (body arg))
-  | .val (.fn body) => .val (.fn fun arg => (body arg).type.eraseRecursively (body arg))
-  | .apply fn arg => .apply (fn.type.eraseRecursively fn) (arg.type.eraseRecursively arg)
+  | typeHinted self _ => self.typeHint.eraseRecursively self
+  | .val (.primitiveFn body) => .val (.primitiveFn fun arg => (body arg).typeHint.eraseRecursively (body arg))
+  | .val (.fn body) => .val (.fn fun arg => (body arg).typeHint.eraseRecursively (body arg))
+  | .apply fn arg => .apply (fn.typeHint.eraseRecursively fn) (arg.typeHint.eraseRecursively arg)
   | _ => self
 
 /-- Predicate that all annotations have been removed from a term. -/
 def IsErased (view : @TypeView I) (self : Trm I := view.self) : Prop :=
   match self with
   | typeHinted _ _ => false
-  | .val (.primitiveFn body) => ∀ arg, (body arg).type.IsErased (body arg)
-  | .val (.fn body) => ∀ arg, (body arg).type.IsErased (body arg)
-  | .apply fn arg => fn.type.IsErased fn ∧ arg.type.IsErased arg
+  | .val (.primitiveFn body) => ∀ arg, (body arg).typeHint.IsErased (body arg)
+  | .val (.fn body) => ∀ arg, (body arg).typeHint.IsErased (body arg)
+  | .apply fn arg => fn.typeHint.IsErased fn ∧ arg.typeHint.IsErased arg
   | _ => true
 
 end TypeView
@@ -294,7 +294,7 @@ This conjecture is independent from type erasure.
 -/
 def IsAdequate [Compiletime.Env I] [Runtime.Env I] (src : Trm I) (fuel : Nat) : Prop :=
   match src.compile fuel with
-  | .result program => program.IsSafe src.type.get fuel
+  | .result program => program.IsSafe src.typeHint.get fuel
   | _ => true
 
 /--
