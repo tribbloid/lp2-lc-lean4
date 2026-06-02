@@ -33,7 +33,7 @@ object TrmDemo extends Preamble {
   val get2ndOnTuple: Boolean =
     get2nd(`false`)(`true`)
 
-  val apply1stOn2ndFn: (Boolean => Boolean) => Boolean => Boolean =
+  val apply1stOn2ndFn: ((v: Any) => v.type) => Boolean => Boolean =
     f => x => f(x)
 
   val apply1stOn2ndFnOnTuple: Boolean =
