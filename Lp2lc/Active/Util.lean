@@ -61,6 +61,30 @@ end Outcome
 
 universe u v
 
+def GuardedRecursion (T : Index) := (fuel: Nat) -> Outcome T
+
+namespace GuardedRecursion
+section
+variable {T : Index}
+
+def yields (self : GuardedRecursion T) (expectedV: T) : Prop :=
+  ∃ (fuel : Nat), match (self fuel) with
+  | .result v => v = expectedV
+  | _ => false
+
+def isDecidable (self : GuardedRecursion T) : Prop :=
+  ∃ (fuel : Nat), match (self fuel) with
+  | .result _ => true
+  | _ => false
+
+def isSemiDecidable (self : GuardedRecursion T) : Prop :=
+  ∀ (fuel: Nat), match (self fuel) with
+  | error  => false
+  | _ => true
+
+end
+end GuardedRecursion
+
 -- 1. Implicitly lift a type to a higher universe using ULift
 /-- Coerce a lower-universe type into a higher universe through `ULift`. -/
 instance _autoUliftType : Coe (Type u) (Type (max u v)) where
