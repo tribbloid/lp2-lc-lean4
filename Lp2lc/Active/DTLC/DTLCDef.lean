@@ -171,7 +171,8 @@ Evaluates a source or compiled program by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm impl) (fuel : Nat) : Outcome (AST.Val impl) :=
+def eval (self : AST.Trm impl) : GuardedRecursion (AST.Val impl) :=
+  fun fuel =>
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -248,7 +249,7 @@ This rule supports:
 - fundamental lemma: (see `def IsComposable`)
 - soundness theorem
 -/
-def compile (trm : Trm impl) (fuel : Nat) : Outcome (Trm impl) := sorry
+def compile (trm : Trm impl) : GuardedRecursion (Trm impl) := sorry
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
 def Typing
