@@ -49,11 +49,11 @@ inductive Outcome (T : Index)
 
 namespace Outcome
 
-def isDecidable : (self : Outcome T) → Prop
+def isResult : (self : Outcome T) → Prop
 | result _ => true
 | _ => false
 
-def isSemiDecidable : (self : Outcome T) → Prop
+def isResultOrOutOfFuel : (self : Outcome T) → Prop
 | error  => false
 | _ => true
 
@@ -79,7 +79,7 @@ def isDecidable (self : GuardedRecursion T) : Prop :=
 
 def isSemiDecidable (self : GuardedRecursion T) : Prop :=
   ∀ (fuel: Nat), match (self fuel) with
-  | error  => false
+  | .error  => false
   | _ => true
 
 end

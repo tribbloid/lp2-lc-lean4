@@ -254,7 +254,7 @@ def compile (trm : Trm impl) (fuel : Nat) : Outcome (Trm impl) := sorry
 def Typing
     (typ: Typ impl) (trm : Trm impl) (fuel : Nat) : Prop := -- TOOD: move trm to be after colon
     let _trm := Trm.typeHinted trm typ
-    (compile _trm fuel).isDecidable
+    (compile _trm fuel).isResult
 
 end AST.Trm
 
@@ -276,8 +276,8 @@ def IsSafe [Compiletime.Env impl] [Runtime.Env impl]
   match result, typeHint with
   | .result value, some type =>
     let hinted := Trm.typeHinted (.val value) type
-    (AST.Trm.compile hinted fuel).isDecidable
-  | result, _ => result.isSemiDecidable
+    (AST.Trm.compile hinted fuel).isResult
+  | result, _ => result.isResultOrOutOfFuel
 
 /--
 The adequacy conjecture of logical relation:
@@ -314,7 +314,7 @@ def IsComposable [Compiletime.Env impl]
     let argRef := fBound.save tIn typPermission
     let pineapplePen := Trm.typeHinted (Trm.apply compiledFn compiledArg) (tOut argRef)
     ∃ moreFuel,
-      (AST.Trm.compile pineapplePen moreFuel).isDecidable
+      (AST.Trm.compile pineapplePen moreFuel).isResult
   | _, _ => true
 
 end AST.Trm

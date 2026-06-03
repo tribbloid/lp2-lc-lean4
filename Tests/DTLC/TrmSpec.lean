@@ -128,115 +128,99 @@ unsafe instance : Compiletime.Env impl where
       exact unsafeCast True.intro
   }
   canSaveAnyTyp := fun _typ => True.intro
+  defaultByteCode := ""
 
-example :
+unsafe example :
     vFalse.compile 0 = .outOfFuel := by
-  sorry
+  rfl
 
-example :
-    vFalse.compile 1 =
-      .result vFalse := by
-  sorry
+unsafe example :
+    (vFalse.compile 1).isResult := by
+  rfl
 
-example :
-    vTrue.compile 1 =
-      .result vTrue := by
-  sorry
+unsafe example :
+    (vTrue.compile 1).isResult := by
+  rfl
 
-example :
-    idFn.compile 1 =
-      .result idFn := by
-  sorry
+unsafe example :
+    (idFn.compile 1).isResult := by
+  rfl
 
-example :
-    idFnOnFalse.compile 2 =
-      .result idFnOnFalse := by
-  sorry
+unsafe example :
+    (idFnOnFalse.compile 2).isResult := by
+  rfl
 
-example :
-    get1st.compile 1 =
-      .result get1st := by
-  sorry
+unsafe example :
+    (get1st.compile 1).isResult := by
+  rfl
 
-example :
-    get2nd.compile 1 =
-      .result get2nd := by
-  sorry
+unsafe example :
+    (get2nd.compile 1).isResult := by
+  rfl
 
-example :
-    get1stOnTuple.compile 3 =
-      .result get1stOnTuple := by
-  sorry
+unsafe example :
+    (get1stOnTuple.compile 3).isResult := by
+  rfl
 
-example :
-    get2ndOnTuple.compile 3 =
-      .result get2ndOnTuple := by
-  sorry
+unsafe example :
+    (get2ndOnTuple.compile 3).isResult := by
+  rfl
 
-example :
-    apply1stOn2ndFn.compile 1 =
-      .result apply1stOn2ndFn := by
-  sorry
+unsafe example :
+    (apply1stOn2ndFn.compile 1).isResult := by
+  rfl
 
-example :
-    apply1stOn2ndFnOnTuple.compile 3 =
-      .result apply1stOn2ndFnOnTuple := by
-  sorry
+unsafe example :
+    (apply1stOn2ndFnOnTuple.compile 3).isResult := by
+  rfl
 
-example :
-    applyidFnOnItself.compile 2 =
-      .result applyidFnOnItself := by
-  sorry
+unsafe example :
+    (applyidFnOnItself.compile 2).isResult := by
+  rfl
 
-example :
-    idFnOnFalse2.compile 3 =
-      .result idFnOnFalse2 := by
-  sorry
+unsafe example :
+    (idFnOnFalse2.compile 3).isResult := by
+  rfl
 
 
-example :
-    primitiveTrueFn.compile 1 =
-      .result primitiveTrueFn := by
-  sorry
+unsafe example :
+    (primitiveTrueFn.compile 1).isResult := by
+  rfl
 
-example :
-    primitiveTrueFnOnFalse.compile 2 =
-      .result primitiveTrueFnOnFalse := by
-  sorry
+unsafe example :
+    (primitiveTrueFnOnFalse.compile 2).isResult := by
+  rfl
 
-example :
-    TypeHinted.hintedFalse.compile 2 =
-      .result TypeHinted.hintedFalse.typeHint.eraseRecursively := by
-  sorry
+unsafe example :
+    (TypeHinted.hintedFalse.compile 2).isResult := by
+  rfl
 
-example :
-    TypeHinted.hintedIdFn.compile 2 =
-      .result TypeHinted.hintedIdFn.typeHint.eraseRecursively := by
-  sorry
+unsafe example :
+    (TypeHinted.hintedIdFn.compile 4).isResult := by
+  rfl
 
-example :
-    TypeHinted.hintedIdFnOnFalse.compile 4 =
-      .result TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively := by
-  sorry
+unsafe example :
+    (TypeHinted.hintedIdFnOnFalse.compile 6).isResult := by
+  rfl
 
-example :
+unsafe example :
     Malformed.apply1.compile 4 =
       .error := by
-  sorry
+  rfl
 
-example :
+unsafe example :
     Malformed.primitiveApply.compile 2 = .error := by
-  sorry
+  rfl
 
-example :
+unsafe example :
     Malformed.primitiveFalseAsFn.compile 2 =
       .error := by
-  sorry
+  rfl
 
-example :
+unsafe example :
     Malformed.idFnAsPrimitive.compile 2 =
       .error := by
-  sorry
+  rfl
 
 end compile
 
