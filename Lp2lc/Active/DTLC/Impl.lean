@@ -10,10 +10,14 @@ inductive Symbol where -- no constructor, it can only be retrieved from FBound
 
 namespace Symbolic
 
-abbrev ByteCode := String
-abbrev Typ := AST.Typ Symbol ByteCode
-abbrev Val := AST.Val Symbol ByteCode
-abbrev Trm := AST.Trm Symbol ByteCode
+@[reducible] def impl : Impl where
+  I := Symbol
+  ByteCode := String
+
+abbrev ByteCode := impl.ByteCode
+abbrev Typ := AST.Typ impl
+abbrev Val := AST.Val impl
+abbrev Trm := AST.Trm impl
 
 end Symbolic
 

@@ -33,7 +33,7 @@ section eval
 def runtimeCanEval (value : Val) : RuntimeCanEval value :=
   True.intro
 
-unsafe instance : Runtime.Env Symbol String where
+unsafe instance : Runtime.Env impl where
   EvalPermission := RuntimeCanEval
   forVals := {
     save := fun value _permission => unsafeCast value
@@ -118,7 +118,7 @@ end eval
 
 section compile
 
-variable [Compiletime.Env Symbol String]
+variable [Compiletime.Env impl]
 
 example :
     vFalse.compile 0 = .outOfFuel := by
