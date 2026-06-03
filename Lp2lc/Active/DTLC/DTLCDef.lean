@@ -13,7 +13,7 @@ open Lp2lc.Active.Util
 
 class Impl where
   I : Index
-  ByteCode : Type
+  B : ByteCode
 
 
 namespace AST
@@ -61,8 +61,8 @@ Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
 -/
 inductive Val : Type where
-| primitive (repr : impl.ByteCode) -- most specific type is always `primitive`
-| primitiveFn (body: (arg: impl.ByteCode) -> Trm ) -- most specific type is always `.depFn .primitive _`
+| primitive (repr : impl.B) -- most specific type is always `primitive`
+| primitiveFn (body: (arg: impl.B) -> Trm ) -- most specific type is always `.depFn .primitive _`
 | fn (body : (arg : impl.I) → Trm) -- most specific type is always `.depFn _ _`
 
 end

@@ -5,6 +5,7 @@ import «Lp2lc».Active.Shared
 namespace Lp2lc.Active.Util
 
 abbrev Index := Type
+abbrev ByteCode := Type
 
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
