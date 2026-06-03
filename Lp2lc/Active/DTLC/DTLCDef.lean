@@ -208,7 +208,7 @@ for transparent fn only
 class Env (impl : Impl) where
   TypPermission : Permission (AST.Typ impl)
   forTyps: FBound impl.I (fun index => AST.Typ { impl with I := index }) TypPermission
-  canSaveTypAny: (typ: AST.Typ impl) -> TypPermission typ
+  canSaveAnyTyp: (typ: AST.Typ impl) -> TypPermission typ
 
 end Compiletime
 
@@ -310,7 +310,7 @@ def IsComposable [Compiletime.Env impl]
   match fnResult, argResult with
   | .result compiledFn, .result compiledArg =>
     let fBound := Compiletime.Env.forTyps (impl := impl)
-    let typPermission := Compiletime.Env.canSaveTypAny tIn
+    let typPermission := Compiletime.Env.canSaveAnyTyp tIn
     let argRef := fBound.save tIn typPermission
     let pineapplePen := Trm.typeHinted (Trm.apply compiledFn compiledArg) (tOut argRef)
     ∃ moreFuel,

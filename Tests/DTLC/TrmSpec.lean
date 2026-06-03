@@ -30,9 +30,6 @@ section eval
 
 @[reducible] def RuntimeCanEval : Permission Val := fun _value => True
 
-def runtimeCanEval (value : Val) : RuntimeCanEval value :=
-  True.intro
-
 unsafe instance : Runtime.Env impl where
   EvalPermission := RuntimeCanEval
   forVals := {
@@ -43,7 +40,7 @@ unsafe instance : Runtime.Env impl where
       intro permission
       exact unsafeCast True.intro
   }
-  canEvalAny := runtimeCanEval
+  canEvalAny := fun _value => True.intro
 
 unsafe example : ((Trm.vFalse : Trm).eval 0) = .outOfFuel := by
   rfl
@@ -118,7 +115,19 @@ end eval
 
 section compile
 
-variable [Compiletime.Env impl]
+@[reducible] def CompiletimeCanSaveTyp : Permission Typ := fun _typ => True
+
+unsafe instance : Compiletime.Env impl where
+  TypPermission := CompiletimeCanSaveTyp
+  forTyps := {
+    save := fun typ _permission => unsafeCast typ
+    load := fun ref => unsafeCast ref
+    roundtrip := by
+      intro typ
+      intro permission
+      exact unsafeCast True.intro
+  }
+  canSaveAnyTyp := fun _typ => True.intro
 
 example :
     vFalse.compile 0 = .outOfFuel := by
