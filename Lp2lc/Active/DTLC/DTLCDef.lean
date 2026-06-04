@@ -207,17 +207,19 @@ in the future we may have FBound for terms or values and a permission granter
 for transparent fn only
 -/
 class Env (impl : Impl) where
-  TypPermission : Permission (AST.Typ impl)
-  forTyps: FBound impl.I (fun index => AST.Typ { impl with I := index }) TypPermission
-  canSaveAnyTyp: (typ: AST.Typ impl) -> TypPermission typ
+  TypPermission : (AST.Typ impl) -> true -- permission is always granted
+  forTyps: FBound impl.I (fun (impl.I) => AST.Typ impl) TypPermission
 
 end Compiletime
 
 section
 open AST
 
-variable {impl : Impl}
-variable [Compiletime.Env impl]
+variable {impl : Impl} [Compiletime.Env impl]
+
+-- structure Program where
+--   trm: Trm impl
+--   bindingTyp: Typ impl
 
 namespace AST.Trm
 /--
