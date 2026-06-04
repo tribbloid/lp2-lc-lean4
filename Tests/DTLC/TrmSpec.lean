@@ -115,10 +115,7 @@ end eval
 
 section compile
 
-@[reducible] def CompiletimeCanSaveTyp : Permission Typ := fun _typ => True
-
 unsafe instance : Compiletime.Env impl where
-  TypPermission := CompiletimeCanSaveTyp
   forTyps := {
     save := fun typ _permission => unsafeCast typ
     load := fun ref => unsafeCast ref
@@ -127,96 +124,78 @@ unsafe instance : Compiletime.Env impl where
       intro permission
       exact unsafeCast True.intro
   }
-  canSaveAnyTyp := fun _typ => True.intro
 
 example :
-    vFalse.compile 0 = .outOfFuel := by
+    vFalse.compile.isSemiDecidable := by
   sorry
 
 example :
-    vFalse.compile 1 =
-      .result vFalse := by
+    vFalse.compile.isSemiDecidable := by
   sorry
 
 example :
-    vTrue.compile 1 =
-      .result vTrue := by
+    vTrue.compile.isSemiDecidable := by
   sorry
 
 example :
-    idFn.compile 1 =
-      .result idFn := by
+    idFn.compile.isSemiDecidable := by
   sorry
 
 example :
-    idFnOnFalse.compile 2 =
-      .result idFnOnFalse := by
+    idFnOnFalse.compile.isSemiDecidable := by
   sorry
 
 example :
-    get1st.compile 1 =
-      .result get1st := by
+    get1st.compile.isSemiDecidable := by
   sorry
 
 example :
-    get2nd.compile 1 =
-      .result get2nd := by
+    get2nd.compile.isSemiDecidable := by
   sorry
 
 example :
-    get1stOnTuple.compile 3 =
-      .result get1stOnTuple := by
+    get1stOnTuple.compile.isSemiDecidable := by
   sorry
 
 example :
-    get2ndOnTuple.compile 3 =
-      .result get2ndOnTuple := by
+    get2ndOnTuple.compile.isSemiDecidable := by
   sorry
 
 example :
-    apply1stOn2ndFn.compile 1 =
-      .result apply1stOn2ndFn := by
+    apply1stOn2ndFn.compile.isSemiDecidable := by
   sorry
 
 example :
-    apply1stOn2ndFnOnTuple.compile 3 =
-      .result apply1stOn2ndFnOnTuple := by
+    apply1stOn2ndFnOnTuple.compile.isSemiDecidable := by
   sorry
 
 example :
-    applyidFnOnItself.compile 2 =
-      .result applyidFnOnItself := by
+    applyidFnOnItself.compile.isSemiDecidable := by
   sorry
 
 example :
-    idFnOnFalse2.compile 3 =
-      .result idFnOnFalse2 := by
+    idFnOnFalse2.compile.isSemiDecidable := by
   sorry
 
 
 example :
-    primitiveTrueFn.compile 1 =
-      .result primitiveTrueFn := by
+    primitiveTrueFn.compile.isSemiDecidable := by
   sorry
 
 example :
-    primitiveTrueFnOnFalse.compile 2 =
-      .result primitiveTrueFnOnFalse := by
+    primitiveTrueFnOnFalse.compile.isSemiDecidable := by
   sorry
 
 example :
-    TypeHinted.hintedFalse.compile 2 =
-      .result TypeHinted.hintedFalse.typeHint.eraseRecursively := by
+    TypeHinted.hintedFalse.compile.isSemiDecidable := by
   sorry
 
 example :
-    TypeHinted.hintedIdFn.compile 2 =
-      .result TypeHinted.hintedIdFn.typeHint.eraseRecursively := by
+    TypeHinted.hintedIdFn.compile.isSemiDecidable := by
   sorry
 
 example :
-    TypeHinted.hintedIdFnOnFalse.compile 4 =
-      .result TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively := by
+    TypeHinted.hintedIdFnOnFalse.compile.isSemiDecidable := by
   sorry
 
 example :

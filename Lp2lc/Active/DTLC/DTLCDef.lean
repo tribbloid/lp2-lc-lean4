@@ -207,8 +207,7 @@ in the future we may have FBound for terms or values and a permission granter
 for transparent fn only
 -/
 class Env (impl : Impl) where
-  TypPermission : (AST.Typ impl) -> true -- permission is always granted
-  forTyps: FBound impl.I (fun (impl.I) => AST.Typ impl) TypPermission
+  forTyps: FBound impl.I (fun _ => AST.Typ impl) (fun _ => True)
 
 end Compiletime
 
@@ -313,7 +312,7 @@ def IsComposable [Compiletime.Env impl]
   match fnResult, argResult with
   | .result compiledFn, .result compiledArg =>
     let fBound := Compiletime.Env.forTyps (impl := impl)
-    let typPermission := Compiletime.Env.canSaveAnyTyp tIn
+    let typPermission := True.intro
     let argRef := fBound.save tIn typPermission
     let pineapplePen := Trm.typeHinted (Trm.apply compiledFn compiledArg) (tOut argRef)
     ∃ moreFuel,
