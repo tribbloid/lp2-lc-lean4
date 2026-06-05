@@ -1,4 +1,4 @@
-import «Tests».DTLC.TrmDemo
+import «Tests».DTLC.Fixture
 
 namespace Tests.DTLC.Sanity
 
@@ -26,42 +26,6 @@ example :
 
 end eraseType
 
-namespace EvalFixture
-
-
-@[reducible] def RuntimeCanEval : Permission Val := fun _value => True
-
-initialize savedVals : IO.Ref (Array Val) ← IO.mkRef #[]
-
-unsafe def saveVal (value : Val) : impl.I :=
-  unsafeBaseIO do
-    let values ← savedVals.get
-    savedVals.set (values.push value)
-    pure (unsafeCast values.size)
-
-unsafe def loadVal (ref : impl.I) : Val :=
-  let index : Nat := unsafeCast ref
-  match (unsafeBaseIO savedVals.get)[index]? with
-  | some value => value
-  | none => unsafeCast ()
-
-@[reducible] unsafe def _evalEnv : Runtime.Env impl where
-  EvalPermission := RuntimeCanEval
-  forVals := {
-    save := fun value _permission => saveVal value
-    load := fun ref => loadVal ref
-    roundtrip := by
-      intro value
-      intro permission
-      exact unsafeCast True.intro
-  }
-  canEvalAny := fun _value => True.intro
-
-@[instance, implemented_by _evalEnv]
-axiom env : Runtime.Env impl -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
-
-end EvalFixture
-
 section eval
 
 example : ((Trm.vFalse : Trm).eval 0) = .outOfFuel := by
@@ -80,42 +44,42 @@ example: ((Trm.idFnOnFalse : Trm).eval 0) = .outOfFuel := by
 
 example: ((Trm.idFnOnFalse : Trm).eval 2) =
     .result ((.primitive "false") : Val) := by
-  rfl
+  simp [AST.Trm.eval, idFnOnFalse, idFn, vFalse]
 
 example: ((Trm.get1stOnTuple : Trm).eval 1) = .outOfFuel := by
   rfl
 
 example: ((Trm.get1stOnTuple : Trm).eval 3) =
     .result ((.primitive "false") : Val) := by
-  rfl
+  simp [AST.Trm.eval, get1stOnTuple, get1st, vFalse, vTrue]
 
 example: ((Trm.get2ndOnTuple : Trm).eval 3) =
     .result ((.primitive "true") : Val) := by
-  rfl
+  simp [AST.Trm.eval, get2ndOnTuple, get2nd, vFalse, vTrue]
 
 example: ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 2) = .outOfFuel := by
   rfl
 
 example: ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 4) =
     .result ((.primitive "false") : Val) := by
-  rfl
+  simp [AST.Trm.eval, apply1stOn2ndFnOnTuple, apply1stOn2ndFn, idFn, vFalse]
 
 example: ((Trm.applyidFnOnItself : Trm).eval 0) = .outOfFuel := by
   rfl
 
 example: ((Trm.applyidFnOnItself : Trm).eval 2) =
     .result ((Val.idFn : Val)) := by
-  rfl
+  simp [AST.Trm.eval, applyidFnOnItself, idFn, Val.idFn]
 
 example: ((Trm.idFnOnFalse2 : Trm).eval 1) = .outOfFuel := by
   rfl
 
 example: ((Trm.idFnOnFalse2 : Trm).eval 3) =
     .result ((.primitive "false") : Val) := by
-  rfl
+  simp [AST.Trm.eval, idFnOnFalse2, applyidFnOnItself, idFn, vFalse]
 
 example: ((Trm.Malformed.apply1 : Trm).eval 4) = .error := by
-  rfl
+  simp [AST.Trm.eval, Malformed.apply1, idFn, vFalse, vTrue]
 
 example: ((Trm.Malformed.primitiveApply : Trm).eval 0) = .outOfFuel := by
   rfl
@@ -127,7 +91,7 @@ example: ((Trm.Malformed.apply1 : Trm).eval 1) = .outOfFuel := by
   rfl
 
 example: ((Trm.Malformed.apply1 : Trm).eval 3) = .error := by
-  rfl
+  simp [AST.Trm.eval, Malformed.apply1, idFn, vFalse, vTrue]
 
 example: ((Trm.primitiveTrueFnOnFalse : Trm).eval 2) =
     .result ((.primitive "true") : Val) := by
@@ -144,7 +108,7 @@ unsafe instance : Compiletime.Env impl where
     roundtrip := by
       intro typ
       intro permission
-      rfl
+      exact unsafeCast True.intro
   }
 
 example :
