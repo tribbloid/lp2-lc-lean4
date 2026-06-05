@@ -31,15 +31,29 @@ namespace EvalFixture
 
 @[reducible] def RuntimeCanEval : Permission Val := fun _value => True
 
-unsafe def _evalEnv : Runtime.Env impl where
+initialize savedVals : IO.Ref (Array Val) ← IO.mkRef #[]
+
+unsafe def saveVal (value : Val) : impl.I :=
+  unsafeBaseIO do
+    let values ← savedVals.get
+    savedVals.set (values.push value)
+    pure (unsafeCast values.size)
+
+unsafe def loadVal (ref : impl.I) : Val :=
+  let index : Nat := unsafeCast ref
+  match (unsafeBaseIO savedVals.get)[index]? with
+  | some value => value
+  | none => unsafeCast ()
+
+@[reducible] unsafe def _evalEnv : Runtime.Env impl where
   EvalPermission := RuntimeCanEval
   forVals := {
-    save := fun value _permission => unsafeCast value
-    load := fun ref => unsafeCast ref
+    save := fun value _permission => saveVal value
+    load := fun ref => loadVal ref
     roundtrip := by
       intro value
       intro permission
-      rfl
+      exact unsafeCast True.intro
   }
   canEvalAny := fun _value => True.intro
 
