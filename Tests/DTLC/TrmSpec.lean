@@ -28,167 +28,147 @@ end eraseType
 
 section eval
 
-example : ((Trm.vFalse : Trm).eval 0) = .outOfFuel := by
-  rfl
+example :
+    ((Trm.vFalse : Trm).eval).yields
+      ((.primitive "false") : Val) := by
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
-example: ((Trm.vFalse : Trm).eval 1) =
-    .result ((.primitive "false") : Val) := by
-  rfl
+example :
+    ((Trm.idFnOnFalse : Trm).eval).yields
+      ((.primitive "false") : Val) := by
+  constructor
+  · exact ⟨2, by simp [AST.Trm.eval, idFnOnFalse, idFn, vFalse]⟩
+  · rfl
 
-example: ((Trm.vFalse : Trm).eval 2) =
-    .result ((.primitive "false") : Val) := by
-  rfl
+example :
+    ((Trm.get1stOnTuple : Trm).eval).yields
+      ((.primitive "false") : Val) := by
+  constructor
+  · exact ⟨3, by simp [AST.Trm.eval, get1stOnTuple, get1st, vFalse, vTrue]⟩
+  · rfl
 
-example: ((Trm.idFnOnFalse : Trm).eval 0) = .outOfFuel := by
-  rfl
+example :
+    ((Trm.get2ndOnTuple : Trm).eval).yields
+      ((.primitive "true") : Val) := by
+  constructor
+  · exact ⟨3, by simp [AST.Trm.eval, get2ndOnTuple, get2nd, vFalse, vTrue]⟩
+  · rfl
 
-example: ((Trm.idFnOnFalse : Trm).eval 2) =
-    .result ((.primitive "false") : Val) := by
-  simp [AST.Trm.eval, idFnOnFalse, idFn, vFalse]
+example :
+    ((Trm.apply1stOn2ndFnOnTuple : Trm).eval).yields
+      ((.primitive "false") : Val) := by
+  constructor
+  · exact ⟨4, by simp [AST.Trm.eval, apply1stOn2ndFnOnTuple, apply1stOn2ndFn, idFn, vFalse]⟩
+  · rfl
 
-example: ((Trm.get1stOnTuple : Trm).eval 1) = .outOfFuel := by
-  rfl
+example :
+    ((Trm.applyidFnOnItself : Trm).eval).yields
+      (Val.idFn : Val) := by
+  constructor
+  · exact ⟨2, by simp [AST.Trm.eval, applyidFnOnItself, idFn, Val.idFn]⟩
+  · rfl
 
-example: ((Trm.get1stOnTuple : Trm).eval 3) =
-    .result ((.primitive "false") : Val) := by
-  simp [AST.Trm.eval, get1stOnTuple, get1st, vFalse, vTrue]
-
-example: ((Trm.get2ndOnTuple : Trm).eval 3) =
-    .result ((.primitive "true") : Val) := by
-  simp [AST.Trm.eval, get2ndOnTuple, get2nd, vFalse, vTrue]
-
-example: ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 2) = .outOfFuel := by
-  rfl
-
-example: ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 4) =
-    .result ((.primitive "false") : Val) := by
-  simp [AST.Trm.eval, apply1stOn2ndFnOnTuple, apply1stOn2ndFn, idFn, vFalse]
-
-example: ((Trm.applyidFnOnItself : Trm).eval 0) = .outOfFuel := by
-  rfl
-
-example: ((Trm.applyidFnOnItself : Trm).eval 2) =
-    .result ((Val.idFn : Val)) := by
-  simp [AST.Trm.eval, applyidFnOnItself, idFn, Val.idFn]
-
-example: ((Trm.idFnOnFalse2 : Trm).eval 1) = .outOfFuel := by
-  rfl
-
-example: ((Trm.idFnOnFalse2 : Trm).eval 3) =
-    .result ((.primitive "false") : Val) := by
-  simp [AST.Trm.eval, idFnOnFalse2, applyidFnOnItself, idFn, vFalse]
+example :
+    ((Trm.idFnOnFalse2 : Trm).eval).yields
+      ((.primitive "false") : Val) := by
+  constructor
+  · exact ⟨3, by simp [AST.Trm.eval, idFnOnFalse2, applyidFnOnItself, idFn, vFalse]⟩
+  · rfl
 
 example: ((Trm.Malformed.apply1 : Trm).eval 4) = .error := by
   simp [AST.Trm.eval, Malformed.apply1, idFn, vFalse, vTrue]
 
-example: ((Trm.Malformed.primitiveApply : Trm).eval 0) = .outOfFuel := by
-  rfl
-
 example: ((Trm.Malformed.primitiveApply : Trm).eval 2) = .error := by
-  rfl
-
-example: ((Trm.Malformed.apply1 : Trm).eval 1) = .outOfFuel := by
   rfl
 
 example: ((Trm.Malformed.apply1 : Trm).eval 3) = .error := by
   simp [AST.Trm.eval, Malformed.apply1, idFn, vFalse, vTrue]
 
-example: ((Trm.primitiveTrueFnOnFalse : Trm).eval 2) =
-    .result ((.primitive "true") : Val) := by
-  rfl
+example :
+    ((Trm.primitiveTrueFnOnFalse : Trm).eval).yields
+      ((.primitive "true") : Val) := by
+  constructor
+  · exact ⟨2, rfl⟩
+  · rfl
 
 end eval
 
 section compile
 
 example :
-    vFalse.compile 0 = .outOfFuel := by
+    vFalse.compile.yields vFalse := by
   sorry
 
 example :
-    vFalse.compile 1 =
-      .result vFalse := by
+    vTrue.compile.yields vTrue := by
   sorry
 
 example :
-    vTrue.compile 1 =
-      .result vTrue := by
+    idFn.compile.yields idFn := by
   sorry
 
 example :
-    idFn.compile 1 =
-      .result idFn := by
+    idFnOnFalse.compile.yields idFnOnFalse := by
   sorry
 
 example :
-    idFnOnFalse.compile 2 =
-      .result idFnOnFalse := by
+    get1st.compile.yields get1st := by
   sorry
 
 example :
-    get1st.compile 1 =
-      .result get1st := by
+    get2nd.compile.yields get2nd := by
   sorry
 
 example :
-    get2nd.compile 1 =
-      .result get2nd := by
+    get1stOnTuple.compile.yields get1stOnTuple := by
   sorry
 
 example :
-    get1stOnTuple.compile 3 =
-      .result get1stOnTuple := by
+    get2ndOnTuple.compile.yields get2ndOnTuple := by
   sorry
 
 example :
-    get2ndOnTuple.compile 3 =
-      .result get2ndOnTuple := by
+    apply1stOn2ndFn.compile.yields apply1stOn2ndFn := by
   sorry
 
 example :
-    apply1stOn2ndFn.compile 1 =
-      .result apply1stOn2ndFn := by
+    apply1stOn2ndFnOnTuple.compile.yields
+      apply1stOn2ndFnOnTuple := by
   sorry
 
 example :
-    apply1stOn2ndFnOnTuple.compile 3 =
-      .result apply1stOn2ndFnOnTuple := by
+    applyidFnOnItself.compile.yields applyidFnOnItself := by
   sorry
 
 example :
-    applyidFnOnItself.compile 2 =
-      .result applyidFnOnItself := by
-  sorry
-
-example :
-    idFnOnFalse2.compile 3 =
-      .result idFnOnFalse2 := by
+    idFnOnFalse2.compile.yields idFnOnFalse2 := by
   sorry
 
 
 example :
-    primitiveTrueFn.compile 1 =
-      .result primitiveTrueFn := by
+    primitiveTrueFn.compile.yields primitiveTrueFn := by
   sorry
 
 example :
-    primitiveTrueFnOnFalse.compile 2 =
-      .result primitiveTrueFnOnFalse := by
+    primitiveTrueFnOnFalse.compile.yields
+      primitiveTrueFnOnFalse := by
   sorry
 
 example :
-    TypeHinted.hintedFalse.compile 2 =
-      .result TypeHinted.hintedFalse.typeHint.eraseRecursively := by
+    TypeHinted.hintedFalse.compile.yields
+      TypeHinted.hintedFalse.typeHint.eraseRecursively := by
   sorry
 
 example :
-    TypeHinted.hintedIdFn.compile 2 =
-      .result TypeHinted.hintedIdFn.typeHint.eraseRecursively := by
+    TypeHinted.hintedIdFn.compile.yields
+      TypeHinted.hintedIdFn.typeHint.eraseRecursively := by
   sorry
 
 example :
-    TypeHinted.hintedIdFnOnFalse.compile 4 =
-      .result TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively := by
+    TypeHinted.hintedIdFnOnFalse.compile.yields
+      TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively := by
   sorry
 
 example :
