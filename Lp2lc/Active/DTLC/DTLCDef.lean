@@ -155,7 +155,7 @@ open AST
 class Env (impl : Impl) where
   EvalPermission : Permission (AST.Val impl)
   -- fuel: Nat -- this can't be used, ewww
-  forVals: FBound impl.I (fun index => AST.Val { impl with I := index }) -- TODO: redudant dependent condition, remove
+  forVals: FBound impl.I (fun _ => AST.Val impl) EvalPermission
   canEvalAny: (v: AST.Val impl) -> EvalPermission v
 
 end Runtime
@@ -186,7 +186,8 @@ def eval (self : AST.Trm impl) : GuardedRecursion (AST.Val impl) :=
         eval (body repr) fuel
       | (.result (.fn body), .result value) =>
         let fBound := Runtime.Env.forVals (impl := impl)
-        eval (body (fBound.save value)) fuel
+        let permission := Runtime.Env.canEvalAny (impl := impl) value
+        eval (body (fBound.save value permission)) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
@@ -206,7 +207,7 @@ in the future we may have FBound for terms or values and a permission granter
 for transparent fn only
 -/
 class Env (impl : Impl) where
-  forTyps: FBound impl.I (fun _ => AST.Typ impl)
+  forTyps: FBound impl.I (fun _ => AST.Typ impl) fun _ => True
 
 end Compiletime
 
@@ -311,7 +312,7 @@ def IsComposable [Compiletime.Env impl]
   match fnResult, argResult with
   | .result compiledFn, .result compiledArg =>
     let fBound := Compiletime.Env.forTyps (impl := impl)
-    let argRef := fBound.save tIn
+    let argRef := fBound.save tIn True.intro
     let pineapplePen := Trm.typeHinted (Trm.apply compiledFn compiledArg) (tOut argRef)
     ∃ moreFuel,
       (AST.Trm.compile pineapplePen moreFuel).isResult
