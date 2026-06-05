@@ -67,10 +67,16 @@ namespace GuardedRecursion
 section
 variable {T : Index}
 
+
 def yields (self : GuardedRecursion T) (expectedV: T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .result v => v = expectedV
   | _ => false
+
+def yieldsIfEnoughFuel (self : GuardedRecursion T) (expectedV: T) : Prop :=
+  let hasFuel := self.yields expectedV
+  let noFuel := self 0 = .outOfFuel
+  hasFuel /\ noFuel
 
 def isDecidable (self : GuardedRecursion T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
