@@ -198,7 +198,7 @@ def eval (self : AST.Trm impl) : GuardedRecursion (AST.Val impl) :=
 end AST.Trm
 end
 
-namespace Compiletime
+namespace Compiler
 
 /--
 only contains FBound for types
@@ -209,12 +209,12 @@ for transparent fn only
 class Env (impl : Impl) where
   forTyps: FBound impl.I (fun _ => AST.Typ impl) fun _ => True
 
-end Compiletime
+end Compiler
 
 section
 open AST
 
-variable {impl : Impl} [Compiletime.Env impl]
+variable {impl : Impl} [Compiler.Env impl]
 
 -- structure Program where
 --   trm: Trm impl
@@ -272,7 +272,7 @@ An safe program may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced with a type hint, the value must
 compile under that hint.
 -/
-def IsSafe [Compiletime.Env impl] [Runtime.Env impl]
+def IsSafe [Compiler.Env impl] [Runtime.Env impl]
     (program : Trm impl) (typeHint : Option (Typ impl)) (fuel: Nat) : Prop :=
   let result := AST.Trm.eval program fuel
   match result, typeHint with
@@ -288,7 +288,7 @@ a successfully compiled term should always be safe.
 
 This conjecture is independent from type erasure.
 -/
-def IsAdequate [Compiletime.Env impl] [Runtime.Env impl]
+def IsAdequate [Compiler.Env impl] [Runtime.Env impl]
     (src : Trm impl) (fuel : Nat) : Prop :=
   match AST.Trm.compile src fuel with
   | .result program => AST.Trm.IsSafe program src.typeHint.get fuel
@@ -303,7 +303,7 @@ output type.
 
 This conjecture is independent from adequacy & type erasure.
 -/
-def IsComposable [Compiletime.Env impl]
+def IsComposable [Compiler.Env impl]
  (fn : Trm impl) (arg: Val impl) (tIn : Typ impl) (tOut : impl.I → Typ impl) (fuel : Nat) : Prop :=
   let fnHinted := Trm.typeHinted fn (.depFn tIn tOut)
   let argHinted := Trm.typeHinted (.val arg) tIn
@@ -311,7 +311,7 @@ def IsComposable [Compiletime.Env impl]
   let argResult := AST.Trm.compile argHinted fuel
   match fnResult, argResult with
   | .result compiledFn, .result compiledArg =>
-    let fBound := Compiletime.Env.forTyps (impl := impl)
+    let fBound := Compiler.Env.forTyps (impl := impl)
     let argRef := fBound.save tIn True.intro
     let pineapplePen := Trm.typeHinted (Trm.apply compiledFn compiledArg) (tOut argRef)
     ∃ moreFuel,
