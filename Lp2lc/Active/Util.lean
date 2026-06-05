@@ -68,13 +68,20 @@ section
 variable {T : Index}
 
 
-def yieldsWithFuel (self : GuardedRecursion T) (expectedV: T) : Prop :=
+def shouldYieldsWithFuel (self : GuardedRecursion T) (expectedV: T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .result v => v = expectedV
   | _ => false
 
-def yields (self : GuardedRecursion T) (expectedV: T) : Prop :=
-  let hasFuel := self.yieldsWithFuel expectedV
+def shouldYields (self : GuardedRecursion T) (expectedV: T) : Prop :=
+  let hasFuel := self.shouldYieldsWithFuel expectedV
+  let noFuel := self 0 = .outOfFuel
+  hasFuel /\ noFuel
+
+def shouldFail (self : GuardedRecursion T) : Prop :=
+  let hasFuel := ∃ (fuel : Nat), match (self fuel) with
+  | .error => true
+  | _ => false
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
