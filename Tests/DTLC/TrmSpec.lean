@@ -77,14 +77,23 @@ example :
   · exact ⟨3, by simp [AST.Trm.eval, idFnOnFalse2, applyidFnOnItself, idFn, vFalse]⟩
   · rfl
 
-example: ((Trm.Malformed.apply1 : Trm).eval 4) = .error := by
-  simp [AST.Trm.eval, Malformed.apply1, idFn, vFalse, vTrue]
+example :
+    ((Trm.Malformed.apply1 : Trm).eval).shouldFail := by
+  constructor
+  · exact ⟨4, by simp [AST.Trm.eval, Malformed.apply1, idFn, vFalse, vTrue]⟩
+  · rfl
 
-example: ((Trm.Malformed.primitiveApply : Trm).eval 2) = .error := by
-  rfl
+example :
+    ((Trm.Malformed.primitiveApply : Trm).eval).shouldFail := by
+  constructor
+  · exact ⟨2, rfl⟩
+  · rfl
 
-example: ((Trm.Malformed.apply1 : Trm).eval 3) = .error := by
-  simp [AST.Trm.eval, Malformed.apply1, idFn, vFalse, vTrue]
+example :
+    ((Trm.Malformed.apply1 : Trm).eval).shouldFail := by
+  constructor
+  · exact ⟨3, by simp [AST.Trm.eval, Malformed.apply1, idFn, vFalse, vTrue]⟩
+  · rfl
 
 example :
     ((Trm.primitiveTrueFnOnFalse : Trm).eval).shouldYields
@@ -172,22 +181,19 @@ example :
   sorry
 
 example :
-    Malformed.apply1.compile 4 =
-      .error := by
+    Malformed.apply1.compile.shouldFail := by
   sorry
 
 example :
-    Malformed.primitiveApply.compile 2 = .error := by
+    Malformed.primitiveApply.compile.shouldFail := by
   sorry
 
 example :
-    Malformed.primitiveFalseAsFn.compile 2 =
-      .error := by
+    Malformed.primitiveFalseAsFn.compile.shouldFail := by
   sorry
 
 example :
-    Malformed.idFnAsPrimitive.compile 2 =
-      .error := by
+    Malformed.idFnAsPrimitive.compile.shouldFail := by
   sorry
 
 end compile
