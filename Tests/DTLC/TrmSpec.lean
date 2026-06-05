@@ -26,11 +26,12 @@ example :
 
 end eraseType
 
-section eval
+namespace EvalFixture
+
 
 @[reducible] def RuntimeCanEval : Permission Val := fun _value => True
 
-unsafe instance : Runtime.Env impl where
+unsafe def _evalEnv : Runtime.Env impl where
   EvalPermission := RuntimeCanEval
   forVals := {
     save := fun value _permission => unsafeCast value
@@ -38,76 +39,83 @@ unsafe instance : Runtime.Env impl where
     roundtrip := by
       intro value
       intro permission
-      exact unsafeCast True.intro
+      rfl
   }
   canEvalAny := fun _value => True.intro
 
-unsafe example : ((Trm.vFalse : Trm).eval 0) = .outOfFuel := by
+@[instance, implemented_by _evalEnv]
+axiom env : Runtime.Env impl -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
+
+end EvalFixture
+
+section eval
+
+example : ((Trm.vFalse : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.vFalse : Trm).eval 1) =
+example: ((Trm.vFalse : Trm).eval 1) =
     .result ((.primitive "false") : Val) := by
   rfl
 
-unsafe example : ((Trm.vFalse : Trm).eval 2) =
+example: ((Trm.vFalse : Trm).eval 2) =
     .result ((.primitive "false") : Val) := by
   rfl
 
-unsafe example : ((Trm.idFnOnFalse : Trm).eval 0) = .outOfFuel := by
+example: ((Trm.idFnOnFalse : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.idFnOnFalse : Trm).eval 2) =
+example: ((Trm.idFnOnFalse : Trm).eval 2) =
     .result ((.primitive "false") : Val) := by
-  exact unsafeCast True.intro
-
-unsafe example : ((Trm.get1stOnTuple : Trm).eval 1) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.get1stOnTuple : Trm).eval 3) =
-    .result ((.primitive "false") : Val) := by
-  exact unsafeCast True.intro
+example: ((Trm.get1stOnTuple : Trm).eval 1) = .outOfFuel := by
+  rfl
 
-unsafe example : ((Trm.get2ndOnTuple : Trm).eval 3) =
+example: ((Trm.get1stOnTuple : Trm).eval 3) =
+    .result ((.primitive "false") : Val) := by
+  rfl
+
+example: ((Trm.get2ndOnTuple : Trm).eval 3) =
     .result ((.primitive "true") : Val) := by
-  exact unsafeCast True.intro
-
-unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 2) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 4) =
+example: ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 2) = .outOfFuel := by
+  rfl
+
+example: ((Trm.apply1stOn2ndFnOnTuple : Trm).eval 4) =
     .result ((.primitive "false") : Val) := by
-  exact unsafeCast True.intro
-
-unsafe example : ((Trm.applyidFnOnItself : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.applyidFnOnItself : Trm).eval 2) =
+example: ((Trm.applyidFnOnItself : Trm).eval 0) = .outOfFuel := by
+  rfl
+
+example: ((Trm.applyidFnOnItself : Trm).eval 2) =
     .result ((Val.idFn : Val)) := by
-  exact unsafeCast True.intro
-
-unsafe example : ((Trm.idFnOnFalse2 : Trm).eval 1) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.idFnOnFalse2 : Trm).eval 3) =
+example: ((Trm.idFnOnFalse2 : Trm).eval 1) = .outOfFuel := by
+  rfl
+
+example: ((Trm.idFnOnFalse2 : Trm).eval 3) =
     .result ((.primitive "false") : Val) := by
-  exact unsafeCast True.intro
-
-unsafe example : ((Trm.Malformed.apply1 : Trm).eval 4) = .error := by
-  exact unsafeCast True.intro
-
-unsafe example : ((Trm.Malformed.primitiveApply : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.Malformed.primitiveApply : Trm).eval 2) = .error := by
+example: ((Trm.Malformed.apply1 : Trm).eval 4) = .error := by
   rfl
 
-unsafe example : ((Trm.Malformed.apply1 : Trm).eval 1) = .outOfFuel := by
+example: ((Trm.Malformed.primitiveApply : Trm).eval 0) = .outOfFuel := by
   rfl
 
-unsafe example : ((Trm.Malformed.apply1 : Trm).eval 3) = .error := by
-  exact unsafeCast True.intro
+example: ((Trm.Malformed.primitiveApply : Trm).eval 2) = .error := by
+  rfl
 
-unsafe example : ((Trm.primitiveTrueFnOnFalse : Trm).eval 2) =
+example: ((Trm.Malformed.apply1 : Trm).eval 1) = .outOfFuel := by
+  rfl
+
+example: ((Trm.Malformed.apply1 : Trm).eval 3) = .error := by
+  rfl
+
+example: ((Trm.primitiveTrueFnOnFalse : Trm).eval 2) =
     .result ((.primitive "true") : Val) := by
   rfl
 
@@ -122,7 +130,7 @@ unsafe instance : Compiletime.Env impl where
     roundtrip := by
       intro typ
       intro permission
-      exact unsafeCast True.intro
+      rfl
   }
 
 example :
