@@ -268,7 +268,7 @@ typing rule used by:
 -/
 def compile (trm : Trm I) (precondition : @SemanticTyp I) : MayTerminate (Program I precondition) := sorry
 
-def compileIntoTrm (trm : Trm I)
+def compileToTrm (trm : Trm I)
   (precondition : @SemanticTyp I := fun _ => true) -- default arg doesn't validate binding.
 : MayTerminate (Trm I) := fun (fuel : Nat) =>
   let out := compile trm precondition fuel
