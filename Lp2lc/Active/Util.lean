@@ -61,42 +61,42 @@ end Outcome
 
 universe u v
 
-def GuardedRecursion (T : Index) := (fuel: Nat) -> Outcome T
+def MayTerminate (T : Index) := (fuel: Nat) -> Outcome T
 
-namespace GuardedRecursion
+namespace MayTerminate
 section
 variable {T : Index}
 
 
-def shouldYieldsWithFuel (self : GuardedRecursion T) (expectedV: T) : Prop :=
+def shouldYieldsWithFuel (self : MayTerminate T) (expectedV: T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .result v => v = expectedV
   | _ => false
 
-def shouldYields (self : GuardedRecursion T) (expectedV: T) : Prop :=
+def shouldYields (self : MayTerminate T) (expectedV: T) : Prop :=
   let hasFuel := self.shouldYieldsWithFuel expectedV
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def shouldFail (self : GuardedRecursion T) : Prop :=
+def shouldFail (self : MayTerminate T) : Prop :=
   let hasFuel := ∃ (fuel : Nat), match (self fuel) with
   | .error => true
   | _ => false
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def isDecidable (self : GuardedRecursion T) : Prop :=
+def isDecidable (self : MayTerminate T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .result _ => true
   | _ => false
 
-def isSemiDecidable (self : GuardedRecursion T) : Prop :=
+def isSemiDecidable (self : MayTerminate T) : Prop :=
   ∀ (fuel: Nat), match (self fuel) with
   | .error  => false
   | _ => true
 
 end
-end GuardedRecursion
+end MayTerminate
 
 -- 1. Implicitly lift a type to a higher universe using ULift
 /-- Coerce a lower-universe type into a higher universe through `ULift`. -/

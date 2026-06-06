@@ -171,9 +171,7 @@ Evaluates a source or compiled program by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm impl) : GuardedRecursion (AST.Val impl) :=
-  fun fuel =>
-  match fuel with
+def eval (self : AST.Trm impl) : MayTerminate (AST.Val impl)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -246,7 +244,7 @@ typing rule used by:
 - `IsAdequate`
 - `IsComposable`
 -/
-def compile (trm : Trm impl) : GuardedRecursion (Trm impl) := sorry
+def compile (trm : Trm impl) : MayTerminate (Trm impl) := sorry
 
 /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
 def Typing
