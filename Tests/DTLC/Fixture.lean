@@ -18,14 +18,14 @@ and `roundtrip` is discharged via `unsafeCast True.intro`; the bridge
 is sound by construction.
 -/
 @[reducible] unsafe def _unsafeFBound (T : Type) :
-    FBound impl.I (fun _ => T) (fun _ => True) :=
+    FBound impl.Index (fun _ => T) (fun _ => True) :=
   let saved : IO.Ref (Array T) := unsafeBaseIO (IO.mkRef #[])
-  let save : T → impl.I := fun value =>
+  let save : T → impl.Index := fun value =>
     unsafeBaseIO do
       let values ← saved.get
       saved.set (values.push value)
       pure (unsafeCast values.size)
-  let load : impl.I → T := fun ref =>
+  let load : impl.Index → T := fun ref =>
     let index : Nat := unsafeCast ref
     match (unsafeBaseIO saved.get)[index]? with
     | some t => t

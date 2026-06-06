@@ -4,8 +4,8 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Util
 
-abbrev Index := Type
-abbrev ByteCode := Type
+abbrev KIndex := Type
+abbrev KData := Type
 
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
@@ -30,7 +30,7 @@ def Permission (T : Type) := (v: T) -> Prop -- no instance will be provided ever
 -- end Permission
 
 /-- Fixed-bound bridge between a HOAS carrier and the syntax family it represents. -/
-class FBound (I : Index) (K : (index : Index) → Type) (P : Permission (K I)): Type where -- fixed-point bound axiom, a crossover between de-bruijn Env/Store & HOAS carrier.
+class FBound (I : KIndex) (K : (index : KIndex) → Type) (P : Permission (K I)): Type where -- fixed-point bound axiom, a crossover between de-bruijn Env/Store & HOAS carrier.
   save : (value : K I) -> (permission: P value) → I -- `I` is unknown & there is no way to get `I` (required by HOAS binder) except submitting a `K I`.
   load : (index : I) → K I -- inverse of save
   roundtrip : ∀ (value : K I), (permission : P value) → load (save value permission) = value
@@ -42,7 +42,7 @@ class FBound (I : Index) (K : (index : Index) → Type) (P : Permission (K I)): 
 attribute [simp] FBound.roundtrip
 
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
-inductive Outcome (T : Index)
+inductive Outcome (T : KIndex)
 | result (v: T)
 | error
 | outOfFuel
@@ -61,11 +61,11 @@ end Outcome
 
 universe u v
 
-def MayTerminate (T : Index) := (fuel: Nat) -> Outcome T
+def MayTerminate (T : KIndex) := (fuel: Nat) -> Outcome T
 
 namespace MayTerminate
 section
-variable {T : Index}
+variable {T : KIndex}
 
 
 def shouldYieldsWithFuel (self : MayTerminate T) (expectedV: T) : Prop :=
