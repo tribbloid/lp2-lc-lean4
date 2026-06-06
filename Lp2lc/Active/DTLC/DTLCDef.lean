@@ -221,34 +221,30 @@ variable {impl : Impl} [Compiler.Env impl]
 --   bindingTyp: Typ impl
 
 namespace AST.Trm
+
 /--
-Fuel-guarded compiler API for compiling any `Trm` with optional type annotations
-into semantic program (also a `Trm`, but type info are removed). Emits a runtime program that may or may not
-be different.
+Fuel-guarded compiler API for type-checking `Trm` syntax and erasing optional
+type annotations.
 
-It does not evaluate the program! compiling a `Trm.apply` should only results
-the same or a slightly different `Trm.apply`.
+`compile` does not evaluate the program. On success, it preserves the source
+program shape: values remain values, references remain references, and
+applications remain applications of recursively compiled subterms. The emitted
+program differs from the source only by removing accepted annotations.
 
-This is the only public API for compilation, every other functions must be private.
+Compilation fails for malformed programs or incompatible annotations. In
+particular, applications must compile both sides successfully, the function side
+must have a function type, and the argument type must be compatible with the
+function input type. Checking function bodies may use the compile-time
+`Compiler.Env.forTyps` F-bound bridge to stand for a bound argument type; this is
+separate from runtime value binding and never calls `eval`.
 
-- compiling malformed terms fails
-- compiling terms with wrong annotations fails
-- fuel `0` always returns `outOfFuel`
-- compile-time checking must not call runtime `eval`
-- application compilation may use the compile-time `FBound I Trm` binding to
-  check the substituted function body
-- when a compiled function carries an input annotation, application compilation
-  checks that the compiled argument value satisfies that input annotation
-- `FBound I Trm` represents compile-time bindings and is deliberately separate
-  from `FBound I Val`, which represents runtime bindings
+Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
 
-Semantic typing is successful fuel-guarded compilation, so this compiler is the
-definition of the semantic typing rule.
-
-This rule supports:
-- adequacy lemma: (see `def IsAdequate`)
-- fundamental lemma: (see `def IsComposable`)
-- soundness theorem
+Semantic typing is successful compilation, so this compiler is the executable
+typing rule used by:
+- `Typing`
+- `IsAdequate`
+- `IsComposable`
 -/
 def compile (trm : Trm impl) : GuardedRecursion (Trm impl) := sorry
 
