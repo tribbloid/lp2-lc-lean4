@@ -204,11 +204,14 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
 An safe program may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the precondition.
 -/
-def IsSafeUnder (self : AST.Trm I) (precondition : @SemanticTyp I) : Prop :=
+def IsSafeWith (self : AST.Trm I) (precondition : @SemanticTyp I) : Prop :=
   ∀ fuel, match self.eval fuel with
   | .result value => precondition value
   | .error => false
   | .outOfFuel => true
+
+def IsSafeUnder (self : AST.Trm I) (binding : Typ I) : Prop :=
+  self.IsSafeWith (fun trm => trm.CanBind binding)
 
 end AST.Trm
 end
@@ -234,9 +237,9 @@ variable {I : Impl}
 /--
 a compiled term with safety proof
 -/
-structure Program (I : Impl) (precondition : @SemanticTyp I) where
+structure Program (I : Impl) (binding : Typ I) where
   trm: AST.Trm I
-  safetyProof: [Runtime.Env I] -> trm.IsSafeUnder precondition
+  safetyProof: [Runtime.Env I] -> trm.IsSafeUnder binding
 
 variable [Compiler.Env I]
 
@@ -266,12 +269,12 @@ typing rule used by:
 - `IsAdequate`
 - `IsComposable`
 -/
-def compile (trm : Trm I) (precondition : @SemanticTyp I) : MayTerminate (Program I precondition) := sorry
+def compile (trm : Trm I) (binding : Typ I) : MayTerminate (Program I binding) := sorry
 
 def compileToTrm (trm : Trm I)
-  (precondition : @SemanticTyp I := fun _ => true) -- default arg doesn't validate binding.
+  (binding : Typ I := .top) -- default arg doesn't validate binding.
 : MayTerminate (Trm I) := fun (fuel : Nat) =>
-  let out := compile trm precondition fuel
+  let out := compile trm binding fuel
   match out with
   | .result v => Outcome.result v.trm
   | .error => .error
