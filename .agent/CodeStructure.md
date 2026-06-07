@@ -3,7 +3,7 @@
 - All Lean production files and modules should be under [this](../Lp2lc/Active) module.
 - All Lean test files and modules should be under [this](../Tests) module.
 - A proof/module directory may contain these Lean files:
-    1. `Def.lean`: definitions, types.
+    1. `<module-name>Def.lean`: definitions, types.
     2. `Proof.lean`: original theorems and proofs.
     3. `Auxiliary.lean`: auxiliary tactics and lemmas to support the original theorems.
 - List the above Lean files in the module aggregator (`package.lean`) so they are compiled by `lake build`.
