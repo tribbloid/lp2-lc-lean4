@@ -61,11 +61,11 @@ end Outcome
 
 universe u v
 
-def MayTerminate (T : KIndex) := (fuel: Nat) -> Outcome T
+def MayTerminate (T : Type) := (fuel: Nat) -> Outcome T
 
 namespace MayTerminate
 section
-variable {T : KIndex}
+variable {T : Type}
 
 
 def shouldYieldsWithFuel (self : MayTerminate T) (expectedV: T) : Prop :=

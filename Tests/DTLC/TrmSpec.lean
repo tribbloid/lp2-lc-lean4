@@ -107,93 +107,93 @@ end eval
 section compile
 
 example :
-    vFalse.compile.shouldYields vFalse := by
+    vFalse.compileToTrm.shouldYields vFalse := by
   sorry
 
 example :
-    vTrue.compile.shouldYields vTrue := by
+    vTrue.compileToTrm.shouldYields vTrue := by
   sorry
 
 example :
-    idFn.compile.shouldYields idFn := by
+    idFn.compileToTrm.shouldYields idFn := by
   sorry
 
 example :
-    idFnOnFalse.compile.shouldYields idFnOnFalse := by
+    idFnOnFalse.compileToTrm.shouldYields idFnOnFalse := by
   sorry
 
 example :
-    get1st.compile.shouldYields get1st := by
+    get1st.compileToTrm.shouldYields get1st := by
   sorry
 
 example :
-    get2nd.compile.shouldYields get2nd := by
+    get2nd.compileToTrm.shouldYields get2nd := by
   sorry
 
 example :
-    get1stOnTuple.compile.shouldYields get1stOnTuple := by
+    get1stOnTuple.compileToTrm.shouldYields get1stOnTuple := by
   sorry
 
 example :
-    get2ndOnTuple.compile.shouldYields get2ndOnTuple := by
+    get2ndOnTuple.compileToTrm.shouldYields get2ndOnTuple := by
   sorry
 
 example :
-    apply1stOn2ndFn.compile.shouldYields apply1stOn2ndFn := by
+    apply1stOn2ndFn.compileToTrm.shouldYields apply1stOn2ndFn := by
   sorry
 
 example :
-    apply1stOn2ndFnOnTuple.compile.shouldYields
+    apply1stOn2ndFnOnTuple.compileToTrm.shouldYields
       apply1stOn2ndFnOnTuple := by
   sorry
 
 example :
-    applyidFnOnItself.compile.shouldYields applyidFnOnItself := by
+    applyidFnOnItself.compileToTrm.shouldYields applyidFnOnItself := by
   sorry
 
 example :
-    idFnOnFalse2.compile.shouldYields idFnOnFalse2 := by
+    idFnOnFalse2.compileToTrm.shouldYields idFnOnFalse2 := by
   sorry
 
 
 example :
-    primitiveTrueFn.compile.shouldYields primitiveTrueFn := by
+    primitiveTrueFn.compileToTrm.shouldYields primitiveTrueFn := by
   sorry
 
 example :
-    primitiveTrueFnOnFalse.compile.shouldYields
+    primitiveTrueFnOnFalse.compileToTrm.shouldYields
       primitiveTrueFnOnFalse := by
   sorry
 
 example :
-    TypeHinted.hintedFalse.compile.shouldYields
+    TypeHinted.hintedFalse.compileToTrm.shouldYields
       TypeHinted.hintedFalse.typeHint.eraseRecursively := by
   sorry
 
 example :
-    TypeHinted.hintedIdFn.compile.shouldYields
+    TypeHinted.hintedIdFn.compileToTrm.shouldYields
       TypeHinted.hintedIdFn.typeHint.eraseRecursively := by
   sorry
 
 example :
-    TypeHinted.hintedIdFnOnFalse.compile.shouldYields
+    TypeHinted.hintedIdFnOnFalse.compileToTrm.shouldYields
       TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively := by
   sorry
 
 example :
-    Malformed.apply1.compile.shouldFail := by
+    Malformed.apply1.compileToTrm.shouldFail := by
   sorry
 
 example :
-    Malformed.primitiveApply.compile.shouldFail := by
+    Malformed.primitiveApply.compileToTrm.shouldFail := by
   sorry
 
 example :
-    Malformed.primitiveFalseAsFn.compile.shouldFail := by
+    Malformed.primitiveFalseAsFn.compileToTrm.shouldFail := by
   sorry
 
 example :
-    Malformed.idFnAsPrimitive.compile.shouldFail := by
+    Malformed.idFnAsPrimitive.compileToTrm.shouldFail := by
   sorry
 
 end compile

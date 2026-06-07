@@ -10,10 +10,10 @@ namespace DTLC
 open AST
 open Lp2lc.Active.Util
 
-theorem AdequacyLemma {impl : Impl}
-    [Compiler.Env impl] [Runtime.Env impl]
-    (src : Trm impl) (fuel : Nat) :
-    src.IsAdequate fuel := sorry
+-- theorem AdequacyLemma {impl : Impl}
+--     [Compiler.Env impl] [Runtime.Env impl]
+--     (src : Trm impl) (fuel : Nat) :
+--     src.IsAdequate fuel := sorry
 
 
 end DTLC
