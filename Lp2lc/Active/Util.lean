@@ -5,11 +5,11 @@ import «Lp2lc».Active.Shared
 namespace Lp2lc.Active.Util
 
 abbrev KIndex := Type
-abbrev KData := Type
+-- abbrev KData := Type
 
 class Impl : Type 1 where
   Index : KIndex
-  Data : KData
+  -- Data : KData
 
 inductive Data where -- no constructor
 
