@@ -5,11 +5,11 @@ import «Lp2lc».Active.Shared
 namespace Lp2lc.Active.Util
 
 abbrev KIndex := Type
--- abbrev KData := Type
+abbrev KData := Type
 
 class Impl : Type 1 where
   Index : KIndex
-  -- Data : KData
+  Data : KData
 
 inductive Data where -- no constructor
 
@@ -75,10 +75,10 @@ def Permission (T : Type) := (v: T) -> Prop -- no instance will be provided ever
 
 
 /-- Fixed-bound bridge between a HOAS carrier and the syntax family it represents. -/
-class FBound (I : KIndex) (K : (index : KIndex) → Type) (P : Permission (K I)): Type where -- fixed-point bound axiom, a crossover between de-bruijn Env/Store & HOAS carrier.
-  save : (value : K I) -> (permission: P value) → I -- `I` is unknown & there is no way to get `I` (required by HOAS binder) except submitting a `K I`.
-  load : (index : I) → K I -- inverse of save
-  roundtrip : ∀ (value : K I), (permission : P value) → load (save value permission) = value
+class FBound (I : KIndex) (V : Type) (P : Permission V): Type where -- fixed-point bound axiom, a crossover between de-bruijn Env/Store & HOAS carrier.
+  save : (value : V) -> (permission: P value) → I -- `I` is unknown & there is no way to get `I` (required by HOAS binder) except submitting a `V`.
+  load : (index : I) → V -- inverse of save
+  roundtrip : ∀ (value : V), (permission : P value) → load (save value permission) = value
 
 -- class Env (P: Index) (I : Index) (K : (index : Index) → Type) where
 --   fBound : FBound I K

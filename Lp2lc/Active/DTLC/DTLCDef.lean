@@ -56,8 +56,8 @@ Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
 -/
 inductive Val : Type where
-| primitive (repr : Data) -- most specific type is always `primitive`
-| primitiveFn (body: (arg: Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
+| primitive (repr : I.Data) -- most specific type is always `primitive`
+| primitiveFn (body: (arg: I.Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
 | fn (body : (arg : I.Index) → Trm) -- most specific type is always `.depFn _ _`
 
 end
@@ -129,7 +129,7 @@ open AST
 class Env (I : Impl) where
   EvalPermission : Permission (AST.Val I)
   -- fuel: Nat -- this can't be used, ewww
-  forVals: FBound I.Index (fun _ => AST.Val I) EvalPermission
+  forVals: FBound I.Index (AST.Val I) EvalPermission
   canEvalAny: (v: AST.Val I) -> EvalPermission v
 
 end Runtime
@@ -225,7 +225,7 @@ in the future we may have FBound for terms or values and a permission granter
 for transparent fn only
 -/
 class Env (I : Impl) where
-  forTyps: FBound I.Index (fun _ => AST.Typ I) fun _ => True
+  forTyps: FBound I.Index (AST.Typ I) fun _ => True
 
 end Compiler
 
