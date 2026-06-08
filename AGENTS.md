@@ -46,6 +46,8 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 
 ##### Don't
 
+- Do not remove or overwrite comment.
+- Do not write code contradicting with the comment.
 - Do not uncomment code or duplicate commented code.
 - Do not add `unsafe`, `noncomputable`, or `partial` declarations/blocks.
 - Do not write axiom.
