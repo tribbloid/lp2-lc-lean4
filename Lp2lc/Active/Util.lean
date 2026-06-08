@@ -5,7 +5,14 @@ import «Lp2lc».Active.Shared
 namespace Lp2lc.Active.Util
 
 abbrev KIndex := Type
-abbrev KData := Type
+-- abbrev KData := Type
+
+class Impl : Type 1 where
+  Index : KIndex
+  -- Data : KData
+
+inductive Data where -- no constructor
+
 
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
@@ -28,6 +35,44 @@ def Permission (T : Type) := (v: T) -> Prop -- no instance will be provided ever
 -- -- def Eval := Permission
 
 -- end Permission
+
+
+-- class Store {I : KIndex} {V : Type} (self: I -> Option V) where
+--   empty : I -> Option V := fun _ => none
+--   save (v: V) : (I × (I -> Option V)) :=
+--     let
+--   load (i: I) :=
+
+-- section KV
+-- variable (String Value : Type)
+
+-- def Env := String → Option Value
+-- namespace Env
+-- def empty : Env K V := fun _ => none
+-- _
+-- def set ( : Env) ( : String) ( : Value) : Env :=
+-- σ x v
+-- fun => if = then some else
+-- y y x v σ y
+-- @[simp] theorem set
+-- _
+-- same ( : Env) ( : String) ( : Value) :
+-- σ x v
+-- ( .set ) = some :=
+-- σ x v x v by
+-- simp [set]
+-- @[simp] theorem set
+-- _
+-- other ( : Env) ( : String) ( : Value) ( : ≠ ) :
+-- σ x y v h y x
+-- ( .set ) = :=
+-- σ x v y σ y by
+-- h
+-- simp [set, ]
+-- end Env
+
+-- end KV
+
 
 /-- Fixed-bound bridge between a HOAS carrier and the syntax family it represents. -/
 class FBound (I : KIndex) (K : (index : KIndex) → Type) (P : Permission (K I)): Type where -- fixed-point bound axiom, a crossover between de-bruijn Env/Store & HOAS carrier.

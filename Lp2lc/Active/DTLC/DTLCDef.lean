@@ -11,14 +11,9 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 
 open Lp2lc.Active.Util
 
-class Impl : Type 1 where
-  Index : KIndex
-  Data : KData
-
-
 namespace AST
 section
-variable (impl : Impl)
+variable (I : Impl)
 
 mutual
 
@@ -31,7 +26,7 @@ wildcard annotation accepted by any value.
 -/
 inductive Typ : Type where
 | primitive -- `AnyVal` in Scala, accepts only primitive values
-| depFn (tIn : Typ) (tOut : (arg : impl.Index) → Typ) -- dependent function
+| depFn (tIn : Typ) (tOut : (arg : I.Index) → Typ) -- dependent function
 | top -- anything/wildcard type, can accept any value.
 
 /--
@@ -52,7 +47,7 @@ inductive Trm : Type where
 | typeHinted (self : Trm) (hint : Typ) -- AKA type annotation, each term can have 0, 1, or many hints (e.g. `((1: Tuple): Product): AnyRef`), required for fundamental/composability theorem
 | val (v : Val) -- AKA literal
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
-| ref (s: impl.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
+| ref (s: I.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
 /--
 Value syntax, containing neither references nor applications.
@@ -61,9 +56,9 @@ Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
 -/
 inductive Val : Type where
-| primitive (repr : impl.Data) -- most specific type is always `primitive`
-| primitiveFn (body: (arg: impl.Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
-| fn (body : (arg : impl.Index) → Trm) -- most specific type is always `.depFn _ _`
+| primitive (repr : Data) -- most specific type is always `primitive`
+| primitiveFn (body: (arg: Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
+| fn (body : (arg : I.Index) → Trm) -- most specific type is always `.depFn _ _`
 
 end
 
@@ -185,6 +180,7 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
     | typeHinted self _ => eval self fuel
     | .val value => .result value
     | .apply fn arg =>
+    -- TODO: for tree crawling, we need a single function to get an IR that contains eval result and a proof that it won't break
       let anf := (eval fn fuel, eval arg fuel) -- ANF, atomic normal form
       match anf with
       | (.result (.primitiveFn body), .result (.primitive repr)) =>
@@ -216,11 +212,9 @@ def IsSafeUnder (self : AST.Trm I) (binding : Typ I) : Prop :=
 end AST.Trm
 end
 
-namespace Toy
+-- namespace Toy
 
-
-
-end Toy
+-- end Toy
 
 namespace Compiler
 
@@ -297,7 +291,7 @@ end AST.Trm
 end
 
 -- section ProofByLogicalRelation
--- variable {impl : Impl}
+-- variable {I : Impl}
 
 -- namespace AST.Trm
 
@@ -308,8 +302,8 @@ end
 
 -- -- This conjecture is independent from type erasure.
 -- -- -/
--- -- def IsAdequate [Compiler.Env impl] [Runtime.Env impl]
--- --     (src : Trm impl) (fuel : Nat) : Prop :=
+-- -- def IsAdequate [Compiler.Env I] [Runtime.Env I]
+-- --     (src : Trm I) (fuel : Nat) : Prop :=
 -- --   match AST.Trm.compile src fuel with
 -- --   | .result program => AST.Trm.IsSafe program src.typeHint.get fuel
 -- --   | _ => true
