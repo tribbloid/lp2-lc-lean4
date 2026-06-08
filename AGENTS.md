@@ -46,7 +46,8 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 
 ##### Don't
 
-- Do not use `unsafe`, `noncomputable`, or `partial` declarations/blocks unless it is test or example code.
+- Do not uncomment code or duplicate commented code.
+- Do not add `unsafe`, `noncomputable`, or `partial` declarations/blocks.
 - Do not write axiom.
 - Do not write multiple cases in pattern matching in 1 line; each case should be in its own line starting with `|`.
 - Do not add compiler public API for already-defined feature (e.g. type-checking, evaluation). Each feature should only have 1 public definition.

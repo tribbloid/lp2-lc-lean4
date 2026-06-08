@@ -62,6 +62,8 @@ inductive Val : Type where
 
 end
 
+abbrev Condition := (value : AST.Val I) -> Prop -- AKA semantic type
+
 end
 
 section
@@ -137,8 +139,6 @@ end Runtime
 section
 variable {I : Impl}
 
-def SemanticTyp := (value : AST.Val I) -> Prop
-
 variable [Runtime.Env I]
 
 namespace AST.Val
@@ -192,15 +192,15 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
-    | .ref refValue =>
+    | .ref i =>
       let fBound := Runtime.Env.forVals (I := I)
-      .result (fBound.load refValue)
+      .result (fBound.load i)
 
 /--
 An safe program may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the precondition.
 -/
-def IsSafeBy (self : AST.Trm I) (precondition : @SemanticTyp I) : Prop :=
+def IsSafeBy (self : AST.Trm I) (precondition : @Condition I) : Prop :=
   ∀ fuel, match self.eval fuel with
   | .result value => precondition value
   | .error => false
@@ -216,6 +216,13 @@ end
 
 -- end Toy
 
+/--
+a compiled term with safety proof
+-/
+structure Program (I : Impl) (condition : AST.Condition I) where
+  trm: AST.Trm I
+  isSafe: [Runtime.Env I] -> trm.IsSafeBy condition
+
 namespace Compiler
 
 /--
@@ -225,7 +232,7 @@ in the future we may have FBound for terms or values and a permission granter
 for transparent fn only
 -/
 class Env (I : Impl) where
-  forTyps: FBound I.Index (AST.Val I -> Prop) fun _ => True
+  forTyps: FBound I.Index (AST.Val I -> (AST.Condition I)) fun _ => True
 
 end Compiler
 
@@ -233,13 +240,6 @@ section
 open AST
 
 variable {I : Impl}
-
-/--
-a compiled term with safety proof
--/
-structure Program (I : Impl) (binding : Typ I) where
-  trm: AST.Trm I
-  safetyProof: [Runtime.Env I] -> trm.IsSafeUnder binding
 
 variable [Compiler.Env I]
 
@@ -269,12 +269,34 @@ typing rule used by:
 - `IsAdequate`
 - `IsComposable`
 -/
-def compile (trm : Trm I) (binding : Typ I) : MayTerminate (Program I binding) := sorry
+def compile (trm : Trm I) (condition: Condition I) : MayTerminate (Program I condition) := sorry
+  -- | 0 => .outOfFuel
+  -- | fuel + 1 =>
+  --   match self with
+  --   | typeHinted self _ => eval self fuel
+  --   | .val value => .result value
+  --   | .apply fn arg =>
+  --   -- TODO: for tree crawling, we need a single function to get an IR that contains eval result and a proof that it won't break
+  --     let anf := (eval fn fuel, eval arg fuel) -- ANF, atomic normal form
+  --     match anf with
+  --     | (.result (.primitiveFn body), .result (.primitive repr)) =>
+  --       eval (body repr) fuel
+  --     | (.result (.fn body), .result value) =>
+  --       let fBound := Runtime.Env.forVals (I := I)
+  --       let permission := Runtime.Env.canEvalAny (I := I) value
+  --       eval (body (fBound.save value permission)) fuel
+  --     | (.outOfFuel, _) => .outOfFuel
+  --     | (_, .outOfFuel) => .outOfFuel
+  --     | _ => .error
+  --   | .ref i =>
+  --     let fBound := Runtime.Env.forVals (I := I)
+  --     .result (fBound.load i)
+
 
 def compileToTrm (trm : Trm I)
-  (binding : Typ I := .top) -- default arg doesn't validate binding.
+  (condition: Condition I := fun _ => true)-- by default, accept any condition
 : MayTerminate (Trm I) := fun (fuel : Nat) =>
-  let out := compile trm binding fuel
+  let out := trm.compile condition fuel
   match out with
   | .result v => Outcome.result v.trm
   | .error => .error

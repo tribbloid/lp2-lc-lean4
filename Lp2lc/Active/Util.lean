@@ -13,7 +13,6 @@ class Impl : Type 1 where
 
 inductive Data where -- no constructor
 
-
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
 

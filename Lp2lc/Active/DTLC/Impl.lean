@@ -12,7 +12,6 @@ namespace Symbolic
 
 @[reducible] def impl : Impl where
   Index := Symbol
-  Data := String
 
 abbrev ByteCode := impl.Data
 abbrev Typ := AST.Typ impl
