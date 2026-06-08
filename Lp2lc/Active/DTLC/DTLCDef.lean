@@ -204,17 +204,23 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
 An safe program may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the precondition.
 -/
-def IsSafeWith (self : AST.Trm I) (precondition : @SemanticTyp I) : Prop :=
+def IsSafeBy (self : AST.Trm I) (precondition : @SemanticTyp I) : Prop :=
   ∀ fuel, match self.eval fuel with
   | .result value => precondition value
   | .error => false
   | .outOfFuel => true
 
 def IsSafeUnder (self : AST.Trm I) (binding : Typ I) : Prop :=
-  self.IsSafeWith (fun trm => trm.CanBind binding)
+  self.IsSafeBy (fun trm => trm.CanBind binding)
 
 end AST.Trm
 end
+
+namespace Toy
+
+
+
+end Toy
 
 namespace Compiler
 
