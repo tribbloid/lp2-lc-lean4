@@ -12,10 +12,12 @@ class Impl : Type 1 where
   -- Data : KData
 
 namespace FromUser
--- constructor should only be used from within FromUser namespace (accessible from unit test side but not compiler side)
+-- all constructors should only be called from unit tests
+-- never from compiler/runtime implementatio
 
 inductive Data
-| private mk
+| private mk (rawCode: String)
+
 end FromUser
 
 /--
