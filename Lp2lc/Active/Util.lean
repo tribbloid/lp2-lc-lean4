@@ -5,20 +5,11 @@ import «Lp2lc».Active.Shared
 namespace Lp2lc.Active.Util
 
 abbrev KIndex := Type
--- abbrev KData := Type
+abbrev KData := Type
 
 class Impl : Type 1 where
   Index : KIndex
-  -- Data : KData
-
-namespace FromUser
--- all constructors should only be called from unit tests
--- never from compiler/runtime implementatio
-
-inductive Data
-| private mk (rawCode: String)
-
-end FromUser
+  Data : KData
 
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
