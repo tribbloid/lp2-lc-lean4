@@ -11,7 +11,12 @@ class Impl : Type 1 where
   Index : KIndex
   -- Data : KData
 
-inductive Data where -- no constructor
+namespace FromUser
+
+inductive Data
+| private mk -- constructor should only be used from within FromUser namespace (accessible from unit test side but not compiler side)
+
+end FromUser
 
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
