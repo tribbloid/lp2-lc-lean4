@@ -56,8 +56,8 @@ Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
 -/
 inductive Val : Type where
-| primitive (repr : Data) -- most specific type is always `primitive`
-| primitiveFn (body: (arg: Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
+| primitive (repr : I.Data) -- most specific type is always `primitive`
+| primitiveFn (body: (arg: I.Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
 | fn (body : (arg : I.Index) → Trm) -- most specific type is always `.depFn _ _`
 
 end

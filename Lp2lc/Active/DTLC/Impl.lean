@@ -10,12 +10,13 @@ inductive Symbol where -- no constructor, it can only be retrieved from FBound
 
 namespace Symbolic
 
-@[reducible] def impl : Impl where
+@[reducible] def I : Impl where
   Index := Symbol
+  Data := String
 
-abbrev Typ := AST.Typ impl
-abbrev Val := AST.Val impl
-abbrev Trm := AST.Trm impl
+abbrev Typ := AST.Typ I
+abbrev Val := AST.Val I
+abbrev Trm := AST.Trm I
 
 end Symbolic
 
