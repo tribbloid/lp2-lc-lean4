@@ -47,7 +47,7 @@ is sound by construction.
   }
 
 @[reducible] unsafe def _compilerEnv : Compiler.Env I :=
-  { forTyps := _unsafeFBound (Val -> AST.Condition I) }
+  { forSemantic := _unsafeFBound (Val -> AST.Condition I) }
 
 @[instance, implemented_by _runtimeEnv]
 axiom runtimeEnv : Runtime.Env I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples

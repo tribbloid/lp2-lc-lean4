@@ -232,7 +232,7 @@ in the future we may have FBound for terms or values and a permission granter
 for transparent fn only
 -/
 class Env (I : Impl) where
-  forTyps: FBound I.Index (AST.Val I -> (AST.Condition I)) fun _ => True
+  forSemantic: FBound I.Index (AST.Val I -> (AST.Condition I)) fun _ => True
 
 end Compiler
 
@@ -246,30 +246,27 @@ variable [Compiler.Env I]
 namespace AST.Trm
 
 /--
-Fuel-guarded compiler API for type-checking `Trm` syntax and erasing optional
-type annotations.
+Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return the same
+`Trm` with it's safety proof, it does not evaluate the program.
 
-`compile` does not evaluate the program. On success, it preserves the source
+It's very similar to `Trm.eval` above in structure, but instead of evaluating
+for the final result, it recursively decompose the precondition goal into
+goals of smaller components that are type-checked independently and incrementally. The compile-time
+`Compiler.Env.forSemantic` F-bound bridge can be used to save/load proven goal; this
+is separate from runtime value binding and never calls `eval`.
+
+Malformed or incompatible component will immediate cause the compilation to
+fail. In particular, applications must compile both sides successfully, the function side
+must satisfy `.fn` or `.primitiveFn` precondition, and the argument must be compatible with the
+function input.
+
+On success, it preserves the source
 program shape: values remain values, references remain references, and
-applications remain applications of recursively compiled subterms. The emitted
-program differs from the source only by removing accepted annotations.
-
-Compilation fails for malformed programs or incompatible annotations. In
-particular, applications must compile both sides successfully, the function side
-must have a function type, and the argument type must be compatible with the
-function input type. Checking function bodies may use the compile-time
-`Compiler.Env.forTyps` F-bound bridge to stand for a bound argument type; this is
-separate from runtime value binding and never calls `eval`.
+applications remain applications of recursively compiled subterms.
 
 Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
-
-Semantic typing is successful compilation, so this compiler is the executable
-typing rule used by:
-- `Typing`
-- `IsAdequate`
-- `IsComposable`
 -/
-def compile (trm : Trm I) (condition: Condition I) : MayTerminate (Program I condition) := sorry
+def compile (trm : Trm I) (precondition: Condition I) : MayTerminate (Program I precondition) := sorry
   -- | 0 => .outOfFuel
   -- | fuel + 1 =>
   --   match self with
