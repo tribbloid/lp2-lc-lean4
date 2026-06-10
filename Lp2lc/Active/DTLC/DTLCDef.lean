@@ -287,27 +287,6 @@ def compile (trm : Trm I) (precondition: Condition I)
         .error
     | .apply _fn _arg => .error
     | .ref _i => .error
-  -- | 0 => .outOfFuel
-  -- | fuel + 1 =>
-  --   match self with
-  --   | typeHinted self _ => eval self fuel
-  --   | .val value => .result value
-  --   | .apply fn arg =>
-  --   -- TODO: for tree crawling, we need a single function to get an IR that contains eval result and a proof that it won't break
-  --     let anf := (eval fn fuel, eval arg fuel) -- ANF, atomic normal form
-  --     match anf with
-  --     | (.result (.primitiveFn body), .result (.primitive repr)) =>
-  --       eval (body repr) fuel
-  --     | (.result (.fn body), .result value) =>
-  --       let fBound := Runtime.Env.forVals (I := I)
-  --       let permission := Runtime.Env.canEvalAny (I := I) value
-  --       eval (body (fBound.save value permission)) fuel
-  --     | (.outOfFuel, _) => .outOfFuel
-  --     | (_, .outOfFuel) => .outOfFuel
-  --     | _ => .error
-  --   | .ref i =>
-  --     let fBound := Runtime.Env.forVals (I := I)
-  --     .result (fBound.load i)
 
 
 def compileToTrm (trm : Trm I)
@@ -319,12 +298,6 @@ def compileToTrm (trm : Trm I)
   | .result v => Outcome.result v.trm
   | .error => .error
   | .outOfFuel => .outOfFuel
-
--- /-- Semantic typing predicate, defined as successful fuel-guarded compilation. -/
--- def Typing
---     (typ: Typ I) (trm : Trm I) (fuel : Nat) : Prop := -- TOOD: move trm to be after colon
---     let _trm := Trm.typeHinted trm typ
---     (compile _trm fuel).isResult
 
 end AST.Trm
 
