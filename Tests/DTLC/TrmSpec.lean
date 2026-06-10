@@ -108,93 +108,133 @@ section compile
 
 example :
     vFalse.compileToTrm.shouldYields vFalse := by
-  sorry
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
     vTrue.compileToTrm.shouldYields vTrue := by
-  sorry
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
     idFn.compileToTrm.shouldYields idFn := by
-  sorry
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
-    idFnOnFalse.compileToTrm.shouldYields idFnOnFalse := by
-  sorry
+    idFnOnFalse.compileToTrm.shouldFail := by
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
     get1st.compileToTrm.shouldYields get1st := by
-  sorry
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
     get2nd.compileToTrm.shouldYields get2nd := by
-  sorry
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
-    get1stOnTuple.compileToTrm.shouldYields get1stOnTuple := by
-  sorry
+    get1stOnTuple.compileToTrm.shouldFail := by
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
-    get2ndOnTuple.compileToTrm.shouldYields get2ndOnTuple := by
-  sorry
+    get2ndOnTuple.compileToTrm.shouldFail := by
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
     apply1stOn2ndFn.compileToTrm.shouldYields apply1stOn2ndFn := by
-  sorry
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
-    apply1stOn2ndFnOnTuple.compileToTrm.shouldYields
-      apply1stOn2ndFnOnTuple := by
-  sorry
+    apply1stOn2ndFnOnTuple.compileToTrm.shouldFail := by
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
-    applyidFnOnItself.compileToTrm.shouldYields applyidFnOnItself := by
-  sorry
+    applyidFnOnItself.compileToTrm.shouldFail := by
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
-    idFnOnFalse2.compileToTrm.shouldYields idFnOnFalse2 := by
-  sorry
+    idFnOnFalse2.compileToTrm.shouldFail := by
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 
 example :
     primitiveTrueFn.compileToTrm.shouldYields primitiveTrueFn := by
-  sorry
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
     primitiveTrueFnOnFalse.compileToTrm.shouldYields
       primitiveTrueFnOnFalse := by
-  sorry
+  constructor
+  · exact ⟨2, rfl⟩
+  · rfl
 
 example :
     TypeHinted.hintedFalse.compileToTrm.shouldYields
       TypeHinted.hintedFalse.typeHint.eraseRecursively := by
-  sorry
+  constructor
+  · exact ⟨2, rfl⟩
+  · rfl
 
 example :
     TypeHinted.hintedIdFn.compileToTrm.shouldYields
       TypeHinted.hintedIdFn.typeHint.eraseRecursively := by
-  sorry
+  constructor
+  · exact ⟨2, rfl⟩
+  · rfl
 
 example :
-    TypeHinted.hintedIdFnOnFalse.compileToTrm.shouldYields
-      TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively := by
-  sorry
+    TypeHinted.hintedIdFnOnFalse.compileToTrm.shouldFail := by
+  constructor
+  · exact ⟨2, rfl⟩
+  · rfl
 
 example :
     Malformed.apply1.compileToTrm.shouldFail := by
-  sorry
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
     Malformed.primitiveApply.compileToTrm.shouldFail := by
-  sorry
+  constructor
+  · exact ⟨1, rfl⟩
+  · rfl
 
 example :
     Malformed.primitiveFalseAsFn.compileToTrm.shouldFail := by
-  sorry
+  constructor
+  · exact ⟨2, rfl⟩
+  · rfl
 
 example :
     Malformed.idFnAsPrimitive.compileToTrm.shouldFail := by
-  sorry
+  constructor
+  · exact ⟨2, rfl⟩
+  · rfl
 
 end compile
 

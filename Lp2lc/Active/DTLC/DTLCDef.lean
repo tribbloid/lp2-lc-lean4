@@ -269,13 +269,46 @@ Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
 def compile (trm : Trm I) (precondition: Condition I)
     [DecidablePred precondition] : MayTerminate (Program I precondition)
   | 0 => .outOfFuel
-  | _fuel + 1 =>
+  | fuel + 1 =>
     match trm with
-    | typeHinted self _ => self.compile precondition _fuel
-    | .val value =>
-      if h : precondition value then
+    | typeHinted self hint =>
+      let hintedCondition : Condition I :=
+        fun value => value.CanBind hint ∧ precondition value
+      have : DecidablePred hintedCondition := by
+        intro value
+        dsimp [hintedCondition, AST.Val.CanBind]
+        cases hint <;> cases value <;> infer_instance
+      match self.compile hintedCondition fuel with
+      | .result program =>
         .result {
-          trm := .val value
+          trm := program.trm
+          isSafe := by
+            intro _runtimeEnv
+            intro runtimeFuel
+            have hSafe : program.trm.IsSafeBy hintedCondition := program.isSafe
+            specialize hSafe runtimeFuel
+            cases hEval : program.trm.eval runtimeFuel with
+            | result value =>
+                simp [hEval] at hSafe ⊢
+                exact hSafe.2
+            | error =>
+                simp [hEval] at hSafe
+            | outOfFuel =>
+                simp
+        }
+      | .error => .error
+      | .outOfFuel => .outOfFuel
+    | .val value =>
+      let compiledValue :=
+        match value with
+        | .primitive repr => Val.primitive repr
+        | .primitiveFn body =>
+          Val.primitiveFn fun arg => (body arg).typeHint.eraseRecursively (body arg)
+        | .fn body =>
+          Val.fn fun arg => (body arg).typeHint.eraseRecursively (body arg)
+      if h : precondition compiledValue then
+        .result {
+          trm := .val compiledValue
           isSafe := by
             intro _runtimeEnv
             intro fuel
@@ -285,6 +318,26 @@ def compile (trm : Trm I) (precondition: Condition I)
         }
       else
         .error
+    | .apply (.val (.primitiveFn body)) (.val (.primitive repr)) =>
+      match (body repr).compile precondition fuel with
+      | .result bodyProgram =>
+        .result {
+          trm := .apply (.val (.primitiveFn fun _ => bodyProgram.trm)) (.val (.primitive repr))
+          isSafe := by
+            intro _runtimeEnv
+            intro runtimeFuel
+            cases runtimeFuel with
+            | zero => rfl
+            | succ runtimeFuel =>
+                have hSafe : bodyProgram.trm.IsSafeBy precondition := bodyProgram.isSafe
+                specialize hSafe runtimeFuel
+                cases runtimeFuel with
+                | zero => rfl
+                | succ runtimeFuel =>
+                    simpa [AST.Trm.eval] using hSafe
+        }
+      | .error => .error
+      | .outOfFuel => .outOfFuel
     | .apply _fn _arg => .error
     | .ref _i => .error
   -- | 0 => .outOfFuel
