@@ -285,7 +285,7 @@ def compile (trm : Trm I) (precondition: Condition I)
         }
       else
         .error
-    | .apply _fn _arg => .error
+    | .apply _fn _arg => sorry
     | .ref _i => .error
 
 
