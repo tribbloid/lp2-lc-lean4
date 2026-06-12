@@ -141,31 +141,6 @@ variable {I : Impl}
 
 variable [Runtime.Env I]
 
-namespace AST.Val
-
-/--
-Decidable semantic membership of a value in a type annotation.
-
-This checks the value head form and, for function values, the input annotation.
-Dependent output annotations are checked later by compiling the function body
-with a concrete compile-time argument reference.
--/
-def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop := -- TODO: can simplify by matching type and value at same level. TODO: return type can be SemanticTyp
-  match type with
-  | .top => true
-  | .primitive =>
-    match value with
-    | .primitive _ => true
-    | .primitiveFn _ => false
-    | .fn _ => false
-  | .depFn _ _ =>
-    match value with
-    | .primitive _ => false
-    | .primitiveFn _ => true
-    | .fn _ => true
-
-end AST.Val
-
 namespace AST.Trm
 
 /--
@@ -206,6 +181,43 @@ def IsSafeBy (self : AST.Trm I) (precondition : @Condition I) : Prop :=
   | .error => false
   | .outOfFuel => true
 
+end AST.Trm
+
+namespace AST.Val
+
+/--
+Semantic membership of a value in a type annotation.
+
+Function values must satisfy their body obligation at the same runtime reference
+that application evaluation will allocate for the argument.
+-/
+def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
+  match type, value with
+  | .top, _ => true
+  | .primitive, .primitive _ => true
+  | .primitive, .primitiveFn _ => false
+  | .primitive, .fn _ => false
+  | .depFn _tIn _tOut, .primitive _ => false
+  | .depFn tIn tOut, .primitiveFn body =>
+    ∀ repr,
+      let arg := AST.Val.primitive repr
+      arg.CanBind tIn →
+        let fBound := Runtime.Env.forVals (I := I)
+        let permission := Runtime.Env.canEvalAny (I := I) arg
+        (body repr).IsSafeBy
+          (fun value => value.CanBind (tOut (fBound.save arg permission)))
+  | .depFn tIn tOut, .fn body =>
+    ∀ arg,
+      arg.CanBind tIn →
+        let fBound := Runtime.Env.forVals (I := I)
+        let permission := Runtime.Env.canEvalAny (I := I) arg
+        (body (fBound.save arg permission)).IsSafeBy
+          (fun value => value.CanBind (tOut (fBound.save arg permission)))
+
+end AST.Val
+
+namespace AST.Trm
+
 def IsSafeUnder (self : AST.Trm I) (binding : Typ I) : Prop :=
   self.IsSafeBy (fun trm => trm.CanBind binding)
 
@@ -226,10 +238,7 @@ structure Program (I : Impl) (condition : AST.Condition I) where
 namespace Compiler
 
 /--
-only contains FBound for types
-
-in the future we may have FBound for terms or values and a permission granter
-for transparent fn only
+Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env (I : Impl) where
   forSemantic: FBound I.Index (AST.Val I -> (AST.Condition I)) fun _ => True
