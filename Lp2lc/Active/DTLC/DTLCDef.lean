@@ -11,9 +11,10 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 
 open Lp2lc.Active.Util
 
-namespace AST
 section
-variable (I : Impl)
+variable {I : Impl}
+
+namespace AST
 
 mutual
 
@@ -24,9 +25,9 @@ Source type syntax.
 whose output annotation may depend on the input reference, and `top` is the
 wildcard annotation accepted by any value.
 -/
-inductive Typ : Type where
+inductive Typ (I : Impl) : Type where
 | primitive -- `AnyVal` in Scala, accepts only primitive values
-| depFn (tIn : Typ) (tOut : (arg : I.Index) → Typ) -- dependent function
+| depFn (tIn : Typ I) (tOut : (arg : I.Index) → Typ I) -- dependent function
 | top -- anything/wildcard type, can accept any value.
 
 /--
@@ -43,10 +44,10 @@ are not intrinsic typing indices on terms.
 
 -- TODO: this definition has 2 problems: can eval at compiletime, cannot express
 -- primitive fn that modify bytecode
-inductive Trm : Type where
-| typeHinted (self : Trm) (hint : Typ) -- AKA type annotation, each term can have 0, 1, or many hints (e.g. `((1: Tuple): Product): AnyRef`), required for fundamental/composability theorem
-| val (v : Val) -- AKA literal
-| apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
+inductive Trm (I : Impl) : Type where
+| typeHinted (self : Trm I) (hint : Typ I) -- AKA type annotation, each term can have 0, 1, or many hints (e.g. `((1: Tuple): Product): AnyRef`), required for fundamental/composability theorem
+| val (v : Val I) -- AKA literal
+| apply (fn : Trm I) (arg : Trm I) -- fn must be a function that can be applied on arg
 | ref (s: I.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
 /--
@@ -55,19 +56,14 @@ Value syntax, containing neither references nor applications.
 Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
 -/
-inductive Val : Type where
+inductive Val (I : Impl) : Type where
 | primitive (repr : I.Data) -- most specific type is always `primitive`
-| primitiveFn (body: (arg: I.Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
-| fn (body : (arg : I.Index) → Trm) -- most specific type is always `.depFn _ _`
+| primitiveFn (body: (arg: I.Data) -> Trm I ) -- most specific type is always `.depFn .primitive _`
+| fn (body : (arg : I.Index) → Trm I) -- most specific type is always `.depFn _ _`
 
 end
 
-abbrev Condition := (value : AST.Val I) -> Prop -- AKA semantic type
-
-end
-
-section
-variable {I : Impl}
+abbrev Condition (I : Impl) := (value : AST.Val I) -> Prop -- AKA semantic type
 
 /-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
 instance valIsTrm : Coe (Val I) (Trm I) where
@@ -117,8 +113,6 @@ end TypeView
 
 end Trm
 
-end
-
 end AST
 
 namespace AST.Val
@@ -137,8 +131,6 @@ class Env (I : Impl) where
 end Runtime
 
 section
-variable {I : Impl}
-
 variable [Runtime.Env I]
 
 namespace AST.Trm
@@ -173,11 +165,11 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
 
 /--
 An safe program may run out of runtime fuel, but it must not reach runtime
-`error`. When a runtime value is produced, it must satisfy the precondition.
+`error`. When a runtime value is produced, it must satisfy the condition.
 -/
-def IsSafeBy (self : AST.Trm I) (precondition : @Condition I) : Prop :=
+def IsSafeBy (self : AST.Trm I) (condition : Condition I) : Prop :=
   ∀ fuel, match self.eval fuel with
-  | .result value => precondition value
+  | .result value => condition value
   | .error => false
   | .outOfFuel => true
 
@@ -224,10 +216,6 @@ def IsSafeUnder (self : AST.Trm I) (binding : Typ I) : Prop :=
 end AST.Trm
 end
 
--- namespace Toy
-
--- end Toy
-
 /--
 a compiled term with safety proof
 -/
@@ -248,8 +236,6 @@ end Compiler
 section
 open AST
 
-variable {I : Impl}
-
 variable [Compiler.Env I]
 
 namespace AST.Trm
@@ -259,8 +245,8 @@ Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return 
 `Trm` with it's safety proof, it does not evaluate the program.
 
 It's very similar to `Trm.eval` above in structure, but instead of evaluating
-for the final result, it recursively decompose the precondition goal into
-goals of smaller components that are type-checked independently and incrementally. The compile-time
+for the final result, it recursively decompose the safety proof obligation into
+obligations of smaller components that are fulfiled independently and incrementally. The compile-time
 `Compiler.Env.forSemantic` F-bound bridge can be used to save/load proven goal; this
 is separate from runtime value binding and never calls `eval`.
 
@@ -275,25 +261,13 @@ applications remain applications of recursively compiled subterms.
 
 Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
 -/
-def compile (trm : Trm I) (precondition: Condition I)
-: MayTerminate (Program I precondition)
+def compile (trm : Trm I) (desired: Condition I)
+: MayTerminate (Program I desired)
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
-    | typeHinted self _ => self.compile precondition _fuel
-    | .val value =>
-      if h : precondition value then
-        .result {
-          trm := .val value
-          isSafe := by
-            intro _runtimeEnv
-            intro fuel
-            cases fuel with
-            | zero => rfl
-            | succ fuel => simpa [AST.Trm.eval] using h
-        }
-      else
-        .error
+    | typeHinted self _ => self.compile desired _fuel
+    | .val value => sorry
     | .apply _fn _arg => sorry
     | .ref _i => .error
 
@@ -357,6 +331,7 @@ end
 
 -- end ProofByLogicalRelation
 
+end
 
 end DTLC
 
