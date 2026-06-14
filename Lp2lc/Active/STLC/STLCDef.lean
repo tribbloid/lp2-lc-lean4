@@ -133,7 +133,6 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
     | typeHinted self _ => eval self fuel
     | .val value => .result value
     | .apply fn arg =>
-    -- TODO: for tree crawling, we need a single function to get an IR that contains eval result and a proof that it won't break
       let anf := (eval fn fuel, eval arg fuel) -- ANF, atomic normal form
       match anf with
       | (.result (.primitiveFn body), .result (.primitive repr)) =>
@@ -157,43 +156,6 @@ def IsSafeBy (self : AST.Trm I) (condition : Condition I) : Prop :=
   | .result value => condition value
   | .error => false
   | .outOfFuel => true
-
-end AST.Trm
-
-namespace AST.Val
-
-/--
-Semantic membership of a value in a type annotation.
-
-Function values must satisfy their body obligation at the same runtime reference
-that application evaluation will allocate for the argument.
--/
-def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
-  match type, value with
-  | .primitive, .primitive _ => true
-  | .primitive, .primitiveFn _ => false
-  | .primitive, .fn _ => false
-  | .depFn _tIn _tOut, .primitive _ => false
-  | .depFn tIn tOut, .primitiveFn body =>
-    ∀ repr,
-      let arg := AST.Val.primitive repr
-      arg.CanBind tIn →
-        (body repr).IsSafeBy
-          (fun value => value.CanBind tOut)
-  | .depFn tIn tOut, .fn body =>
-    ∀ arg,
-      arg.CanBind tIn →
-        let fBound := Runtime.Env.forVals
-        let permission := Runtime.Env.canEvalAny arg
-        (body (fBound.save arg permission)).IsSafeBy
-          (fun value => value.CanBind tOut)
-
-end AST.Val
-
-namespace AST.Trm
-
-def IsSafeUnder (self : AST.Trm I) (binding : Typ I) : Prop :=
-  self.IsSafeBy (fun trm => trm.CanBind binding)
 
 end AST.Trm
 
