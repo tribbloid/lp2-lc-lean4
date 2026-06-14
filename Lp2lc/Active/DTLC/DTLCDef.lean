@@ -215,23 +215,21 @@ end AST.Trm
 /--
 a compiled term with safety proof
 -/
-structure Program (I : Impl) (condition : AST.Condition I) where
+structure Program (condition : AST.Condition I) where
   trm: AST.Trm I
   isSafe: trm.IsSafeBy condition
-
-end
 
 namespace Compiler
 
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
-class Env (I : Impl) where
+class Env where
   forSemantic: FBound I.Index (AST.Val I -> AST.Condition I) fun _ => True
 
 end Compiler
 
-section variable [Compiler.Env I]
+section variable [@Compiler.Env I]
 open AST
 
 
@@ -260,7 +258,7 @@ applications remain applications of recursively compiled subterms.
 Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
 -/
 def compile (trm : Trm I) (desired: Condition I)
-: MayTerminate (Program I desired)
+: MayTerminate (Program desired)
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
@@ -280,6 +278,8 @@ def compileToTrm (trm : Trm I)
   | .outOfFuel => .outOfFuel
 
 end AST.Trm
+
+end
 
 end
 

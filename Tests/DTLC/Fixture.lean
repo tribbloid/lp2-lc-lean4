@@ -39,22 +39,21 @@ is sound by construction.
       exact unsafeCast True.intro
   }
 
-@[reducible] unsafe def _runtimeEnv : Runtime.Env I :=
+@[reducible] unsafe def _runtimeEnv : @Runtime.Env I :=
   {
     EvalPermission := RuntimeCanEval
     forVals := _unsafeFBound Val
     canEvalAny := fun _value => True.intro
   }
 
-@[reducible] unsafe def _compilerEnv : Compiler.Env I :=
+@[reducible] unsafe def _compilerEnv : @Compiler.Env I :=
   { forSemantic := _unsafeFBound (Val -> AST.Condition I) }
 
 @[instance, implemented_by _runtimeEnv]
-axiom runtimeEnv : Runtime.Env I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
+axiom runtimeEnv : @Runtime.Env I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
 
 @[instance, implemented_by _compilerEnv]
-axiom compilerEnv : Compiler.Env I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
-
+axiom compilerEnv : @Compiler.Env I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
 
 end Fixture
 
