@@ -140,6 +140,8 @@ def isSemiDecidable (self : MayTerminate T) : Prop :=
 end
 end MayTerminate
 
+def IProp := Prop
+
 -- 1. Implicitly lift a type to a higher universe using ULift
 /-- Coerce a lower-universe type into a higher universe through `ULift`. -/
 instance _autoUliftType : Coe (Type u) (Type (max u v)) where
