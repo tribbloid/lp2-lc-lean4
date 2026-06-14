@@ -142,8 +142,7 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
         let fBound := env.forVals
         let permission := Runtime.Env.canEvalAny value
         eval (body (fBound.save value permission)) fuel
-      | (.outOfFuel, _) => .outOfFuel
-      | (_, .outOfFuel) => .outOfFuel
+      | (.outOfFuel, _) | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref i =>
       let fBound := Runtime.Env.forVals
@@ -179,8 +178,6 @@ def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
     ∀ repr,
       let arg := AST.Val.primitive repr
       arg.CanBind tIn →
-        let fBound := Runtime.Env.forVals
-        let permission := Runtime.Env.canEvalAny arg
         (body repr).IsSafeBy
           (fun value => value.CanBind tOut)
   | .depFn tIn tOut, .fn body =>

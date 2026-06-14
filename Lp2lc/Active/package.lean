@@ -3,8 +3,8 @@ import «Lp2lc».Active.Shared
 import «Lp2lc».Active.Util
 import «Lp2lc».Active.PartialDefInheritance
 
--- STLC module exports Def; scratch examples are imported from Tests.
-import «Lp2lc».Active.STLC.Def
+-- STLC module exports STLCDef; scratch examples are imported from Tests.
+import «Lp2lc».Active.STLC.STLCDef
 import «Lp2lc».Active.DTLC.Impl
 import «Lp2lc».Active.DTLC.Proof
 
