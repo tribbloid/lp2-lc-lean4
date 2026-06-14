@@ -1,6 +1,6 @@
 import Std
 import «Lp2lc».Active.Shared
-import «Lp2lc».Util
+import «Lp2lc».Active.Util
 
 namespace Lp2lc.Active
 
@@ -25,8 +25,7 @@ wildcard annotation accepted by any value.
 -/
 inductive Typ : Type where
 | primitive -- `AnyVal` in Scala, accepts only primitive values
-| depFn (tIn : Typ) (tOut : (arg : I.Index) → Typ) -- dependent function
-| top -- anything/wildcard type, can accept any value.
+| depFn (tIn : Typ) (tOut : Typ) -- dependent function
 
 /--
 Source term syntax.
@@ -66,14 +65,6 @@ end
 /-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
 instance valIsTrm : Coe (Val I) (Trm I) where
   coe := fun v => Trm.val v
-
-namespace Typ
-
-inductive SubtypeEv : (under: Typ I) -> (over: Typ I) -> Prop
-| x2x (t: Typ I) : SubtypeEv t t
-| x2Top (t : Typ I) : SubtypeEv t Typ.top
-
-end Typ
 
 namespace Trm
 
@@ -180,7 +171,6 @@ that application evaluation will allocate for the argument.
 -/
 def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
   match type, value with
-  | .top, _ => true
   | .primitive, .primitive _ => true
   | .primitive, .primitiveFn _ => false
   | .primitive, .fn _ => false
@@ -192,14 +182,14 @@ def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
         let fBound := Runtime.Env.forVals
         let permission := Runtime.Env.canEvalAny arg
         (body repr).IsSafeBy
-          (fun value => value.CanBind (tOut (fBound.save arg permission)))
+          (fun value => value.CanBind tOut)
   | .depFn tIn tOut, .fn body =>
     ∀ arg,
       arg.CanBind tIn →
         let fBound := Runtime.Env.forVals
         let permission := Runtime.Env.canEvalAny arg
         (body (fBound.save arg permission)).IsSafeBy
-          (fun value => value.CanBind (tOut (fBound.save arg permission)))
+          (fun value => value.CanBind tOut)
 
 end AST.Val
 
@@ -232,50 +222,50 @@ open AST
 
 
 
-namespace AST.Trm
+-- namespace AST.Trm
 
-/--
-Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return the same
-`Trm` with it's safety proof, it does not evaluate the program.
+-- /--
+-- Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return the same
+-- `Trm` with it's safety proof, it does not evaluate the program.
 
-It's very similar to `Trm.eval` above in structure, but instead of evaluating
-for the final result, it recursively decompose the safety proof obligation into
-obligations of smaller components that are fulfiled independently and incrementally. The compile-time
-`Compiler.Env.forSemantic` F-bound bridge can be used to save/load proven goal; this
-is separate from runtime value binding and never calls `eval`.
+-- It's very similar to `Trm.eval` above in structure, but instead of evaluating
+-- for the final result, it recursively decompose the safety proof obligation into
+-- obligations of smaller components that are fulfiled independently and incrementally. The compile-time
+-- `Compiler.Env.forSemantic` F-bound bridge can be used to save/load proven goal; this
+-- is separate from runtime value binding and never calls `eval`.
 
-Malformed or incompatible component will immediate cause the compilation to
-fail. In particular, applications must compile both sides successfully, the function side
-must satisfy `.fn` or `.primitiveFn` precondition, and the argument must be compatible with the
-function input.
+-- Malformed or incompatible component will immediate cause the compilation to
+-- fail. In particular, applications must compile both sides successfully, the function side
+-- must satisfy `.fn` or `.primitiveFn` precondition, and the argument must be compatible with the
+-- function input.
 
-On success, it preserves the source
-program shape: values remain values, references remain references, and
-applications remain applications of recursively compiled subterms.
+-- On success, it preserves the source
+-- program shape: values remain values, references remain references, and
+-- applications remain applications of recursively compiled subterms.
 
-Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
--/
-def compile (trm : Trm I) (desired: Condition I)
-: MayTerminate (Program desired)
-  | 0 => .outOfFuel
-  | _fuel + 1 =>
-    match trm with
-    | typeHinted self _ => self.compile desired _fuel
-    | .val value => sorry
-    | .apply _fn _arg => sorry
-    | .ref _i => .error
+-- Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
+-- -/
+-- def compile (trm : Trm I) (desired: Condition I)
+-- : MayTerminate (Program desired)
+--   | 0 => .outOfFuel
+--   | _fuel + 1 =>
+--     match trm with
+--     | typeHinted self _ => self.compile desired _fuel
+--     | .val value => sorry
+--     | .apply _fn _arg => sorry
+--     | .ref _i => .error
 
 
-def compileToTrm (trm : Trm I)
-  (condition: Condition I := fun _ => true)-- by default, accept any condition
-: MayTerminate (Trm I) := fun (fuel : Nat) =>
-  let out := trm.compile condition fuel
-  match out with
-  | .result v => Outcome.result v.trm
-  | .error => .error
-  | .outOfFuel => .outOfFuel
+-- def compileToTrm (trm : Trm I)
+--   (condition: Condition I := fun _ => true)-- by default, accept any condition
+-- : MayTerminate (Trm I) := fun (fuel : Nat) =>
+--   let out := trm.compile condition fuel
+--   match out with
+--   | .result v => Outcome.result v.trm
+--   | .error => .error
+--   | .outOfFuel => .outOfFuel
 
-end AST.Trm
+-- end AST.Trm
 
 end
 
