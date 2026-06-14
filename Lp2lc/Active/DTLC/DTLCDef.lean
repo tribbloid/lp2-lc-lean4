@@ -11,10 +11,10 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 
 open Lp2lc.Active.Util
 
-section
-variable {I : Impl}
+section variable {I : Impl}
 
 namespace AST
+section variable (I : Impl)
 
 mutual
 
@@ -25,9 +25,9 @@ Source type syntax.
 whose output annotation may depend on the input reference, and `top` is the
 wildcard annotation accepted by any value.
 -/
-inductive Typ (I : Impl) : Type where
+inductive Typ : Type where
 | primitive -- `AnyVal` in Scala, accepts only primitive values
-| depFn (tIn : Typ I) (tOut : (arg : I.Index) → Typ I) -- dependent function
+| depFn (tIn : Typ) (tOut : (arg : I.Index) → Typ) -- dependent function
 | top -- anything/wildcard type, can accept any value.
 
 /--
@@ -44,10 +44,10 @@ are not intrinsic typing indices on terms.
 
 -- TODO: this definition has 2 problems: can eval at compiletime, cannot express
 -- primitive fn that modify bytecode
-inductive Trm (I : Impl) : Type where
-| typeHinted (self : Trm I) (hint : Typ I) -- AKA type annotation, each term can have 0, 1, or many hints (e.g. `((1: Tuple): Product): AnyRef`), required for fundamental/composability theorem
-| val (v : Val I) -- AKA literal
-| apply (fn : Trm I) (arg : Trm I) -- fn must be a function that can be applied on arg
+inductive Trm : Type where
+| typeHinted (self : Trm) (hint : Typ) -- AKA type annotation, each term can have 0, 1, or many hints (e.g. `((1: Tuple): Product): AnyRef`), required for fundamental/composability theorem
+| val (v : Val) -- AKA literal
+| apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
 | ref (s: I.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
 /--
@@ -56,15 +56,15 @@ Value syntax, containing neither references nor applications.
 Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
 -/
-inductive Val (I : Impl) : Type where
+inductive Val : Type where
 | primitive (repr : I.Data) -- most specific type is always `primitive`
-| primitiveFn (body: (arg: I.Data) -> Trm I ) -- most specific type is always `.depFn .primitive _`
-| fn (body : (arg : I.Index) → Trm I) -- most specific type is always `.depFn _ _`
+| primitiveFn (body: (arg: I.Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
+| fn (body : (arg : I.Index) → Trm) -- most specific type is always `.depFn _ _`
 
 end
 
-abbrev Condition (I : Impl) := (value : AST.Val I) -> Prop -- AKA semantic type
-
+abbrev Condition := (value : AST.Val I) -> Prop -- AKA semantic type
+end
 /-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
 instance valIsTrm : Coe (Val I) (Trm I) where
   coe := fun v => Trm.val v
@@ -120,9 +120,7 @@ namespace AST.Val
 end AST.Val
 
 namespace Runtime
-open AST
-
-class Env (I : Impl) where
+class Env where
   EvalPermission : Permission (AST.Val I)
   -- fuel: Nat -- this can't be used, ewww
   forVals: FBound I.Index (AST.Val I) EvalPermission
@@ -130,8 +128,7 @@ class Env (I : Impl) where
 
 end Runtime
 
-section
-variable [Runtime.Env I]
+section variable [env: @Runtime.Env I]
 
 namespace AST.Trm
 
@@ -153,14 +150,14 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
       | (.result (.primitiveFn body), .result (.primitive repr)) =>
         eval (body repr) fuel
       | (.result (.fn body), .result value) =>
-        let fBound := Runtime.Env.forVals (I := I)
-        let permission := Runtime.Env.canEvalAny (I := I) value
+        let fBound := env.forVals
+        let permission := Runtime.Env.canEvalAny value
         eval (body (fBound.save value permission)) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref i =>
-      let fBound := Runtime.Env.forVals (I := I)
+      let fBound := Runtime.Env.forVals
       .result (fBound.load i)
 
 /--
@@ -194,15 +191,15 @@ def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
     ∀ repr,
       let arg := AST.Val.primitive repr
       arg.CanBind tIn →
-        let fBound := Runtime.Env.forVals (I := I)
-        let permission := Runtime.Env.canEvalAny (I := I) arg
+        let fBound := Runtime.Env.forVals
+        let permission := Runtime.Env.canEvalAny arg
         (body repr).IsSafeBy
           (fun value => value.CanBind (tOut (fBound.save arg permission)))
   | .depFn tIn tOut, .fn body =>
     ∀ arg,
       arg.CanBind tIn →
-        let fBound := Runtime.Env.forVals (I := I)
-        let permission := Runtime.Env.canEvalAny (I := I) arg
+        let fBound := Runtime.Env.forVals
+        let permission := Runtime.Env.canEvalAny arg
         (body (fBound.save arg permission)).IsSafeBy
           (fun value => value.CanBind (tOut (fBound.save arg permission)))
 
@@ -214,14 +211,15 @@ def IsSafeUnder (self : AST.Trm I) (binding : Typ I) : Prop :=
   self.IsSafeBy (fun trm => trm.CanBind binding)
 
 end AST.Trm
-end
 
 /--
 a compiled term with safety proof
 -/
 structure Program (I : Impl) (condition : AST.Condition I) where
   trm: AST.Trm I
-  isSafe: [Runtime.Env I] -> trm.IsSafeBy condition
+  isSafe: trm.IsSafeBy condition
+
+end
 
 namespace Compiler
 
@@ -229,14 +227,14 @@ namespace Compiler
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env (I : Impl) where
-  forSemantic: FBound I.Index (AST.Val I -> (AST.Condition I)) fun _ => True
+  forSemantic: FBound I.Index (AST.Val I -> AST.Condition I) fun _ => True
 
 end Compiler
 
-section
+section variable [Compiler.Env I]
 open AST
 
-variable [Compiler.Env I]
+
 
 namespace AST.Trm
 
