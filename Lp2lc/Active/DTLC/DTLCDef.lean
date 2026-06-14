@@ -276,7 +276,7 @@ applications remain applications of recursively compiled subterms.
 Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
 -/
 def compile (trm : Trm I) (precondition: Condition I)
-    [DecidablePred precondition] : MayTerminate (Program I precondition)
+: MayTerminate (Program I precondition)
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
@@ -300,7 +300,6 @@ def compile (trm : Trm I) (precondition: Condition I)
 
 def compileToTrm (trm : Trm I)
   (condition: Condition I := fun _ => true)-- by default, accept any condition
-  [DecidablePred condition]
 : MayTerminate (Trm I) := fun (fuel : Nat) =>
   let out := trm.compile condition fuel
   match out with
