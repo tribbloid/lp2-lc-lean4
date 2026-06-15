@@ -173,7 +173,10 @@ structure AdequateTrm where
   safetyEvidence: trm.IsSafeBy condition
 
 namespace AdequateTrm
+section variable (self: AdequateTrm)
 
+
+end
 end AdequateTrm
 
 

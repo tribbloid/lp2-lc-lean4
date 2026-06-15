@@ -24,53 +24,6 @@ in the future we may:
 -/
 def Permission (T : Type) := (v: T) -> Prop -- no instance will be provided ever, they are requiremennts to apply AST rules.
 
--- namespace Permission
-
--- -- class PermissionToCompile extends Permission
--- def Eval := Permission
-
--- -- def Eval := Permission
-
--- end Permission
-
-
--- class Store {I : KIndex} {V : Type} (self: I -> Option V) where
---   empty : I -> Option V := fun _ => none
---   save (v: V) : (I × (I -> Option V)) :=
---     let
---   load (i: I) :=
-
--- section KV
--- variable (String Value : Type)
-
--- def Env := String → Option Value
--- namespace Env
--- def empty : Env K V := fun _ => none
--- _
--- def set ( : Env) ( : String) ( : Value) : Env :=
--- σ x v
--- fun => if = then some else
--- y y x v σ y
--- @[simp] theorem set
--- _
--- same ( : Env) ( : String) ( : Value) :
--- σ x v
--- ( .set ) = some :=
--- σ x v x v by
--- simp [set]
--- @[simp] theorem set
--- _
--- other ( : Env) ( : String) ( : Value) ( : ≠ ) :
--- σ x y v h y x
--- ( .set ) = :=
--- σ x v y σ y by
--- h
--- simp [set, ]
--- end Env
-
--- end KV
-
-
 /-- Fixed-bound bridge between a HOAS carrier and the syntax family it represents. -/
 class FBound (I : KIndex) (V : Type) (P : Permission V): Type where -- fixed-point bound axiom, a crossover between de-bruijn Env/Store & HOAS carrier.
   save : (value : V) -> (permission: P value) → I -- `I` is unknown & there is no way to get `I` (required by HOAS binder) except submitting a `V`.
@@ -83,62 +36,68 @@ class FBound (I : KIndex) (V : Type) (P : Permission V): Type where -- fixed-poi
 
 attribute [simp] FBound.roundtrip
 
+section variable {T : Type}
+
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
-inductive Outcome (T : KIndex)
+inductive Outcome
 | result (v: T)
 | error
 | outOfFuel
 
 namespace Outcome
+section variable (self: @Outcome T)
 
-def isResult : (self : Outcome T) → Prop
+def isResult : Prop := match self with
 | result _ => true
 | _ => false
 
-def isResultOrOutOfFuel : (self : Outcome T) → Prop
+def isResultOrOutOfFuel : Prop := match self with
 | error  => false
 | _ => true
 
+end
 end Outcome
 
-universe u v
+-- universe u v
 
-def MayTerminate (T : Type) := (fuel: Nat) -> Outcome T
+def MayTerminate (T : Type) := (fuel: Nat) -> @Outcome T
 
 namespace MayTerminate
-section
-variable {T : Type}
+section variable  (self : @MayTerminate T)
 
-
-def shouldYieldsWithFuel (self : MayTerminate T) (expectedV: T) : Prop :=
+def shouldYieldsWithFuel (expectedV: T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .result v => v = expectedV
   | _ => false
 
-def shouldYields (self : MayTerminate T) (expectedV: T) : Prop :=
+def shouldYields  (expectedV: T) : Prop :=
   let hasFuel := self.shouldYieldsWithFuel expectedV
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def shouldFail (self : MayTerminate T) : Prop :=
+def shouldFail  : Prop :=
   let hasFuel := ∃ (fuel : Nat), match (self fuel) with
   | .error => true
   | _ => false
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def isDecidable (self : MayTerminate T) : Prop :=
+def isDecidable  : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .result _ => true
   | _ => false
 
-def isSemiDecidable (self : MayTerminate T) : Prop :=
+def isSemiDecidable  : Prop :=
   ∀ (fuel: Nat), match (self fuel) with
   | .error  => false
   | _ => true
 
 end
 end MayTerminate
+
+end
+
+-- def MaySuccess := (fuel : Nat) -> ({x : Outcome T} // x.isResultOrOutOfFuel)
 
 def IProp := Prop
 
