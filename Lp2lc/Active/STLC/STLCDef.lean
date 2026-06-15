@@ -60,7 +60,6 @@ inductive Val : Type where
 
 end
 
-abbrev Condition := (value : AST.Val I) -> Prop -- AKA semantic type
 end
 /-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
 instance valIsTrm : Coe (Val I) (Trm I) where
@@ -112,59 +111,71 @@ namespace Runtime
 class Env where
   EvalPermission : Permission (AST.Val I)
   -- fuel: Nat -- this can't be used, ewww
-  forVals: FBound I.Index (AST.Val I) EvalPermission
+  valueRefs: FBound I.Index (AST.Val I) EvalPermission
   canEvalAny: (v: AST.Val I) -> EvalPermission v
+
 
 end Runtime
 
-section variable [env: @Runtime.Env I]
+abbrev Condition := (value : AST.Val I) -> Prop -- AKA semantic type
 
 namespace AST.Trm
+section variable (self : AST.Trm I) (env: @Runtime.Env I)
 
 /--
-Evaluates a source or compiled program by spending 1 fuel at each semantic
+Evaluates a term by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
+def eval (self : AST.Trm I) : MayTerminate (AST.Val I) -- TODO: circumventing https://github.com/leanprover/lean4/issues/14061
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | typeHinted self _ => eval self fuel
+    | .typeHinted self _ => eval self fuel
     | .val value => .result value
     | .apply fn arg =>
-      let anf := (eval fn fuel, eval arg fuel) -- ANF, atomic normal form
+      let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
-      | (.result (.primitiveFn body), .result (.primitive repr)) =>
-        eval (body repr) fuel
-      | (.result (.fn body), .result value) =>
-        let fBound := env.forVals
-        let permission := Runtime.Env.canEvalAny value
-        eval (body (fBound.save value permission)) fuel
+      | (.result (.fn body), .result input) =>
+        let permission := env.canEvalAny input
+        let index := env.valueRefs.save input permission
+        (body index).eval fuel
+      | (.result (.primitiveFn body), .result (.primitive input)) =>
+        (body input).eval fuel
       | (.outOfFuel, _) | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref i =>
-      let fBound := Runtime.Env.forVals
-      .result (fBound.load i)
+      .result (env.valueRefs.load i)
+
+end
 
 /--
-An safe program may run out of runtime fuel, but it must not reach runtime
+An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
-def IsSafeBy (self : AST.Trm I) (condition : Condition I) : Prop :=
-  ∀ fuel, match self.eval fuel with
+def IsSafeBy (self : AST.Trm I) (condition : @Condition I) : Prop :=
+  ∀ (fuel : Nat) (env : Runtime.Env), match self.eval env fuel with
   | .result value => condition value
   | .error => false
   | .outOfFuel => true
+
+def IsSafe (self : AST.Trm I) : Prop :=
+  IsSafeBy self (fun _ => true)
 
 end AST.Trm
 
 /--
 a compiled term with safety proof
 -/
-structure Program (condition : AST.Condition I) where
+structure AdequateTrm where
   trm: AST.Trm I
-  isSafe: trm.IsSafeBy condition
+  condition : @Condition I
+  safetyEvidence: trm.IsSafeBy condition
+
+namespace AdequateTrm
+
+end AdequateTrm
+
 
 namespace Compiler
 
@@ -172,66 +183,51 @@ namespace Compiler
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env where
-  forSemantic: FBound I.Index (AST.Val I -> AST.Condition I) fun _ => True
+  safetyEvStore: @AdequateTrm I
 
 end Compiler
 
 section variable [@Compiler.Env I]
 open AST
 
+namespace AST.Trm
 
+/--
+Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return the same
+`Trm` with it's safety proof, it does not evaluate the program.
 
--- namespace AST.Trm
+It's very similar to `Trm.eval` above in structure, but instead of evaluating
+for the final result, it recursively decompose the safety proof obligation into
+obligations of smaller components that are fulfiled independently and incrementally. The compile-time
+`Compiler.Env.forSemantic` F-bound bridge can be used to save/load proven goal; this
+is separate from runtime value binding and never calls `eval`.
 
--- /--
--- Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return the same
--- `Trm` with it's safety proof, it does not evaluate the program.
+Malformed or incompatible component will immediate cause the compilation to
+fail. In particular, applications must compile both sides successfully, the function side
+must satisfy `.fn` or `.primitiveFn` precondition, and the argument must be compatible with the
+function input.
 
--- It's very similar to `Trm.eval` above in structure, but instead of evaluating
--- for the final result, it recursively decompose the safety proof obligation into
--- obligations of smaller components that are fulfiled independently and incrementally. The compile-time
--- `Compiler.Env.forSemantic` F-bound bridge can be used to save/load proven goal; this
--- is separate from runtime value binding and never calls `eval`.
+On success, it preserves the source
+program shape: values remain values, references remain references, and
+applications remain applications of recursively compiled subterms.
 
--- Malformed or incompatible component will immediate cause the compilation to
--- fail. In particular, applications must compile both sides successfully, the function side
--- must satisfy `.fn` or `.primitiveFn` precondition, and the argument must be compatible with the
--- function input.
+Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
+-/
+def compile (trm : Trm I)
+: MayTerminate (@AdequateTrm I)
+  | 0 => .outOfFuel
+  | _fuel + 1 =>
+    match trm with
+    | typeHinted self _ => self.compile _fuel
+    | .val value => sorry
+    | .apply _fn _arg => sorry
+    | .ref _i => .error
 
--- On success, it preserves the source
--- program shape: values remain values, references remain references, and
--- applications remain applications of recursively compiled subterms.
-
--- Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
--- -/
--- def compile (trm : Trm I) (desired: Condition I)
--- : MayTerminate (Program desired)
---   | 0 => .outOfFuel
---   | _fuel + 1 =>
---     match trm with
---     | typeHinted self _ => self.compile desired _fuel
---     | .val value => sorry
---     | .apply _fn _arg => sorry
---     | .ref _i => .error
-
-
--- def compileToTrm (trm : Trm I)
---   (condition: Condition I := fun _ => true)-- by default, accept any condition
--- : MayTerminate (Trm I) := fun (fuel : Nat) =>
---   let out := trm.compile condition fuel
---   match out with
---   | .result v => Outcome.result v.trm
---   | .error => .error
---   | .outOfFuel => .outOfFuel
-
--- end AST.Trm
+end AST.Trm
 
 end
 
 end
-
-end
-
 
 end STLC
 
