@@ -118,7 +118,7 @@ class Env where
 
 end Runtime
 
-abbrev Condition := (value : AST.Val I) -> Prop -- AKA semantic type
+abbrev Condition (I : Impl) := (value : AST.Val I) -> Prop -- AKA semantic type
 
 namespace AST.Trm
 section variable (self : AST.Trm I) [env: @Runtime.Env I]
@@ -154,7 +154,7 @@ end
 An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
-def IsSafeBy (self : AST.Trm I) (condition : @Condition I) : Prop :=
+def IsSafeBy (self : AST.Trm I) (condition : Condition I) : Prop :=
   ∀ (fuel : Nat) [@Runtime.Env I], match self.eval fuel with
   | .result value => condition value
   | .error => false
@@ -170,20 +170,18 @@ namespace Internal
 /--
 a compiled term with safety proof
 -/
-private structure _AdequateTrm where
+private structure _AdequateTrm (condition : Condition I) where
   trm: AST.Trm I
-  condition : @Condition I
   safetyEvidence: trm.IsSafeBy condition
-
 
 end Internal
 
 abbrev AdequateTrm := @Internal._AdequateTrm I
 
 namespace AdequateTrm
-section variable (self: AdequateTrm) [env : @Runtime.Env I]
+section variable {c: Condition I} (self: AdequateTrm c) [env : @Runtime.Env I]
 
-def eval : MaySucceed (AST.Val I) := fun fuel =>
+def eval : MaySucceed ({v : AST.Val I // c v}) := fun fuel =>
   ⟨self.trm.eval fuel, by
     cases h : self.trm.eval fuel
     · simp [Outcome.isResultOrOutOfFuel]
@@ -212,7 +210,7 @@ namespace AST.Trm
 /--
 similar to Trm.compile, but only produce the safety proof
 -/
-def verify (trm : Trm I) (condition : @Condition I) : MayTerminate (trm.IsSafeBy condition)
+def verify (trm : Trm I) (condition : Condition I) : MayTerminate (trm.IsSafeBy condition)
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
@@ -242,12 +240,12 @@ applications remain applications of recursively compiled subterms.
 
 Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
 -/
-def compile (trm : Trm I)
-: MayTerminate (@AdequateTrm I)
+def compile (trm : Trm I) (c : Condition I)
+: MayTerminate (AdequateTrm c)
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
-    | .typeHinted self _ => self.compile _fuel
+    | .typeHinted self _ => self.compile c _fuel
     | .val value => sorry
     | .apply _fn _arg => sorry
     | .ref _i => .error
