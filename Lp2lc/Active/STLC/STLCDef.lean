@@ -164,6 +164,7 @@ def IsSafe (self : AST.Trm I) : Prop :=
 
 end AST.Trm
 
+
 /--
 a compiled term with safety proof
 -/
@@ -173,12 +174,18 @@ structure AdequateTrm where
   safetyEvidence: trm.IsSafeBy condition
 
 namespace AdequateTrm
-section variable (self: AdequateTrm)
+section variable (self: AdequateTrm) (env : @Runtime.Env I)
 
+def eval : MaySucceed (AST.Val I) := fun fuel =>
+  ⟨self.trm.eval env fuel, by
+    cases h : self.trm.eval env fuel
+    · simp [Outcome.isResultOrOutOfFuel]
+    · have noError := self.safetyEvidence fuel env
+      simp [h] at noError
+    · simp [Outcome.isResultOrOutOfFuel]⟩
 
 end
 end AdequateTrm
-
 
 namespace Compiler
 
@@ -194,6 +201,18 @@ section variable [@Compiler.Env I]
 open AST
 
 namespace AST.Trm
+
+/--
+similar to Trm.compile, but only produce the safety proof
+-/
+def verify (trm : Trm I) (condition : @Condition I) : MayTerminate (trm.IsSafeBy condition)
+  | 0 => .outOfFuel
+  | _fuel + 1 =>
+    match trm with
+    | .typeHinted self _ => self.verify _fuel
+    | .val value => sorry
+    | .apply _fn _arg => sorry
+    | .ref _i => .error
 
 /--
 Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return the same
@@ -221,7 +240,7 @@ def compile (trm : Trm I)
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
-    | typeHinted self _ => self.compile _fuel
+    | .typeHinted self _ => self.compile _fuel
     | .val value => sorry
     | .apply _fn _arg => sorry
     | .ref _i => .error
