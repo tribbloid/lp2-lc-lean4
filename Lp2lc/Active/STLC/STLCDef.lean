@@ -182,12 +182,19 @@ namespace AdequateTrm
 section variable {c: Condition I} (self: AdequateTrm c) [env : @Runtime.Env I]
 
 def eval : MaySucceed ({v : AST.Val I // c v}) := fun fuel =>
-  ⟨self.trm.eval fuel, by
-    cases h : self.trm.eval fuel
-    · simp [Outcome.isResultOrOutOfFuel]
-    · have noError := self.safetyEvidence fuel
-      simp [h] at noError
-    · simp [Outcome.isResultOrOutOfFuel]⟩
+  match h : self.trm.eval fuel with
+  | .result value =>
+    ⟨.result ⟨value, by
+      have evidence := self.safetyEvidence fuel
+      simpa [h] using evidence⟩, by
+        simp [Outcome.isResultOrOutOfFuel]⟩
+  | .error =>
+    have noError := self.safetyEvidence fuel
+    False.elim (by
+      simp [h] at noError)
+  | .outOfFuel =>
+    ⟨.outOfFuel, by
+      simp [Outcome.isResultOrOutOfFuel]⟩
 
 end
 end AdequateTrm
