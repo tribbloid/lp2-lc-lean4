@@ -3,7 +3,8 @@ package Example
 import Example.Preamble
 
 /**
-  * All definitions in [[../*/*Demo.lean]] must be consistent with the following example in Scala (the object-language).
+  * All definitions in [[../**/**Demo.lean]] must be consistent with the following example in Scala (the
+  * object-language).
   *
   * both terms and type hints should be consistent
   */
