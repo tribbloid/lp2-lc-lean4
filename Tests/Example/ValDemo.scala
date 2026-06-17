@@ -1,6 +1,6 @@
-package DTLC.Example
+package Example
 
-import Tests.Preamble
+import Example.Preamble
 
 object ValDemo extends Preamble {
 

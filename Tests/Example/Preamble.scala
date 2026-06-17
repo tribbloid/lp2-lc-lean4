@@ -1,3 +1,3 @@
-package Tests
+package Example
 
 trait Preamble {}

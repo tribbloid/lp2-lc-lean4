@@ -1,4 +1,4 @@
-package DTLC.Example
+package Example
 
 import scala.compiletime.constValue
 import scala.compiletime.ops.int.*
