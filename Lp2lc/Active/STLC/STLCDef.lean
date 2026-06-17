@@ -47,6 +47,7 @@ inductive Trm : Type where
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
 | ref (s: I.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
+
 /--
 Value syntax, containing neither references nor applications.
 
@@ -55,7 +56,7 @@ used by function application after both sides have been evaluated.
 -/
 inductive Val : Type where
 | primitive (repr : I.Data) -- most specific type is always `primitive`
-| primitiveFn (body: (arg: I.Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
+| compute (body: (arg: I.Data) -> Trm) -- most specific type is always `.depFn .primitive _`
 | fn (body : (arg : I.Index) → Trm) -- most specific type is always `.depFn _ _`
 
 end
@@ -83,7 +84,7 @@ def get (view : @TypeView I) : Option (Typ I) :=
 def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
   match self with
   | typeHinted self _ => self.typeHint.eraseRecursively self
-  | .val (.primitiveFn body) => .val (.primitiveFn fun arg => (body arg).typeHint.eraseRecursively (body arg))
+  | .val (.compute body) => .val (.compute fun arg => (body arg).typeHint.eraseRecursively (body arg))
   | .val (.fn body) => .val (.fn fun arg => (body arg).typeHint.eraseRecursively (body arg))
   | .apply fn arg => .apply (fn.typeHint.eraseRecursively fn) (arg.typeHint.eraseRecursively arg)
   | _ => self
@@ -92,7 +93,7 @@ def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
 def IsErased (view : @TypeView I) (self : Trm I := view.self) : Prop :=
   match self with
   | typeHinted _ _ => false
-  | .val (.primitiveFn body) => ∀ arg, (body arg).typeHint.IsErased (body arg)
+  | .val (.compute body) => ∀ arg, (body arg).typeHint.IsErased (body arg)
   | .val (.fn body) => ∀ arg, (body arg).typeHint.IsErased (body arg)
   | .apply fn arg => fn.typeHint.IsErased fn ∧ arg.typeHint.IsErased arg
   | _ => true
@@ -120,7 +121,7 @@ end Runtime
 abbrev Condition := (value : AST.Val I) -> Prop -- AKA semantic type
 
 namespace AST.Trm
-section variable (self : AST.Trm I) (env: @Runtime.Env I)
+section variable (self : AST.Trm I) [env: @Runtime.Env I]
 
 /--
 Evaluates a term by spending 1 fuel at each semantic
@@ -140,7 +141,7 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I) -- TODO: circumventing ht
         let permission := env.canEvalAny input
         let index := env.valueRefs.save input permission
         (body index).eval fuel
-      | (.result (.primitiveFn body), .result (.primitive input)) =>
+      | (.result (.compute body), .result (.primitive input)) =>
         (body input).eval fuel
       | (.outOfFuel, _) | (_, .outOfFuel) => .outOfFuel
       | _ => .error
@@ -154,7 +155,7 @@ An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
 def IsSafeBy (self : AST.Trm I) (condition : @Condition I) : Prop :=
-  ∀ (fuel : Nat) (env : Runtime.Env), match self.eval env fuel with
+  ∀ (fuel : Nat) [@Runtime.Env I], match self.eval fuel with
   | .result value => condition value
   | .error => false
   | .outOfFuel => true
@@ -174,13 +175,13 @@ structure AdequateTrm where
   safetyEvidence: trm.IsSafeBy condition
 
 namespace AdequateTrm
-section variable (self: AdequateTrm) (env : @Runtime.Env I)
+section variable (self: AdequateTrm) [env : @Runtime.Env I]
 
 def eval : MaySucceed (AST.Val I) := fun fuel =>
-  ⟨self.trm.eval env fuel, by
-    cases h : self.trm.eval env fuel
+  ⟨self.trm.eval fuel, by
+    cases h : self.trm.eval fuel
     · simp [Outcome.isResultOrOutOfFuel]
-    · have noError := self.safetyEvidence fuel env
+    · have noError := self.safetyEvidence fuel
       simp [h] at noError
     · simp [Outcome.isResultOrOutOfFuel]⟩
 
@@ -192,12 +193,12 @@ namespace Compiler
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
-class Env where
-  safetyEvStore: @AdequateTrm I
+class Env (I : Impl) : Type where
+  -- add any
 
 end Compiler
 
-section variable [@Compiler.Env I]
+section variable [env: @Compiler.Env I]
 open AST
 
 namespace AST.Trm
@@ -209,7 +210,7 @@ def verify (trm : Trm I) (condition : @Condition I) : MayTerminate (trm.IsSafeBy
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
-    | .typeHinted self _ => self.verify _fuel
+    | .typeHinted self _ => sorry
     | .val value => sorry
     | .apply _fn _arg => sorry
     | .ref _i => .error
