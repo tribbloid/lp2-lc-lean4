@@ -1,3 +1,5 @@
+package Example.Syntax
+
 /**
   * using simple HOAS (higher-order abstract syntax) convention
   *

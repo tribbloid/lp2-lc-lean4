@@ -5,8 +5,7 @@ import «Lp2lc».Active.DOT.DOTDef
 /-
 this is a supporting sanity test file for DOT calculus syntax definition.
 
-each of the AST below are supposed to represent scala variable of the same name
-in @SanityExample.scala
+the related Scala syntax examples live under [[../Example]]
 -/
 
 namespace Tests.DOT.Sanity

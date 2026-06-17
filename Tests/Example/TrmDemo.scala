@@ -3,7 +3,7 @@ package Example
 import Example.Preamble
 
 /**
-  * Everything here should have a [[../TrmDemo.lean]] counterpart.
+  * All definitions in [[../*/*Demo.lean]] must be consistent with the following example in Scala (the object-language).
   *
   * both terms and type hints should be consistent
   */
