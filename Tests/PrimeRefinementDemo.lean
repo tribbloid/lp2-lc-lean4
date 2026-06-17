@@ -12,8 +12,7 @@ example : PrimeNumber :=
 example : firstPrime.belowTen = true := by
   rfl
 
-def extract (v: PrimeNumber) := match v with
-  | PrimeNumberRep.mk v i => v
+def extract (v: PrimeNumber) := v.belowTen
 
 end publicApi
 
