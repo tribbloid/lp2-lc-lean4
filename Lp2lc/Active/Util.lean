@@ -36,7 +36,7 @@ class FBound (I : KIndex) (V : Type) (P : Permission V): Type where -- fixed-poi
 
 attribute [simp] FBound.roundtrip
 
-section variable {T : Type u}
+section variable {T : Sort u}
 
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
 inductive Outcome
@@ -60,7 +60,7 @@ end Outcome
 
 -- universe u v
 
-def MayTerminate (T : Type u) := (fuel: Nat) -> @Outcome T
+def MayTerminate (T : Sort u) := (fuel: Nat) -> @Outcome T
 
 namespace MayTerminate
 section variable  (self : @MayTerminate T)
