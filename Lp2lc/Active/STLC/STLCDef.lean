@@ -165,14 +165,20 @@ def IsSafe (self : AST.Trm I) : Prop :=
 
 end AST.Trm
 
+namespace Internal
 
 /--
 a compiled term with safety proof
 -/
-structure AdequateTrm where
+private structure _AdequateTrm where
   trm: AST.Trm I
   condition : @Condition I
   safetyEvidence: trm.IsSafeBy condition
+
+
+end Internal
+
+abbrev AdequateTrm := @Internal._AdequateTrm I
 
 namespace AdequateTrm
 section variable (self: AdequateTrm) [env : @Runtime.Env I]
@@ -194,7 +200,7 @@ namespace Compiler
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env (I : Impl) : Type where
-  -- add any
+  -- TODO: add any FBound to load/save proof of safety
 
 end Compiler
 
