@@ -1,12 +1,12 @@
-import «Tests».DTLC.TrmDemo
+import «Tests».STLC.TrmDemo
 
-namespace Tests.DTLC.Sanity
+namespace Tests.STLC.Sanity
 
 namespace Trm
 
 open Lp2lc.Active.Util
-open Lp2lc.Active.DTLC
-open Lp2lc.Active.DTLC.Symbolic
+open Lp2lc.Active.STLC
+open Tests.STLC.Sanity.Symbolic
 
 namespace Fixture
 
@@ -42,12 +42,12 @@ is sound by construction.
 @[reducible] unsafe def _runtimeEnv : @Runtime.Env I :=
   {
     EvalPermission := RuntimeCanEval
-    forVals := _unsafeFBound Val
+    valueRefs := _unsafeFBound Val
     canEvalAny := fun _value => True.intro
   }
 
 @[reducible] unsafe def _compilerEnv : @Compiler.Env I :=
-  { forSemantic := _unsafeFBound (Val -> AST.Condition I) }
+  {}
 
 @[instance, implemented_by _runtimeEnv]
 axiom runtimeEnv : @Runtime.Env I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
@@ -59,4 +59,4 @@ end Fixture
 
 end Trm
 
-end Tests.DTLC.Sanity
+end Tests.STLC.Sanity

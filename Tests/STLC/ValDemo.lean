@@ -1,8 +1,24 @@
-import «Lp2lc».Active.DTLC.Impl
+import «Lp2lc».Active.STLC.STLCDef
 
-namespace Tests.DTLC.Sanity
-open Lp2lc.Active.DTLC
-open Lp2lc.Active.DTLC.Symbolic
+namespace Tests.STLC.Sanity
+open Lp2lc.Active.Util
+open Lp2lc.Active.STLC
+
+inductive Symbol where
+
+namespace Symbolic
+
+@[reducible] def I : Impl where
+  Index := Symbol
+  Data := String
+
+abbrev Typ := AST.Typ I
+abbrev Val := AST.Val I
+abbrev Trm := AST.Trm I
+
+end Symbolic
+
+open Tests.STLC.Sanity.Symbolic
 
 namespace Val
 

@@ -1,5 +1,5 @@
-import «Tests».DTLC.ValDemo
-import «Tests».DTLC.TypDemo
-import «Tests».DTLC.TrmDemo
-import «Tests».DTLC.Fixture
-import «Tests».DTLC.TrmSpec
+import «Tests».STLC.ValDemo
+import «Tests».STLC.TypDemo
+import «Tests».STLC.TrmDemo
+import «Tests».STLC.Fixture
+import «Tests».STLC.TrmSpec

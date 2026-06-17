@@ -1,12 +1,12 @@
-import «Tests».DTLC.Fixture
+import «Tests».STLC.Fixture
 
-namespace Tests.DTLC.Sanity
+namespace Tests.STLC.Sanity
 
 namespace Trm
 
 open Lp2lc.Active.Util
-open Lp2lc.Active.DTLC
-open Lp2lc.Active.DTLC.Symbolic
+open Lp2lc.Active.STLC
+open Tests.STLC.Sanity.Symbolic
 
 section eraseType
 
@@ -107,93 +107,88 @@ end eval
 section compile
 
 example :
-    vFalse.compileToTrm.shouldYields vFalse := by
+    vFalse.compile.isDecidable := by
   sorry
 
 example :
-    vTrue.compileToTrm.shouldYields vTrue := by
+    vTrue.compile.isDecidable := by
   sorry
 
 example :
-    idFn.compileToTrm.shouldYields idFn := by
+    idFn.compile.isDecidable := by
   sorry
 
 example :
-    idFnOnFalse.compileToTrm.shouldYields idFnOnFalse := by
+    idFnOnFalse.compile.isDecidable := by
   sorry
 
 example :
-    get1st.compileToTrm.shouldYields get1st := by
+    get1st.compile.isDecidable := by
   sorry
 
 example :
-    get2nd.compileToTrm.shouldYields get2nd := by
+    get2nd.compile.isDecidable := by
   sorry
 
 example :
-    get1stOnTuple.compileToTrm.shouldYields get1stOnTuple := by
+    get1stOnTuple.compile.isDecidable := by
   sorry
 
 example :
-    get2ndOnTuple.compileToTrm.shouldYields get2ndOnTuple := by
+    get2ndOnTuple.compile.isDecidable := by
   sorry
 
 example :
-    apply1stOn2ndFn.compileToTrm.shouldYields apply1stOn2ndFn := by
+    apply1stOn2ndFn.compile.isDecidable := by
   sorry
 
 example :
-    apply1stOn2ndFnOnTuple.compileToTrm.shouldYields
-      apply1stOn2ndFnOnTuple := by
+    apply1stOn2ndFnOnTuple.compile.isDecidable := by
   sorry
 
 example :
-    applyidFnOnItself.compileToTrm.shouldYields applyidFnOnItself := by
+    applyidFnOnItself.compile.isDecidable := by
   sorry
 
 example :
-    idFnOnFalse2.compileToTrm.shouldYields idFnOnFalse2 := by
+    idFnOnFalse2.compile.isDecidable := by
   sorry
 
 
 example :
-    primitiveTrueFn.compileToTrm.shouldYields primitiveTrueFn := by
+    primitiveTrueFn.compile.isDecidable := by
   sorry
 
 example :
-    primitiveTrueFnOnFalse.compileToTrm.shouldYields
-      primitiveTrueFnOnFalse := by
+    primitiveTrueFnOnFalse.compile.isDecidable := by
   sorry
 
 example :
-    TypeHinted.hintedFalse.compileToTrm.shouldYields
-      TypeHinted.hintedFalse.typeHint.eraseRecursively := by
+    TypeHinted.hintedFalse.compile.isDecidable := by
   sorry
 
 example :
-    TypeHinted.hintedIdFn.compileToTrm.shouldYields
-      TypeHinted.hintedIdFn.typeHint.eraseRecursively := by
+    TypeHinted.hintedIdFn.compile.isDecidable := by
   sorry
 
 example :
-    TypeHinted.hintedIdFnOnFalse.compileToTrm.shouldYields
-      TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively := by
+    TypeHinted.hintedIdFnOnFalse.compile.isDecidable := by
   sorry
 
 example :
-    Malformed.apply1.compileToTrm.shouldFail := by
+    Malformed.apply1.compile.shouldFail := by
   sorry
 
 example :
-    Malformed.primitiveApply.compileToTrm.shouldFail := by
+    Malformed.primitiveApply.compile.shouldFail := by
   sorry
 
 example :
-    Malformed.primitiveFalseAsFn.compileToTrm.shouldFail := by
+    Malformed.primitiveFalseAsFn.compile.shouldFail := by
   sorry
 
 example :
-    Malformed.idFnAsPrimitive.compileToTrm.shouldFail := by
+    Malformed.idFnAsPrimitive.compile.shouldFail := by
   sorry
 
 end compile

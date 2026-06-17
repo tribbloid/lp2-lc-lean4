@@ -1,8 +1,8 @@
-import «Lp2lc».Active.DTLC.Impl
+import «Tests».STLC.ValDemo
 
-namespace Tests.DTLC.Sanity
-open Lp2lc.Active.DTLC
-open Lp2lc.Active.DTLC.Symbolic
+namespace Tests.STLC.Sanity
+open Lp2lc.Active.STLC
+open Tests.STLC.Sanity.Symbolic
 
 namespace Typ
 
@@ -10,17 +10,15 @@ def false : Typ :=
   .primitive
 
 def idFn : Typ :=
-  .depFn .primitive (fun _x => .primitive)
+  .fn .primitive .primitive
 
 def get1st : Typ :=
-  .depFn .primitive (fun _x =>
-    .depFn .primitive (fun _y => .primitive))
+  .fn .primitive (.fn .primitive .primitive)
 
 def apply1stOn2ndFn : Typ :=
-  .depFn
-    (.depFn .primitive (fun _x => .primitive))
-    (fun _f =>
-      .depFn .primitive (fun _x => .primitive))
+  .fn
+    (.fn .primitive .primitive)
+    (.fn .primitive .primitive)
 
 end Typ
 

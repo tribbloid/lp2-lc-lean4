@@ -1,9 +1,9 @@
-import «Tests».DTLC.ValDemo
+import «Tests».STLC.ValDemo
 
-namespace Tests.DTLC.Sanity
+namespace Tests.STLC.Sanity
 open Lp2lc.Active.Util
-open Lp2lc.Active.DTLC
-open Lp2lc.Active.DTLC.Symbolic
+open Lp2lc.Active.STLC
+open Tests.STLC.Sanity.Symbolic
 
 namespace Trm
 
@@ -61,7 +61,7 @@ def idFnOnFalse2 : Trm :=
 
 def primitiveTrueFn : Trm :=
   .val
-    (.primitiveFn (fun _repr =>
+    (.compute (fun _repr =>
       .val (.primitive "true")))
 
 def primitiveTrueFnOnFalse : Trm :=
@@ -82,7 +82,7 @@ def hintedIdFn : Trm :=
           .typeHinted
             (.ref x)
             .primitive)))
-    (.depFn .primitive (fun _x => .primitive))
+    (.fn .primitive .primitive)
 
 def hintedIdFnOnFalse : Trm :=
   .typeHinted
@@ -104,7 +104,7 @@ def apply1 : Trm :=
 def primitiveFalseAsFn : Trm :=
   .typeHinted
     (.val (.primitive "false"))
-    (.depFn .primitive (fun _ => .primitive))
+    (.fn .primitive .primitive)
 
 def idFnAsPrimitive : Trm :=
   .typeHinted
