@@ -25,7 +25,7 @@ wildcard annotation accepted by any value.
 -/
 inductive Typ : Type where
 | primitive -- `AnyVal` in Scala, accepts only primitive values
-| depFn (tIn : Typ) (tOut : Typ) -- dependent function
+| fn (tIn : Typ) (tOut : Typ) -- function
 
 /--
 Source term syntax.
