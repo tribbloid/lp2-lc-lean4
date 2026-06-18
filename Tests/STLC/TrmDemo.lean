@@ -63,12 +63,6 @@ def apply1stOn2ndFnOnTuple : Trm :=
     (.apply apply1stOn2ndFn idFn)
     vFalse
 
-def applyidFnOnItself : Trm :=
-  .apply idFn idFn
-
-def idFnOnFalse2 : Trm :=
-  .apply applyidFnOnItself vFalse
-
 def primitiveTrueFn : Trm :=
   .val
     (.fn (fun _x =>
@@ -94,6 +88,12 @@ def hintedIdFnOnFalse : Trm :=
 end TypeHinted
 
 namespace Malformed
+
+def applyidFnOnItself : Trm :=
+  .apply idFn idFn
+
+def idFnOnFalse2 : Trm :=
+  .apply applyidFnOnItself vFalse
 
 def primitiveApply : Trm :=
   .apply vFalse vTrue

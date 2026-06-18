@@ -63,17 +63,17 @@ example :
   · rfl
 
 example :
-    ((Trm.applyidFnOnItself : Trm).eval).shouldYields
+    ((Trm.Malformed.applyidFnOnItself : Trm).eval).shouldYields
       (Val.idFn : Val) := by
   constructor
-  · exact ⟨2, by simp [AST.Trm.eval, applyidFnOnItself, idFn, Val.idFn]⟩
+  · exact ⟨2, by simp [AST.Trm.eval, Malformed.applyidFnOnItself, idFn, Val.idFn]⟩
   · rfl
 
 example :
-    ((Trm.idFnOnFalse2 : Trm).eval).shouldYields
+    ((Trm.Malformed.idFnOnFalse2 : Trm).eval).shouldYields
       ((.primitive "false") : Val) := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.eval, idFnOnFalse2, applyidFnOnItself, idFn, vFalse]⟩
+  · exact ⟨3, by simp [AST.Trm.eval, Malformed.idFnOnFalse2, Malformed.applyidFnOnItself, idFn, vFalse]⟩
   · rfl
 
 example :
@@ -147,15 +147,6 @@ example :
   sorry
 
 example :
-    (applyidFnOnItself.compile fun _ => true).isDecidable := by
-  sorry
-
-example :
-    (idFnOnFalse2.compile fun _ => true).isDecidable := by
-  sorry
-
-
-example :
     (primitiveTrueFn.compile fun _ => true).isDecidable := by
   sorry
 
@@ -173,6 +164,14 @@ example :
 
 example :
     (TypeHinted.hintedIdFnOnFalse.compile fun _ => true).isDecidable := by
+  sorry
+
+example :
+    (Malformed.applyidFnOnItself.compile fun _ => true).shouldFail := by
+  sorry
+
+example :
+    (Malformed.idFnOnFalse2.compile fun _ => true).shouldFail := by
   sorry
 
 example :
