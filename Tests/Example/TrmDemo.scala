@@ -16,8 +16,14 @@ object TrmDemo extends Preamble {
 
   val vTrue: Boolean = true
 
-  val idFn: (v: Any) => v.type =
+  val primitiveIdFn: Boolean => Boolean =
     x => x
+
+  val idFn: (v: Any) => v.type = // doesn't exist in STLC,
+    x => x
+
+  val primitiveIdFnOnFalse: Boolean =
+    primitiveIdFn(vFalse)
 
   val idFnOnFalse: Boolean =
     idFn(vFalse)
