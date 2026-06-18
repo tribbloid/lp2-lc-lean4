@@ -27,7 +27,7 @@ example :
 end eraseType
 
 section eval
-variable [env: Runtime.Env Symbolic.I]
+variable [env : @Runtime.Env Symbolic.I]
 
 example :
     ((Trm.vFalse : Trm).eval).shouldYields
@@ -106,90 +106,91 @@ example :
 end eval
 
 section compile
+variable [env : Compiler.Env Symbolic.I]
 
 example :
-    vFalse.compile.isDecidable := by
+    (vFalse.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    vTrue.compile.isDecidable := by
+    (vTrue.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    idFn.compile.isDecidable := by
+    (idFn.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    idFnOnFalse.compile.isDecidable := by
+    (idFnOnFalse.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    get1st.compile.isDecidable := by
+    (get1st.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    get2nd.compile.isDecidable := by
+    (get2nd.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    get1stOnTuple.compile.isDecidable := by
+    (get1stOnTuple.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    get2ndOnTuple.compile.isDecidable := by
+    (get2ndOnTuple.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    apply1stOn2ndFn.compile.isDecidable := by
+    (apply1stOn2ndFn.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    apply1stOn2ndFnOnTuple.compile.isDecidable := by
+    (apply1stOn2ndFnOnTuple.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    applyidFnOnItself.compile.isDecidable := by
+    (applyidFnOnItself.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    idFnOnFalse2.compile.isDecidable := by
+    (idFnOnFalse2.compile fun _ => true).isDecidable := by
   sorry
 
 
 example :
-    primitiveTrueFn.compile.isDecidable := by
+    (primitiveTrueFn.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    primitiveTrueFnOnFalse.compile.isDecidable := by
+    (primitiveTrueFnOnFalse.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    TypeHinted.hintedFalse.compile.isDecidable := by
+    (TypeHinted.hintedFalse.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    TypeHinted.hintedIdFn.compile.isDecidable := by
+    (TypeHinted.hintedIdFn.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    TypeHinted.hintedIdFnOnFalse.compile.isDecidable := by
+    (TypeHinted.hintedIdFnOnFalse.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    Malformed.apply1.compile.shouldFail := by
+    (Malformed.apply1.compile fun _ => true).shouldFail := by
   sorry
 
 example :
-    Malformed.primitiveApply.compile.shouldFail := by
+    (Malformed.primitiveApply.compile fun _ => true).shouldFail := by
   sorry
 
 example :
-    Malformed.primitiveFalseAsFn.compile.shouldFail := by
+    (Malformed.primitiveFalseAsFn.compile fun _ => true).shouldFail := by
   sorry
 
 example :
-    Malformed.idFnAsPrimitive.compile.shouldFail := by
+    (Malformed.idFnAsPrimitive.compile fun _ => true).shouldFail := by
   sorry
 
 end compile
