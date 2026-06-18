@@ -18,7 +18,7 @@ and `roundtrip` is discharged via `unsafeCast True.intro`; the bridge
 is sound by construction.
 -/
 @[reducible] unsafe def _unsafeFBound (T : Type) :
-    FBound I.Index T (fun _ => True) :=
+    FBound I.Index T :=
   let saved : IO.Ref (Array T) := unsafeBaseIO (IO.mkRef #[])
   let save : T → I.Index := fun value =>
     unsafeBaseIO do
@@ -31,18 +31,17 @@ is sound by construction.
     | some t => t
     | none => unsafeCast ()
   {
-    save := fun value _permission => save value
+    save := fun value => save value
     load := fun ref => load ref
     roundtrip := by
       intro value
-      intro permission
       exact unsafeCast True.intro
   }
 
 @[reducible] unsafe def _runtimeEnv : @Runtime.Env I :=
   {
     EvalPermission := RuntimeCanEval
-    forVals := _unsafeFBound Val
+    forVals := _unsafeFBound { value : Val // RuntimeCanEval value }
     canEvalAny := fun _value => True.intro
   }
 
@@ -52,7 +51,7 @@ axiom runtimeEnv : @Runtime.Env I -- this instance of Runtime.Env is intend to c
 
 
 @[reducible] unsafe def _compilerEnv : @Compiler.Env I :=
-  { forSemantic := _unsafeFBound (Val -> AST.Condition I) }
+  { forSemantic := _unsafeFBound { _semantic : Val -> AST.Condition I // True } }
 
 @[instance, implemented_by _compilerEnv]
 axiom compilerEnv : @Compiler.Env I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples

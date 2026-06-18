@@ -111,10 +111,9 @@ end AST.Val
 namespace Runtime
 class Env where
   EvalPermission : Permission (AST.Val I)
-  -- fuel: Nat -- this can't be used, ewww
-  valueRefs: FBound I.Index (AST.Val I) EvalPermission
+  valueRefs: FBound I.Index { value : AST.Val I // EvalPermission value }
   canEvalAny: (v: AST.Val I) -> EvalPermission v
-
+  -- fuel: Nat -- this can't be used, ewww
 
 end Runtime
 
@@ -139,14 +138,14 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I) -- TODO: circumventing ht
       match anf with
       | (.result (.fn body), .result input) =>
         let permission := env.canEvalAny input
-        let index := env.valueRefs.save input permission
+        let index := env.valueRefs.save (p := ()) ⟨input, permission⟩
         (body index).eval fuel
       | (.result (.compute body), .result (.primitive input)) =>
         (body input).eval fuel
       | (.outOfFuel, _) | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref i =>
-      .result (env.valueRefs.load i)
+      .result (env.valueRefs.load (p := ()) i).1
 
 end
 
@@ -172,7 +171,7 @@ a compiled term with safety proof
 -/
 private structure _AdequateTrm (condition : Condition I) where
   trm: AST.Trm I
-  safetyEvidence: trm.IsSafeBy condition
+  safetyEv: trm.IsSafeBy condition
 
 end Internal
 
@@ -185,11 +184,11 @@ def eval : MaySucceed ({v : AST.Val I // c v}) := fun fuel =>
   match h : self.trm.eval fuel with
   | .result value =>
     ⟨.result ⟨value, by
-      have evidence := self.safetyEvidence fuel
+      have evidence := self.safetyEv fuel
       simpa [h] using evidence⟩, by
         simp [Outcome.isResultOrOutOfFuel]⟩
   | .error =>
-    have noError := self.safetyEvidence fuel
+    have noError := self.safetyEv fuel
     False.elim (by
       simp [h] at noError)
   | .outOfFuel =>
@@ -205,7 +204,8 @@ namespace Compiler
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env (I : Impl) : Type where
-  safetyEvRefs: (c: Condition I) -> FBound (I.Index) (AdequateTrm c) Permission.WideOpen
+  safetyEvRefs: (c: Condition I) ->
+    FBound I.Index { evidence : AdequateTrm c // Permission.WideOpen evidence }
   -- TODO: add a conjecture of FBound to load/save proof of safety
 
 end Compiler
@@ -215,17 +215,17 @@ open AST
 
 namespace AST.Trm
 
-/--
-similar to Trm.compile, but only produce the safety proof
--/
-def verify (trm : Trm I) (condition : Condition I) : MayTerminate (trm.IsSafeBy condition)
-  | 0 => .outOfFuel
-  | _fuel + 1 =>
-    match trm with
-    | .typeHinted self _ => sorry
-    | .val value => sorry
-    | .apply _fn _arg => sorry
-    | .ref _i => .error
+-- /--
+-- similar to Trm.compile, but only produce the safety proof
+-- -/
+-- def verify (trm : Trm I) (condition : Condition I) : MayTerminate (trm.IsSafeBy condition)
+--   | 0 => .outOfFuel
+--   | _fuel + 1 =>
+--     match trm with
+--     | .typeHinted self _ => sorry
+--     | .val value => sorry
+--     | .apply _fn _arg => sorry
+--     | .ref _i => .error
 
 /--
 Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return the same

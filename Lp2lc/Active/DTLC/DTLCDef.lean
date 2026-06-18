@@ -123,7 +123,7 @@ namespace Runtime
 class Env where
   EvalPermission : Permission (AST.Val I)
   -- fuel: Nat -- this can't be used, ewww
-  forVals: FBound I.Index (AST.Val I) EvalPermission
+  forVals: FBound I.Index { value : AST.Val I // EvalPermission value }
   canEvalAny: (v: AST.Val I) -> EvalPermission v
 
 end Runtime
@@ -152,13 +152,13 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
       | (.result (.fn body), .result value) =>
         let fBound := env.forVals
         let permission := Runtime.Env.canEvalAny value
-        eval (body (fBound.save value permission)) fuel
+        eval (body (fBound.save (p := ()) ⟨value, permission⟩)) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref i =>
       let fBound := Runtime.Env.forVals
-      .result (fBound.load i)
+      .result (fBound.load (p := ()) i).1
 
 /--
 An safe program may run out of runtime fuel, but it must not reach runtime
@@ -194,14 +194,14 @@ def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
         let fBound := Runtime.Env.forVals
         let permission := Runtime.Env.canEvalAny arg
         (body repr).IsSafeBy
-          (fun value => value.CanBind (tOut (fBound.save arg permission)))
+          (fun value => value.CanBind (tOut (fBound.save (p := ()) ⟨arg, permission⟩)))
   | .depFn tIn tOut, .fn body =>
     ∀ arg,
       arg.CanBind tIn →
         let fBound := Runtime.Env.forVals
         let permission := Runtime.Env.canEvalAny arg
-        (body (fBound.save arg permission)).IsSafeBy
-          (fun value => value.CanBind (tOut (fBound.save arg permission)))
+        (body (fBound.save (p := ()) ⟨arg, permission⟩)).IsSafeBy
+          (fun value => value.CanBind (tOut (fBound.save (p := ()) ⟨arg, permission⟩)))
 
 end AST.Val
 
@@ -225,7 +225,7 @@ namespace Compiler
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env where
-  forSemantic: FBound I.Index (AST.Val I -> AST.Condition I) fun _ => True
+  forSemantic: FBound I.Index { _semantic : AST.Val I -> AST.Condition I // True }
 
 end Compiler
 
