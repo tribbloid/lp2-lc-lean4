@@ -79,11 +79,12 @@ Every task can be classified into one of the following Categories:
 - Use camelCase for definitions and functions that yield values.
 - Use PascalCase for types, propositions, properties, type constructors and predicates that yield `Type`/`Type u`/`Prop`/`Sort u`, first letter capitalized.
 
-##### Glossary
+##### Glossary/Abbreviations
 
 - `T` prefix: type/sort argument (as in C#)
 - `Ref` : reference
 - `Gen` suffix : generator
+- `Dep` prefix : dependent, related to dependent type
 
 ## Key Commands
 
