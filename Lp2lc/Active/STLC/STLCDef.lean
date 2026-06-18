@@ -201,15 +201,19 @@ end AdequateTrm
 
 namespace Compiler
 
-structure ConditionedIndex (condition: Condition I) where
-  index: TIndex
+namespace Condition
+
+structure DepIndex (self: Condition I) where
+  index: I.Index
+
+end Condition
 
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env (I : Impl) : Type where
-  safetyEvRefs: DepFBound ConditionedIndex AdequateTrm -- TODO: don't know how to define this prior
-
+  trmRefs: @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
+  -- TODO: revise this trmRefs if necessary
 
 end Compiler
 
@@ -256,10 +260,12 @@ def compile (trm : Trm I) (c : Condition I)
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
-    | .typeHinted self _ => self.compile c _fuel
+    | .typeHinted self hint =>
+      let extraC : Condition I := sorry --TODO: this is the semantic counterpart of hint
+      self.compile (fun x => (c x) ∧ (extraC x)) _fuel
     | .val value => sorry
     | .apply _fn _arg => sorry
-    | .ref _i => .error
+    | .ref _i => sorry
 
 end AST.Trm
 
