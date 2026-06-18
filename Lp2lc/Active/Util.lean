@@ -4,12 +4,13 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Util
 
-abbrev KIndex := Type
-abbrev KData := Type
+abbrev TProperty := Type
+abbrev TIndex := Type
+abbrev TData := Type
 
 class Impl : Type 1 where
-  Index : KIndex
-  Data : KData
+  Index : TIndex
+  Data : TData
 
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
@@ -31,16 +32,14 @@ def WideOpen {T} : Permission T := fun _ => true
 end Permission
 
 /-- Fixed-bound bridge between a HOAS carrier and the syntax family it represents. -/
-class FBound (I : KIndex) (V : Type) (P : Permission V): Type where -- fixed-point bound axiom, a crossover between de-bruijn Env/Store & HOAS carrier.
-  save : (value : V) -> (permission: P value) → I -- `I` is unknown & there is no way to get `I` (required by HOAS binder) except submitting a `V`.
-  load : (index : I) → V -- inverse of save
-  roundtrip : ∀ (value : V), (permission : P value) → load (save value permission) = value
+class DepFBound (P : TProperty) (I : P -> TIndex) (V : P -> Type): Type where
+  save : (value : V p) → I p -- `I` is unknown & there is no way to get `I` (required by HOAS binder) except submitting a `V`.
+  load : (index : I p) → V p -- inverse of save
+  roundtrip : ∀ (value : V p), load (save value) = value
 
--- class Env (P: Index) (I : Index) (K : (index : Index) → Type) where
---   fBound : FBound I K
---   permission: P
+abbrev FBound (I : TIndex) (V : Type) : Type := DepFBound Unit (fun _ => I) (fun _ => V)
 
-attribute [simp] FBound.roundtrip
+attribute [simp] DepFBound.roundtrip
 
 section variable {T : Sort u}
 
