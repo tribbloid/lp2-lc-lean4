@@ -42,8 +42,7 @@ are not intrinsic typing indices on terms.
 -- TODO: this definition has 2 problems: can eval at compiletime, cannot express
 -- primitive fn that modify bytecode
 inductive Trm : Type where
-| typeHinted (self : Trm) (hint : Typ) -- AKA type annotation, each term can have 0, 1, or many hints (e.g. `((1: Tuple): Product): AnyRef`), required for fundamental/composability theorem
-| val (v : Val) -- AKA literal
+| val (v : Val) (hint : Typ) -- AKA literal
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
 | ref (s: I.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
