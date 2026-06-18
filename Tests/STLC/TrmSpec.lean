@@ -27,6 +27,7 @@ example :
 end eraseType
 
 section eval
+variable [env: Runtime.Env Symbolic.I]
 
 example :
     ((Trm.vFalse : Trm).eval).shouldYields

@@ -24,6 +24,12 @@ in the future we may:
 -/
 def Permission (T : Type) := (v: T) -> Prop -- no instance will be provided ever, they are requiremennts to apply AST rules.
 
+namespace Permission
+
+def WideOpen {T} : Permission T := fun _ => true
+
+end Permission
+
 /-- Fixed-bound bridge between a HOAS carrier and the syntax family it represents. -/
 class FBound (I : KIndex) (V : Type) (P : Permission V): Type where -- fixed-point bound axiom, a crossover between de-bruijn Env/Store & HOAS carrier.
   save : (value : V) -> (permission: P value) → I -- `I` is unknown & there is no way to get `I` (required by HOAS binder) except submitting a `V`.

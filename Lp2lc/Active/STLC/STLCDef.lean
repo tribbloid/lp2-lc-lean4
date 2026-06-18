@@ -118,7 +118,7 @@ class Env where
 
 end Runtime
 
-abbrev Condition (I : Impl) := (value : AST.Val I) -> Prop -- AKA semantic type
+abbrev Condition (I : Impl) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
 namespace AST.Trm
 section variable (self : AST.Trm I) [env: @Runtime.Env I]
@@ -205,7 +205,8 @@ namespace Compiler
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env (I : Impl) : Type where
-  -- TODO: add any FBound to load/save proof of safety
+  safetyEvRefs: (c: Condition I) -> FBound (I.Index) (AdequateTrm c) Permission.WideOpen
+  -- TODO: add a conjecture of FBound to load/save proof of safety
 
 end Compiler
 

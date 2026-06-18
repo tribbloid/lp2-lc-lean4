@@ -46,11 +46,13 @@ is sound by construction.
     canEvalAny := fun _value => True.intro
   }
 
-@[reducible] unsafe def _compilerEnv : @Compiler.Env I :=
-  { forSemantic := _unsafeFBound (Val -> AST.Condition I) }
 
 @[instance, implemented_by _runtimeEnv]
 axiom runtimeEnv : @Runtime.Env I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
+
+
+@[reducible] unsafe def _compilerEnv : @Compiler.Env I :=
+  { forSemantic := _unsafeFBound (Val -> AST.Condition I) }
 
 @[instance, implemented_by _compilerEnv]
 axiom compilerEnv : @Compiler.Env I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
