@@ -8,13 +8,15 @@ open Tests.STLC.Sanity.Symbolic
 namespace Trm
 
 def vFalse : Trm :=
-  .val (.primitive "false")
+  .val (.primitive "false") .primitive
 
 def vTrue : Trm :=
-  .val (.primitive "true")
+  .val (.primitive "true") .primitive
 
 def idFn : Trm :=
-  .val (.fn (fun x => .ref x))
+  .val
+    (.fn (fun x => .ref x))
+    (.fn .primitive .primitive)
 
 def idFnOnFalse : Trm :=
   .apply idFn vFalse
@@ -23,13 +25,17 @@ def get1st : Trm :=
   .val
     (.fn (fun x =>
       .val
-        (.fn (fun _y => .ref x))))
+        (.fn (fun _y => .ref x))
+        (.fn .primitive .primitive)))
+    (.fn .primitive (.fn .primitive .primitive))
 
 def get2nd : Trm :=
   .val
     (.fn (fun _x =>
       .val
-        (.fn (fun y => .ref y))))
+        (.fn (fun y => .ref y))
+        (.fn .primitive .primitive)))
+    (.fn .primitive (.fn .primitive .primitive))
 
 def get1stOnTuple : Trm :=
   .apply
@@ -46,7 +52,11 @@ def apply1stOn2ndFn : Trm :=
       .val (.fn (fun x =>
         .apply
           (.ref f)
-          (.ref x)))))
+          (.ref x)))
+        (.fn .primitive .primitive)))
+    (.fn
+      (.fn .primitive .primitive)
+      (.fn .primitive .primitive))
 
 def apply1stOn2ndFnOnTuple : Trm :=
   .apply
@@ -62,7 +72,8 @@ def idFnOnFalse2 : Trm :=
 def primitiveTrueFn : Trm :=
   .val
     (.compute (fun _repr =>
-      .val (.primitive "true")))
+      .val (.primitive "true") .primitive))
+    (.fn .primitive .primitive)
 
 def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn vFalse
@@ -70,24 +81,15 @@ def primitiveTrueFnOnFalse : Trm :=
 namespace TypeHinted
 
 def hintedFalse : Trm :=
-  .typeHinted
-    (.val (.primitive "false"))
-    .primitive
+  .val (.primitive "false") .primitive
 
 def hintedIdFn : Trm :=
-  .typeHinted
-    (.val
-      (.fn
-        (fun x =>
-          .typeHinted
-            (.ref x)
-            .primitive)))
+  .val
+    (.fn (fun x => .ref x))
     (.fn .primitive .primitive)
 
 def hintedIdFnOnFalse : Trm :=
-  .typeHinted
-    (.apply hintedIdFn hintedFalse)
-    .primitive
+  .apply hintedIdFn hintedFalse
 
 end TypeHinted
 
@@ -102,13 +104,13 @@ def apply1 : Trm :=
     vTrue
 
 def primitiveFalseAsFn : Trm :=
-  .typeHinted
-    (.val (.primitive "false"))
+  .val
+    (.primitive "false")
     (.fn .primitive .primitive)
 
 def idFnAsPrimitive : Trm :=
-  .typeHinted
-    (.val (.fn (fun x => .ref x)))
+  .val
+    (.fn (fun x => .ref x))
     .primitive
 
 end Malformed

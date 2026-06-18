@@ -19,9 +19,7 @@ mutual
 /--
 Source type syntax.
 
-`primitive` classifies primitive bytecode values, `depFn` classifies functions
-whose output annotation may depend on the input reference, and `top` is the
-wildcard annotation accepted by any value.
+`primitive` classifies primitive bytecode values and `fn` classifies functions.
 -/
 inductive Typ : Type where
 | primitive -- `AnyVal` in Scala, accepts only primitive values
@@ -30,11 +28,11 @@ inductive Typ : Type where
 /--
 Source term syntax.
 
-Each constructor may carry an optional type annotation. Annotations are
-compile-time constraints only: compilation checks them and runtime evaluation
-ignores them.
+Every value term carries a mandatory type annotation. Applications and
+references are unannotated. Annotations are compile-time constraints only:
+compilation checks them and runtime evaluation ignores them.
 
-In HOAS there is no context or environment binding terms to types, so optional
+In HOAS there is no syntax-level context binding terms to types, so value
 annotations are the extrinsic typing evidence available to the compiler. They
 are not intrinsic typing indices on terms.
 -/
@@ -55,15 +53,12 @@ used by function application after both sides have been evaluated.
 -/
 inductive Val : Type where
 | primitive (repr : I.Data) -- most specific type is always `primitive`
-| compute (body: (arg: I.Data) -> Trm) -- most specific type is always `.depFn .primitive _`
-| fn (body : (arg : I.Index) → Trm) -- most specific type is always `.depFn _ _`
+| compute (body: (arg: I.Data) -> Trm) -- most specific type is always `.fn .primitive _`
+| fn (body : (arg : I.Index) → Trm) -- most specific type is always `.fn _ _`
 
 end
 
 end
-/-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
-instance valIsTrm : Coe (Val I) (Trm I) where
-  coe := fun v => Trm.val v
 
 namespace Trm
 
@@ -73,29 +68,11 @@ def typeHint (self: Trm I) := TypeView.mk self
 
 namespace TypeView
 
-/-- Reads the optional annotation attached to the outer term constructor. -/
+/-- Reads the mandatory annotation attached to an outer value term. -/
 def get (view : @TypeView I) : Option (Typ I) :=
   match view.self with
-  | typeHinted _ t => some t
+  | .val _ hint => some hint
   | _ => none
-
-/-- Removes all optional type annotations from a term. -/
-def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
-  match self with
-  | typeHinted self _ => self.typeHint.eraseRecursively self
-  | .val (.compute body) => .val (.compute fun arg => (body arg).typeHint.eraseRecursively (body arg))
-  | .val (.fn body) => .val (.fn fun arg => (body arg).typeHint.eraseRecursively (body arg))
-  | .apply fn arg => .apply (fn.typeHint.eraseRecursively fn) (arg.typeHint.eraseRecursively arg)
-  | _ => self
-
-/-- Predicate that all annotations have been removed from a term. -/
-def IsErased (view : @TypeView I) (self : Trm I := view.self) : Prop :=
-  match self with
-  | typeHinted _ _ => false
-  | .val (.compute body) => ∀ arg, (body arg).typeHint.IsErased (body arg)
-  | .val (.fn body) => ∀ arg, (body arg).typeHint.IsErased (body arg)
-  | .apply fn arg => fn.typeHint.IsErased fn ∧ arg.typeHint.IsErased arg
-  | _ => true
 
 end TypeView
 
@@ -131,8 +108,7 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I) -- TODO: circumventing ht
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .typeHinted self _ => eval self fuel
-    | .val value => .result value
+    | .val value _hint => .result value
     | .apply fn arg =>
       let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
@@ -228,8 +204,7 @@ namespace AST.Trm
 --   | 0 => .outOfFuel
 --   | _fuel + 1 =>
 --     match trm with
---     | .typeHinted self _ => sorry
---     | .val value => sorry
+--     | .val value hint => sorry
 --     | .apply _fn _arg => sorry
 --     | .ref _i => .error
 
@@ -245,7 +220,7 @@ is separate from runtime value binding and never calls `eval`.
 
 Malformed or incompatible component will immediate cause the compilation to
 fail. In particular, applications must compile both sides successfully, the function side
-must satisfy `.fn` or `.primitiveFn` precondition, and the argument must be compatible with the
+must satisfy `.fn` or `.compute` precondition, and the argument must be compatible with the
 function input.
 
 On success, it preserves the source
@@ -259,10 +234,9 @@ def compile (trm : Trm I) (c : Condition I)
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
-    | .typeHinted self hint =>
+    | .val _value hint =>
       let extraC : Condition I := sorry --TODO: this is the semantic counterpart of hint
-      self.compile (fun x => (c x) ∧ (extraC x)) _fuel
-    | .val value => sorry
+      sorry
     | .apply _fn _arg => sorry
     | .ref _i => sorry
 

@@ -8,23 +8,21 @@ open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
-section eraseType
+section typeHint
 
 example :
-    TypeHinted.hintedFalse.typeHint.eraseRecursively =
-      (vFalse : Trm) := rfl
+    TypeHinted.hintedFalse.typeHint.get =
+      some (.primitive : Typ) := rfl
 
 example :
-    TypeHinted.hintedIdFn.typeHint.eraseRecursively =
-      .val (.fn fun x => .ref x) := rfl
+    TypeHinted.hintedIdFn.typeHint.get =
+      some (.fn .primitive .primitive : Typ) := rfl
 
 example :
-    TypeHinted.hintedIdFnOnFalse.typeHint.eraseRecursively =
-      .apply
-        TypeHinted.hintedIdFn.typeHint.eraseRecursively
-        (vFalse : Trm) := rfl
+    TypeHinted.hintedIdFnOnFalse.typeHint.get =
+      (none : Option Typ) := rfl
 
-end eraseType
+end typeHint
 
 section eval
 variable [env : @Runtime.Env Symbolic.I]
