@@ -201,14 +201,15 @@ end AdequateTrm
 
 namespace Compiler
 
+structure ConditionedIndex (condition: Condition I) where
+  index: TIndex
+
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env (I : Impl) : Type where
-  -- safetyEvRefs: DepFBound (TP -> I.Index) (TP -> AST.Val I) -- TODO: don't know how to define this prior
+  safetyEvRefs: DepFBound ConditionedIndex AdequateTrm -- TODO: don't know how to define this prior
 
-    FBound I.Index { evidence : AdequateTrm c // Permission.WideOpen evidence }
-  -- TODO: add a conjecture of FBound to load/save proof of safety
 
 end Compiler
 
