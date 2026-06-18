@@ -31,13 +31,20 @@ def WideOpen {T} : Permission T := fun _ => true
 
 end Permission
 
-/-- Fixed-bound bridge between a HOAS carrier and the syntax family it represents. -/
-class DepFBound (P : TProperty) (I : P -> TIndex) (V : P -> Type): Type where
+/--
+Hypothetical bridge between values & UUIDs as HOAS carrier
+
+There is no way to generate a UUID except saving a `V`, as a result, loading ALWAYS succeed.
+As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
+
+The UUId can be a dependent type of P, if unnecessary, use FBound alias instead
+-/
+class DepFBound {P : TProperty} (I : P -> TIndex) (V : P -> Type): Type where
   save : (value : V p) → I p -- `I` is unknown & there is no way to get `I` (required by HOAS binder) except submitting a `V`.
   load : (index : I p) → V p -- inverse of save
   roundtrip : ∀ (value : V p), load (save value) = value
 
-abbrev FBound (I : TIndex) (V : Type) : Type := DepFBound Unit (fun _ => I) (fun _ => V)
+abbrev FBound (I : TIndex) (V : Type) : Type := DepFBound (fun (_ : Unit) => I) (fun _ => V)
 
 attribute [simp] DepFBound.roundtrip
 

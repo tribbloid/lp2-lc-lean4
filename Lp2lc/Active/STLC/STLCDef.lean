@@ -110,9 +110,10 @@ end AST.Val
 
 namespace Runtime
 class Env where
-  EvalPermission : Permission (AST.Val I)
-  valueRefs: FBound I.Index { value : AST.Val I // EvalPermission value }
-  canEvalAny: (v: AST.Val I) -> EvalPermission v
+  CanSave : Permission (AST.Val I)
+  -- valueRefGen {TP: Type} : DepFBound (TP -> I.Index) (TP -> { value : AST.Val I // CanSave value }) -- TODO: don't know how to define this prior
+  valueRefs: FBound I.Index { value : AST.Val I // CanSave value }
+  canEvalAny: (v: AST.Val I) -> CanSave v
   -- fuel: Nat -- this can't be used, ewww
 
 end Runtime
@@ -204,7 +205,8 @@ namespace Compiler
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env (I : Impl) : Type where
-  safetyEvRefs: (c: Condition I) ->
+  -- safetyEvRefs: DepFBound (TP -> I.Index) (TP -> AST.Val I) -- TODO: don't know how to define this prior
+
     FBound I.Index { evidence : AdequateTrm c // Permission.WideOpen evidence }
   -- TODO: add a conjecture of FBound to load/save proof of safety
 

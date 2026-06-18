@@ -56,6 +56,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 - Do not use generic universe if possible, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2).
 - Do not write trivial, short wrapper function: its body should be inlined.
 - Do not export definition, only open at callsite.
+- Do not create Lean file with `.` in file name.
 
 #### Task-specific Guardrails
 
@@ -66,17 +67,23 @@ Every task can be classified into one of the following Categories:
 - **Example/Demo/Test** is for writing example & test case for existing definition in the Tests directory. DO NOT write or update production code except for explicitly educational tutorial/demo modules allowed by the Guardrails above. Theorem or lemma requires no example or test case.
 - **Proof Discharge** is for proving existing conjecture/lemma/theorem, DO NOT write new `sorry`, introducing new lemma is permitted if & only if they help proving the main theorem, but they have to be proven immediately. If a lemma or theorem is believed to be false, a counterexample should be added into Tests directory.
 
-#### Naming
+#### Source Code Style
 
-- When creating a new Lean file, do not include `.` in the file name.
-- Use camelCase for definitions and functions that yield values.
-- Use PascalCase for types, propositions, properties, type constructors and predicates that yield `Type`/`Type u`/`Prop`/`Sort u`, first letter capitalized.
-- Variable name of `Prop` or `Bool` type should contain "is"/"Is" 
-
-#### Modules
+##### Modules
 
 - Use quoted module names, e.g. `import «Lp2lc».xxx`.
 - Group imports logically (Lean core, external deps, local modules).
+
+##### Definitions
+
+- Use camelCase for definitions and functions that yield values.
+- Use PascalCase for types, propositions, properties, type constructors and predicates that yield `Type`/`Type u`/`Prop`/`Sort u`, first letter capitalized.
+
+##### Glossary
+
+- `T` prefix: type/sort argument (as in C#)
+- `Ref` : reference
+- `Gen` suffix : generator
 
 ## Key Commands
 
