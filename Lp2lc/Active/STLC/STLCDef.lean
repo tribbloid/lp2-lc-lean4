@@ -53,7 +53,6 @@ used by function application after both sides have been evaluated.
 -/
 inductive Val : Type where
 | primitive (repr : I.Data) -- most specific type is always `primitive`
-| compute (body: (arg: I.Data) -> Trm) -- most specific type is always `.fn .primitive _`
 | fn (body : (arg : I.Index) → Trm) -- most specific type is always `.fn _ _`
 
 end
@@ -116,8 +115,6 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I) -- TODO: circumventing ht
         let permission := env.canEvalAny input
         let index := env.valueRefs.save (p := ()) ⟨input, permission⟩
         (body index).eval fuel
-      | (.result (.compute body), .result (.primitive input)) =>
-        (body input).eval fuel
       | (.outOfFuel, _) | (_, .outOfFuel) => .outOfFuel
       | _ => .error
     | .ref i =>
@@ -220,7 +217,7 @@ is separate from runtime value binding and never calls `eval`.
 
 Malformed or incompatible component will immediate cause the compilation to
 fail. In particular, applications must compile both sides successfully, the function side
-must satisfy `.fn` or `.compute` precondition, and the argument must be compatible with the
+must satisfy the `.fn` precondition, and the argument must be compatible with the
 function input.
 
 On success, it preserves the source

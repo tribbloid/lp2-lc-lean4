@@ -71,7 +71,7 @@ def idFnOnFalse2 : Trm :=
 
 def primitiveTrueFn : Trm :=
   .val
-    (.compute (fun _repr =>
+    (.fn (fun _x =>
       .val (.primitive "true") .primitive))
     (.fn .primitive .primitive)
 
