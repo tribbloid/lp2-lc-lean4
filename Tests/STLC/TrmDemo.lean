@@ -13,13 +13,13 @@ def vFalse : Trm :=
 def vTrue : Trm :=
   .val (.primitive "true") .primitive
 
-def idFn : Trm :=
+def primitiveIdFn : Trm :=
   .val
     (.fn (fun x => .ref x))
     (.fn .primitive .primitive)
 
-def idFnOnFalse : Trm :=
-  .apply idFn vFalse
+def primitiveIdFnOnFalse : Trm :=
+  .apply primitiveIdFn vFalse
 
 def get1st : Trm :=
   .val
@@ -60,7 +60,7 @@ def apply1stOn2ndFn : Trm :=
 
 def apply1stOn2ndFnOnTuple : Trm :=
   .apply
-    (.apply apply1stOn2ndFn idFn)
+    (.apply apply1stOn2ndFn primitiveIdFn)
     vFalse
 
 def primitiveTrueFn : Trm :=
@@ -90,7 +90,7 @@ end TypeHinted
 namespace Malformed
 
 def applyidFnOnItself : Trm :=
-  .apply idFn idFn
+  .apply primitiveIdFn primitiveIdFn
 
 def idFnOnFalse2 : Trm :=
   .apply applyidFnOnItself vFalse
@@ -100,7 +100,7 @@ def primitiveApply : Trm :=
 
 def apply1 : Trm :=
   .apply
-    (.apply idFn vFalse)
+    (.apply primitiveIdFn vFalse)
     vTrue
 
 def primitiveFalseAsFn : Trm :=

@@ -35,10 +35,10 @@ example :
   · rfl
 
 example :
-    ((Trm.idFnOnFalse : Trm).eval).shouldYields
+    ((Trm.primitiveIdFnOnFalse : Trm).eval).shouldYields
       ((.primitive "false") : Val) := by
   constructor
-  · exact ⟨2, by simp [AST.Trm.eval, idFnOnFalse, idFn, vFalse]⟩
+  · exact ⟨2, by simp [AST.Trm.eval, primitiveIdFnOnFalse, primitiveIdFn, vFalse]⟩
   · rfl
 
 example :
@@ -59,27 +59,27 @@ example :
     ((Trm.apply1stOn2ndFnOnTuple : Trm).eval).shouldYields
       ((.primitive "false") : Val) := by
   constructor
-  · exact ⟨4, by simp [AST.Trm.eval, apply1stOn2ndFnOnTuple, apply1stOn2ndFn, idFn, vFalse]⟩
+  · exact ⟨4, by simp [AST.Trm.eval, apply1stOn2ndFnOnTuple, apply1stOn2ndFn, primitiveIdFn, vFalse]⟩
   · rfl
 
 example :
     ((Trm.Malformed.applyidFnOnItself : Trm).eval).shouldYields
       (Val.idFn : Val) := by
   constructor
-  · exact ⟨2, by simp [AST.Trm.eval, Malformed.applyidFnOnItself, idFn, Val.idFn]⟩
+  · exact ⟨2, by simp [AST.Trm.eval, Malformed.applyidFnOnItself, primitiveIdFn, Val.idFn]⟩
   · rfl
 
 example :
     ((Trm.Malformed.idFnOnFalse2 : Trm).eval).shouldYields
       ((.primitive "false") : Val) := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.eval, Malformed.idFnOnFalse2, Malformed.applyidFnOnItself, idFn, vFalse]⟩
+  · exact ⟨3, by simp [AST.Trm.eval, Malformed.idFnOnFalse2, Malformed.applyidFnOnItself, primitiveIdFn, vFalse]⟩
   · rfl
 
 example :
     ((Trm.Malformed.apply1 : Trm).eval).shouldFail := by
   constructor
-  · exact ⟨4, by simp [AST.Trm.eval, Malformed.apply1, idFn, vFalse, vTrue]⟩
+  · exact ⟨4, by simp [AST.Trm.eval, Malformed.apply1, primitiveIdFn, vFalse, vTrue]⟩
   · rfl
 
 example :
@@ -91,7 +91,7 @@ example :
 example :
     ((Trm.Malformed.apply1 : Trm).eval).shouldFail := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.eval, Malformed.apply1, idFn, vFalse, vTrue]⟩
+  · exact ⟨3, by simp [AST.Trm.eval, Malformed.apply1, primitiveIdFn, vFalse, vTrue]⟩
   · rfl
 
 example :
@@ -115,11 +115,11 @@ example :
   sorry
 
 example :
-    (idFn.compile fun _ => true).isDecidable := by
+    (primitiveIdFn.compile fun _ => true).isDecidable := by
   sorry
 
 example :
-    (idFnOnFalse.compile fun _ => true).isDecidable := by
+    (primitiveIdFnOnFalse.compile fun _ => true).isDecidable := by
   sorry
 
 example :
