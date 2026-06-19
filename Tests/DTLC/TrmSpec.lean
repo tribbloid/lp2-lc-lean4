@@ -43,7 +43,7 @@ example :
     ((Trm.primitiveIdFnOnFalse : Trm).eval).shouldYields
       ((.primitive "false") : Val) := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.eval, primitiveIdFnOnFalse, primitiveIdFn, vFalse]⟩
+  · exact ⟨3, by simp [AST.Trm.eval, primitiveIdFnOnFalse, primitiveIdFn, idFn, vFalse]⟩
   · rfl
 
 example :
