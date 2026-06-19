@@ -15,11 +15,6 @@ def idFn : Typ :=
 def get1st : Typ :=
   .fn .primitive (.fn .primitive .primitive)
 
-def apply1stOn2ndFn : Typ :=
-  .fn
-    (.fn .primitive .primitive)
-    (.fn .primitive .primitive)
-
 end Typ
 
 

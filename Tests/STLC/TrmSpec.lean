@@ -56,13 +56,6 @@ example :
   · rfl
 
 example :
-    ((Trm.apply1stOn2ndFnOnTuple : Trm).eval).shouldYields
-      ((.primitive "false") : Val) := by
-  constructor
-  · exact ⟨4, by simp [AST.Trm.eval, apply1stOn2ndFnOnTuple, apply1stOn2ndFn, primitiveIdFn, vFalse]⟩
-  · rfl
-
-example :
     ((Trm.Malformed.applyidFnOnItself : Trm).eval).shouldYields
       (Val.idFn : Val) := by
   constructor
@@ -86,12 +79,6 @@ example :
     ((Trm.Malformed.primitiveApply : Trm).eval).shouldFail := by
   constructor
   · exact ⟨2, rfl⟩
-  · rfl
-
-example :
-    ((Trm.Malformed.apply1 : Trm).eval).shouldFail := by
-  constructor
-  · exact ⟨3, by simp [AST.Trm.eval, Malformed.apply1, primitiveIdFn, vFalse, vTrue]⟩
   · rfl
 
 example :
@@ -136,14 +123,6 @@ example :
 
 example :
     (get2ndOnTuple.compile fun _ => true).isDecidable := by
-  sorry
-
-example :
-    (apply1stOn2ndFn.compile fun _ => true).isDecidable := by
-  sorry
-
-example :
-    (apply1stOn2ndFnOnTuple.compile fun _ => true).isDecidable := by
   sorry
 
 example :

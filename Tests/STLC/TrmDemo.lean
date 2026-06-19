@@ -47,22 +47,6 @@ def get2ndOnTuple : Trm :=
     (.apply get2nd vFalse)
     vTrue
 
-def apply1stOn2ndFn : Trm :=
-  .val (.fn (fun f =>
-      .val (.fn (fun x =>
-        .apply
-          (.ref f)
-          (.ref x)))
-        (.fn .primitive .primitive)))
-    (.fn
-      (.fn .primitive .primitive)
-      (.fn .primitive .primitive))
-
-def apply1stOn2ndFnOnTuple : Trm :=
-  .apply
-    (.apply apply1stOn2ndFn primitiveIdFn)
-    vFalse
-
 def primitiveTrueFn : Trm :=
   .val
     (.fn (fun _x =>
