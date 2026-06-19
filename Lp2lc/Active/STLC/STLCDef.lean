@@ -137,6 +137,8 @@ def IsSafeBy (self : AST.Trm I) (condition : Condition I) : Prop :=
 def IsSafe (self : AST.Trm I) : Prop :=
   IsSafeBy self (fun _ => true)
 
+-- def IsSafeUnder (self : AST.Trm I) (condition : Condition I) : Prop :=
+
 end AST.Trm
 
 namespace Internal
@@ -186,7 +188,8 @@ end Condition
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env (I : Impl) : Type where
-  trmRefs: @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
+  trmRefs : @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
+  typRefs : FBound (Index I) (AdequateTrm)
   -- TODO: revise this trmRefs if necessary
 
 end Compiler
@@ -194,30 +197,36 @@ end Compiler
 section variable [env: @Compiler.Env I]
 open AST
 
+def WeakestPre : Type := Typ I
+
 namespace AST.Trm
 
--- /--
--- similar to Trm.compile, but only produce the safety proof
--- -/
--- def verify (trm : Trm I) (condition : Condition I) : MayTerminate (trm.IsSafeBy condition)
---   | 0 => .outOfFuel
---   | _fuel + 1 =>
---     match trm with
---     | .val value hint => sorry
---     | .apply _fn _arg => sorry
---     | .ref _i => .error
+/--
+similar to Trm.compile, but only produce the safety proof
+-/
+def infer (trm : Trm I) : MayTerminate (Typ I)
+  | 0 => .outOfFuel
+  | _fuel + 1 =>
+    match trm with
+    | .val value hint => sorry
+    | .apply _fn _arg => sorry
+    | .ref _i => .error
 
 /--
-Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return the same
-`Trm` with it's safety proof, it does not evaluate the program.
+Fuel-guarded compiler API for recursively type-checking `Trm` syntax,
+
+- if valid return an `AdequateTrm` with safety proof.
+- if malformed return error
+
+it does not evaluate the program.
 
 It's very similar to `Trm.eval` above in structure, but instead of evaluating
 for the final result, it recursively decompose the safety proof obligation into
-obligations of smaller components that are fulfiled independently and incrementally. The compile-time
-`Compiler.Env.forSemantic` F-bound bridge can be used to save/load proven goal; this
+obligations of smaller components that are fulfiled independently and incrementally. The F-bound bridge in
+`Compiler.Env` can be used to save/load proven goal; this
 is separate from runtime value binding and never calls `eval`.
 
-Malformed or incompatible component will immediate cause the compilation to
+Malformed term will cause the compilation to
 fail. In particular, applications must compile both sides successfully, the function side
 must satisfy the `.fn` precondition, and the argument must be compatible with the
 function input.
