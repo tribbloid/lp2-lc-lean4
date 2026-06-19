@@ -46,8 +46,8 @@ object TrmDemo extends Preamble {
   val apply1stOn2ndFnOnTuple: Boolean =
     apply1stOn2ndFn(idFn)(vFalse)
 
-  val applyidFnOnItself: Boolean => Boolean =
-    ((f: Boolean => Boolean) => f)((x: Boolean) => x)
+  val applyidFnOnItself =
+    idFn(idFn)
 
   val idFnOnFalse2: Boolean =
     applyidFnOnItself(vFalse)
