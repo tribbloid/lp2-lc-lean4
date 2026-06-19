@@ -1,7 +1,7 @@
-import «Docs».LeanCompiler.STLC.Source
-import «Docs».LeanCompiler.STLC.CPS
-import «Docs».LeanCompiler.STLC.CC
-import «Docs».LeanCompiler.STLC.CPSify
-import «Docs».LeanCompiler.STLC.CCify
-import «Docs».LeanCompiler.STLC.Compile
-import «Docs».LeanCompiler.STLC.Examples
+import «LeanCompiler».STLC.Source
+import «LeanCompiler».STLC.CPS
+import «LeanCompiler».STLC.CC
+import «LeanCompiler».STLC.CPSify
+import «LeanCompiler».STLC.CCify
+import «LeanCompiler».STLC.Compile
+import «LeanCompiler».STLC.Examples

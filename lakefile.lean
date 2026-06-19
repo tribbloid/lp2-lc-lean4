@@ -9,10 +9,12 @@ lean_lib «Lp2lc» where
 @[default_target] -- compiled but should never publish
 lean_lib «Tests» where
 
-lean_lib «Spike» where
-
+@[default_target] -- compiled but should never publish
 lean_lib «Docs» where
+  srcDir := "Docs"
+  roots := #[`ContextualEmbedding, `LeanCompiler, `Phoas]
 
+lean_lib «Spike» where
 
 require aesop from git
   "https://github.com/leanprover-community/aesop" @ "v4.30.0"

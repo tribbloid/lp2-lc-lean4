@@ -1,2 +1,2 @@
-import «Docs».Phoas.phoas
-import «Docs».Phoas.phoasExtrinsic
+import «Phoas».phoas
+import «Phoas».phoasExtrinsic

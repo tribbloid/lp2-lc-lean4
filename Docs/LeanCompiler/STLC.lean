@@ -1,1 +1,1 @@
-import «Docs».LeanCompiler.STLC.package
+import «LeanCompiler».STLC.package

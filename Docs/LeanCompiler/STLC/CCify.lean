@@ -1,5 +1,5 @@
-import «Docs».LeanCompiler.STLC.CPS
-import «Docs».LeanCompiler.STLC.CC
+import «LeanCompiler».STLC.CPS
+import «LeanCompiler».STLC.CC
 
 namespace LeanCompiler.STLC.CCify
 

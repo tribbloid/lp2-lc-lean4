@@ -198,8 +198,6 @@ def denote (term : Term) : Option Value :=
     pure ⟨ty, value⟩
   | none => none
 
-#rfl denote three_the_hard_way
-
 example : denote three_the_hard_way = some ⟨Ty.nat, 3⟩ :=
   rfl
 

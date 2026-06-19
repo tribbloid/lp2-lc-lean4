@@ -206,8 +206,6 @@ the `simp` tactic. We also say this is a hint for the Lean term simplifier.
   | Term'.lam f    => fun x => denote (f x)
   | Term'.let a b  => denote (b (denote a))
 
-#rfl denote three_the_hard_way
-
 example : denote three_the_hard_way = 3 :=
   rfl
 

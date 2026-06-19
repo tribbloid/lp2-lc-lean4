@@ -1,3 +1,3 @@
-import «Docs».ContextualEmbedding.CE
-import «Docs».ContextualEmbedding.CELeveledUpSTLC
-import «Docs».ContextualEmbedding.CELeveledUpLinear
+import «ContextualEmbedding».CE
+import «ContextualEmbedding».CELeveledUpSTLC
+import «ContextualEmbedding».CELeveledUpLinear

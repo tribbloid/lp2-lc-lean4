@@ -1,4 +1,4 @@
-import «Docs».LeanCompiler.STLC.Compile
+import «LeanCompiler».STLC.Compile
 
 namespace LeanCompiler.STLC.Examples
 
