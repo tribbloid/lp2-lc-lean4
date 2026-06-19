@@ -189,7 +189,7 @@ Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env (I : Impl) : Type where
   trmRefs : @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
-  typRefs : FBound (Index I) (AdequateTrm)
+  typRefs : FBound (Index I) (Typ I)
   -- TODO: revise this trmRefs if necessary
 
 end Compiler
