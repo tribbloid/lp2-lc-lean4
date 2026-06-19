@@ -11,6 +11,10 @@ open Lp2lc.Active.DTLC.Symbolic
 section eraseType
 
 example :
+    primitiveIdFn.typeHint.eraseRecursively =
+      .val (.fn fun x => .ref x) := rfl
+
+example :
     TypeHinted.hintedFalse.typeHint.eraseRecursively =
       (vFalse : Trm) := rfl
 
@@ -33,6 +37,13 @@ example :
       ((.primitive "false") : Val) := by
   constructor
   · exact ⟨1, rfl⟩
+  · rfl
+
+example :
+    ((Trm.primitiveIdFnOnFalse : Trm).eval).shouldYields
+      ((.primitive "false") : Val) := by
+  constructor
+  · exact ⟨3, by simp [AST.Trm.eval, primitiveIdFnOnFalse, primitiveIdFn, vFalse]⟩
   · rfl
 
 example :
@@ -115,7 +126,17 @@ example :
   sorry
 
 example :
+    primitiveIdFn.compileToTrm.shouldYields
+      primitiveIdFn.typeHint.eraseRecursively := by
+  sorry
+
+example :
     idFn.compileToTrm.shouldYields idFn := by
+  sorry
+
+example :
+    primitiveIdFnOnFalse.compileToTrm.shouldYields
+      primitiveIdFnOnFalse.typeHint.eraseRecursively := by
   sorry
 
 example :

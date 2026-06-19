@@ -16,8 +16,16 @@ def vTrue : Trm :=
 def idFn : Trm :=
   .val (.fn (fun x => .ref x))
 
+def primitiveIdFn : Trm :=
+  .typeHinted
+    idFn
+    (.depFn .primitive (fun _x => .primitive))
+
 def idFnOnFalse : Trm :=
   .apply idFn vFalse
+
+def primitiveIdFnOnFalse : Trm :=
+  .apply primitiveIdFn vFalse
 
 def get1st : Trm :=
   .val
