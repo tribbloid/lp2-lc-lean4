@@ -1,4 +1,4 @@
-import «Lp2lc».Util
+namespace Phoas.Intrinsic
 
 /-!
 # Parametric Higher-Order Abstract Syntax
@@ -39,7 +39,7 @@ We call it the "dot notation".
 def v1 :=
   let x := Ty.nat
   x.denote
-#rfl v1
+
 example : v1 = Nat := rfl
 
 /-!
@@ -303,3 +303,5 @@ example {rep : Ty → Type} :
 example {rep : Ty → Type} :
     NbE.normalize pureIncrementOnConst (rep := rep) = Term'.const 42 :=
   rfl
+
+end Phoas.Intrinsic

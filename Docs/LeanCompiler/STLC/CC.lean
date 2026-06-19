@@ -1,4 +1,4 @@
-import LeanCompiler.STLC.CPS
+import «Docs».LeanCompiler.STLC.CPS
 
 namespace LeanCompiler.STLC.CC
 

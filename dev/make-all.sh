@@ -8,5 +8,5 @@ DATE=$(date +%Y-%m-%dT%H:%M:%S%z)
 
 cd "$FWDIR"
 
-lake build && \
+lake build Lp2lc Tests Docs && \
 sbt --server compile

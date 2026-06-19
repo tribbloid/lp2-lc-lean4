@@ -1,4 +1,4 @@
-import «Lp2lc».Util
+namespace Phoas.Extrinsic
 
 inductive Ty where
   | nat
@@ -12,8 +12,6 @@ inductive Ty where
 def v1 :=
   let ty := Ty.nat
   ty.denote
-
-#rfl v1
 
 example : v1 = Nat :=
   rfl
@@ -332,3 +330,5 @@ example {rep : Type} :
 example {rep : Type} :
     NbE.normalize pureIncrementOnConst (rep := rep) = Term'.const 42 :=
   rfl
+
+end Phoas.Extrinsic

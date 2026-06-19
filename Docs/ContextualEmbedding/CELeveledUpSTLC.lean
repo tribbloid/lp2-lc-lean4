@@ -1,3 +1,5 @@
+namespace ContextualEmbedding.CELeveledUpSTLC
+
 inductive Ty : Type
   | Unit : Ty
   | Fun : Ty -> Ty -> Ty
@@ -124,8 +126,9 @@ theorem indexIsoL (i : Index l ts' t)
   : reify (self := (fromIndex i).2) (fromIndex i).3 = i := by
   induction i with
   | Top => rfl
-  | Pop i' ih => simp [fromIndex, weakenPVar, reify]
-                 exact ih
+  | Pop i' ih =>
+      change Pop (reify (self := (fromIndex i').2) (fromIndex i').3) = Pop i'
+      exact congrArg Pop ih
 
 --  fromIndex ∘ reify  --
 --------------------------
@@ -187,10 +190,12 @@ theorem indexIsoR (inst : ReifyIndex l l' ts t) (i : ProxyTop l t):
         (λ⟨l'', ts', t', hEqL, hEqTs, inst', instEqSnoc⟩
             => by subst hEqL hEqTs
                   simp at instEqSnoc                  -- Same idea as the Refl case
-                  simp [instEqSnoc, reify, fromIndex] -- Simplify and rewrite using these equalities and function definitions
-                  rw [indexIsoR]                      -- Recursive/inductive step
-                  rfl
+                  rw [instEqSnoc]
+                  change weakenPVar (fromIndex (reify (self := inst') i))
+                    = weakenPVar (PVar (inst := inst') i)
+                  rw [indexIsoR inst' i]              -- Recursive/inductive step
         )
+termination_by l'
 
 
 -------------------------------
@@ -218,7 +223,7 @@ theorem isoL {l : Nat} {ts : Ctx} {t : Ty} {e : STLC l ts t}
     <;> simp [contextualise, unembed, *]
 
   -- Finish remaining Var case using index isomorphism
-  case Var i => simp [contextualise, toCVar, fromVar, unembed, indexIsoL]
+  case Var i => simp [toCVar, fromVar, unembed, indexIsoL]
 
 -- contextualise ∘ unembed
 ----------------------------
@@ -236,7 +241,7 @@ theorem isoR {l : Nat} {ts : Ctx} {t : Ty} {e : STLCCtx l ts t}
     <;> try (repeat' (funext p; cases p)
              <;> simp [*])
   -- Deal with leftover CVar case using index isomorphism
-  case CVar => simp [unembed, contextualise, toCVar, indexIsoR]
+  case CVar => simp [toCVar, indexIsoR]
                rfl
 
 -- Examples
@@ -303,3 +308,5 @@ example {ts : Ctx} {a : Ty}
   funext x
   cases x
   rfl
+
+end ContextualEmbedding.CELeveledUpSTLC

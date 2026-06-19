@@ -1,3 +1,5 @@
+namespace ContextualEmbedding.CELeveledUpLinear
+
 inductive Ty : Type
   | Unit : Ty
   | Tensor : Ty -> Ty -> Ty
@@ -151,8 +153,9 @@ theorem indexIsoL (i : Index l ci co t)
   : reify (self := (fromIndex i).4) (fromIndex i).5 = i := by
   induction i with
   | Top => rfl
-  | Pop i' ih => simp [fromIndex, weakenPVar, reify]
-                 exact ih
+  | Pop i' ih =>
+      change Pop (reify (self := (fromIndex i').4) (fromIndex i').5) = Pop i'
+      exact congrArg Pop ih
 
 --  fromIndex ∘ reify  --
 --------------------------
@@ -222,10 +225,12 @@ theorem indexIsoR (inst : ReifyIndex l l' i o ci co t) (pt : ProxyTop l i o t):
         (λ⟨l'', ci', co', z, hEqL, hEqCi, hEqCo, inst', instEqSnoc⟩
             => by subst hEqL hEqCi hEqCo
                   simp at instEqSnoc                  -- Same idea as the Refl case
-                  simp [instEqSnoc, reify, fromIndex] -- Simplify and rewrite using these equalities and function definitions
-                  rw [indexIsoR]                      -- Recursive/inductive step
-                  rfl
+                  rw [instEqSnoc]
+                  change weakenPVar (fromIndex (reify (self := inst') pt))
+                    = weakenPVar (PVar (inst := inst') pt)
+                  rw [indexIsoR inst' pt]             -- Recursive/inductive step
         )
+termination_by l'
 
 -------------------------------
 --      LLC Isomorphism      --
@@ -252,7 +257,7 @@ theorem isoL {l : Nat} {ci co : Ctx} {t : Ty} {e : LLC l ci co t}
     <;> simp [contextualise, unembed, *]
 
   -- Finish remaining Var case using index isomorphism
-  case Var i => simp [contextualise, toCVar, fromVar, unembed, indexIsoL]
+  case Var i => simp [toCVar, fromVar, unembed, indexIsoL]
 
 -- contextualise ∘ unembed
 ----------------------------
@@ -270,7 +275,7 @@ theorem isoR {l : Nat} {ci co : Ctx} {t : Ty} {e : LLCCtx l ci co t}
     <;> try (repeat' (funext p; cases p)
              <;> simp [*])
   -- Deal with leftover CVar case using index isomorphism
-  case CVar => simp [unembed, contextualise, toCVar, indexIsoR]
+  case CVar => simp [toCVar, indexIsoR]
                rfl
 
 -- Examples
@@ -322,3 +327,5 @@ def pair' := @pair zero Ctx.Empty Unit Unit
 #eval unembed pair'
 #eval (showLLCCtx ∘ contextualise ∘ unembed) pair'
 #eval (unembed ∘ contextualise ∘ unembed) pair'
+
+end ContextualEmbedding.CELeveledUpLinear
