@@ -50,6 +50,8 @@ Value syntax, containing neither references nor applications.
 
 Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
+
+Value represents both runtime and compiletime data, it should nevery carry type information due to type erasure
 -/
 inductive Val : Type where
 | primitive (repr : I.Data) -- most specific type is always `primitive`
