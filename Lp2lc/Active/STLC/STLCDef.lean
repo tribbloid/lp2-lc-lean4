@@ -37,8 +37,6 @@ annotations are the extrinsic typing evidence available to the compiler. They
 are not intrinsic typing indices on terms.
 -/
 
--- TODO: this definition has 2 problems: can eval at compiletime, cannot express
--- primitive fn that modify bytecode
 inductive Trm : Type where
 | val (v : Val) (hint : Typ) -- AKA literal
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
@@ -80,6 +78,38 @@ end TypeView
 end Trm
 
 end AST
+
+/-- Decides structural equality of source types without deriving over the mutual syntax family. -/
+instance typDecidableEq : DecidableEq (AST.Typ I) := fun left right =>
+  match left, right with
+  | .primitive, .primitive => isTrue rfl
+  | .primitive, .fn _ _ =>
+    isFalse (by
+      intro equality
+      cases equality)
+  | .fn _ _, .primitive =>
+    isFalse (by
+      intro equality
+      cases equality)
+  | .fn leftIn leftOut, .fn rightIn rightOut =>
+    match typDecidableEq leftIn rightIn with
+    | isFalse notEqual =>
+      isFalse (by
+        intro equality
+        cases equality
+        exact notEqual rfl)
+    | isTrue inputEqual =>
+      match typDecidableEq leftOut rightOut with
+      | isFalse notEqual =>
+        isFalse (by
+          intro equality
+          cases equality
+          exact notEqual rfl)
+      | isTrue outputEqual =>
+        isTrue (by
+          cases inputEqual
+          cases outputEqual
+          rfl)
 
 namespace AST.Val
 
@@ -188,7 +218,7 @@ end Condition
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class Env (I : Impl) : Type where
-  trmRefs : @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
+  -- trmRefs : @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
   typRefs : FBound I.Index (AST.Typ I)
   -- TODO: revise this trmRefs if necessary
 
@@ -200,17 +230,37 @@ open AST
 def WeakestPre : Type := Typ I
 
 namespace AST.Trm
+section variable (trm: Trm I)
 
 /--
 similar to Trm.compile, but only produce the safety proof
 -/
 def infer (trm : Trm I) : MayTerminate (Typ I)
   | 0 => .outOfFuel
-  | _fuel + 1 =>
+  | fuel + 1 =>
     match trm with
-    | .val value hint => sorry
-    | .apply _fn _arg => sorry
-    | .ref _i => .error
+    | .val (.primitive _repr) hint =>
+      match hint with
+      | .primitive => .result .primitive
+      | .fn _tIn _tOut => .error
+    | .val (.fn body) hint =>
+      match hint with
+      | .primitive => .error
+      | .fn tIn tOut =>
+        let index := env.typRefs.save (p := ()) tIn
+        match (body index).infer fuel with
+        | .result inferred =>
+          if inferred = tOut then .result hint else .error
+        | .error => .error
+        | .outOfFuel => .outOfFuel
+    | .apply fn arg =>
+      match fn.infer fuel, arg.infer fuel with
+      | .result (.fn tIn tOut), .result argTyp =>
+        if tIn = argTyp then .result tOut else .error
+      | .outOfFuel, _ => .outOfFuel
+      | _, .outOfFuel => .outOfFuel
+      | _, _ => .error
+    | .ref i => .result (env.typRefs.load (p := ()) i)
 
 /--
 Fuel-guarded compiler API for recursively type-checking `Trm` syntax,
@@ -243,11 +293,12 @@ def compile (trm : Trm I) (c : Condition I)
   | _fuel + 1 =>
     match trm with
     | .val _value hint =>
-      let extraC : Condition I := sorry --TODO: this is the semantic counterpart of hint
+      let extraC : Condition I := sorry -- this should be the semantic counterpart of hint
       sorry
     | .apply _fn _arg => sorry
     | .ref _i => sorry
 
+end
 end AST.Trm
 
 end
