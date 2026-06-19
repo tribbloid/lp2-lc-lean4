@@ -11,7 +11,7 @@ lean_lib «Tests» where
 
 lean_lib «Spike» where
 
-lean_lib «LeanCompiler» where
+lean_lib «Docs» where
 
 
 require aesop from git
