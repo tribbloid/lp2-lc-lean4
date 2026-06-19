@@ -39,12 +39,12 @@ As a result, explicit variable substitution (common in de Bruijn serial & named 
 
 The UUId can be a dependent type of P, if unnecessary, use FBound alias instead
 -/
-class DepFBound {P : TProperty} (I : P -> TIndex) (V : P -> Type): Type where
-  save : (value : V p) → I p -- `I` is unknown & there is no way to get `I` (required by HOAS binder) except submitting a `V`.
-  load : (index : I p) → V p -- inverse of save
+class DepFBound {P : TProperty} (UUID : P -> TIndex) (V : P -> Type): Type where
+  save : (value : V p) → UUID p -- this is the only way to get an UUID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
+  load : (id : UUID p) → V p
   roundtrip : ∀ (value : V p), load (save value) = value
 
-abbrev FBound (I : TIndex) (V : Type) : Type := DepFBound (fun (_ : Unit) => I) (fun _ => V)
+abbrev FBound (UUID : TIndex) (V : Type) : Type := DepFBound (fun (_ : Unit) => UUID) (fun _ => V)
 
 attribute [simp] DepFBound.roundtrip
 
