@@ -100,7 +100,10 @@ def contextualise : STLC ts t -> STLCCtx ts t
 --------------------------------------------
 
 /-
-`STLC` and `STLCCtx` correspond very closely, so induction and simplification/rewriting takes care of a large chunk of the proof. The real meat of the issue is the isomorphism between `Index` and `ProxyTop` + `ReifyIndex`. Once we have that, the rest follows without much trouble.
+`STLC` and `STLCCtx` correspond very closely, so induction and
+simplification/rewriting takes care of a large chunk of the proof. The real meat
+of the issue is the isomorphism between `Index` and `ProxyTop` + `ReifyIndex`.
+Once we have that, the rest follows without much trouble.
 -/
 
 -----------------------------
@@ -110,14 +113,21 @@ def contextualise : STLC ts t -> STLCCtx ts t
 --  reify ∘ fromIndex  --
 --------------------------
 
-/-
+/--
 We start from the easier direction, where we begin and end with `Index`:
 
-The `indexIsoL` lemma says that `reify` is the inverse of `fromIndex`. The proof itself is a relatively straightforward induction on the index. The intuition is that for every `Pop` in the index, `fromIndex` weakens the `ProxyTop` by one, which `reify` then turns back into a `Pop`.
+The `indexIsoL` lemma says that `reify` is the inverse of `fromIndex`. The proof
+itself is a relatively straightforward induction on the index. The intuition is
+that for every `Pop` in the index, `fromIndex` weakens the `ProxyTop` by one,
+which `reify` then turns back into a `Pop`.
 
-The tricky part is that this `ProxyTop` and the `ReifyIndex` instance we need for `reify` are existential within the `ProxyVar` returned by `fromIndex`, which makes them awkward refer to in the type of this lemma.
+The tricky part is that this `ProxyTop` and the `ReifyIndex` instance we need
+for `reify` are existential within the `ProxyVar` returned by `fromIndex`, which
+makes them awkward refer to in the type of this lemma.
 
-Thankfully, we can use lean's field index notation. `(fromIndex i).2` means 'get the 2nd field of the return value of `fromIndex i`', which is the `ReifyIndex` instance. `(fromIndex i).3` is the `ProxyTop`.
+Thankfully, we can use lean's field index notation. `(fromIndex i).2` means 'get
+the 2nd field of the return value of `fromIndex i`', which is the `ReifyIndex`
+instance. `(fromIndex i).3` is the `ProxyTop`.
 -/
 theorem indexIsoL (i : Index ts' t)
   : reify (self := (fromIndex i).2) (fromIndex i).3 = i := by
@@ -131,17 +141,27 @@ theorem indexIsoL (i : Index ts' t)
 --  fromIndex ∘ reify  --
 --------------------------
 
-/-
+/--
 Now for the more difficult direction.
 
-We no longer have a concrete index to form an induction on. We have only a `ProxyTop` and a `ReifyIndex` instance. In practice, the instance (and therefore the index) is determined by the contexts, so you would hope that we could do some kind of induction on them, but sadly this won't help us.
+We no longer have a concrete index to form an induction on. We have only a
+`ProxyTop` and a `ReifyIndex` instance. In practice, the instance (and therefore
+the index) is determined by the contexts, so you would hope that we could do
+some kind of induction on them, but sadly this won't help us.
 
-If we know the contexts we can *find* an instance, but that doesn't mean it's the same as the instance we've been given. Technically, type classes are open world in Haskell, Lean, and Agda, which means if we are given e.g. a `ReifyIndex ts ts` instance, we can't say for certain that it's specifically the Refl instance (even though it will be in practice) because another overlapping instance for that type could be defined elsewhere.
+If we know the contexts we can *find* an instance, but that doesn't mean it's
+the same as the instance we've been given. Technically, type classes are open
+world in Haskell, Lean, and Agda, which means if we are given e.g. a `ReifyIndex
+ts ts` instance, we can't say for certain that it's specifically the Refl
+instance (even though it will be in practice) because another overlapping
+instance for that type could be defined elsewhere.
 
-Therefore, we need a 'closed world' axiom which says 'if you give me a `ReifyIndex` instance, it must either be `instReifyIndexRefl` or `instReifyIndexSnoc`'. We believe this is a reasonable assertion to make in practice since we can hide the type class from users by not exporting it.
+Therefore, we need a 'closed world' axiom which says 'if you give me a
+`ReifyIndex` instance, it must either be `instReifyIndexRefl` or
+`instReifyIndexSnoc`'. We believe this is a reasonable assertion to make in
+practice since we can hide the type class from users by not exporting it.
 
 -/
-
 axiom closedWorld {ts1 ts2 : Ctx} (inst : ReifyIndex ts1 ts2)
     -- Option 1: `inst` is the Refl instance and the contexts are the same, i.e. `ts1 = ts2`.
     --           `hEq ▸ inst` substitutes `ts1` for `ts2` in `inst`, otherwise the equality with

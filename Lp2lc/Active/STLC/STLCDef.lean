@@ -80,36 +80,15 @@ end Trm
 end AST
 
 /-- Decides structural equality of source types without deriving over the mutual syntax family. -/
-instance typDecidableEq : DecidableEq (AST.Typ I) := fun left right =>
-  match left, right with
+instance typDecidableEq : DecidableEq (AST.Typ I)
   | .primitive, .primitive => isTrue rfl
-  | .primitive, .fn _ _ =>
-    isFalse (by
-      intro equality
-      cases equality)
-  | .fn _ _, .primitive =>
-    isFalse (by
-      intro equality
-      cases equality)
+  | .primitive, .fn _ _
+  | .fn _ _, .primitive => isFalse (fun equality => nomatch equality)
   | .fn leftIn leftOut, .fn rightIn rightOut =>
-    match typDecidableEq leftIn rightIn with
-    | isFalse notEqual =>
-      isFalse (by
-        intro equality
-        cases equality
-        exact notEqual rfl)
-    | isTrue inputEqual =>
-      match typDecidableEq leftOut rightOut with
-      | isFalse notEqual =>
-        isFalse (by
-          intro equality
-          cases equality
-          exact notEqual rfl)
-      | isTrue outputEqual =>
-        isTrue (by
-          cases inputEqual
-          cases outputEqual
-          rfl)
+    match typDecidableEq leftIn rightIn, typDecidableEq leftOut rightOut with
+    | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
+    | isFalse notEqual, _ => isFalse (fun equality => notEqual (AST.Typ.fn.inj equality).1)
+    | _, isFalse notEqual => isFalse (fun equality => notEqual (AST.Typ.fn.inj equality).2)
 
 namespace AST.Val
 
