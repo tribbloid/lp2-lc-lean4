@@ -79,16 +79,31 @@ end Trm
 
 end AST
 
-/-- Decides structural equality of source types without deriving over the mutual syntax family. -/
-instance typDecidableEq : DecidableEq (AST.Typ I)
+/-- Current STLC subtyping coincides with structural type equality. -/
+instance typLE : LE (AST.Typ I) := ⟨Eq⟩
+
+-- /-- Establishes reflexivity, transitivity, and antisymmetry for source-type subtyping. -/
+-- instance typIsPartialOrder : Std.IsPartialOrder (AST.Typ I) where
+--   le_refl _ := rfl
+--   le_trans _ _ _ := Eq.trans
+--   le_antisymm _ _ equality _ := equality
+
+/-- Decides the current structural subtyping relation. -/
+instance typDecidableLE : DecidableLE (AST.Typ I)
   | .primitive, .primitive => isTrue rfl
   | .primitive, .fn _ _
   | .fn _ _, .primitive => isFalse (fun equality => nomatch equality)
   | .fn leftIn leftOut, .fn rightIn rightOut =>
-    match typDecidableEq leftIn rightIn, typDecidableEq leftOut rightOut with
+    match typDecidableLE leftIn rightIn, typDecidableLE leftOut rightOut with
     | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
     | isFalse notEqual, _ => isFalse (fun equality => notEqual (AST.Typ.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (fun equality => notEqual (AST.Typ.fn.inj equality).2)
+
+-- /-- Decides structural equality from bidirectional subtyping. -/
+-- instance typDecidableEq : DecidableEq (AST.Typ I) := fun left right =>
+--   decidable_of_iff (left ≤ right ∧ right ≤ left)
+--     ⟨fun subtype => Std.IsPartialOrder.le_antisymm left right subtype.1 subtype.2,
+--       fun equality => equality ▸ ⟨rfl, rfl⟩⟩
 
 namespace AST.Val
 
@@ -229,13 +244,13 @@ def infer (trm : Trm I) : MayTerminate (Typ I)
         let index := env.typRefs.save (p := ()) tIn
         match (body index).infer fuel with
         | .result inferred =>
-          if inferred = tOut then .result hint else .error
+          if inferred ≤ tOut then .result hint else .error
         | .error => .error
         | .outOfFuel => .outOfFuel
     | .apply fn arg =>
       match fn.infer fuel, arg.infer fuel with
       | .result (.fn tIn tOut), .result argTyp =>
-        if tIn = argTyp then .result tOut else .error
+        if argTyp ≤ tIn then .result tOut else .error
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .error
