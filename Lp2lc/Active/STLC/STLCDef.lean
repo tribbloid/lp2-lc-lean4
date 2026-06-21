@@ -294,7 +294,7 @@ applications remain applications of recursively compiled subterms.
 
 Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
 -/
-def compile (trm : Trm I) (typ : Typ I)
+def compile (trm : Trm I) (c : Condition I)
 : MayTerminate (AdequateTrm c)
   | 0 => .outOfFuel
   | _fuel + 1 =>

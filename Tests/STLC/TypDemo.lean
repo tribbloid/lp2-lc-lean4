@@ -6,7 +6,7 @@ open Tests.STLC.Sanity.Symbolic
 
 namespace Typ
 
-def false : Typ :=
+def tFalse : Typ :=
   .primitive
 
 def idFn : Typ :=
