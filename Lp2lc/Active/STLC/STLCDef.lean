@@ -221,13 +221,20 @@ end Compiler
 section variable [env: @Compiler.Env I]
 open AST
 
-def WeakestPre : Type := Typ I
+-- def WeakestPre : Type := Typ I
+
+-- namespace AST.Val
+-- section variable (self: Val I)
+
+
+
+-- end Val
 
 namespace AST.Trm
-section variable (trm: Trm I)
+section variable (self: Trm I)
 
 /--
-similar to Trm.compile, but only produce the safety proof
+get the strongest post type bound (post-condition) of a term, or throw an error
 -/
 def infer (trm : Trm I) : MayTerminate (Typ I)
   | 0 => .outOfFuel
@@ -235,7 +242,7 @@ def infer (trm : Trm I) : MayTerminate (Typ I)
     match trm with
     | .val (.primitive _repr) hint =>
       match hint with
-      | .primitive => .result .primitive
+      | .primitive => .result hint
       | .fn _tIn _tOut => .error
     | .val (.fn body) hint =>
       match hint with
@@ -255,6 +262,12 @@ def infer (trm : Trm I) : MayTerminate (Typ I)
       | _, .outOfFuel => .outOfFuel
       | _, _ => .error
     | .ref i => .result (env.typRefs.load (p := ()) i)
+
+/--
+given a term and a weakest pre-type bound, determine if the term can inhabit the pre-type
+-/
+def canInhabit (trm : Trm I) (weakestPreType : Typ I) : Prop :=
+  sorry
 
 /--
 Fuel-guarded compiler API for recursively type-checking `Trm` syntax,
@@ -281,14 +294,12 @@ applications remain applications of recursively compiled subterms.
 
 Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
 -/
-def compile (trm : Trm I) (c : Condition I)
+def compile (trm : Trm I) (typ : Typ I)
 : MayTerminate (AdequateTrm c)
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
-    | .val _value hint =>
-      let extraC : Condition I := sorry -- this should be the semantic counterpart of hint
-      sorry
+    | .val _value hint => sorry
     | .apply _fn _arg => sorry
     | .ref _i => sorry
 
