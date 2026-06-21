@@ -264,9 +264,9 @@ def infer (trm : Trm I) : MayTerminate (Typ I)
     | .ref i => .result (env.typRefs.load (p := ()) i)
 
 /--
-given a term and a weakest pre-type bound, determine if the term can inhabit the pre-type
+given a term and a weakest pre-type bound, return the same term if it can inhabit the pre-type
 -/
-def canInhabit (trm : Trm I) (weakestPreType : Typ I) : Prop :=
+def canInhabit (trm : Trm I) (weakestPreType : Typ I) : MayTerminate (Trm I) :=
   sorry
 
 /--
