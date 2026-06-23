@@ -28,13 +28,12 @@ inductive Typ : Type where
 /--
 Source term syntax.
 
-Every value term carries a mandatory type annotation. Applications and
-references are unannotated. Annotations are compile-time constraints only:
-compilation checks them and runtime evaluation ignores them.
+Primitive value terms are self-typed, while function values carry their input
+type. Applications and references are unannotated.
 
-In HOAS there is no syntax-level context binding terms to types, so value
-annotations are the extrinsic typing evidence available to the compiler. They
-are not intrinsic typing indices on terms.
+In HOAS there is no syntax-level context binding terms to types, so function
+input annotations are the extrinsic typing evidence available to the compiler.
+They are not intrinsic typing indices on terms.
 -/
 
 inductive Trm : Type where
@@ -49,7 +48,7 @@ Value syntax, containing neither references nor applications.
 Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
 
-Value represents both runtime and compiletime data, it should nevery carry type information due to type erasure
+Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
 inductive Val : Type where
 | primitive (repr : I.Data) -- most specific type is always `primitive`
@@ -58,24 +57,6 @@ inductive Val : Type where
 end
 
 end
-
-namespace Trm
-
-structure TypeView where (self: Trm I)
-
-def typeHint (self: Trm I) := TypeView.mk self
-
-namespace TypeView
-
-/-- Reads the mandatory annotation attached to an outer value term. -/
-def get (view : @TypeView I) : Option (Typ I) :=
-  match view.self with
-  | .val _ hint => some hint
-  | _ => none
-
-end TypeView
-
-end Trm
 
 end AST
 
@@ -133,11 +114,11 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val value _hint => .result value
+    | .val value => .result value
     | .apply fn arg =>
       let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
-      | (.result (.fn body), .result input) =>
+      | (.result (.fn body _tIn), .result input) =>
         let permission := env.canEvalAny input
         let index := env.valueRefs.save (p := ()) ⟨input, permission⟩
         (body index).eval fuel
@@ -224,20 +205,13 @@ def infer (trm : Trm I) : MayTerminate (Typ I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match trm with
-    | .val (.primitive _repr) hint =>
-      match hint with
-      | .primitive => .result hint
-      | .fn _tIn _tOut => .error
-    | .val (.fn body) hint =>
-      match hint with
-      | .primitive => .error
-      | .fn tIn tOut =>
-        let index := env.typRefs.save (p := ()) tIn
-        match (body index).infer fuel with
-        | .result inferred =>
-          if inferred ≤ tOut then .result hint else .error
-        | .error => .error
-        | .outOfFuel => .outOfFuel
+    | .val (.primitive _repr) => .result .primitive
+    | .val (.fn body tIn) =>
+      let index := env.typRefs.save (p := ()) tIn
+      match (body index).infer fuel with
+      | .result tOut => .result (.fn tIn tOut)
+      | .error => .error
+      | .outOfFuel => .outOfFuel
     | .apply fn arg =>
       match fn.infer fuel, arg.infer fuel with
       | .result (.fn tIn tOut), .result argTyp =>
@@ -253,8 +227,9 @@ def CanInhabit (self : Trm I) (typ : Typ I) : Prop := sorry -- AKA compile
 end
 end AST.Trm
 
-def AST.Typ.ToCondition (typ: Typ I): Condition I := fun v =>
-  let trm := Trm.val v typ
+/-- Interprets source types as semantic conditions over values. -/
+def AST.Typ.ToCondition (typ: Typ I): Condition I := fun value =>
+  let trm := Trm.val value
   trm.CanInhabit typ
 
 /-- States that syntactic typing entails semantic typing by the interpreted type. -/

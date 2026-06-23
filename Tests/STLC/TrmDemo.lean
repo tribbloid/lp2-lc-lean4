@@ -8,15 +8,13 @@ open Tests.STLC.Sanity.Symbolic
 namespace Trm
 
 def vFalse : Trm :=
-  .val (.primitive "false") .primitive
+  .val (.primitive "false")
 
 def vTrue : Trm :=
-  .val (.primitive "true") .primitive
+  .val (.primitive "true")
 
 def primitiveIdFn : Trm :=
-  .val
-    (.fn (fun x => .ref x))
-    (.fn .primitive .primitive)
+  .val (.fn (fun x => .ref x) .primitive)
 
 def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
@@ -25,17 +23,15 @@ def get1st : Trm :=
   .val
     (.fn (fun x =>
       .val
-        (.fn (fun _y => .ref x))
-        (.fn .primitive .primitive)))
-    (.fn .primitive (.fn .primitive .primitive))
+        (.fn (fun _y => .ref x) .primitive))
+      .primitive)
 
 def get2nd : Trm :=
   .val
     (.fn (fun _x =>
       .val
-        (.fn (fun y => .ref y))
-        (.fn .primitive .primitive)))
-    (.fn .primitive (.fn .primitive .primitive))
+        (.fn (fun y => .ref y) .primitive))
+      .primitive)
 
 def get1stOnTuple : Trm :=
   .apply
@@ -50,8 +46,8 @@ def get2ndOnTuple : Trm :=
 def primitiveTrueFn : Trm :=
   .val
     (.fn (fun _x =>
-      .val (.primitive "true") .primitive))
-    (.fn .primitive .primitive)
+      .val (.primitive "true"))
+      .primitive)
 
 def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn vFalse
@@ -59,12 +55,10 @@ def primitiveTrueFnOnFalse : Trm :=
 namespace TypeHinted
 
 def hintedFalse : Trm :=
-  .val (.primitive "false") .primitive
+  .val (.primitive "false")
 
 def hintedIdFn : Trm :=
-  .val
-    (.fn (fun x => .ref x))
-    (.fn .primitive .primitive)
+  .val (.fn (fun x => .ref x) .primitive)
 
 def hintedIdFnOnFalse : Trm :=
   .apply hintedIdFn hintedFalse
@@ -86,16 +80,6 @@ def apply1 : Trm :=
   .apply
     (.apply primitiveIdFn vFalse)
     vTrue
-
-def primitiveFalseAsFn : Trm :=
-  .val
-    (.primitive "false")
-    (.fn .primitive .primitive)
-
-def idFnAsPrimitive : Trm :=
-  .val
-    (.fn (fun x => .ref x))
-    .primitive
 
 end Malformed
 

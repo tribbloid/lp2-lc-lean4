@@ -8,22 +8,6 @@ open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
-section typeHint
-
-example :
-    TypeHinted.hintedFalse.typeHint.get =
-      some (.primitive : Typ) := rfl
-
-example :
-    TypeHinted.hintedIdFn.typeHint.get =
-      some (.fn .primitive .primitive : Typ) := rfl
-
-example :
-    TypeHinted.hintedIdFnOnFalse.typeHint.get =
-      (none : Option Typ) := rfl
-
-end typeHint
-
 section eval
 variable [env : @Runtime.Env Symbolic.I]
 
@@ -159,14 +143,6 @@ example :
 
 example :
     ¬ ∃ typ, Malformed.primitiveApply.CanInhabit typ := by
-  sorry
-
-example :
-    ¬ ∃ typ, Malformed.primitiveFalseAsFn.CanInhabit typ := by
-  sorry
-
-example :
-    ¬ ∃ typ, Malformed.idFnAsPrimitive.CanInhabit typ := by
   sorry
 
 end compile
