@@ -221,7 +221,11 @@ def infer (trm : Trm I) : MayTerminate (Typ I)
       | _, _ => .error
     | .ref i => .result (env.typRefs.load (p := ()) i)
 
+/--
+determine if a term can can inhabit a type bound.
 
+Structurally it should be similar to infer, but return a Prop/proof obligation instead of a precise type bound
+-/
 def CanInhabit (self : Trm I) (typ : Typ I) : Prop := sorry -- AKA compile
 
 end
