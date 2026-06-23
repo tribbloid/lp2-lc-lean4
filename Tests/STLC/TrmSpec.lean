@@ -94,79 +94,79 @@ section compile
 variable [env : Compiler.Env Symbolic.I]
 
 example :
-    (vFalse.compile fun _ => true).isDecidable := by
+    vFalse.CanInhabit .primitive := by
   sorry
 
 example :
-    (vTrue.compile fun _ => true).isDecidable := by
+    vTrue.CanInhabit .primitive := by
   sorry
 
 example :
-    (primitiveIdFn.compile fun _ => true).isDecidable := by
+    primitiveIdFn.CanInhabit (.fn .primitive .primitive) := by
   sorry
 
 example :
-    (primitiveIdFnOnFalse.compile fun _ => true).isDecidable := by
+    primitiveIdFnOnFalse.CanInhabit .primitive := by
   sorry
 
 example :
-    (get1st.compile fun _ => true).isDecidable := by
+    get1st.CanInhabit (.fn .primitive (.fn .primitive .primitive)) := by
   sorry
 
 example :
-    (get2nd.compile fun _ => true).isDecidable := by
+    get2nd.CanInhabit (.fn .primitive (.fn .primitive .primitive)) := by
   sorry
 
 example :
-    (get1stOnTuple.compile fun _ => true).isDecidable := by
+    get1stOnTuple.CanInhabit .primitive := by
   sorry
 
 example :
-    (get2ndOnTuple.compile fun _ => true).isDecidable := by
+    get2ndOnTuple.CanInhabit .primitive := by
   sorry
 
 example :
-    (primitiveTrueFn.compile fun _ => true).isDecidable := by
+    primitiveTrueFn.CanInhabit (.fn .primitive .primitive) := by
   sorry
 
 example :
-    (primitiveTrueFnOnFalse.compile fun _ => true).isDecidable := by
+    primitiveTrueFnOnFalse.CanInhabit .primitive := by
   sorry
 
 example :
-    (TypeHinted.hintedFalse.compile fun _ => true).isDecidable := by
+    TypeHinted.hintedFalse.CanInhabit .primitive := by
   sorry
 
 example :
-    (TypeHinted.hintedIdFn.compile fun _ => true).isDecidable := by
+    TypeHinted.hintedIdFn.CanInhabit (.fn .primitive .primitive) := by
   sorry
 
 example :
-    (TypeHinted.hintedIdFnOnFalse.compile fun _ => true).isDecidable := by
+    TypeHinted.hintedIdFnOnFalse.CanInhabit .primitive := by
   sorry
 
 example :
-    (Malformed.applyidFnOnItself.compile fun _ => true).shouldFail := by
+    ¬ ∃ typ, Malformed.applyidFnOnItself.CanInhabit typ := by
   sorry
 
 example :
-    (Malformed.idFnOnFalse2.compile fun _ => true).shouldFail := by
+    ¬ ∃ typ, Malformed.idFnOnFalse2.CanInhabit typ := by
   sorry
 
 example :
-    (Malformed.apply1.compile fun _ => true).shouldFail := by
+    ¬ ∃ typ, Malformed.apply1.CanInhabit typ := by
   sorry
 
 example :
-    (Malformed.primitiveApply.compile fun _ => true).shouldFail := by
+    ¬ ∃ typ, Malformed.primitiveApply.CanInhabit typ := by
   sorry
 
 example :
-    (Malformed.primitiveFalseAsFn.compile fun _ => true).shouldFail := by
+    ¬ ∃ typ, Malformed.primitiveFalseAsFn.CanInhabit typ := by
   sorry
 
 example :
-    (Malformed.idFnAsPrimitive.compile fun _ => true).shouldFail := by
+    ¬ ∃ typ, Malformed.idFnAsPrimitive.CanInhabit typ := by
   sorry
 
 end compile
