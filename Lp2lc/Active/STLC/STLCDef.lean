@@ -122,14 +122,14 @@ end Runtime
 abbrev Condition (I : Impl) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
 namespace AST.Trm
-section variable (self : AST.Trm I) [env: @Runtime.Env I]
+section variable [env: @Runtime.Env I]
 
 /--
 Evaluates a term by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm I) : MayTerminate (AST.Val I) -- TODO: circumventing https://github.com/leanprover/lean4/issues/14061
+def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -152,61 +152,54 @@ end
 An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
-def IsSafeBy (self : AST.Trm I) (condition : Condition I) : Prop :=
+def CanInhabit_semantic (self : AST.Trm I) (condition : Condition I) : Prop :=
   ∀ (fuel : Nat) [@Runtime.Env I], match self.eval fuel with
   | .result value => condition value
   | .error => false
   | .outOfFuel => true
 
-def IsSafe (self : AST.Trm I) : Prop :=
-  IsSafeBy self (fun _ => true)
+abbrev WeakestPre := @CanInhabit_semantic I -- weakest precondition in Iris framework
 
--- def IsSafeUnder (self : AST.Trm I) (condition : Condition I) : Prop :=
+def IsSafe (self : AST.Trm I) : Prop :=
+  CanInhabit_semantic self (fun _ => true)
 
 end AST.Trm
 
-namespace Internal
+-- namespace Internal
 
-/--
-a compiled term with safety proof
--/
-private structure _AdequateTrm (condition : Condition I) where
-  trm: AST.Trm I
-  safetyEv: trm.IsSafeBy condition
+-- /--
+-- a compiled term with safety proof
+-- -/
+-- private structure _AdequateTrm (condition : Condition I) where
+--   trm: AST.Trm I
+--   safetyEv: trm.IsSafeBy condition
 
-end Internal
+-- end Internal
 
-abbrev AdequateTrm := @Internal._AdequateTrm I
+-- abbrev AdequateTrm := @Internal._AdequateTrm I
 
-namespace AdequateTrm
-section variable {c: Condition I} (self: AdequateTrm c) [env : @Runtime.Env I]
+-- namespace AdequateTrm
+-- section variable {c: Condition I} (self: AdequateTrm c) [env : @Runtime.Env I]
 
-def eval : MaySucceed ({v : AST.Val I // c v}) := fun fuel =>
-  match h : self.trm.eval fuel with
-  | .result value =>
-    ⟨.result ⟨value, by
-      have evidence := self.safetyEv fuel
-      simpa [h] using evidence⟩, by
-        simp [Outcome.isResultOrOutOfFuel]⟩
-  | .error =>
-    have noError := self.safetyEv fuel
-    False.elim (by
-      simp [h] at noError)
-  | .outOfFuel =>
-    ⟨.outOfFuel, by
-      simp [Outcome.isResultOrOutOfFuel]⟩
+-- def eval : MaySucceed ({v : AST.Val I // c v}) := fun fuel =>
+--   match h : self.trm.eval fuel with
+--   | .result value =>
+--     ⟨.result ⟨value, by
+--       have evidence := self.safetyEv fuel
+--       simpa [h] using evidence⟩, by
+--         simp [Outcome.isResultOrOutOfFuel]⟩
+--   | .error =>
+--     have noError := self.safetyEv fuel
+--     False.elim (by
+--       simp [h] at noError)
+--   | .outOfFuel =>
+--     ⟨.outOfFuel, by
+--       simp [Outcome.isResultOrOutOfFuel]⟩
 
-end
-end AdequateTrm
+-- end
+-- end AdequateTrm
 
 namespace Compiler
-
-namespace Condition
-
-structure DepIndex (self: Condition I) where
-  index: I.Index
-
-end Condition
 
 /--
 Contains compile-time FBound bridges for semantic obligations.
@@ -220,15 +213,6 @@ end Compiler
 
 section variable [env: @Compiler.Env I]
 open AST
-
--- def WeakestPre : Type := Typ I
-
--- namespace AST.Val
--- section variable (self: Val I)
-
-
-
--- end Val
 
 namespace AST.Trm
 section variable (self: Trm I)
@@ -263,48 +247,25 @@ def infer (trm : Trm I) : MayTerminate (Typ I)
       | _, _ => .error
     | .ref i => .result (env.typRefs.load (p := ()) i)
 
-/--
-given a term and a weakest pre-type bound, return the same term if it can inhabit the pre-type
--/
-def canInhabit (trm : Trm I) (weakestPreType : Typ I) : MayTerminate (Trm I) :=
-  sorry
 
-/--
-Fuel-guarded compiler API for recursively type-checking `Trm` syntax,
-
-- if valid return an `AdequateTrm` with safety proof.
-- if malformed return error
-
-it does not evaluate the program.
-
-It's very similar to `Trm.eval` above in structure, but instead of evaluating
-for the final result, it recursively decompose the safety proof obligation into
-obligations of smaller components that are fulfiled independently and incrementally. The F-bound bridge in
-`Compiler.Env` can be used to save/load proven goal; this
-is separate from runtime value binding and never calls `eval`.
-
-Malformed term will cause the compilation to
-fail. In particular, applications must compile both sides successfully, the function side
-must satisfy the `.fn` precondition, and the argument must be compatible with the
-function input.
-
-On success, it preserves the source
-program shape: values remain values, references remain references, and
-applications remain applications of recursively compiled subterms.
-
-Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
--/
-def compile (trm : Trm I) (c : Condition I)
-: MayTerminate (AdequateTrm c)
-  | 0 => .outOfFuel
-  | _fuel + 1 =>
-    match trm with
-    | .val _value hint => sorry
-    | .apply _fn _arg => sorry
-    | .ref _i => sorry
+def CanInhabit (self : Trm I) (typ : Typ I) : Prop := sorry -- AKA compile
 
 end
 end AST.Trm
+
+def AST.Typ.ToCondition (typ: Typ I): Condition I := fun v =>
+  let trm := Trm.val v typ
+  trm.CanInhabit typ
+
+/-- States that syntactic typing entails semantic typing by the interpreted type. -/
+def Fundamental : Prop :=
+  ∀ (term : Trm I) (type : Typ I),
+    term.CanInhabit type → term.CanInhabit_semantic (type.ToCondition)
+
+/-- States that semantic typing of a closed term entails operational safety. -/
+def Adequacy : Prop :=
+  ∀ (term : Trm I) (postcondition : Condition I),
+    term.CanInhabit_semantic postcondition → term.IsSafe
 
 end
 
