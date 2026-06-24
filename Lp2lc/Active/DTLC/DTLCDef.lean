@@ -142,23 +142,23 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
   | fuel + 1 =>
     match self with
     | typeHinted self _ => eval self fuel
-    | .val value => .result value
+    | .val value => .yield (some value)
     | .apply fn arg =>
     -- TODO: for tree crawling, we need a single function to get an IR that contains eval result and a proof that it won't break
       let anf := (eval fn fuel, eval arg fuel) -- ANF, atomic normal form
       match anf with
-      | (.result (.primitiveFn body), .result (.primitive repr)) =>
+      | (.yield (some (.primitiveFn body)), .yield (some (.primitive repr))) =>
         eval (body repr) fuel
-      | (.result (.fn body), .result value) =>
+      | (.yield (some (.fn body)), .yield (some value)) =>
         let fBound := env.forVals
         let permission := Runtime.Env.canEvalAny value
         eval (body (fBound.save (p := ()) ⟨value, permission⟩)) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
-      | _ => .error
+      | _ => .yield none
     | .ref i =>
       let fBound := Runtime.Env.forVals
-      .result (fBound.load (p := ()) i).1
+      .yield (some (fBound.load (p := ()) i).1)
 
 /--
 An safe program may run out of runtime fuel, but it must not reach runtime
@@ -166,8 +166,8 @@ An safe program may run out of runtime fuel, but it must not reach runtime
 -/
 def IsSafeBy (self : AST.Trm I) (condition : Condition I) : Prop :=
   ∀ fuel, match self.eval fuel with
-  | .result value => condition value
-  | .error => false
+  | .yield (some value) => condition value
+  | .yield none => false
   | .outOfFuel => true
 
 end AST.Trm
@@ -265,7 +265,7 @@ def compile (trm : Trm I) (desired: Condition I)
     | typeHinted self _ => self.compile desired _fuel
     | .val value => sorry
     | .apply _fn _arg => sorry
-    | .ref _i => .error
+    | .ref _i => .yield none
 
 
 def compileToTrm (trm : Trm I)
@@ -273,8 +273,8 @@ def compileToTrm (trm : Trm I)
 : MayTerminate (Trm I) := fun (fuel : Nat) =>
   let out := trm.compile condition fuel
   match out with
-  | .result v => Outcome.result v.trm
-  | .error => .error
+  | .yield (some v) => .yield (some v.trm)
+  | .yield none => .yield none
   | .outOfFuel => .outOfFuel
 
 end AST.Trm

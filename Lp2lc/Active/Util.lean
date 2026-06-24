@@ -56,14 +56,14 @@ inductive Outcome
 | outOfFuel
 
 namespace Outcome
-section variable (self: @Outcome T)
+section variable {T : Type u}
 
-def isResult : Prop := match self with
-| result _ => true
+def isResult (self : @Outcome (Option T)) : Prop := match self with
+| .yield (some _) => true
 | _ => false
 
-def isResultOrOutOfFuel : Prop := match self with
-| error  => false
+def isResultOrOutOfFuel (self : @Outcome (Option T)) : Prop := match self with
+| .yield none => false
 | _ => true
 
 end
@@ -71,42 +71,42 @@ end Outcome
 
 -- universe u v
 
-def MayTerminate (T : Sort u) := (fuel: Nat) -> @Outcome T
+def MayTerminate (T : Type u) := (fuel : Nat) -> @Outcome (Option T)
 
 namespace MayTerminate
-section variable  (self : @MayTerminate T)
+section variable {T : Type u}
 
-def shouldYieldsWithFuel (expectedV: T) : Prop :=
+def shouldYieldsWithFuel (self : MayTerminate T) (expectedV : T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
-  | .result v => v = expectedV
+  | .yield (some v) => v = expectedV
   | _ => false
 
-def shouldYields  (expectedV: T) : Prop :=
+def shouldYields (self : MayTerminate T) (expectedV : T) : Prop :=
   let hasFuel := self.shouldYieldsWithFuel expectedV
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def shouldFail  : Prop :=
+def shouldFail (self : MayTerminate T) : Prop :=
   let hasFuel := ∃ (fuel : Nat), match (self fuel) with
-  | .error => true
+  | .yield none => true
   | _ => false
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def isDecidable  : Prop :=
+def isDecidable (self : MayTerminate T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
-  | .result _ => true
+  | .yield (some _) => true
   | _ => false
 
-def isSemiDecidable  : Prop :=
-  ∀ (fuel: Nat), match (self fuel) with
-  | .error  => false
+def isSemiDecidable (self : MayTerminate T) : Prop :=
+  ∀ (fuel : Nat), match (self fuel) with
+  | .yield none => false
   | _ => true
 
 end
 end MayTerminate
 
-def MaySucceed (T : Type) := (fuel : Nat) -> {x : @Outcome T // x.isResultOrOutOfFuel}
+def MaySucceed (T : Type) := (fuel : Nat) -> {x : @Outcome (Option T) // x.isResultOrOutOfFuel}
 
 end
 

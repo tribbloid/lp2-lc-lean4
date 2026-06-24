@@ -65,7 +65,7 @@ structure TerminatingAdequateTerm (postcondition : Condition I) where
   term : Trm
   evaluates :
     ∀ [@Runtime.Env I], ∃ fuel : Nat, ∃ result : AdequateValue postcondition,
-      term.eval fuel = .result result.1
+      term.eval fuel = .yield (some result.1)
 
 
 example : TerminatingAdequateTerm (primitiveWhen proposition) where

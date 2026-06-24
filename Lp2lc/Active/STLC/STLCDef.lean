@@ -100,18 +100,19 @@ def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val value => .result value
+    | .val value => .yield (some value)
     | .apply fn arg =>
       let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
-      | (.result (.fn body _tIn), .result input) =>
+      | (.yield (some (.fn body _tIn)), .yield (some input)) =>
         let permission := env.canEvalAny input
         let index := env.valueRefs.save (p := ()) ⟨input, permission⟩
         (body index).eval fuel
-      | (.outOfFuel, _) | (_, .outOfFuel) => .outOfFuel
-      | _ => .error
+      | (.outOfFuel, _) => .outOfFuel
+      | (_, .outOfFuel) => .outOfFuel
+      | _ => .yield none
     | .ref i =>
-      .result (env.valueRefs.load (p := ()) i).1
+      .yield (some (env.valueRefs.load (p := ()) i).1)
 
 end
 
@@ -121,8 +122,8 @@ An safe term may run out of runtime fuel, but it must not reach runtime
 -/
 def CanInhabit_semantic (self : AST.Trm I) (condition : Condition I) : Prop :=
   ∀ (fuel : Nat) [@Runtime.Env I], match self.eval fuel with
-  | .result value => condition value
-  | .error => false
+  | .yield (some value) => condition value
+  | .yield none => false
   | .outOfFuel => true
 
 abbrev WeakestPre := @CanInhabit_semantic I -- weakest precondition in Iris framework
@@ -191,21 +192,21 @@ def infer (trm : Trm I) : MayTerminate (Typ I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match trm with
-    | .val (.primitive _repr) => .result .primitive
+    | .val (.primitive _repr) => .yield (some .primitive)
     | .val (.fn body tIn) =>
       let index := env.typRefs.save (p := ()) tIn
       match (body index).infer fuel with
-      | .result tOut => .result (.fn tIn tOut)
-      | .error => .error
+      | .yield (some tOut) => .yield (some (.fn tIn tOut))
+      | .yield none => .yield none
       | .outOfFuel => .outOfFuel
     | .apply fn arg =>
       match fn.infer fuel, arg.infer fuel with
-      | .result (.fn tIn tOut), .result argTyp =>
-        if argTyp ≤ tIn then .result tOut else .error
+      | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
+        if argTyp ≤ tIn then .yield (some tOut) else .yield none
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
-      | _, _ => .error
-    | .ref i => .result (env.typRefs.load (p := ()) i)
+      | _, _ => .yield none
+    | .ref i => .yield (some (env.typRefs.load (p := ()) i))
 
 /--
 determine if a term can can inhabit a type bound.
