@@ -96,7 +96,7 @@ Evaluates a term by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
+def eval (self : AST.Trm I) : RecOption (AST.Val I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -120,16 +120,16 @@ end
 An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
-def CanInhabit_semantic (self : AST.Trm I) (condition : Condition I) : Prop :=
-  ∀ (fuel : Nat) [@Runtime.Env I], match self.eval fuel with
+def CanInhabit_semantic [@Runtime.Env I] (self : AST.Trm I) (condition : Condition I) : Rec Prop := fun fuel =>
+  match self.eval fuel with
   | .yield (some value) => condition value
-  | .yield none => false
-  | .outOfFuel => true
+  | .yield none => .yield false
+  | .outOfFuel => .outOfFuel
 
-abbrev WeakestPre := @CanInhabit_semantic I -- weakest precondition in Iris framework
+-- abbrev WeakestPre := @CanInhabit_semantic I -- weakest precondition in Iris framework
 
-def IsSafe (self : AST.Trm I) : Prop :=
-  CanInhabit_semantic self (fun _ => true)
+-- def IsSafe (self : AST.Trm I) : Prop :=
+--   CanInhabit_semantic self (fun _ => true)
 
 end AST.Trm
 
@@ -188,7 +188,7 @@ section variable (self: Trm I)
 /--
 get the strongest post type bound (post-condition) of a term, or throw an error
 -/
-def infer (trm : Trm I) : MayTerminate (Typ I)
+def infer (trm : Trm I) : RecOption (Typ I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match trm with

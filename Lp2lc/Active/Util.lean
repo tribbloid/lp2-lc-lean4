@@ -48,7 +48,7 @@ abbrev FBound (UUID : TIndex) (V : Type) : Type := DepFBound (fun (_ : Unit) => 
 
 attribute [simp] DepFBound.roundtrip
 
-section variable {T : Sort u}
+section variable (T : Sort u)
 
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
 inductive Outcome
@@ -56,7 +56,10 @@ inductive Outcome
 | outOfFuel
 
 namespace Outcome
-section variable {T : Type u}
+
+def map {T2 : Sort u} (f : T -> T2): Outcome T2 := sorry
+
+section variable (T : Type u)
 
 def isResult (self : @Outcome (Option T)) : Prop := match self with
 | .yield (some _) => true
@@ -70,36 +73,36 @@ end
 end Outcome
 
 -- universe u v
-def MaySucceed (T : Type) := (fuel : Nat) -> @Outcome T
+def Rec (T : Type) := (fuel : Nat) -> @Outcome T
 
-def MayTerminate (T : Type u) := (fuel : Nat) -> @Outcome (Option T)
+def RecOption (T : Type u) := (fuel : Nat) -> @Outcome (Option T)
 
 namespace MayTerminate
 section variable {T : Type u}
 
-def _shouldYields (self : MayTerminate T) (expectedV : T) : Prop :=
+def _shouldYields (self : RecOption T) (expectedV : T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .yield (some v) => v = expectedV
   | _ => false
 
-def shouldYields (self : MayTerminate T) (expectedV : T) : Prop :=
+def shouldYields (self : RecOption T) (expectedV : T) : Prop :=
   let hasFuel := self._shouldYields expectedV
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def shouldFail (self : MayTerminate T) : Prop :=
+def shouldFail (self : RecOption T) : Prop :=
   let hasFuel := ∃ (fuel : Nat), match (self fuel) with
   | .yield none => true
   | _ => false
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def isDecidable (self : MayTerminate T) : Prop :=
+def isDecidable (self : RecOption T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .yield (some _) => true
   | _ => false
 
-def isSemiDecidable (self : MayTerminate T) : Prop :=
+def isSemiDecidable (self : RecOption T) : Prop :=
   ∀ (fuel : Nat), match (self fuel) with
   | .yield none => false
   | _ => true

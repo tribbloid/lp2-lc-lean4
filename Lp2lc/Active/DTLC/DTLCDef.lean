@@ -137,7 +137,7 @@ Evaluates a source or compiled program by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm I) : MayTerminate (AST.Val I)
+def eval (self : AST.Trm I) : RecOption (AST.Val I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -258,7 +258,7 @@ applications remain applications of recursively compiled subterms.
 Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
 -/
 def compile (trm : Trm I) (desired: Condition I)
-: MayTerminate (Program desired)
+: RecOption (Program desired)
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
@@ -270,7 +270,7 @@ def compile (trm : Trm I) (desired: Condition I)
 
 def compileToTrm (trm : Trm I)
   (condition: Condition I := fun _ => true)-- by default, accept any condition
-: MayTerminate (Trm I) := fun (fuel : Nat) =>
+: RecOption (Trm I) := fun (fuel : Nat) =>
   let out := trm.compile condition fuel
   match out with
   | .yield (some v) => .yield (some v.trm)
