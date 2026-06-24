@@ -271,11 +271,7 @@ def compile (trm : Trm I) (desired: Condition I)
 def compileToTrm (trm : Trm I)
   (condition: Condition I := fun _ => true)-- by default, accept any condition
 : RecOption (Trm I) := fun (fuel : Nat) =>
-  let out := trm.compile condition fuel
-  match out with
-  | .yield (some v) => .yield (some v.trm)
-  | .yield none => .yield none
-  | .outOfFuel => .outOfFuel
+  (trm.compile condition fuel).map (fun out => out.map (fun v => v.trm))
 
 end AST.Trm
 

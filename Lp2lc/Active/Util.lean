@@ -57,7 +57,10 @@ inductive Outcome
 
 namespace Outcome
 
-def map {T2 : Sort u} (f : T -> T2): Outcome T2 := sorry
+def map {T : Sort u} {T2 : Sort v} (self : Outcome T) (f : T -> T2) : Outcome T2 :=
+  match self with
+  | .yield v => .yield (f v)
+  | .outOfFuel => .outOfFuel
 
 section variable (T : Type u)
 
@@ -77,38 +80,38 @@ def Rec (T : Type) := (fuel : Nat) -> @Outcome T
 
 def RecOption (T : Type u) := (fuel : Nat) -> @Outcome (Option T)
 
-namespace MayTerminate
+namespace _root_.Function
 section variable {T : Type u}
 
-def _shouldYields (self : RecOption T) (expectedV : T) : Prop :=
+def _shouldYields (self : Lp2lc.Active.Util.RecOption T) (expectedV : T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .yield (some v) => v = expectedV
   | _ => false
 
-def shouldYields (self : RecOption T) (expectedV : T) : Prop :=
-  let hasFuel := self._shouldYields expectedV
+def shouldYields (self : Lp2lc.Active.Util.RecOption T) (expectedV : T) : Prop :=
+  let hasFuel := _shouldYields self expectedV
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def shouldFail (self : RecOption T) : Prop :=
+def shouldFail (self : Lp2lc.Active.Util.RecOption T) : Prop :=
   let hasFuel := ∃ (fuel : Nat), match (self fuel) with
   | .yield none => true
   | _ => false
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def isDecidable (self : RecOption T) : Prop :=
+def isDecidable (self : Lp2lc.Active.Util.RecOption T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .yield (some _) => true
   | _ => false
 
-def isSemiDecidable (self : RecOption T) : Prop :=
+def isSemiDecidable (self : Lp2lc.Active.Util.RecOption T) : Prop :=
   ∀ (fuel : Nat), match (self fuel) with
   | .yield none => false
   | _ => true
 
 end
-end MayTerminate
+end _root_.Function
 
 end
 
