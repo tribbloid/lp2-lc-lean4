@@ -120,16 +120,16 @@ end
 An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
-def CanInhabit_semantic (self : AST.Trm I) (condition : Condition I) : Prop :=
-  ∀ fuel [@Runtime.Env I], match self.eval fuel with
+def CanInhabit_semantic (self : AST.Trm I) (condition : Condition I) : Rec Prop := fun fuel =>
+  ∀ [@Runtime.Env I], match self.eval fuel with
   | .yield (some value) => condition value
   | .yield none => false
   | .outOfFuel => true
 
 -- abbrev WeakestPre := @CanInhabit_semantic I -- weakest precondition in Iris framework
 
--- def IsSafe (self : AST.Trm I) : Prop :=
---   CanInhabit_semantic self (fun _ => true)
+def IsSafe (self : AST.Trm I) : Rec Prop :=
+  CanInhabit_semantic self (fun _ => true)
 
 end AST.Trm
 
@@ -251,7 +251,7 @@ end
 /-- States that semantic typing of a closed term entails operational safety. -/
 def Adequacy : Prop :=
   ∀ (term : AST.Trm I) (postcondition : Condition I),
-    term.CanInhabit_semantic postcondition → term.CanInhabit_semantic (fun _ => true)
+    term.CanInhabit_semantic postcondition → term.IsSafe
 
 end
 
