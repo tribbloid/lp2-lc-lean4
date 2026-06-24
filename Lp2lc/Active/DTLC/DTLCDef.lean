@@ -11,10 +11,10 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 
 open Lp2lc.Active.Util
 
-section variable {I : Impl}
+section variable {I : Free}
 
 namespace AST
-section variable (I : Impl)
+section variable (I : Free)
 
 mutual
 

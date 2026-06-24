@@ -8,7 +8,7 @@ abbrev TProperty := Type
 abbrev TIndex := Type
 abbrev TData := Type
 
-class Impl : Type 1 where
+class Free : Type 1 where
   Index : TIndex
   Data : TData
 

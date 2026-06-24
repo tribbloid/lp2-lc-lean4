@@ -10,7 +10,7 @@ inductive Symbol where -- no constructor, it can only be retrieved from FBound
 
 namespace Symbolic
 
-@[reducible] def I : Impl where
+@[reducible] def I : Free where
   Index := Symbol
   Data := String
 

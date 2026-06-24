@@ -9,10 +9,10 @@ namespace STLC
 /- Shared STLC syntax family, currently exposing function types over the common representation. -/
 open Lp2lc.Active.Util
 
-section variable {I : Impl}
+section variable {I : Free}
 
 namespace AST
-section variable (I : Impl)
+section variable (I : Free)
 
 mutual
 
@@ -86,7 +86,7 @@ class Env where
 
 end Runtime
 
-abbrev Condition (I : Impl) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
+abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
 namespace AST.Trm
 section variable [env: @Runtime.Env I]
@@ -171,7 +171,7 @@ namespace Compiler
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
-class Env (I : Impl) : Type where
+class Env (I : Free) : Type where
   -- trmRefs : @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
   typRefs : FBound I.Index (AST.Typ I)
   -- TODO: revise this trmRefs if necessary

@@ -13,7 +13,7 @@ inductive Symbol where
 
 namespace Symbolic
 
-@[reducible] def I : Impl where
+@[reducible] def I : Free where
   Index := Symbol
   Data := String
 
