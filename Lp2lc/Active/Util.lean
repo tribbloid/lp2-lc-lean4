@@ -76,42 +76,42 @@ end
 end Outcome
 
 -- universe u v
-def Rec (T : Type) := (fuel : Nat) -> @Outcome T
+def Rec (T : Sort u) := (fuel : Nat) -> @Outcome T
 
-def RecOption (T : Type u) := (fuel : Nat) -> @Outcome (Option T)
+abbrev RecOption (T : Type u) := (fuel : Nat) -> @Outcome (Option T)
 
-namespace _root_.Function
-section variable {T : Type u}
+namespace RecOption
+section variable {T : Type u} (self : Lp2lc.Active.Util.RecOption T)
 
-def _shouldYields (self : Lp2lc.Active.Util.RecOption T) (expectedV : T) : Prop :=
+def _shouldYields (expectedV : T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .yield (some v) => v = expectedV
   | _ => false
 
-def shouldYields (self : Lp2lc.Active.Util.RecOption T) (expectedV : T) : Prop :=
+def shouldYields (expectedV : T) : Prop :=
   let hasFuel := _shouldYields self expectedV
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def shouldFail (self : Lp2lc.Active.Util.RecOption T) : Prop :=
+def shouldFail : Prop :=
   let hasFuel := ∃ (fuel : Nat), match (self fuel) with
   | .yield none => true
   | _ => false
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
-def isDecidable (self : Lp2lc.Active.Util.RecOption T) : Prop :=
+def isDecidable : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .yield (some _) => true
   | _ => false
 
-def isSemiDecidable (self : Lp2lc.Active.Util.RecOption T) : Prop :=
+def isSemiDecidable : Prop :=
   ∀ (fuel : Nat), match (self fuel) with
   | .yield none => false
   | _ => true
 
 end
-end _root_.Function
+end RecOption
 
 end
 

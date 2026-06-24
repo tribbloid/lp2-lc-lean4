@@ -121,10 +121,10 @@ An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
 def CanInhabit_semantic (self : AST.Trm I) (condition : Condition I) : Rec Prop := fun fuel =>
-  ∀ [@Runtime.Env I], match self.eval fuel with
-  | .yield (some value) => condition value
-  | .yield none => false
-  | .outOfFuel => true
+  ∀ [@Runtime.Env I],
+    (self.eval fuel).map (fun v
+    | .some v => condition v
+    | .none => false)
 
 -- abbrev WeakestPre := @CanInhabit_semantic I -- weakest precondition in Iris framework
 
@@ -210,7 +210,8 @@ determine if a term can can inhabit a type bound.
 
 Structurally it should be similar to infer, but return a Prop/proof obligation instead of a precise type bound
 -/
-def CanInhabit (self : Trm I) (typ : Typ I) : Prop := sorry -- AKA compile
+def CanInhabit (self : Trm I) (typ : Typ I) : Prop := sorry -- AKA compile, this serve as the prior condition of the Fundamental theorem
+-- TODO: this should be a Rec
 
 end
 end AST.Trm
@@ -218,14 +219,14 @@ end AST.Trm
 /-- Interprets source types as semantic conditions over values. -/
 def AST.Typ.ToCondition (typ: Typ I): Condition I := fun value =>
   let trm := Trm.val value
-  trm.CanInhabit typ
+  (trm.CanInhabit typ)
 
 /-- States that syntactic typing entails semantic typing by the interpreted type. -/
 def Fundamental : Prop :=
   ∀ (term : Trm I) (type : Typ I),
     term.CanInhabit type → term.CanInhabit_semantic (type.ToCondition)
 
-def _proofFundamental (term : Trm I) (type : Typ I) : term.CanInhabit type → term.CanInhabit_semantic (type.ToCondition) := sorry
+-- def _proofFundamental (term : Trm I) (type : Typ I) : term.CanInhabit type → term.CanInhabit_semantic (type.ToCondition) := sorry
   -- | 0 => .outOfFuel
   -- | fuel + 1 =>
   --   match trm with
