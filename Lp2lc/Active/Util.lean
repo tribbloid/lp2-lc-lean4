@@ -70,19 +70,20 @@ end
 end Outcome
 
 -- universe u v
+def MaySucceed (T : Type) := (fuel : Nat) -> @Outcome T
 
 def MayTerminate (T : Type u) := (fuel : Nat) -> @Outcome (Option T)
 
 namespace MayTerminate
 section variable {T : Type u}
 
-def shouldYieldsWithFuel (self : MayTerminate T) (expectedV : T) : Prop :=
+def _shouldYields (self : MayTerminate T) (expectedV : T) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .yield (some v) => v = expectedV
   | _ => false
 
 def shouldYields (self : MayTerminate T) (expectedV : T) : Prop :=
-  let hasFuel := self.shouldYieldsWithFuel expectedV
+  let hasFuel := self._shouldYields expectedV
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
@@ -105,8 +106,6 @@ def isSemiDecidable (self : MayTerminate T) : Prop :=
 
 end
 end MayTerminate
-
-def MaySucceed (T : Type) := (fuel : Nat) -> {x : @Outcome (Option T) // x.isResultOrOutOfFuel}
 
 end
 
