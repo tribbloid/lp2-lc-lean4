@@ -52,7 +52,7 @@ section variable {T : Sort u}
 
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
 inductive Outcome
-| result (v: T)
+| yield (v: T)
 | outOfFuel
 
 namespace Outcome
