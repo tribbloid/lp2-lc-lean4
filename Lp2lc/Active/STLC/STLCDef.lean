@@ -227,6 +227,27 @@ def Fundamental : Prop :=
   ∀ (term : Trm I) (type : Typ I),
     term.CanInhabit type → term.CanInhabit_semantic (type.ToCondition)
 
+def _proofFundamental (term : Trm I) (type : Typ I) : term.CanInhabit type → term.CanInhabit_semantic (type.ToCondition) := sorry
+  -- | 0 => .outOfFuel
+  -- | fuel + 1 =>
+  --   match trm with
+  --   | .val (.primitive _repr) => .result .primitive
+  --   | .val (.fn body tIn) =>
+  --     let index := env.typRefs.save (p := ()) tIn
+  --     match (body index).infer fuel with
+  --     | .result tOut => .result (.fn tIn tOut)
+  --     | .error => .error
+  --     | .outOfFuel => .outOfFuel
+  --   | .apply fn arg =>
+  --     match fn.infer fuel, arg.infer fuel with
+  --     | .result (.fn tIn tOut), .result argTyp =>
+  --       if argTyp ≤ tIn then .result tOut else .error
+  --     | .outOfFuel, _ => .outOfFuel
+  --     | _, .outOfFuel => .outOfFuel
+  --     | _, _ => .error
+  --   | .ref i => .result (env.typRefs.load (p := ()) i)
+
+
 end
 
 /-- States that semantic typing of a closed term entails operational safety. -/
