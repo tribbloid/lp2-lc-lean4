@@ -241,26 +241,11 @@ def Fundamental : Prop :=
   ∀ (term : Trm I) (type : Typ I),
     term.CanInhabit type → term.SemiCanSatisfy (type.ToCondition)
 
--- def _proofFundamental (term : Trm I) (type : Typ I) : term.CanInhabit type → term.CanInhabit_semantic (type.ToCondition) := sorry
-  -- | 0 => .outOfFuel
-  -- | fuel + 1 =>
-  --   match trm with
-  --   | .val (.primitive _repr) => .result .primitive
-  --   | .val (.fn body tIn) =>
-  --     let index := env.typRefs.save (p := ()) tIn
-  --     match (body index).infer fuel with
-  --     | .result tOut => .result (.fn tIn tOut)
-  --     | .error => .error
-  --     | .outOfFuel => .outOfFuel
-  --   | .apply fn arg =>
-  --     match fn.infer fuel, arg.infer fuel with
-  --     | .result (.fn tIn tOut), .result argTyp =>
-  --       if argTyp ≤ tIn then .result tOut else .error
-  --     | .outOfFuel, _ => .outOfFuel
-  --     | _, .outOfFuel => .outOfFuel
-  --     | _, _ => .error
-  --   | .ref i => .result (env.typRefs.load (p := ()) i)
+namespace Fundamental
 
+def recProof : Rec (@Fundamental I) := sorry
+
+end Fundamental
 
 end
 
@@ -269,8 +254,13 @@ def Adequacy : Prop :=
   ∀ (term : AST.Trm I) (postcondition : Condition I),
     term.WeakestPre postcondition → term.IsSafe
 
-end
+namespace Adequacy
 
+def proof : @Adequacy I := sorry
+
+end Adequacy
+
+end
 end STLC
 
 end Lp2lc.Active
