@@ -219,15 +219,18 @@ used in Fundamental theorem (thus the `_total` suffix)
 
 Structurally it should be similar to infer, but return `.some Unit` or `.none` instead of a precise type bound
 -/
-def recCanInhabit (self : Trm I) (typ : Typ I) : Rec (Option Unit) :=
-  let _ := self
-  sorry
+def recCanInhabit (self : Trm I) (typ : Typ I) : RecOption Unit :=
+  fun fuel =>
+    (self.recInfer fuel).map (fun
+      | some inferredTyp =>
+        if inferredTyp ≤ typ then some () else none
+      | none => none)
 
 /--
 determine if a term can can inhabit a type bound.
 -/
-def CanInhabit_total (typ : Typ I) : Prop :=
-  ∃ fuel, (self.recCanInhabit typ fuel).map (fun v => v = .some _).getOrElse (False)
+def CanInhabit_total (self : Trm I) (typ : Typ I) : Prop :=
+  RecOption.isDecidable (self.recCanInhabit typ)
 
 end
 end AST.Trm
@@ -246,7 +249,7 @@ def AST.Typ.ToCondition (typ: Typ I): Condition I := fun value =>
 /-- States that syntactic typing entails semantic typing by the interpreted type. -/
 def Fundamental : Prop :=
   ∀ (term : Trm I) (type : Typ I) (compilerFuel: Nat),
-    (term.recCanInhabit type compilerFuel).getOrElse False → term.SemiCanSatisfy (type.ToCondition)
+    term.recCanInhabit type compilerFuel = .yield (some ()) → term.CanSatisfy_semi (type.ToCondition)
 
 -- /-- States that syntactic typing entails semantic typing by the interpreted type. -/
 -- def Fundamental : Prop :=
@@ -255,7 +258,7 @@ def Fundamental : Prop :=
 
 namespace Fundamental
 
-def proof: @Fundamental I := sorry
+def proof: @Fundamental I env := sorry
 
 -- def recProof : Rec (@Fundamental I) := fun fuel =>
 --   fun (term : Trm I) (type : Typ I) (compilerFuel: Nat) =>
