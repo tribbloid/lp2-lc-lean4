@@ -8,9 +8,15 @@ abbrev TPayload := Type
 abbrev TIndex := Type
 abbrev TData := Type
 
-class Free : Type 1 where
-  Index : TIndex
+class HFree : Type 1 where
+  Payload : TPayload
+  HIndex : Payload -> TIndex
   Data : TData
+
+class Free : Type 1 extends HFree where
+  Index : TIndex
+  Payload := Unit
+  HIndex := fun _ => Index
 
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
