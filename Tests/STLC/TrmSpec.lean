@@ -92,38 +92,58 @@ example :
 example :
     (primitiveIdFn.recCanInhabit (.fn .primitive .primitive)).shouldYields () := by
   constructor
-  · exact ⟨2, by simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, typLE, primitiveIdFn]⟩
-  · rfl
+  · exact ⟨2, by
+      simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, primitiveIdFn]
+      have h : (AST.Typ.primitive.fn AST.Typ.primitive : AST.Typ I) ≤ (AST.Typ.primitive.fn AST.Typ.primitive : AST.Typ I) := rfl
+      simp [h]⟩
+  · simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map]
 
 example :
     (primitiveIdFnOnFalse.recCanInhabit .primitive).shouldYields () := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, typLE, primitiveIdFnOnFalse, primitiveIdFn, vFalse]⟩
-  · rfl
+  · exact ⟨3, by
+      simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, primitiveIdFnOnFalse, primitiveIdFn, vFalse]
+      have h : (AST.Typ.primitive : AST.Typ I) ≤ (AST.Typ.primitive : AST.Typ I) := rfl
+      simp [h]⟩
+  · simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map]
 
 example :
     (get1st.recCanInhabit (.fn .primitive (.fn .primitive .primitive))).shouldYields () := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, typLE, get1st]⟩
-  · rfl
+  · exact ⟨3, by
+      simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, get1st]
+      have h : (AST.Typ.primitive.fn (AST.Typ.primitive.fn AST.Typ.primitive) : AST.Typ I) ≤
+               (AST.Typ.primitive.fn (AST.Typ.primitive.fn AST.Typ.primitive) : AST.Typ I) := rfl
+      simp [h]⟩
+  · simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map]
 
 example :
     (get2nd.recCanInhabit (.fn .primitive (.fn .primitive .primitive))).shouldYields () := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, typLE, get2nd]⟩
-  · rfl
+  · exact ⟨3, by
+      simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, get2nd]
+      have h : (AST.Typ.primitive.fn (AST.Typ.primitive.fn AST.Typ.primitive) : AST.Typ I) ≤
+               (AST.Typ.primitive.fn (AST.Typ.primitive.fn AST.Typ.primitive) : AST.Typ I) := rfl
+      simp [h]⟩
+  · simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map]
 
 example :
     (get1stOnTuple.recCanInhabit .primitive).shouldYields () := by
   constructor
-  · exact ⟨5, by simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, typLE, get1stOnTuple, get1st, vFalse, vTrue]⟩
-  · rfl
+  · exact ⟨5, by
+      simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, get1stOnTuple, get1st, vFalse, vTrue]
+      have h : (AST.Typ.primitive : AST.Typ I) ≤ (AST.Typ.primitive : AST.Typ I) := rfl
+      simp [h]⟩
+  · simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map]
 
 example :
     (get2ndOnTuple.recCanInhabit .primitive).shouldYields () := by
   constructor
-  · exact ⟨5, by simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, typLE, get2ndOnTuple, get2nd, vFalse, vTrue]⟩
-  · rfl
+  · exact ⟨5, by
+      simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, get2ndOnTuple, get2nd, vFalse, vTrue]
+      have h : (AST.Typ.primitive : AST.Typ I) ≤ (AST.Typ.primitive : AST.Typ I) := rfl
+      simp [h]⟩
+  · simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map]
 
 example :
     (primitiveTrueFn.recCanInhabit (.fn .primitive .primitive)).shouldYields () := by
@@ -146,35 +166,52 @@ example :
 example :
     (TypeHinted.hintedIdFn.recCanInhabit (.fn .primitive .primitive)).shouldYields () := by
   constructor
-  · exact ⟨2, by simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, typLE, TypeHinted.hintedIdFn]⟩
-  · rfl
+  · exact ⟨2, by
+      simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, TypeHinted.hintedIdFn]
+      have h : (AST.Typ.primitive.fn AST.Typ.primitive : AST.Typ I) ≤ (AST.Typ.primitive.fn AST.Typ.primitive : AST.Typ I) := rfl
+      simp [h]⟩
+  · simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map]
 
 example :
     (TypeHinted.hintedIdFnOnFalse.recCanInhabit .primitive).shouldYields () := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, typLE, TypeHinted.hintedIdFnOnFalse, TypeHinted.hintedIdFn, TypeHinted.hintedFalse]⟩
-  · rfl
+  · exact ⟨3, by
+      simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, TypeHinted.hintedIdFnOnFalse, TypeHinted.hintedIdFn, TypeHinted.hintedFalse]
+      have h : (AST.Typ.primitive : AST.Typ I) ≤ (AST.Typ.primitive : AST.Typ I) := rfl
+      simp [h]⟩
+  · simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map]
 
 example :
     ∀ typ, (Malformed.applyidFnOnItself.recCanInhabit typ).shouldFail := by
   intro typ
   constructor
-  · exact ⟨3, by cases typ <;> simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, typLE, Malformed.applyidFnOnItself, primitiveIdFn]⟩
-  · rfl
+  · refine ⟨3, ?_⟩
+    simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, Malformed.applyidFnOnItself, primitiveIdFn]
+    have h : ¬((AST.Typ.primitive.fn AST.Typ.primitive : AST.Typ I) ≤ AST.Typ.primitive) := by
+      intro hle; injection hle
+    simp [h]
+  · simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map]
 
 example :
     ∀ typ, (Malformed.idFnOnFalse2.recCanInhabit typ).shouldFail := by
   intro typ
   constructor
-  · exact ⟨4, by cases typ <;> simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, typLE, Malformed.idFnOnFalse2, Malformed.applyidFnOnItself, primitiveIdFn, vFalse]⟩
-  · rfl
+  · refine ⟨4, ?_⟩
+    simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, Malformed.idFnOnFalse2, Malformed.applyidFnOnItself, primitiveIdFn, vFalse]
+    have h : ¬((AST.Typ.primitive.fn AST.Typ.primitive : AST.Typ I) ≤ AST.Typ.primitive) := by
+      intro hle; injection hle
+    simp [h]
+  · simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map]
 
 example :
     ∀ typ, (Malformed.apply1.recCanInhabit typ).shouldFail := by
   intro typ
   constructor
-  · exact ⟨4, by cases typ <;> simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, typLE, Malformed.apply1, primitiveIdFn, vFalse, vTrue]⟩
-  · rfl
+  · refine ⟨4, ?_⟩
+    simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map, Malformed.apply1, primitiveIdFn, vFalse, vTrue]
+    have h : (AST.Typ.primitive : AST.Typ I) ≤ (AST.Typ.primitive : AST.Typ I) := rfl
+    simp [h]
+  · simp [AST.Trm.recCanInhabit, AST.Trm.recInfer, Outcome.map]
 
 example :
     ∀ typ, (Malformed.primitiveApply.recCanInhabit typ).shouldFail := by
