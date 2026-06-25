@@ -116,20 +116,25 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
 
 end
 
+def RecCanInhabit_semantic (self : AST.Trm I) (condition : Condition I) : ∀ [@Runtime.Env I], Rec Prop := fun fuel =>
+  (self.eval fuel).map (fun
+    | some v => condition v
+    | none => False)
+
 /--
 An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
-def CanInhabit_semantic (self : AST.Trm I) (condition : Condition I) : Rec Prop := fun fuel =>
-  ∀ [@Runtime.Env I],
-    (self.eval fuel).map (fun v
-    | .some v => condition v
-    | .none => false)
+def CanInhabit_semantic (term : AST.Trm I) (condition : Condition I) : Prop :=
+  ∀ fuel, ∀ [@Runtime.Env I], match term.RecCanInhabit_semantic condition fuel with
+  | .yield proposition => proposition
+  | .outOfFuel => True
 
--- abbrev WeakestPre := @CanInhabit_semantic I -- weakest precondition in Iris framework
+/-- Converts semantic outcomes into obligations over all fuel and runtime environments. -/
+abbrev WeakestPre := @CanInhabit_semantic I -- weakest precondition in Iris framework
 
-def IsSafe (self : AST.Trm I) : Rec Prop :=
-  CanInhabit_semantic self (fun _ => true)
+def IsSafe (self : AST.Trm I) : Prop :=
+  self.CanInhabit_semantic (fun _ => true)
 
 end AST.Trm
 
@@ -205,13 +210,18 @@ def infer (trm : Trm I) : RecOption (Typ I)
       | _, _ => .yield none
     | .ref i => .yield (some (env.typRefs.load (p := ()) i))
 
+
+def RecCanInhabit (self : Trm I) (typ : Typ I) : Rec Prop := sorry -- AKA compile, this serve as the prior condition of the Fundamental theorem
+
 /--
 determine if a term can can inhabit a type bound.
 
 Structurally it should be similar to infer, but return a Prop/proof obligation instead of a precise type bound
 -/
-def CanInhabit (self : Trm I) (typ : Typ I) : Prop := sorry -- AKA compile, this serve as the prior condition of the Fundamental theorem
--- TODO: this should be a Rec
+def CanInhabit (self : Trm I) (typ : Typ I) : Prop :=
+  ∀ fuel, match term.RecCanInhabit typ fuel with
+  | .yield proposition => proposition
+  | .outOfFuel => True
 
 end
 end AST.Trm
@@ -224,7 +234,7 @@ def AST.Typ.ToCondition (typ: Typ I): Condition I := fun value =>
 /-- States that syntactic typing entails semantic typing by the interpreted type. -/
 def Fundamental : Prop :=
   ∀ (term : Trm I) (type : Typ I),
-    term.CanInhabit type → term.CanInhabit_semantic (type.ToCondition)
+    term.CanInhabit type → term.WeakestPre (type.ToCondition)
 
 -- def _proofFundamental (term : Trm I) (type : Typ I) : term.CanInhabit type → term.CanInhabit_semantic (type.ToCondition) := sorry
   -- | 0 => .outOfFuel
@@ -252,7 +262,7 @@ end
 /-- States that semantic typing of a closed term entails operational safety. -/
 def Adequacy : Prop :=
   ∀ (term : AST.Trm I) (postcondition : Condition I),
-    term.CanInhabit_semantic postcondition → term.IsSafe
+    term.WeakestPre postcondition → term.IsSafe
 
 end
 

@@ -38,15 +38,12 @@ example : ¬primitiveWhen proposition Val.idFn := by
 abbrev AdequateValue (postcondition : Condition I) :=
   { value : Val // postcondition value }
 
-def WeakestPre (term : Trm) (postcondition : Condition I) : Prop :=
-  term.CanInhabit_semantic postcondition
-
 def Hoare (precondition : Prop) (term : Trm)
     (postcondition : Condition I) : Prop :=
-  precondition → WeakestPre term postcondition
+  precondition → term.WeakestPre postcondition
 
 def AdequateTerm (term : Trm) (postcondition : Condition I) : Prop :=
-  WeakestPre term postcondition
+  term.WeakestPre postcondition
 
 example :
     Hoare proposition
@@ -85,7 +82,7 @@ end
 -- Semantic typing for a closed term.
 def TypedInSemantic
     (term : Trm) (semanticType : Condition I) : Prop :=
-  WeakestPre term semanticType
+  term.WeakestPre semanticType
 
 -- Adequacy of the logical relation.
 def Adequacy : Prop :=
