@@ -85,6 +85,7 @@ Every task can be classified into one of the following Categories:
 - `Ref` : reference
 - `Gen` suffix : generator
 - `Dep` prefix : dependent, related to dependent type
+- `Rec` : recursive, guarded recursion
 
 ## Key Commands
 
