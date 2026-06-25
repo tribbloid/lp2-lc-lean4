@@ -127,14 +127,14 @@ def recCanSatisfy (condition : Condition I) : ∀ [@Runtime.Env I], Rec Prop := 
 An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
-def SemiCanSatisfy (condition : Condition I) : Prop :=
+def CanSatisfy_semi (condition : Condition I) : Prop :=
   ∀ fuel, ∀ [@Runtime.Env I], (self.recCanSatisfy condition fuel).getOrElse True
 
 /-- Converts semantic outcomes into obligations over all fuel and runtime environments. -/
-abbrev WeakestPre := @SemiCanSatisfy I -- weakest precondition in Iris framework
+abbrev WeakestPre := @CanSatisfy_semi I -- weakest precondition in Iris framework
 
 def IsSafe : Prop :=
-  self.SemiCanSatisfy (fun _ => true)
+  self.CanSatisfy_semi (fun _ => true)
 
 end
 end AST.Trm
@@ -215,19 +215,19 @@ def recInfer (self : Trm I) : RecOption (Typ I) -- TODO: remove this, not possib
 AKA compile, recursively produce a proof target.
 
 it is NOT guaranteed to terminate, but termination is the prior condition to be
-used in Fundamental theorem
+used in Fundamental theorem (thus the `_total` suffix)
+
+Structurally it should be similar to infer, but return `.some Unit` or `.none` instead of a precise type bound
 -/
-def recCanInhabit (self : Trm I) (typ : Typ I) : Rec Prop :=
+def recCanInhabit (self : Trm I) (typ : Typ I) : Rec (Option Unit) :=
   let _ := self
   sorry
 
 /--
 determine if a term can can inhabit a type bound.
-
-Structurally it should be similar to infer, but return a Prop/proof obligation instead of a precise type bound
 -/
-def CanInhabit (typ : Typ I) : Prop :=
-  ∃ fuel, (self.recCanInhabit typ fuel).getOrElse False
+def CanInhabit_total (typ : Typ I) : Prop :=
+  ∃ fuel, (self.recCanInhabit typ fuel).map (fun v => v = .some _).getOrElse (False)
 
 end
 end AST.Trm
@@ -235,7 +235,7 @@ end AST.Trm
 /-- Interprets source types as semantic conditions over values. -/
 def AST.Typ.ToCondition (typ: Typ I): Condition I := fun value =>
   let trm := Trm.val value
-  (trm.CanInhabit typ)
+  (trm.CanInhabit_total typ)
 
 -- /-- States that syntactic typing entails semantic typing by the interpreted type. -/
 -- def RecFundamental :=
