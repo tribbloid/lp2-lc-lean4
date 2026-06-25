@@ -248,7 +248,8 @@ def AST.Typ.ToCondition (typ: Typ I): Condition I := fun value =>
 
 /-- States that syntactic typing entails semantic typing by the interpreted type. -/
 def Fundamental : Prop :=
-  ∀ (term : Trm I) (type : Typ I) (compilerFuel: Nat),
+  ∀ (term : Trm I) (type : Typ I),
+  ∀ (compilerFuel: Nat),
     term.recCanInhabit type compilerFuel = .yield (some ()) → term.CanSatisfy_semi (type.ToCondition)
 
 -- /-- States that syntactic typing entails semantic typing by the interpreted type. -/

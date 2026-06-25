@@ -8,15 +8,27 @@ abbrev TPayload := Type
 abbrev TIndex := Type
 abbrev TData := Type
 
-class HFree : Type 1 where
+-- DO NOT INTRODUCE BEYOND NECESSITY
+
+/--
+collection of free type variables, with index type depending on payload
+
+They are deliberately left free to ward off unlawful construction:
+
+- the only way to construct a `DepIndex p` is to save `Value p` into a `DepFBound`
+- it is impossible mingle `DepIndex p1` and `DepIndex p2` if p1 & p2 are different in definition: They are different types
+- the only way to construct a `Data` is to parse a primitive literal in AST
+- if payload is not required, it can be set to `Unit` (see `Free`)
+-/
+class DepFree : Type 1 where
   Payload : TPayload
-  HIndex : Payload -> TIndex
+  DepIndex : Payload -> TIndex
   Data : TData
 
-class Free : Type 1 extends HFree where
+class Free : Type 1 extends DepFree where
   Index : TIndex
   Payload := Unit
-  HIndex := fun _ => Index
+  DepIndex := fun _ => Index
 
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
