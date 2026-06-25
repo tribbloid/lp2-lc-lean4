@@ -221,7 +221,7 @@ determine if a term can can inhabit a type bound.
 Structurally it should be similar to infer, but return a Prop/proof obligation instead of a precise type bound
 -/
 def CanInhabit (typ : Typ I) : Prop :=
-  ∀ fuel, (self.recCanInhabit typ fuel).getOrElse False
+  ∃ fuel, (self.recCanInhabit typ fuel).getOrElse False
 
 end
 end AST.Trm
