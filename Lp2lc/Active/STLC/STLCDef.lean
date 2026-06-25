@@ -249,7 +249,14 @@ def Fundamental : Prop :=
 
 namespace Fundamental
 
-def recProof : Rec (@Fundamental I) := sorry
+def proof: @Fundamental I := sorry
+
+-- def recProof : Rec (@Fundamental I) := fun fuel =>
+--   fun (term : Trm I) (type : Typ I) (compilerFuel: Nat) =>
+--     match term with
+--     | .ref index =>
+
+--     | _ => sorry
 
 end Fundamental
 
