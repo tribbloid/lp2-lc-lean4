@@ -4,7 +4,7 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Util
 
-abbrev TProperty := Type
+abbrev TPayload := Type
 abbrev TIndex := Type
 abbrev TData := Type
 
@@ -39,7 +39,7 @@ As a result, explicit variable substitution (common in de Bruijn serial & named 
 
 The UUId can be a dependent type of P, if unnecessary, use FBound alias instead
 -/
-class DepFBound {P : TProperty} (UUID : P -> TIndex) (V : P -> Type): Type where
+class DepFBound {P : TPayload} (UUID : P -> TIndex) (V : P -> Type): Type where
   save : (value : V p) → UUID p -- this is the only way to get an UUID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
   load : (id : UUID p) → V p
   roundtrip : ∀ (value : V p), load (save value) = value
