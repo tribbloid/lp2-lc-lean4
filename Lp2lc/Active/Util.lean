@@ -48,19 +48,25 @@ abbrev FBound (UUID : TIndex) (V : Type) : Type := DepFBound (fun (_ : Unit) => 
 
 attribute [simp] DepFBound.roundtrip
 
-section variable (T : Sort u)
+section variable {T : Sort u}
 
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
-inductive Outcome
+inductive Outcome (T : Sort u)
 | yield (v: T)
 | outOfFuel
 
 namespace Outcome
+variable (self : Outcome T)
 
-def map {T : Sort u} {T2 : Sort v} (self : Outcome T) (f : T -> T2) : Outcome T2 :=
+def map {T2 : Sort v} (f : T -> T2) : Outcome T2 :=
   match self with
   | .yield v => .yield (f v)
   | .outOfFuel => .outOfFuel
+
+def getOrElse (fallback : T) : T :=
+  match self with
+  | .yield v => v
+  | .outOfFuel => fallback
 
 section variable (T : Type u)
 

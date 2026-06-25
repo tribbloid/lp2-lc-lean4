@@ -116,7 +116,9 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
 
 end
 
-def RecCanInhabit_semantic (self : AST.Trm I) (condition : Condition I) : ∀ [@Runtime.Env I], Rec Prop := fun fuel =>
+section variable (self : AST.Trm I)
+
+def RecCanSatisfy (condition : Condition I) : ∀ [@Runtime.Env I], Rec Prop := fun fuel =>
   (self.eval fuel).map (fun
     | some v => condition v
     | none => False)
@@ -125,17 +127,16 @@ def RecCanInhabit_semantic (self : AST.Trm I) (condition : Condition I) : ∀ [@
 An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
-def CanInhabit_semantic (term : AST.Trm I) (condition : Condition I) : Prop :=
-  ∀ fuel, ∀ [@Runtime.Env I], match term.RecCanInhabit_semantic condition fuel with
-  | .yield proposition => proposition
-  | .outOfFuel => True
+def SemiCanSatisfy (condition : Condition I) : Prop :=
+  ∀ fuel, ∀ [@Runtime.Env I], (self.RecCanSatisfy condition fuel).getOrElse True
 
 /-- Converts semantic outcomes into obligations over all fuel and runtime environments. -/
-abbrev WeakestPre := @CanInhabit_semantic I -- weakest precondition in Iris framework
+abbrev WeakestPre := @SemiCanSatisfy I -- weakest precondition in Iris framework
 
-def IsSafe (self : AST.Trm I) : Prop :=
-  self.CanInhabit_semantic (fun _ => true)
+def IsSafe : Prop :=
+  self.SemiCanSatisfy (fun _ => true)
 
+end
 end AST.Trm
 
 -- namespace Internal
@@ -188,7 +189,7 @@ section variable [env: @Compiler.Env I]
 open AST
 
 namespace AST.Trm
-section variable (self: Trm I)
+section variable (self : Trm I)
 
 /--
 get the strongest post type bound (post-condition) of a term, or throw an error
@@ -211,17 +212,17 @@ def infer (trm : Trm I) : RecOption (Typ I)
     | .ref i => .yield (some (env.typRefs.load (p := ()) i))
 
 
-def RecCanInhabit (self : Trm I) (typ : Typ I) : Rec Prop := sorry -- AKA compile, this serve as the prior condition of the Fundamental theorem
+def RecCanInhabit (typ : Typ I) : Rec Prop :=
+  let _ := self
+  sorry -- AKA compile, this serve as the prior condition of the Fundamental theorem
 
 /--
 determine if a term can can inhabit a type bound.
 
 Structurally it should be similar to infer, but return a Prop/proof obligation instead of a precise type bound
 -/
-def CanInhabit (self : Trm I) (typ : Typ I) : Prop :=
-  ∀ fuel, match term.RecCanInhabit typ fuel with
-  | .yield proposition => proposition
-  | .outOfFuel => True
+def CanInhabit (typ : Typ I) : Prop :=
+  ∀ fuel, (self.RecCanInhabit typ fuel).getOrElse False
 
 end
 end AST.Trm
@@ -230,6 +231,12 @@ end AST.Trm
 def AST.Typ.ToCondition (typ: Typ I): Condition I := fun value =>
   let trm := Trm.val value
   (trm.CanInhabit typ)
+
+
+/-- States that syntactic typing entails semantic typing by the interpreted type. -/
+def RecFundamental (term : Trm I) (type : Typ I): Prop :=
+  ∀ (term : Trm I) (type : Typ I),
+    term.CanInhabit type → term.WeakestPre (type.ToCondition)
 
 /-- States that syntactic typing entails semantic typing by the interpreted type. -/
 def Fundamental : Prop :=
