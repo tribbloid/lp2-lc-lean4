@@ -211,9 +211,15 @@ def recInfer (self : Trm I) : RecOption (Typ I) -- TODO: remove this, not possib
       | _, _ => .yield none
     | .ref i => .yield (some (env.typRefs.load (p := ()) i))
 
+/--
+AKA compile, recursively produce a proof target.
+
+it is NOT guaranteed to terminate, but termination is the prior condition to be
+used in Fundamental theorem
+-/
 def recCanInhabit (self : Trm I) (typ : Typ I) : Rec Prop :=
   let _ := self
-  sorry -- AKA compile, this serve as the prior condition of the Fundamental theorem
+  sorry
 
 /--
 determine if a term can can inhabit a type bound.
