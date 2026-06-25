@@ -256,7 +256,18 @@ def Adequacy : Prop :=
 
 namespace Adequacy
 
-def proof : @Adequacy I := sorry
+def proof : @Adequacy I := by
+  intro term postcondition weakest fuel runtimeEnv
+  specialize weakest fuel
+  cases evalResult : term.eval fuel with
+  | yield value =>
+    cases value with
+    | none =>
+      simp [AST.Trm.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult] at weakest
+    | some value =>
+      simp [AST.Trm.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult]
+  | outOfFuel =>
+    simp [AST.Trm.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult]
 
 end Adequacy
 
