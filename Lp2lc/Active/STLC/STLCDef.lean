@@ -76,20 +76,16 @@ namespace AST.Val
 
 end AST.Val
 
-namespace Runtime
-class Env where
+class RuntimeEnv where
   CanSave : Permission (AST.Val I)
   -- valueRefGen {TP: Type} : DepFBound (TP -> I.Index) (TP -> { value : AST.Val I // CanSave value }) -- TODO: don't know how to define this prior
   valueRefs: FBound I.Index { value : AST.Val I // CanSave value }
   canEvalAny: (v: AST.Val I) -> CanSave v
-  -- fuel: Nat -- this can't be used, ewww
-
-end Runtime
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
 namespace AST.Trm
-section variable [env: @Runtime.Env I]
+section variable [env: @RuntimeEnv I]
 
 /--
 Evaluates a term by spending 1 fuel at each semantic
@@ -118,7 +114,7 @@ end
 
 section variable (self : AST.Trm I)
 
-def recCanSatisfy (condition : Condition I) : ∀ [@Runtime.Env I], Rec Prop := fun fuel =>
+def recCanSatisfy (condition : Condition I) : ∀ [@RuntimeEnv I], Rec Prop := fun fuel =>
   (self.eval fuel).map (fun
     | some v => condition v
     | none => False)
@@ -128,7 +124,7 @@ An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
 def CanSatisfy_semi (condition : Condition I) : Prop :=
-  ∀ fuel, ∀ [@Runtime.Env I], (self.recCanSatisfy condition fuel).getOrElse True
+  ∀ fuel, ∀ [@RuntimeEnv I], (self.recCanSatisfy condition fuel).getOrElse True
 
 /-- Converts semantic outcomes into obligations over all fuel and runtime environments. -/
 abbrev WeakestPre := @CanSatisfy_semi I -- weakest precondition in Iris framework
@@ -153,7 +149,7 @@ end AST.Trm
 -- abbrev AdequateTrm := @Internal._AdequateTrm I
 
 -- namespace AdequateTrm
--- section variable {c: Condition I} (self: AdequateTrm c) [env : @Runtime.Env I]
+-- section variable {c: Condition I} (self: AdequateTrm c) [env : @RuntimeEnv I]
 
 -- def eval : MaySucceed ({v : AST.Val I // c v}) := fun fuel =>
 --   match h : self.trm.eval fuel with
@@ -173,19 +169,15 @@ end AST.Trm
 -- end
 -- end AdequateTrm
 
-namespace Compiler
-
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
-class Env : Type where
+class CompilerEnv : Type where
   -- trmRefs : @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
   typRefs : FBound I.Index (AST.Typ I)
   -- TODO: revise this trmRefs if necessary
 
-end Compiler
-
-section variable [env: @Compiler.Env I]
+section variable [env: @CompilerEnv I]
 open AST
 
 namespace AST.Trm

@@ -61,7 +61,7 @@ example : AdequateValue (primitiveWhen proposition) :=
 structure TerminatingAdequateTerm (postcondition : Condition I) where
   term : Trm
   evaluates :
-    ∀ [@Runtime.Env I], ∃ fuel : Nat, ∃ result : AdequateValue postcondition,
+    ∀ [@RuntimeEnv I], ∃ fuel : Nat, ∃ result : AdequateValue postcondition,
       term.eval fuel = .yield (some result.1)
 
 

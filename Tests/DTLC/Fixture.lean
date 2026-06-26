@@ -38,7 +38,7 @@ is sound by construction.
       exact unsafeCast True.intro
   }
 
-@[reducible] unsafe def _runtimeEnv : @Runtime.Env I :=
+@[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
   {
     EvalPermission := RuntimeCanEval
     forVals := _unsafeFBound { value : Val // RuntimeCanEval value }
@@ -47,14 +47,14 @@ is sound by construction.
 
 
 @[instance, implemented_by _runtimeEnv]
-axiom runtimeEnv : @Runtime.Env I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
+axiom runtimeEnv : @RuntimeEnv I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
 
 
-@[reducible] unsafe def _compilerEnv : @Compiler.Env I :=
+@[reducible] unsafe def _compilerEnv : @CompilerEnv I :=
   { forSemantic := _unsafeFBound { _semantic : Val -> AST.Condition I // True } }
 
 @[instance, implemented_by _compilerEnv]
-axiom compilerEnv : @Compiler.Env I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
+axiom compilerEnv : @CompilerEnv I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
 
 end Fixture
 

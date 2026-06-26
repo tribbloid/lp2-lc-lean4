@@ -3,7 +3,7 @@ import «Lp2lc».Active.Shared
 import «Lp2lc».Active.Util
 import «Lp2lc».Active.STLC.STLCDef
 
-namespace Lp2lc.Actives
+namespace Lp2lc.Active
 
 namespace STLC
 open Lp2lc.Active.Util
@@ -21,29 +21,29 @@ section variable (I : Free)
 namespace Proving
 
 class Env where
-  [@Runtime.Env I]
-  [@Compiler.Env I]
+  runtimeEnv : @RuntimeEnv I
+  compilerEnv : @CompilerEnv I
 
 end Proving
 
-structure TrmIn where
-  self: AST.Trm I
-  fuel: Nat
+-- structure TrmIn where
+--   self: AST.Trm I
+--   fuel: Nat
 
-def isSafe -- doesn't use type
-  [env : Proving.Env I]
-  (trm : TrmIn I)
-  -- (typ : AST.Typ I)
-  : Prop
-:=
-  let t1 := AST.Trm.infer (I := I) (env := compilerEnv) trm.self trm.fuel
-  let evaled := AST.Trm.eval (I := I) (env := runtimeEnv) trm.self trm.fuel
+-- def isSafe -- doesn't use type
+--   [env : Proving.Env I]
+--   (trm : TrmIn I)
+--   -- (typ : AST.Typ I)
+--   : Prop
+-- :=
+--   let t1 := AST.Trm.infer (I := I) (env := compilerEnv) trm.self trm.fuel
+--   let evaled := AST.Trm.eval (I := I) (env := runtimeEnv) trm.self trm.fuel
 
-  evaled.map ( fun v =>
-    let t2 := v.infer (env := compilerEnv)
-    t2 <= t1
-  )
-  .getOrElse False
+--   evaled.map ( fun v =>
+--     let t2 := v.infer (env := compilerEnv)
+--     t2 <= t1
+--   )
+--   .getOrElse False
   -- .getOrElse True
   -- match evaled with
   -- | .yields v =>
@@ -57,10 +57,10 @@ def isSafe -- doesn't use type
 
 -- it's the evaluation target of compile function, like value to eval function
 -- -/
--- structure SafeTrm [Compiler.Env I] (I : Free) where
+-- structure SafeTrm [CompilerEnv I] (I : Free) where
 --   trm : AST.Trm I
 --   typ : AST.Typ I
---   proof: [Runtime.Env] -> (trm.infer.shouldYields typ) /\   Rec trm.infer.shouldYields typ -- in STLC this is just an equality! extension will happen later
+--   proof: [RuntimeEnv] -> (trm.infer.shouldYields typ) /\   Rec trm.infer.shouldYields typ -- in STLC this is just an equality! extension will happen later
 
 -- -- TODO: mimic Trm.recInfer
 -- def proveSafety [fb: FBound I.Index (SafeTrm I)] (trm: AST.Trm I): RecOption (SafeTrm I)

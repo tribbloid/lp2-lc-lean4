@@ -119,16 +119,13 @@ namespace AST.Val
 
 end AST.Val
 
-namespace Runtime
-class Env where
+class RuntimeEnv where
   EvalPermission : Permission (AST.Val I)
   -- fuel: Nat -- this can't be used, ewww
   forVals: FBound I.Index { value : AST.Val I // EvalPermission value }
   canEvalAny: (v: AST.Val I) -> EvalPermission v
 
-end Runtime
-
-section variable [env: @Runtime.Env I]
+section variable [env: @RuntimeEnv I]
 
 namespace AST.Trm
 
@@ -151,13 +148,13 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
         eval (body repr) fuel
       | (.yield (some (.fn body)), .yield (some value)) =>
         let fBound := env.forVals
-        let permission := Runtime.Env.canEvalAny value
+        let permission := RuntimeEnv.canEvalAny value
         eval (body (fBound.save (p := ()) ⟨value, permission⟩)) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref i =>
-      let fBound := Runtime.Env.forVals
+      let fBound := RuntimeEnv.forVals
       .yield (some (fBound.load (p := ()) i).1)
 
 /--
@@ -191,15 +188,15 @@ def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
     ∀ repr,
       let arg := AST.Val.primitive repr
       arg.CanBind tIn →
-        let fBound := Runtime.Env.forVals
-        let permission := Runtime.Env.canEvalAny arg
+        let fBound := RuntimeEnv.forVals
+        let permission := RuntimeEnv.canEvalAny arg
         (body repr).IsSafeBy
           (fun value => value.CanBind (tOut (fBound.save (p := ()) ⟨arg, permission⟩)))
   | .depFn tIn tOut, .fn body =>
     ∀ arg,
       arg.CanBind tIn →
-        let fBound := Runtime.Env.forVals
-        let permission := Runtime.Env.canEvalAny arg
+        let fBound := RuntimeEnv.forVals
+        let permission := RuntimeEnv.canEvalAny arg
         (body (fBound.save (p := ()) ⟨arg, permission⟩)).IsSafeBy
           (fun value => value.CanBind (tOut (fBound.save (p := ()) ⟨arg, permission⟩)))
 
@@ -219,17 +216,13 @@ structure Program (condition : AST.Condition I) where
   trm: AST.Trm I
   isSafe: trm.IsSafeBy condition
 
-namespace Compiler
-
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
-class Env where
+class CompilerEnv where
   forSemantic: FBound I.Index { _semantic : AST.Val I -> AST.Condition I // True }
 
-end Compiler
-
-section variable [@Compiler.Env I]
+section variable [@CompilerEnv I]
 open AST
 
 
@@ -243,7 +236,7 @@ Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return 
 It's very similar to `Trm.eval` above in structure, but instead of evaluating
 for the final result, it recursively decompose the safety proof obligation into
 obligations of smaller components that are fulfiled independently and incrementally. The compile-time
-`Compiler.Env.forSemantic` F-bound bridge can be used to save/load proven goal; this
+`CompilerEnv.forSemantic` F-bound bridge can be used to save/load proven goal; this
 is separate from runtime value binding and never calls `eval`.
 
 Malformed or incompatible component will immediate cause the compilation to
@@ -291,7 +284,7 @@ end
 
 -- -- This conjecture is independent from type erasure.
 -- -- -/
--- -- def IsAdequate [Compiler.Env I] [Runtime.Env I]
+-- -- def IsAdequate [CompilerEnv I] [RuntimeEnv I]
 -- --     (src : Trm I) (fuel : Nat) : Prop :=
 -- --   match AST.Trm.compile src fuel with
 -- --   | .result program => AST.Trm.IsSafe program src.typeHint.get fuel
@@ -306,7 +299,7 @@ end
 
 -- This conjecture is independent from adequacy & type erasure.
 -- -/
--- def IsComposable [Compiler.Env I]
+-- def IsComposable [CompilerEnv I]
 --  (fn : Trm I) (arg: Val I) (tIn : Typ I) (tOut : I.Index → Typ I) (fuel : Nat) : Prop :=
 --   let fnHinted := Trm.typeHinted fn (.depFn tIn tOut)
 --   let argHinted := Trm.typeHinted (.val arg) tIn
@@ -314,7 +307,7 @@ end
 --   let argResult := AST.Trm.compile argHinted fuel
 --   match fnResult, argResult with
 --   | .result compiledFn, .result compiledArg =>
---     let fBound := Compiler.Env.forTyps (I := I)
+--     let fBound := CompilerEnv.forTyps (I := I)
 --     let argRef := fBound.save tIn True.intro
 --     let pineapplePen := Trm.typeHinted (Trm.apply compiledFn compiledArg) (tOut argRef)
 --     ∃ moreFuel,

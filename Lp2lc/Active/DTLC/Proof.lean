@@ -11,7 +11,7 @@ open AST
 open Lp2lc.Active.Util
 
 -- theorem AdequacyLemma {impl : Impl}
---     [Compiler.Env impl] [Runtime.Env impl]
+--     [CompilerEnv impl] [RuntimeEnv impl]
 --     (src : Trm impl) (fuel : Nat) :
 --     src.IsAdequate fuel := sorry
 
