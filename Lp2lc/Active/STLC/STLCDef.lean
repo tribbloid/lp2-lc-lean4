@@ -194,16 +194,16 @@ section variable (self : Trm I)
 /--
 get the strongest post type bound (post-condition) of a term, or throw an error
 -/
-def recInfer (self : Trm I) : RecOption (Typ I) -- TODO: remove this, not possible in subtyping
+def infer (self : Trm I) : RecOption (Typ I) -- TODO: remove this, not possible in subtyping
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
     | .val (.primitive _repr) => .yield (some .primitive)
     | .val (.fn body tIn) =>
       let index := env.typRefs.save (p := ()) tIn
-      ((body index).recInfer fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
+      ((body index).infer fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
     | .apply fn arg =>
-      match fn.recInfer fuel, arg.recInfer fuel with
+      match fn.infer fuel, arg.infer fuel with
       | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
         if argTyp ≤ tIn then .yield (some tOut) else .yield none
       | .outOfFuel, _ => .outOfFuel
@@ -221,7 +221,7 @@ Structurally it should be similar to infer, but return `.some Unit` or `.none` i
 -/
 def recCanInhabit (self : Trm I) (typ : Typ I) : RecOption Unit :=
   fun fuel =>
-    (self.recInfer fuel).map (fun
+    (self.infer fuel).map (fun
       | some inferredTyp =>
         if inferredTyp ≤ typ then some () else none
       | none => none)
