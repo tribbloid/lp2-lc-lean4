@@ -81,6 +81,11 @@ def map {T2 : Sort v} (f : T -> T2) : Outcome T2 :=
   | .yield v => .yield (f v)
   | .outOfFuel => .outOfFuel
 
+def flatMap {T2 : Sort v} (f : T -> Outcome T2) : Outcome T2 :=
+  match self with
+  | .yield v => f v
+  | .outOfFuel => .outOfFuel
+
 def getOrElse (fallback : T) : T :=
   match self with
   | .yield v => v
