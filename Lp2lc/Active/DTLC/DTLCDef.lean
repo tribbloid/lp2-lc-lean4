@@ -149,13 +149,13 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
       | (.yield (some (.fn body)), .yield (some value)) =>
         let fBound := env.forVals
         let permission := RuntimeEnv.canEvalAny value
-        eval (body (fBound.save (p := ()) ⟨value, permission⟩)) fuel
+        eval (body (fBound.save ⟨value, permission⟩)) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref i =>
       let fBound := RuntimeEnv.forVals
-      .yield (some (fBound.load (p := ()) i).1)
+      .yield (some (fBound.load i).1)
 
 /--
 An safe program may run out of runtime fuel, but it must not reach runtime
@@ -191,14 +191,14 @@ def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
         let fBound := RuntimeEnv.forVals
         let permission := RuntimeEnv.canEvalAny arg
         (body repr).IsSafeBy
-          (fun value => value.CanBind (tOut (fBound.save (p := ()) ⟨arg, permission⟩)))
+          (fun value => value.CanBind (tOut (fBound.save ⟨arg, permission⟩)))
   | .depFn tIn tOut, .fn body =>
     ∀ arg,
       arg.CanBind tIn →
         let fBound := RuntimeEnv.forVals
         let permission := RuntimeEnv.canEvalAny arg
-        (body (fBound.save (p := ()) ⟨arg, permission⟩)).IsSafeBy
-          (fun value => value.CanBind (tOut (fBound.save (p := ()) ⟨arg, permission⟩)))
+        (body (fBound.save ⟨arg, permission⟩)).IsSafeBy
+          (fun value => value.CanBind (tOut (fBound.save ⟨arg, permission⟩)))
 
 end AST.Val
 

@@ -68,6 +68,7 @@ class FBound (UUID : TIndex) (V : Type): Type where
   roundtrip : ∀ (value : V), load (save value) = value
 
 attribute [simp] DepFBound.roundtrip
+attribute [simp] FBound.roundtrip
 
 section variable {T : Sort u}
 

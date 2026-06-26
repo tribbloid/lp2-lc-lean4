@@ -102,13 +102,13 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
       match anf with
       | (.yield (some (.fn body _tIn)), .yield (some input)) =>
         let permission := env.canEvalAny input
-        let index := env.valueRefs.save (p := ()) ⟨input, permission⟩
+        let index := env.valueRefs.save ⟨input, permission⟩
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref i =>
-      .yield (some (env.valueRefs.load (p := ()) i).1)
+      .yield (some (env.valueRefs.load i).1)
 
 end
 
@@ -192,7 +192,7 @@ def infer (self : Trm I) : RecOption (Typ I) -- TODO: remove this, not possible 
     match self with
     | .val (.primitive _repr) => .yield (some .primitive)
     | .val (.fn body tIn) =>
-      let index := env.typRefs.save (p := ()) tIn
+      let index := env.typRefs.save tIn
       ((body index).infer fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
     | .apply fn arg =>
       match fn.infer fuel, arg.infer fuel with
@@ -201,7 +201,7 @@ def infer (self : Trm I) : RecOption (Typ I) -- TODO: remove this, not possible 
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | .ref i => .yield (some (env.typRefs.load (p := ()) i))
+    | .ref i => .yield (some (env.typRefs.load i))
 
 /--
 AKA compile, recursively produce a proof target.
@@ -249,18 +249,8 @@ def Fundamental : Prop :=
 --   ∀ (term : Trm I) (type : Typ I),
 --     term.CanInhabit type → term.SemiCanSatisfy (type.ToCondition)
 
-namespace Fundamental
-
-def proof: @Fundamental I env := sorry
-
--- def recProof : Rec (@Fundamental I) := fun fuel =>
---   fun (term : Trm I) (type : Typ I) (compilerFuel: Nat) =>
---     match term with
---     | .ref index =>
-
---     | _ => sorry
-
-end Fundamental
+def fundamentalProof : @Fundamental I env := by
+  sorry
 
 end
 
