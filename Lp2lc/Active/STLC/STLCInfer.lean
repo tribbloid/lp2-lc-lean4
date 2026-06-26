@@ -16,15 +16,11 @@ term can be inferred to type using some fuel, evaluating it must leads to either
 Obviously inferring type is not alway available in more complex type system, but it's a good demo for recursive proving
 -/
 
-section variable (I : Free)
+section variable {I : Free}
 
-namespace Proving
 
-class Env where
-  runtimeEnv : @RuntimeEnv I
-  compilerEnv : @CompilerEnv I
+class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
 
-end Proving
 
 -- structure TrmIn where
 --   self: AST.Trm I
