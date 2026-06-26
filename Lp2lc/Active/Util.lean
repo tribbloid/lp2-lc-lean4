@@ -62,7 +62,10 @@ class DepFBound {P : TPayload} (UUID : P -> TIndex) (V : P -> Type): Type where
   load : (id : UUID p) → V p
   roundtrip : ∀ (value : V p), load (save value) = value
 
-abbrev FBound (UUID : TIndex) (V : Type) : Type := DepFBound (fun (_ : Unit) => UUID) (fun _ => V)
+class FBound (UUID : TIndex) (V : Type): Type where
+  save : (value : V) → UUID -- this is the only way to get an UUID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
+  load : (id : UUID) → V
+  roundtrip : ∀ (value : V), load (save value) = value
 
 attribute [simp] DepFBound.roundtrip
 
