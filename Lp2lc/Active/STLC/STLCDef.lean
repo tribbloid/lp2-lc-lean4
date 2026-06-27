@@ -184,26 +184,6 @@ namespace AST.Trm
 section variable (self : Trm I)
 
 /--
-get the strongest post type bound (post-condition) of a term, or throw an error
--/
-def infer (self : Trm I) : RecOption (Typ I) -- TODO: remove this, not possible in subtyping
-  | 0 => .outOfFuel
-  | fuel + 1 =>
-    match self with
-    | .val (.primitive _repr) => .yield (some .primitive)
-    | .val (.fn body tIn) =>
-      let index := env.typRefs.save tIn
-      ((body index).infer fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
-    | .apply fn arg =>
-      match fn.infer fuel, arg.infer fuel with
-      | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
-        if argTyp ≤ tIn then .yield (some tOut) else .yield none
-      | .outOfFuel, _ => .outOfFuel
-      | _, .outOfFuel => .outOfFuel
-      | _, _ => .yield none
-    | .ref i => .yield (some (env.typRefs.load i))
-
-/--
 AKA compile, recursively produce a proof target.
 
 it is NOT guaranteed to terminate, but termination is the prior condition to be
@@ -212,11 +192,7 @@ used in Fundamental theorem (thus the `_total` suffix)
 Structurally it should be similar to infer, but return `.some Unit` or `.none` instead of a precise type bound
 -/
 def recCanInhabit (self : Trm I) (typ : Typ I) : RecOption Unit :=
-  fun fuel =>
-    (self.infer fuel).map (fun
-      | some inferredTyp =>
-        if inferredTyp ≤ typ then some () else none
-      | none => none)
+  sorry
 
 /--
 determine if a term can can inhabit a type bound.

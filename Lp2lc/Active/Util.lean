@@ -111,6 +111,8 @@ end Outcome
 -- universe u v
 def Rec (T : Sort u) := (fuel : Nat) -> @Outcome T
 
+-- TODO: all algorithm with this signature should have a proof of monotonicity
+
 abbrev RecOption (T : Type u) := (fuel : Nat) -> @Outcome (Option T)
 
 namespace RecOption

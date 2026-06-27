@@ -18,35 +18,55 @@ Obviously inferring type is not alway available in more complex type system, but
 
 section variable {I : Free}
 
+/--
+get the strongest post type bound (post-condition) of a term, or throw an error
+-/
+def infer [env: @CompilerEnv I] (self : AST.Trm I) : RecOption (AST.Typ I) -- TODO: remove this, not possible in subtyping
+  | 0 => .outOfFuel
+  | fuel + 1 =>
+    match self with
+    | .val (.primitive _repr) => .yield (some .primitive)
+    | .val (.fn body tIn) =>
+      let index := env.typRefs.save tIn
+      ((body index).infer fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
+    | .apply fn arg =>
+      match fn.infer fuel, arg.infer fuel with
+      | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
+        if argTyp ≤ tIn then .yield (some tOut) else .yield none
+      | .outOfFuel, _ => .outOfFuel
+      | _, .outOfFuel => .outOfFuel
+      | _, _ => .yield none
+    | .ref i => .yield (some (env.typRefs.load i))
+
 
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
-
 
 -- structure TrmIn where
 --   self: AST.Trm I
 --   fuel: Nat
 
--- def isSafe -- doesn't use type
---   [env : Proving.Env I]
---   (trm : TrmIn I)
---   -- (typ : AST.Typ I)
---   : Prop
--- :=
---   let t1 := AST.Trm.infer (I := I) (env := compilerEnv) trm.self trm.fuel
---   let evaled := AST.Trm.eval (I := I) (env := runtimeEnv) trm.self trm.fuel
+def isSafe -- doesn't use type
+  [env : @ProvingEnv I]
+  (trm : AST.Trm I)
+  (priorFuel: Nat)
+  -- (typ : AST.Typ I)
+  : Prop
+:=
+  let t1 := trm.infer priorFuel
+  let evaled := trm.eval priorFuel
 
---   evaled.map ( fun v =>
---     let t2 := v.infer (env := compilerEnv)
---     t2 <= t1
---   )
---   .getOrElse False
-  -- .getOrElse True
-  -- match evaled with
-  -- | .yields v =>
-  --   let _inferred : (AST.Trm.val v).infer
-  --   _inferred <= inferred
-  -- | .outOfFuel => True
-  -- sorry
+  evaled.map ( fun v =>
+    let t2 := v.infer (env := compilerEnv)
+    t2 <= t1
+  )
+  .getOrElse False
+  .getOrElse True
+  match evaled with
+  | .yields v =>
+    let _inferred : (AST.Trm.val v).infer
+    _inferred <= inferred
+  | .outOfFuel => True
+  sorry
 
 -- /--
 -- trm with a built-in safety proof
