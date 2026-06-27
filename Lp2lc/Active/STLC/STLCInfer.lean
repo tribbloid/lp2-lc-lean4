@@ -53,8 +53,8 @@ def isSafe [env : @ProvingEnv I]
   : Prop := -- TODO: this conjecture shouldn't be too long
 
   trm.eval.isSemiDecidable ( fun vv =>
-    match (.val vv).infer compileFuel with
-    | Outcome.yield (.some t2) => t2 <= t1
+    match (AST.Trm.val vv).infer compilerFuel with
+    | Outcome.yield (.some t2) => t2 <= typ
     | _ => false
   )
 
