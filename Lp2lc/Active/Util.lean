@@ -49,25 +49,31 @@ def WideOpen {T} : Permission T := fun _ => true
 
 end Permission
 
+-- TODO: this should be removed, dependent type constraint (of Payload) cannot provide more information to the compiler
+-- /--
+-- Hypothetical bridge between values & UUIDs as HOAS carrier
+
+-- There is no way to generate a UUID except saving a `V`, as a result, loading ALWAYS succeed.
+-- As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
+
+-- The UUId can be a dependent type of P, if unnecessary, use FBound alias instead
+-- -/
+-- class DepFBound {P : TPayload} (UUID : P -> TIndex) (V : P -> Type): Type where
+--   save : (value : V p) → UUID p -- this is the only way to get an UUID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
+--   load : (id : UUID p) → V p
+--   roundtrip : ∀ (value : V p), load (save value) = value
+
 /--
 Hypothetical bridge between values & UUIDs as HOAS carrier
 
 There is no way to generate a UUID except saving a `V`, as a result, loading ALWAYS succeed.
 As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
-
-The UUId can be a dependent type of P, if unnecessary, use FBound alias instead
 -/
-class DepFBound {P : TPayload} (UUID : P -> TIndex) (V : P -> Type): Type where
-  save : (value : V p) → UUID p -- this is the only way to get an UUID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
-  load : (id : UUID p) → V p
-  roundtrip : ∀ (value : V p), load (save value) = value
-
 class FBound (UUID : TIndex) (V : Type): Type where
   save : (value : V) → UUID -- this is the only way to get an UUID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
   load : (id : UUID) → V
   roundtrip : ∀ (value : V), load (save value) = value
 
-attribute [simp] DepFBound.roundtrip
 attribute [simp] FBound.roundtrip
 
 section variable {T : Sort u}
