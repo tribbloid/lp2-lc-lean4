@@ -45,13 +45,18 @@ end AST.Trm
 
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
 
-def isSafe
-  [env : @ProvingEnv I]
+def isSafe [env : @ProvingEnv I]
   (trm : AST.Trm I)
-  (priorFuel: Nat)
-  : Prop
-:=
-  True
+  (typ : AST.Typ I)
+  (compilerFuel: Nat)
+  (hCanCompile : trm.infer compilerFuel = Outcome.yield (.some typ))
+  : Prop := -- TODO: this conjecture shouldn't be too long
+
+  trm.eval.isSemiDecidable ( fun vv =>
+    match (.val vv).infer compileFuel with
+    | Outcome.yield (.some t2) => t2 <= t1
+    | _ => false
+  )
 
 -- /--
 -- trm with a built-in safety proof

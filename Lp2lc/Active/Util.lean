@@ -118,13 +118,19 @@ abbrev RecOption (T : Type u) := (fuel : Nat) -> @Outcome (Option T)
 namespace RecOption
 section variable {T : Type u} (self : Lp2lc.Active.Util.RecOption T)
 
-def _shouldYields (expectedV : T) : Prop :=
+def isDecidable (condition: T -> Prop := fun _ => True) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
-  | .yield (some v) => v = expectedV
+  | .yield (some v) => condition v
   | _ => false
 
+def isSemiDecidable (condition: T -> Prop := fun _ => True) : Prop :=
+  ∀ (fuel : Nat), match (self fuel) with
+  | .yield none => false
+  | .outOfFuel => true
+  | .yield (some v) => condition v
+
 def shouldYields (expectedV : T) : Prop :=
-  let hasFuel := _shouldYields self expectedV
+  let hasFuel := RecOption.isDecidable self (fun v => v = expectedV)
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
@@ -134,16 +140,6 @@ def shouldFail : Prop :=
   | _ => false
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
-
-def isDecidable : Prop :=
-  ∃ (fuel : Nat), match (self fuel) with
-  | .yield (some _) => true
-  | _ => false
-
-def isSemiDecidable : Prop :=
-  ∀ (fuel : Nat), match (self fuel) with
-  | .yield none => false
-  | _ => true
 
 end
 end RecOption
