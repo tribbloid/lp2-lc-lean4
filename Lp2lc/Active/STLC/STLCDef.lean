@@ -225,7 +225,7 @@ def Fundamental : Prop :=
 --   ∀ (term : Trm I) (type : Typ I),
 --     term.CanInhabit type → term.SemiCanSatisfy (type.ToCondition)
 
-def fundamentalProof : @Fundamental I env := by
+def fundamentalProof : @Fundamental I := by
   sorry
 
 end

@@ -18,14 +18,16 @@ Obviously inferring type is not alway available in more complex type system, but
 
 section variable {I : Free}
 
+namespace AST.Trm
+
 /--
 get the strongest post type bound (post-condition) of a term, or throw an error
 -/
-def infer [env: @CompilerEnv I] (self : AST.Trm I) : RecOption (AST.Typ I) -- TODO: remove this, not possible in subtyping
+def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remove this, not possible in subtyping
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val (.primitive _repr) => .yield (some .primitive)
+    | .val (.primitive _) => .yield (some .primitive)
     | .val (.fn body tIn) =>
       let index := env.typRefs.save tIn
       ((body index).infer fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
@@ -38,35 +40,18 @@ def infer [env: @CompilerEnv I] (self : AST.Trm I) : RecOption (AST.Typ I) -- TO
       | _, _ => .yield none
     | .ref i => .yield (some (env.typRefs.load i))
 
+end AST.Trm
+
 
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
 
--- structure TrmIn where
---   self: AST.Trm I
---   fuel: Nat
-
-def isSafe -- doesn't use type
+def isSafe
   [env : @ProvingEnv I]
   (trm : AST.Trm I)
   (priorFuel: Nat)
-  -- (typ : AST.Typ I)
   : Prop
 :=
-  let t1 := trm.infer priorFuel
-  let evaled := trm.eval priorFuel
-
-  evaled.map ( fun v =>
-    let t2 := v.infer (env := compilerEnv)
-    t2 <= t1
-  )
-  .getOrElse False
-  .getOrElse True
-  match evaled with
-  | .yields v =>
-    let _inferred : (AST.Trm.val v).infer
-    _inferred <= inferred
-  | .outOfFuel => True
-  sorry
+  True
 
 -- /--
 -- trm with a built-in safety proof
