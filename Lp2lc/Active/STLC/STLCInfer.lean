@@ -47,10 +47,8 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
 
 variable [env : @ProvingEnv I]
 
-def Safety
-  (trm : AST.Trm I)
-  (typ : AST.Typ I)
-  (fuel : Nat) : Prop := -- TODO: this conjecture shouldn't be too long
+def Safety : Prop := -- TODO: this conjecture shouldn't be too long
+  ∀ (trm : AST.Trm I) (typ : AST.Typ I) (fuel : Nat),
   ∀ (_: (trm.infer fuel) = Outcome.yield (.some typ)),
   trm.eval.isSemiDecidable ( fun vv =>
     match (AST.Trm.val vv).infer fuel with
@@ -60,7 +58,7 @@ def Safety
 
 namespace Safety
 
-def proof : Safety := sorry
+def proof : @Safety I env := sorry
 
 end Safety
 
