@@ -45,7 +45,7 @@ theorem termInferMonotone [env : @CompilerEnv I]
     (trm : Trm I) (fromFuel toFuel : Nat) (typ : Typ I) :
     fromFuel <= toFuel ->
     trm.infer fromFuel = .yield (some typ) ->
-    exists typ2, trm.infer toFuel = .yield (some typ2) /\ typ2 <= typ := by
+    trm.infer toFuel = .yield (some typ) := by
   intro hFuel hInfer
   induction fromFuel using Nat.strongRecOn generalizing trm toFuel typ with
   | ind fromFuel ih =>
