@@ -119,6 +119,19 @@ def Rec (T : Sort u) := (fuel : Nat) -> @Outcome T
 
 -- TODO: all algorithm with this signature should have a proof of monotonicity
 
+namespace Rec
+section variable {T : Sort u} (self : Lp2lc.Active.Util.Rec T)
+
+/-- Recursive computations stay successful with more fuel for a chosen result embedding. -/
+def Monotone : Prop :=
+  ∀ (less more : Nat) (value : T),
+  (less <= more) ->
+  self less = .yield value ->
+  self more = .yield value
+
+end
+end Rec
+
 abbrev RecOption (T : Type u) := (fuel : Nat) -> @Outcome (Option T)
 
 namespace RecOption
@@ -151,6 +164,19 @@ end
 end RecOption
 
 end
+
+end Lp2lc.Active.Util
+
+namespace Function
+section variable {T : Sort u} (self : Lp2lc.Active.Util.Rec T)
+
+def Monotone {TValue : Sort v} (yield : TValue -> T) : Prop :=
+  Lp2lc.Active.Util.Rec.Monotone self yield
+
+end
+end Function
+
+namespace Lp2lc.Active.Util
 
 def IProp := Prop
 

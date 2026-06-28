@@ -42,11 +42,11 @@ def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remo
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone [env : @CompilerEnv I]
-    (trm : Trm I) (fromFuel toFuel : Nat) (typ : Typ I) :
-    fromFuel <= toFuel ->
-    trm.infer fromFuel = .yield (some typ) ->
-    trm.infer toFuel = .yield (some typ) := by
-  intro hFuel hInfer
+    (trm : Trm I) :
+    let self : Rec (Option (Typ I)) := trm.infer
+    self.Monotone Option.some := by
+  dsimp
+  intro fromFuel toFuel typ hFuel hInfer
   induction fromFuel using Nat.strongRecOn generalizing trm toFuel typ with
   | ind fromFuel ih =>
     cases fromFuel with
