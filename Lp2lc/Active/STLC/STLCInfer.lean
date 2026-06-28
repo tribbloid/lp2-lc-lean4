@@ -82,24 +82,22 @@ theorem termInferMonotone [env : @CompilerEnv I]
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone [env : @CompilerEnv I]
-    (value : AST.Val I) (fromFuel toFuel : Nat) (typ : AST.Typ I) :
-    fromFuel <= toFuel ->
-    (AST.Trm.val value).infer fromFuel = .yield (some typ) ->
-    exists typ2, (AST.Trm.val value).infer toFuel = .yield (some typ2) /\ typ2 <= typ :=
-  fun hFuel hInfer =>
-    ⟨typ, termInferMonotone (AST.Trm.val value) fromFuel toFuel (some typ) hFuel hInfer, rfl⟩
+    (value : AST.Val I) :
+    let self : Rec (Option (Typ I)) := (AST.Trm.val value).infer
+    self.Monotone :=
+  termInferMonotone (AST.Trm.val value)
 
 end AST.Trm
 
 
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
   refSafety :
-    forall (id : I.Index) (fuel : Nat),
+    ∀ (id : I.Index) (fuel : Nat),
       exists typ, (AST.Trm.val (valueRefs.load id).1).infer fuel = .yield (some typ) /\ typ <= typRefs.load id
   bindInfer :
-    forall (body : I.Index -> AST.Trm I) (tIn tOut : AST.Typ I) (input : AST.Val I) (inputFuel bodyFuel : Nat),
+    ∀ (body : I.Index -> AST.Trm I) (tIn tOut : AST.Typ I) (input : AST.Val I) (inputFuel bodyFuel : Nat),
       (body (typRefs.save tIn)).infer bodyFuel = .yield (some tOut) ->
-      (exists inputTyp, (AST.Trm.val input).infer inputFuel = .yield (some inputTyp) /\ inputTyp <= tIn) ->
+      (∃ inputTyp, (AST.Trm.val input).infer inputFuel = .yield (some inputTyp) /\ inputTyp <= tIn) ->
       (body (valueRefs.save { val := input, property := canEvalAny input })).infer bodyFuel = .yield (some tOut)
 
 variable [env : @ProvingEnv I]
@@ -245,19 +243,10 @@ def proof : @Safety I env := by
                                                 | none => simp [hOutputInfer] at hBodySafe
                                                 | some outputTyp =>
                                                   simp [hOutputInfer] at hBodySafe
-                                                  have hOutputFuel := AST.Trm.valueInferMonotone output bodyFuel (bodyFuel + 1 + 1) outputTyp (Nat.le_of_lt hBodyFuelLt) hOutputInfer
-                                                  cases hOutputFuel with
-                                                  | intro topTyp hOutputFuelRest =>
-                                                    cases hOutputFuelRest with
-                                                    | intro hTopInfer hTopLe =>
-                                                      simp [AST.Trm.eval, hFnEval, hArgEval, hBodyEval]
-                                                      rw [hTopInfer]
-                                                      have hTopToTyp : topTyp <= typ := by
-                                                        change topTyp = typ
-                                                        change topTyp = outputTyp at hTopLe
-                                                        change outputTyp = typ at hBodySafe
-                                                        exact hTopLe.trans hBodySafe
-                                                      exact hTopToTyp
+                                                  have hOutputTop := AST.Trm.valueInferMonotone output bodyFuel (bodyFuel + 1 + 1) (some outputTyp) (Nat.le_of_lt hBodyFuelLt) hOutputInfer
+                                                  simp [AST.Trm.eval, hFnEval, hArgEval, hBodyEval]
+                                                  rw [hOutputTop]
+                                                  exact hBodySafe
                   case neg =>
                     rw [hFn, hArg] at hInfer
                     simp [hArgLe] at hInfer
