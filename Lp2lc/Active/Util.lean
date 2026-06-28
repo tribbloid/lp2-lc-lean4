@@ -122,7 +122,7 @@ def Rec (T : Sort u) := (fuel : Nat) -> @Outcome T
 namespace Rec
 section variable {T : Sort u} (self : Lp2lc.Active.Util.Rec T)
 
-/-- Recursive computations stay successful with more fuel for a chosen result embedding. -/
+/-- Recursive computations stay successful with more fuel for the same result. -/
 def Monotone : Prop :=
   ∀ (less more : Nat) (value : T),
   (less <= more) ->
@@ -170,8 +170,8 @@ end Lp2lc.Active.Util
 namespace Function
 section variable {T : Sort u} (self : Lp2lc.Active.Util.Rec T)
 
-def Monotone {TValue : Sort v} (yield : TValue -> T) : Prop :=
-  Lp2lc.Active.Util.Rec.Monotone self yield
+def Monotone : Prop :=
+  Lp2lc.Active.Util.Rec.Monotone self
 
 end
 end Function

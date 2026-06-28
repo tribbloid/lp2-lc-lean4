@@ -44,10 +44,10 @@ def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remo
 theorem termInferMonotone [env : @CompilerEnv I]
     (trm : Trm I) :
     let self : Rec (Option (Typ I)) := trm.infer
-    self.Monotone Option.some := by
+    self.Monotone := by
   dsimp
-  intro fromFuel toFuel typ hFuel hInfer
-  induction fromFuel using Nat.strongRecOn generalizing trm toFuel typ with
+  intro fromFuel toFuel result hFuel hInfer
+  induction fromFuel using Nat.strongRecOn generalizing trm toFuel result with
   | ind fromFuel ih =>
     cases fromFuel with
     | zero =>
@@ -60,56 +60,25 @@ theorem termInferMonotone [env : @CompilerEnv I]
         cases trm with
         | val value =>
           cases value with
-          | primitive repr =>
-            simp [AST.Trm.infer] at hInfer
-            subst typ
-            simp [AST.Trm.infer]
+          | primitive repr => simpa [AST.Trm.infer] using hInfer
           | fn body tIn =>
-            simp [AST.Trm.infer] at hInfer
             cases hBody : (body (env.typRefs.save tIn)).infer fuel with
-            | outOfFuel => simp [hBody, Outcome.map] at hInfer
+            | outOfFuel => simp [AST.Trm.infer, hBody, Outcome.map] at hInfer
             | yield bodyResult =>
-              cases bodyResult with
-              | none => simp [hBody, Outcome.map] at hInfer
-              | some bodyTyp =>
-                simp [hBody, Outcome.map] at hInfer
-                have hBodyTop := ih fuel (Nat.lt_succ_self fuel) (body (env.typRefs.save tIn)) toFuel bodyTyp hFuelTail hBody
-                simp [AST.Trm.infer, Outcome.map, hBodyTop, hInfer]
+              have hBodyTop := ih fuel (Nat.lt_succ_self fuel) (body (env.typRefs.save tIn)) toFuel bodyResult hFuelTail hBody
+              simpa [AST.Trm.infer, Outcome.map, hBody, hBodyTop] using hInfer
         | apply fnTerm arg =>
-          simp [AST.Trm.infer] at hInfer
           cases hFn : fnTerm.infer fuel with
-          | outOfFuel => simp [hFn] at hInfer
+          | outOfFuel => simp [AST.Trm.infer, hFn] at hInfer
           | yield fnResult =>
-            cases fnResult with
-            | none =>
-              cases hArg : arg.infer fuel with
-              | outOfFuel => simp [hFn, hArg] at hInfer
-              | yield argResult => cases argResult <;> simp [hFn, hArg] at hInfer
-            | some fnTyp =>
-              cases fnTyp with
-              | primitive =>
-                cases hArg : arg.infer fuel with
-                | outOfFuel => simp [hFn, hArg] at hInfer
-                | yield argResult => cases argResult <;> simp [hFn, hArg] at hInfer
-              | fn tIn tOut =>
-                cases hArg : arg.infer fuel with
-                | outOfFuel => simp [hFn, hArg] at hInfer
-                | yield argResult =>
-                  cases argResult with
-                  | none => simp [hFn, hArg] at hInfer
-                  | some argTyp =>
-                    by_cases hArgLe : argTyp <= tIn
-                    case pos =>
-                      simp [hFn, hArg, hArgLe] at hInfer
-                      have hFnTop := ih fuel (Nat.lt_succ_self fuel) fnTerm toFuel (.fn tIn tOut) hFuelTail hFn
-                      have hArgTop := ih fuel (Nat.lt_succ_self fuel) arg toFuel argTyp hFuelTail hArg
-                      simp [AST.Trm.infer, hFnTop, hArgTop, hArgLe, hInfer]
-                    case neg =>
-                      simp [hFn, hArg, hArgLe] at hInfer
+            cases hArg : arg.infer fuel with
+            | outOfFuel => simp [AST.Trm.infer, hFn, hArg] at hInfer
+            | yield argResult =>
+              have hFnTop := ih fuel (Nat.lt_succ_self fuel) fnTerm toFuel fnResult hFuelTail hFn
+              have hArgTop := ih fuel (Nat.lt_succ_self fuel) arg toFuel argResult hFuelTail hArg
+              simpa [AST.Trm.infer, hFn, hArg, hFnTop, hArgTop] using hInfer
         | ref id =>
-          simp [AST.Trm.infer] at hInfer
-          subst typ
-          simp [AST.Trm.infer]
+          simpa [AST.Trm.infer] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone [env : @CompilerEnv I]
@@ -118,7 +87,7 @@ theorem valueInferMonotone [env : @CompilerEnv I]
     (AST.Trm.val value).infer fromFuel = .yield (some typ) ->
     exists typ2, (AST.Trm.val value).infer toFuel = .yield (some typ2) /\ typ2 <= typ :=
   fun hFuel hInfer =>
-    Exists.intro typ (And.intro (termInferMonotone (AST.Trm.val value) fromFuel toFuel typ hFuel hInfer) rfl)
+    ⟨typ, termInferMonotone (AST.Trm.val value) fromFuel toFuel (some typ) hFuel hInfer, rfl⟩
 
 end AST.Trm
 
