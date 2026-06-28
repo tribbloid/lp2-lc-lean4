@@ -40,6 +40,106 @@ def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remo
       | _, _ => .yield none
     | .ref i => .yield (some (env.typRefs.load i))
 
+/-- Inference that succeeds with smaller fuel succeeds with a bounded type at larger fuel. -/
+theorem termInferMonotone [env : @CompilerEnv I]
+    (trm : Trm I) (fromFuel toFuel : Nat) (typ : Typ I) :
+    fromFuel <= toFuel ->
+    trm.infer fromFuel = .yield (some typ) ->
+    exists typ2, trm.infer toFuel = .yield (some typ2) /\ typ2 <= typ := by
+  intro hFuel hInfer
+  induction fromFuel using Nat.strongRecOn generalizing trm toFuel typ with
+  | ind fromFuel ih =>
+    cases fromFuel with
+    | zero =>
+      cases trm <;> simp [AST.Trm.infer] at hInfer
+    | succ fuel =>
+      cases toFuel with
+      | zero => cases hFuel
+      | succ toFuel =>
+        have hFuelTail : fuel <= toFuel := Nat.le_of_succ_le_succ hFuel
+        cases trm with
+        | val value =>
+          cases value with
+          | primitive repr =>
+            simp [AST.Trm.infer] at hInfer
+            subst typ
+            exact Exists.intro .primitive (And.intro (by simp [AST.Trm.infer]) rfl)
+          | fn body tIn =>
+            simp [AST.Trm.infer] at hInfer
+            cases hBody : (body (env.typRefs.save tIn)).infer fuel with
+            | outOfFuel => simp [hBody, Outcome.map] at hInfer
+            | yield bodyResult =>
+              cases bodyResult with
+              | none => simp [hBody, Outcome.map] at hInfer
+              | some bodyTyp =>
+                simp [hBody, Outcome.map] at hInfer
+                have hBodyTop := ih fuel (Nat.lt_succ_self fuel) (body (env.typRefs.save tIn)) toFuel bodyTyp hFuelTail hBody
+                cases hBodyTop with
+                | intro topBodyTyp hBodyTopRest =>
+                  cases hBodyTopRest with
+                  | intro hBodyTopInfer hBodyTopLe =>
+                    exact Exists.intro (.fn tIn topBodyTyp) (And.intro (by simp [AST.Trm.infer, Outcome.map, hBodyTopInfer]) (by
+                      change AST.Typ.fn tIn topBodyTyp = typ
+                      change topBodyTyp = bodyTyp at hBodyTopLe
+                      exact (congrArg (AST.Typ.fn tIn) hBodyTopLe).trans hInfer))
+        | apply fnTerm arg =>
+          simp [AST.Trm.infer] at hInfer
+          cases hFn : fnTerm.infer fuel with
+          | outOfFuel => simp [hFn] at hInfer
+          | yield fnResult =>
+            cases fnResult with
+            | none =>
+              cases hArg : arg.infer fuel with
+              | outOfFuel => simp [hFn, hArg] at hInfer
+              | yield argResult => cases argResult <;> simp [hFn, hArg] at hInfer
+            | some fnTyp =>
+              cases fnTyp with
+              | primitive =>
+                cases hArg : arg.infer fuel with
+                | outOfFuel => simp [hFn, hArg] at hInfer
+                | yield argResult => cases argResult <;> simp [hFn, hArg] at hInfer
+              | fn tIn tOut =>
+                cases hArg : arg.infer fuel with
+                | outOfFuel => simp [hFn, hArg] at hInfer
+                | yield argResult =>
+                  cases argResult with
+                  | none => simp [hFn, hArg] at hInfer
+                  | some argTyp =>
+                    by_cases hArgLe : argTyp <= tIn
+                    case pos =>
+                      simp [hFn, hArg, hArgLe] at hInfer
+                      have hFnTop := ih fuel (Nat.lt_succ_self fuel) fnTerm toFuel (.fn tIn tOut) hFuelTail hFn
+                      have hArgTop := ih fuel (Nat.lt_succ_self fuel) arg toFuel argTyp hFuelTail hArg
+                      cases hFnTop with
+                      | intro topFnTyp hFnTopRest =>
+                        cases hFnTopRest with
+                        | intro hFnTopInfer hFnTopLe =>
+                          change topFnTyp = .fn tIn tOut at hFnTopLe
+                          rw [hFnTopLe] at hFnTopInfer
+                          cases hArgTop with
+                          | intro topArgTyp hArgTopRest =>
+                            cases hArgTopRest with
+                            | intro hArgTopInfer hArgTopLe =>
+                              change topArgTyp = argTyp at hArgTopLe
+                              rw [hArgTopLe] at hArgTopInfer
+                              exact Exists.intro tOut (And.intro (by simp [AST.Trm.infer, hFnTopInfer, hArgTopInfer, hArgLe]) (by
+                                change tOut = typ
+                                exact hInfer))
+                    case neg =>
+                      simp [hFn, hArg, hArgLe] at hInfer
+        | ref id =>
+          simp [AST.Trm.infer] at hInfer
+          subst typ
+          exact Exists.intro (env.typRefs.load id) (And.intro (by simp [AST.Trm.infer]) rfl)
+
+/-- Value inference monotonicity follows from term inference monotonicity. -/
+theorem valueInferMonotone [env : @CompilerEnv I]
+    (value : AST.Val I) (fromFuel toFuel : Nat) (typ : AST.Typ I) :
+    fromFuel <= toFuel ->
+    (AST.Trm.val value).infer fromFuel = .yield (some typ) ->
+    exists typ2, (AST.Trm.val value).infer toFuel = .yield (some typ2) /\ typ2 <= typ :=
+  termInferMonotone (AST.Trm.val value) fromFuel toFuel typ
+
 end AST.Trm
 
 
@@ -47,11 +147,6 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
   refSafety :
     forall (id : I.Index) (fuel : Nat),
       exists typ, (AST.Trm.val (valueRefs.load id).1).infer fuel = .yield (some typ) /\ typ <= typRefs.load id
-  valueInferMonotone :
-    forall (value : AST.Val I) (fromFuel toFuel : Nat) (typ : AST.Typ I),
-      fromFuel <= toFuel ->
-      (AST.Trm.val value).infer fromFuel = .yield (some typ) ->
-      exists typ2, (AST.Trm.val value).infer toFuel = .yield (some typ2) /\ typ2 <= typ
   bindInfer :
     forall (body : I.Index -> AST.Trm I) (tIn tOut : AST.Typ I) (input : AST.Val I) (inputFuel bodyFuel : Nat),
       (body (typRefs.save tIn)).infer bodyFuel = .yield (some tOut) ->
@@ -201,7 +296,7 @@ def proof : @Safety I env := by
                                                 | none => simp [hOutputInfer] at hBodySafe
                                                 | some outputTyp =>
                                                   simp [hOutputInfer] at hBodySafe
-                                                  have hOutputFuel := ProvingEnv.valueInferMonotone output bodyFuel (bodyFuel + 1 + 1) outputTyp (Nat.le_of_lt hBodyFuelLt) hOutputInfer
+                                                  have hOutputFuel := AST.Trm.valueInferMonotone output bodyFuel (bodyFuel + 1 + 1) outputTyp (Nat.le_of_lt hBodyFuelLt) hOutputInfer
                                                   cases hOutputFuel with
                                                   | intro topTyp hOutputFuelRest =>
                                                     cases hOutputFuelRest with
