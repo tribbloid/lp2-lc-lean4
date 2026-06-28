@@ -83,7 +83,7 @@ example : CProgClosed.denote ccFals (fun b => b) = false := by
   simpa [ccFals, fals] using compile_correct fals
 
 example : CProgClosed.denote ccTestSecond (fun b => b) = true := by
-  simpa [ccTestSecond, testSecond] using compile_correct testSecond
+  simpa [ccTestSecond, testSecond, second, fals, tru, TermClosed.denote] using compile_correct testSecond
 
 end Parametric
 
