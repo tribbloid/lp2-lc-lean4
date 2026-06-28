@@ -91,13 +91,15 @@ end AST.Trm
 
 
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
-  refSafety :
-    ∀ (id : I.Index) (fuel : Nat),
-      ∃ typ, (AST.Trm.val (valueRefs.load id).1).infer fuel = .yield (some typ) /\ typ <= typRefs.load id
+  refSafety : -- consistency between valRefs and typRefs
+    ∀ (id : I.Index),
+      RecOption.isDecidable
+        (AST.Trm.val (valueRefs.load id).1).infer
+        (fun typ => typ <= typRefs.load id)
   bindInfer :
-    ∀ (body : I.Index -> AST.Trm I) (tIn tOut : AST.Typ I) (input : AST.Val I) (inputFuel bodyFuel : Nat),
+    ∀ (body : I.Index -> AST.Trm I) (tIn tOut : AST.Typ I) (input : AST.Val I) (bodyFuel : Nat),
       (body (typRefs.save tIn)).infer bodyFuel = .yield (some tOut) ->
-      (∃ inputTyp, (AST.Trm.val input).infer inputFuel = .yield (some inputTyp) /\ inputTyp <= tIn) ->
+      RecOption.isDecidable (AST.Trm.val input).infer (fun inputTyp => inputTyp <= tIn) ->
       (body (valueRefs.save { val := input, property := canEvalAny input })).infer bodyFuel = .yield (some tOut)
 
 variable [env : @ProvingEnv I]
@@ -106,9 +108,7 @@ def Safety : Prop := -- TODO: this conjecture shouldn't be too long
   ∀ (trm : AST.Trm I) (typ : AST.Typ I) (fuel : Nat),
   ∀ (_: (trm.infer fuel) = Outcome.yield (.some typ)),
   trm.eval.isSemiDecidable ( fun vv =>
-    match (AST.Trm.val vv).infer fuel with
-    | Outcome.yield (.some t2) => t2 <= typ
-    | _ => false
+    RecOption.isDecidable (AST.Trm.val vv).infer (fun t2 => t2 <= typ)
   )
 
 namespace Safety
@@ -134,12 +134,16 @@ def proof : @Safety I env := by
           simp [AST.Trm.eval]
           have hRef := ProvingEnv.refSafety id (fuel + 1)
           cases hRef with
-          | intro typ2 hRest =>
-            cases hRest with
-            | intro hValueInfer hLe =>
-              rw [hValueInfer]
-              simp [AST.Trm.infer] at hInfer
-              simpa [hInfer] using hLe
+          | intro _ hRef =>
+            cases hValueInfer : (AST.Trm.val (env.valueRefs.load id).1).infer (fuel + 1) with
+            | outOfFuel => simp [hValueInfer] at hRef
+            | yield refResult =>
+              cases refResult with
+              | none => simp [hValueInfer] at hRef
+              | some typ2 =>
+                simp [hValueInfer] at hRef
+                simp [AST.Trm.infer] at hInfer
+                simpa [hInfer] using hRef
       | apply fnTerm arg =>
         simp [AST.Trm.infer] at hInfer
         cases hFn : fnTerm.infer fuel with
