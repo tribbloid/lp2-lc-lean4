@@ -46,14 +46,14 @@ theorem termInferMonotone [env : @CompilerEnv I]
     let self : Rec (Option (Typ I)) := trm.infer
     self.Monotone := by
   dsimp
-  intro fromFuel toFuel result hFuel hInfer
-  induction fromFuel using Nat.strongRecOn generalizing trm toFuel result with
+  intro less more result hFuel hInfer
+  induction less using Nat.strongRecOn generalizing trm more result with
   | ind fromFuel ih =>
     cases fromFuel with
     | zero =>
       cases trm <;> simp [AST.Trm.infer] at hInfer
     | succ fuel =>
-      cases toFuel with
+      cases more with
       | zero => cases hFuel
       | succ toFuel =>
         have hFuelTail : fuel <= toFuel := Nat.le_of_succ_le_succ hFuel
@@ -93,7 +93,7 @@ end AST.Trm
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
   refSafety :
     ∀ (id : I.Index) (fuel : Nat),
-      exists typ, (AST.Trm.val (valueRefs.load id).1).infer fuel = .yield (some typ) /\ typ <= typRefs.load id
+      ∃ typ, (AST.Trm.val (valueRefs.load id).1).infer fuel = .yield (some typ) /\ typ <= typRefs.load id
   bindInfer :
     ∀ (body : I.Index -> AST.Trm I) (tIn tOut : AST.Typ I) (input : AST.Val I) (inputFuel bodyFuel : Nat),
       (body (typRefs.save tIn)).infer bodyFuel = .yield (some tOut) ->
