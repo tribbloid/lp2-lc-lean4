@@ -43,9 +43,7 @@ def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remo
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone [env : @CompilerEnv I]
     (trm : Trm I) :
-    let self : Rec (Option (Typ I)) := trm.infer
-    self.Monotone := by
-  dsimp
+    trm.infer.Monotone := by
   intro less more result hFuel hInfer
   induction less using Nat.strongRecOn generalizing trm more result with
   | ind fromFuel ih =>
@@ -83,8 +81,7 @@ theorem termInferMonotone [env : @CompilerEnv I]
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone [env : @CompilerEnv I]
     (value : AST.Val I) :
-    let self : Rec (Option (Typ I)) := (AST.Trm.val value).infer
-    self.Monotone :=
+    (AST.Trm.val value).infer.Monotone :=
   termInferMonotone (AST.Trm.val value)
 
 end AST.Trm

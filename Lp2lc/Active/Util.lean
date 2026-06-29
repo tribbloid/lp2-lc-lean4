@@ -132,7 +132,7 @@ def Monotone : Prop :=
 end
 end Rec
 
-abbrev RecOption (T : Type u) := (fuel : Nat) -> @Outcome (Option T)
+abbrev RecOption (T : Type u) := Rec (Option T)
 
 namespace RecOption
 section variable {T : Type u} (self : Lp2lc.Active.Util.RecOption T)
@@ -166,15 +166,6 @@ end RecOption
 end
 
 end Lp2lc.Active.Util
-
-namespace Function
-section variable {T : Sort u} (self : Lp2lc.Active.Util.Rec T)
-
-def Monotone : Prop :=
-  Lp2lc.Active.Util.Rec.Monotone self
-
-end
-end Function
 
 namespace Lp2lc.Active.Util
 
