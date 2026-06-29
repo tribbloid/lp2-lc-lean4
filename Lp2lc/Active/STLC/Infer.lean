@@ -206,47 +206,36 @@ def proof : @Safety I env := by
                                   cases argEvalResult with
                                   | none => cases hArgSafe
                                   | some input =>
+                                    let inputIndex := env.valueRefs.save { val := input, property := env.canEvalAny input }
                                     rcases hArgSafe with ⟨inputFuel, hArgSafe⟩
-                                    cases hInputInfer : (AST.Trm.val input).infer inputFuel with
-                                    | outOfFuel => simp [hInputInfer] at hArgSafe
-                                    | yield inputResult =>
-                                      cases inputResult with
-                                      | none => simp [hInputInfer] at hArgSafe
-                                      | some inputTyp =>
+                                    match hInputInfer : (AST.Trm.val input).infer inputFuel with
+                                    | .yield (some inputTyp) =>
                                         simp [hInputInfer] at hArgSafe
                                         change inputTyp = argTyp at hArgSafe
                                         change argTyp = tIn at hArgLe
-                                        have hInputTyp : inputTyp = tIn := hArgSafe.trans hArgLe
-                                        have hBodyRuntimeInfer :
-                                            (body (env.valueRefs.save { val := input, property := env.canEvalAny input })).infer bodyFuel =
-                                              .yield (some typ) := by
+                                        have hBodySafe := ih (body inputIndex) typ bodyFuel (by
                                           rcases ProvingEnv.bindInfer body input bodyFuel with ⟨bindFuel, hBind⟩
-                                          cases hBindInput : (AST.Trm.val input).infer bindFuel with
-                                          | outOfFuel => simp [hBindInput] at hBind
-                                          | yield bindResult =>
-                                            cases bindResult with
-                                            | none => simp [hBindInput] at hBind
-                                            | some bindTyp =>
+                                          match hBindInput : (AST.Trm.val input).infer bindFuel with
+                                          | .yield (some bindTyp) =>
                                               simp [hBindInput] at hBind
-                                              have hSameInputTyp : bindTyp = inputTyp := by
-                                                let topFuel := bindFuel + inputFuel
-                                                have hBindTop := AST.Trm.termInferMonotone (AST.Trm.val input) bindFuel topFuel (some bindTyp) (Nat.le_add_right bindFuel inputFuel) hBindInput
-                                                have hInputTop := AST.Trm.termInferMonotone (AST.Trm.val input) inputFuel topFuel (some inputTyp) (Nat.le_add_left inputFuel bindFuel) hInputInfer
-                                                rw [hInputTop] at hBindTop
-                                                cases hBindTop
-                                                rfl
+                                              have hBindTop := AST.Trm.valueInferMonotone input bindFuel (bindFuel + inputFuel) (some bindTyp) (Nat.le_add_right bindFuel inputFuel) hBindInput
+                                              have hInputTop := AST.Trm.valueInferMonotone input inputFuel (bindFuel + inputFuel) (some inputTyp) (Nat.le_add_left inputFuel bindFuel) hInputInfer
                                               rw [← hBind]
-                                              simpa [hSameInputTyp, hInputTyp] using hBodyCompile
-                                        have hBodySafe := ih (body (env.valueRefs.save { val := input, property := env.canEvalAny input })) typ bodyFuel hBodyRuntimeInfer
-                                        cases hBodyEval : (body (env.valueRefs.save { val := input, property := env.canEvalAny input })).eval runtimeFuel with
-                                        | outOfFuel => simp [AST.Trm.eval, hFnEval, hArgEval, hBodyEval]
+                                              simpa [Option.some.inj (Outcome.yield.inj (hBindTop.symm.trans hInputTop)), hArgSafe, hArgLe] using hBodyCompile
+                                          | .outOfFuel
+                                          | .yield none => simp [hBindInput] at hBind
+                                        )
+                                        cases hBodyEval : (body inputIndex).eval runtimeFuel with
+                                        | outOfFuel => simp [AST.Trm.eval, hFnEval, hArgEval, hBodyEval, inputIndex]
                                         | yield bodyEvalResult =>
                                           rw [hBodyEval] at hBodySafe
                                           cases bodyEvalResult with
                                           | none => cases hBodySafe
                                           | some output =>
-                                            simp [AST.Trm.eval, hFnEval, hArgEval, hBodyEval]
+                                            simp [AST.Trm.eval, hFnEval, hArgEval, hBodyEval, inputIndex]
                                             exact hBodySafe
+                                    | .outOfFuel
+                                    | .yield none => simp [hInputInfer] at hArgSafe
                   case neg =>
                     rw [hFn, hArg] at hInfer
                     simp [hArgLe] at hInfer
