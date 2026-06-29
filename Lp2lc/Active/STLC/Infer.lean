@@ -95,10 +95,10 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
     ∀ (id : I.Index),
         (AST.Trm.val (valueRefs.load id).1).infer.isDecidable (fun typ => typ <= typRefs.load id)
   bindInfer : -- fn body applied on UUID of a value can always inhabit the same type of the same fn body applied on UUID of the type of that value
-    ∀ (body : I.Index -> AST.Trm I) (tIn tOut : AST.Typ I) (v : AST.Val I) (bodyFuel : Nat),
-      (body (typRefs.save tIn)).infer bodyFuel = .yield (some tOut) ->
+    ∀ (body : I.Index -> AST.Trm I) (tIn tOut : AST.Typ I) (v : AST.Val I) (fuel : Nat),
+      (body (typRefs.save tIn)).infer fuel = .yield (some tOut) ->
       (AST.Trm.val v).infer.isDecidable (fun _tIn => _tIn <= tIn) ->
-      (body (valueRefs.save { val := v, property := canEvalAny v })).infer bodyFuel = .yield (some tOut)
+      (body (valueRefs.save { val := v, property := canEvalAny v })).infer fuel = .yield (some tOut)
 -- TODO: tIn can be skipped, just use _tIn
 -- TODO: may be a corollary of a cross-FBound roundtrip axiom?
 

@@ -5,7 +5,8 @@ import «Lp2lc».Active.PartialDefInheritance
 
 -- STLC module exports STLCDef; scratch examples are imported from Tests.
 import «Lp2lc».Active.STLC.STLCDef
-import «Lp2lc».Active.STLC.STLCInfer
+import «Lp2lc».Active.STLC.Eval
+import «Lp2lc».Active.STLC.Infer
 import «Lp2lc».Active.DTLC.Impl
 import «Lp2lc».Active.DTLC.Proof
 

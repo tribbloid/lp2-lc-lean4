@@ -120,7 +120,7 @@ def Rec (T : Sort u) := (fuel : Nat) -> @Outcome T
 -- TODO: all algorithm with this signature should have a proof of monotonicity
 
 namespace Rec
-section variable {T : Sort u} (self : Lp2lc.Active.Util.Rec T)
+section variable (self : Lp2lc.Active.Util.Rec T)
 
 /-- Recursive computations stay successful with more fuel for the same result. -/
 def Monotone : Prop :=
