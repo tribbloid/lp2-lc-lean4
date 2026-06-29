@@ -174,7 +174,7 @@ Contains compile-time FBound bridges for semantic obligations.
 -/
 class CompilerEnv : Type where
   -- trmRefs : @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
-  typRefs : FBound I.Index (AST.Typ I)
+  typeRefs : FBound I.Index (AST.Typ I)
   -- TODO: revise this trmRefs if necessary
 
 section variable [env: @CompilerEnv I]

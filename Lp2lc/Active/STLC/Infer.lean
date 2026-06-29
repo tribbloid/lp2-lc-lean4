@@ -29,7 +29,7 @@ def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remo
     match self with
     | .val (.primitive _) => .yield (some .primitive)
     | .val (.fn body tIn) =>
-      let index := env.typRefs.save tIn
+      let index := env.typeRefs.save tIn
       ((body index).infer fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
     | .apply fn arg =>
       match fn.infer fuel, arg.infer fuel with
@@ -38,7 +38,7 @@ def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remo
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | .ref i => .yield (some (env.typRefs.load i))
+    | .ref i => .yield (some (env.typeRefs.load i))
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone [env : @CompilerEnv I]
@@ -60,10 +60,10 @@ theorem termInferMonotone [env : @CompilerEnv I]
           cases value with
           | primitive repr => simpa [AST.Trm.infer] using hInfer
           | fn body tIn =>
-            cases hBody : (body (env.typRefs.save tIn)).infer fuel with
+            cases hBody : (body (env.typeRefs.save tIn)).infer fuel with
             | outOfFuel => simp [AST.Trm.infer, hBody, Outcome.map] at hInfer
             | yield bodyResult =>
-              have hBodyTop := ih fuel (Nat.lt_succ_self fuel) (body (env.typRefs.save tIn)) toFuel bodyResult hFuelTail hBody
+              have hBodyTop := ih fuel (Nat.lt_succ_self fuel) (body (env.typeRefs.save tIn)) toFuel bodyResult hFuelTail hBody
               simpa [AST.Trm.infer, Outcome.map, hBody, hBodyTop] using hInfer
         | apply fnTerm arg =>
           cases hFn : fnTerm.infer fuel with
@@ -91,16 +91,17 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
   refSafety : -- consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : I.Index),
         (AST.Trm.val (valueRefs.load id).1).infer.isDecidable (fun typ =>
-          typ <= typRefs.load id
+          typ <= typeRefs.load id
         )
   bindInfer : -- fn body applied on UUID of a value can always inhabit the same type of the same fn body applied on UUID of the type of that value
     ∀ (body : I.Index -> AST.Trm I) (v : AST.Val I) (fuel : Nat),
       (AST.Trm.val v).infer.isDecidable (fun tIn =>
-        (body (typRefs.save tIn)).infer fuel =
+        (body (typeRefs.save tIn)).infer fuel =
           (body (valueRefs.save { val := v, property := canEvalAny v })).infer fuel
       )
--- TODO: tIn can be skipped, just use _tIn
--- TODO: can these be corollaries of a cross-FBound axiom?
+-- TODO: can these be corollaries of a cross-FBound axiom? Namely:
+-- - body is a pure function, `(typeRefs.save tIn) = (valueRefs.save { val := v, property := canEvalAny v })` can be inferred if save requires an AST to generate UUID
+-- - typeRefs only accepts well-formed AST that is guaranteed to compile
 
 variable [env : @ProvingEnv I]
 
@@ -185,7 +186,7 @@ def proof : @Safety I env := by
                           | zero => simp [AST.Trm.infer] at hFnSafe
                           | succ bodyFuel =>
                             simp [AST.Trm.infer] at hFnSafe
-                            cases hBodyCompile : (body (env.typRefs.save runtimeTIn)).infer bodyFuel with
+                            cases hBodyCompile : (body (env.typeRefs.save runtimeTIn)).infer bodyFuel with
                             | outOfFuel =>
                               rw [hBodyCompile] at hFnSafe
                               simp [Outcome.map] at hFnSafe
