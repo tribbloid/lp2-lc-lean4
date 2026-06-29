@@ -94,11 +94,13 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
   refSafety : -- consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : I.Index),
         (AST.Trm.val (valueRefs.load id).1).infer.isDecidable (fun typ => typ <= typRefs.load id)
-  bindInfer :
-    ∀ (body : I.Index -> AST.Trm I) (tIn tOut : AST.Typ I) (input : AST.Val I) (bodyFuel : Nat),
+  bindInfer : -- fn body applied on UUID of a value can always inhabit the same type of the same fn body applied on UUID of the type of that value
+    ∀ (body : I.Index -> AST.Trm I) (tIn tOut : AST.Typ I) (v : AST.Val I) (bodyFuel : Nat),
       (body (typRefs.save tIn)).infer bodyFuel = .yield (some tOut) ->
-      (AST.Trm.val input).infer.isDecidable (fun inputTyp => inputTyp <= tIn) ->
-      (body (valueRefs.save { val := input, property := canEvalAny input })).infer bodyFuel = .yield (some tOut)
+      (AST.Trm.val v).infer.isDecidable (fun _tIn => _tIn <= tIn) ->
+      (body (valueRefs.save { val := v, property := canEvalAny v })).infer bodyFuel = .yield (some tOut)
+-- TODO: tIn can be skipped, just use _tIn
+-- TODO: may be a corollary of a cross-FBound roundtrip axiom?
 
 variable [env : @ProvingEnv I]
 

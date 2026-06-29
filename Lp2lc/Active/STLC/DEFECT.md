@@ -8,7 +8,7 @@ current `FBound` store interface alone:
 
 - [x] `refSafety`: a runtime value loaded from `valueRefs` must infer to a type
   bounded by the type loaded from `typRefs` at the same index.
-- [ ] `bindInfer`: if a HOAS body infers at the compile-time type binder, then the
+- [ ] `bindInfer`: if a Val.fn body infers at the compile-time type binder, then the
   same body must infer at the runtime value binder when the runtime input
   satisfies the expected input type.
 
