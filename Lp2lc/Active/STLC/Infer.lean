@@ -86,22 +86,26 @@ theorem valueInferMonotone [env : @CompilerEnv I]
 
 end AST.Trm
 
-
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
   refSafety : -- consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : I.Index),
         (AST.Trm.val (valueRefs.load id).1).infer.isDecidable (fun typ =>
           typ <= typeRefs.load id
         )
-  bindInfer : -- fn body applied on UUID of a value can always inhabit the same type of the same fn body applied on UUID of the type of that value
+  bindInfer : -- fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
     ∀ (body : I.Index -> AST.Trm I) (v : AST.Val I) (fuel : Nat),
       (AST.Trm.val v).infer.isDecidable (fun tIn =>
         (body (typeRefs.save tIn)).infer fuel =
           (body (valueRefs.save { val := v, property := canEvalAny v })).infer fuel
       )
 -- TODO: can these be corollaries of a cross-FBound axiom? Namely:
--- - body is a pure function, `(typeRefs.save tIn) = (valueRefs.save { val := v, property := canEvalAny v })` can be inferred if save requires an AST to generate UUID
--- - typeRefs only accepts well-formed AST that is guaranteed to compile
+-- - [x] body is a pure function, `(typeRefs.save tIn) = (valueRefs.save { val := v, property := canEvalAny v })` can be inferred if save requires an AST to generate UID
+-- - [ ] (same id <-> same term), immutable binding (1 id only refers to 1 type/value) |- mappings in valueRefs & typeRefs are always compatible
+--   - TODO: how to make it more obvious?
+--     -- By making typeRefs stronger: saving a term into typeRefs will get a UID, it automatically implies that the same UID in valueRefs automatically evaluates to the same type.
+--   - [by making a dual UID hashtable UID -> (Option Typ, Option Tr] -- TODO: not necessary, remove
+
+-- typeRefs only accepts well-formed AST that is guaranteed to compile, so
 
 variable [env : @ProvingEnv I]
 

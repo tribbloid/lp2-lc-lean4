@@ -51,27 +51,37 @@ end Permission
 
 -- TODO: this should be removed, dependent type constraint (of Payload) cannot provide more information to the compiler
 -- /--
--- Hypothetical bridge between values & UUIDs as HOAS carrier
+-- Hypothetical bridge between values & UIDs as HOAS carrier
 
--- There is no way to generate a UUID except saving a `V`, as a result, loading ALWAYS succeed.
+-- There is no way to generate a UID except saving a `V`, as a result, loading ALWAYS succeed.
 -- As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
 
--- The UUId can be a dependent type of P, if unnecessary, use FBound alias instead
+-- The UID can be a dependent type of P, if unnecessary, use FBound alias instead
 -- -/
--- class DepFBound {P : TPayload} (UUID : P -> TIndex) (V : P -> Type): Type where
---   save : (value : V p) → UUID p -- this is the only way to get an UUID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
---   load : (id : UUID p) → V p
+-- class DepFBound {P : TPayload} (UID : P -> TIndex) (V : P -> Type): Type where
+--   save : (value : V p) → UID p -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
+--   load : (id : UID p) → V p
 --   roundtrip : ∀ (value : V p), load (save value) = value
 
 /--
-Hypothetical bridge between values & UUIDs as HOAS carrier
+thin wrapper of `T` representing outcome of a valid compilation, implying safety of associated code snippet.
 
-There is no way to generate a UUID except saving a `V`, as a result, loading ALWAYS succeed.
+all compilation API should ideally return this.
+
+if saved in an FBound, the result UID should work in any `Env` to get a compatible term or value.
+-/
+structure Valid T : Type where
+  self: T
+
+/--
+Hypothetical bridge between values & UIDs as HOAS carrier
+
+There is no way to generate a UID except saving a `V`, as a result, loading ALWAYS succeed.
 As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
 -/
-class FBound (UUID : TIndex) (V : Type): Type where
-  save : (value : V) → UUID -- this is the only way to get an UUID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
-  load : (id : UUID) → V
+class FBound (UID : TIndex) (V : Type): Type where
+  save : (value : V) → UID -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
+  load : (id : UID) → V
   roundtrip : ∀ (value : V), load (save value) = value
 
 attribute [simp] FBound.roundtrip
