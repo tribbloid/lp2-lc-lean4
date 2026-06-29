@@ -23,7 +23,7 @@ namespace AST.Trm
 /--
 get the strongest post type bound (post-condition) of a term, or throw an error
 -/
-def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remove this, not possible in subtyping
+def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Valid (Typ I)) -- TODO: remove this, not possible in subtyping
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
