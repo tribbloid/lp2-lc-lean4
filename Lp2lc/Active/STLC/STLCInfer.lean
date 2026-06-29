@@ -97,7 +97,7 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
   bindInfer :
     ∀ (body : I.Index -> AST.Trm I) (tIn tOut : AST.Typ I) (input : AST.Val I) (bodyFuel : Nat),
       (body (typRefs.save tIn)).infer bodyFuel = .yield (some tOut) ->
-      RecOption.isDecidable (AST.Trm.val input).infer (fun inputTyp => inputTyp <= tIn) ->
+      (AST.Trm.val input).infer.isDecidable (fun inputTyp => inputTyp <= tIn) ->
       (body (valueRefs.save { val := input, property := canEvalAny input })).infer bodyFuel = .yield (some tOut)
 
 variable [env : @ProvingEnv I]
