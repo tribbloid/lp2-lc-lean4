@@ -23,7 +23,7 @@ namespace AST.Trm
 /--
 get the strongest post type bound (post-condition) of a term, or throw an error
 -/
-def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Valid (Typ I)) -- TODO: remove this, not possible in subtyping
+def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remove this, not possible in subtyping
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -91,7 +91,7 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
     ∀ (id : I.Index),
         (AST.Trm.val (valueRefs.load id).1).infer.isDecidable (fun typ =>
           typ <= typeRefs.load id
-        )
+        ) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom
   bindInfer : -- fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
     ∀ (body : I.Index -> AST.Trm I) (v : AST.Val I) (fuel : Nat),
       (AST.Trm.val v).infer.isDecidable (fun tIn =>
@@ -113,7 +113,7 @@ def Safety : Prop := -- TODO: this conjecture shouldn't be too long
   ∀ (trm : AST.Trm I) (typ : AST.Typ I) (fuel : Nat),
   ∀ (_: (trm.infer fuel) = Outcome.yield (.some typ)),
   trm.eval.isSemiDecidable ( fun vv =>
-    RecOption.isDecidable (AST.Trm.val vv).infer (fun t2 => t2 <= typ)
+    (AST.Trm.val vv).infer.isDecidable (fun t2 => t2 <= typ)
   )
 
 namespace Safety
