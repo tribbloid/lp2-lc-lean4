@@ -76,11 +76,14 @@ namespace AST.Val
 
 end AST.Val
 
-class RuntimeEnv where
+class HasFBoundSys : Type where
+  system: FBoundSys I.Index (AST.Trm I)
+
+class RuntimeEnv extends @HasFBoundSys I where
   CanSave : Permission (AST.Val I)
-  -- valueRefGen {TP: Type} : DepFBound (TP -> I.Index) (TP -> { value : AST.Val I // CanSave value }) -- TODO: don't know how to define this prior
-  valueRefs: FBound I.Index { value : AST.Val I // CanSave value }
   canEvalAny: (v: AST.Val I) -> CanSave v
+  valueRefs: FBound I.Index { value : AST.Val I // CanSave value }
+
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
@@ -172,7 +175,7 @@ end AST.Trm
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
-class CompilerEnv : Type where
+class CompilerEnv : Type extends @HasFBoundSys I where
   -- trmRefs : @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
   typeRefs : FBound I.Index (AST.Typ I)
   -- TODO: revise this trmRefs if necessary
