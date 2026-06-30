@@ -86,6 +86,7 @@ Every task can be classified into one of the following Categories:
 - `Gen` suffix : generator
 - `Dep` prefix : dependent, related to dependent type
 - `Rec` : recursive, guarded recursion
+- `__` : experimental, self-contained code, non-experimental code should not import from it
 
 ## Key Commands
 
