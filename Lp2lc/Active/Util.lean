@@ -86,22 +86,32 @@ class FBound (UID : TIndex) (V : Type): Type where
 
 attribute [simp] FBound.roundtrip
 
-namespace FBoundV2
 section variable (I: TIndex)
 
-structure UID : Type where
-  k: I
-  hash: I
+structure UID : Type where -- used to retrieve data from multiple FBounds. Always 2 parts
+  key: I -- always corresponding to AST.Trm.
+  value: I -- situational
 
-class FBound (K : Type) (V : Type): Type where -- all these functions are pure
-  getID (key: K): I
-  save (key: K) (value : V) : UID I -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
+/--
+System of which multiple FBounds can depends on, they share the same `(K : Type)` & correspondence `(UID.key <-> key)`
+-/
+class FBoundSys : Type 1 where
+  K : Type -- key type, in PL reasoning this is always `Trm I`
+  indexK: K -> I
+  indexKIsomorph : ∀ (i1 i2: K), (indexK i1 = indexK i2) -> (i1 = i2) -- not sure if useful, just leave it here
+
+class FBoundV2 [Sys: FBoundSys I] (V : Type): Type where -- depends on FBoundSys
+  indexV (kID: I) (v: V) : I
+  save (key: Sys.K) (value : V) : UID I :=
+    let ik := Sys.indexK key
+    let iv := indexV ik value
+    UID.mk ik iv
+   -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
   load (uid: UID I) : V
-  roundtripAxiom : ∀ (k : K) (v : V), load (save k v) = v
-  sameKeyAxiom : ∀ (k1 k2 : K) (v : V), (k1 = k2) -> (save k1 v = save k2 v)
+  roundtrip : ∀ (k : Sys.K) (v : V), load (save k v) = v -- TODO: downstream of a simplier axiom on indexV
+  -- sameKeyAxiom : ∀ (k1 k2 : K) (v : V), (k1 = k2) -> (save k1 v = save k2 v) -- TODO: remove
 
 end
-end FBoundV2
 
 section variable {T : Sort u}
 
