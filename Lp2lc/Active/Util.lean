@@ -86,6 +86,23 @@ class FBound (UID : TIndex) (V : Type): Type where
 
 attribute [simp] FBound.roundtrip
 
+namespace FBoundV2
+section variable (I: TIndex)
+
+structure UID : Type where
+  k: I
+  hash: I
+
+class FBound (K : Type) (V : Type): Type where -- all these functions are pure
+  getID (key: K): I
+  save (key: K) (value : V) : UID I -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
+  load (uid: UID I) : V
+  roundtripAxiom : ∀ (k : K) (v : V), load (save k v) = v
+  sameKeyAxiom : ∀ (k1 k2 : K) (v : V), (k1 = k2) -> (save k1 v = save k2 v)
+
+end
+end FBoundV2
+
 section variable {T : Sort u}
 
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
