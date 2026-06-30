@@ -40,17 +40,17 @@ example :
   · rfl
 
 example :
-    ((Trm.Malformed.applyidFnOnItself : Trm).eval).shouldYields
+    (Malformed.applyIdFnOnItself.eval).shouldYields
       (Val.idFn : Val) := by
   constructor
-  · exact ⟨2, by simp [AST.Trm.eval, Malformed.applyidFnOnItself, primitiveIdFn, Val.idFn]⟩
+  · exact ⟨2, by simp [AST.Trm.eval, Malformed.applyIdFnOnItself, primitiveIdFn, Val.idFn]⟩
   · rfl
 
 example :
     ((Trm.Malformed.idFnOnFalse2 : Trm).eval).shouldYields
       ((.primitive "false") : Val) := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.eval, Malformed.idFnOnFalse2, Malformed.applyidFnOnItself, primitiveIdFn, vFalse]⟩
+  · exact ⟨3, by simp [AST.Trm.eval, Malformed.idFnOnFalse2, Malformed.applyIdFnOnItself, primitiveIdFn, vFalse]⟩
   · rfl
 
 example :
@@ -130,7 +130,7 @@ example :
   sorry
 
 example :
-    ∀ typ, (Malformed.applyidFnOnItself.recCanInhabit typ).shouldFail := by
+    ∀ typ, (Malformed.applyIdFnOnItself.recCanInhabit typ).shouldFail := by
   sorry
 
 example :

@@ -67,11 +67,11 @@ end TypeHinted
 
 namespace Malformed
 
-def applyidFnOnItself : Trm :=
+def applyIdFnOnItself : Trm :=
   .apply primitiveIdFn primitiveIdFn
 
 def idFnOnFalse2 : Trm :=
-  .apply applyidFnOnItself vFalse
+  .apply applyIdFnOnItself vFalse
 
 def primitiveApply : Trm :=
   .apply vFalse vTrue
