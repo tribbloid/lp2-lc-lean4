@@ -88,29 +88,38 @@ attribute [simp] FBound.roundtrip
 
 section variable (I: TIndex)
 
-structure UID : Type where -- used to retrieve data from multiple FBounds. Always 2 parts
-  key: I -- always corresponding to AST.Trm.
-  value: I -- situational
+/--
+Single key, of which multiple FBoundExt can depends on, they share the same `(K : Type)` & correspondence `(UID.key <-> key)`
+
+V can be Unit, this is a common pattern if it is only useful as a base of other FBoundExt
+-/
+class FBoundBase
+  (K : Type) (V : Type) -- key type, in PL reasoning this is always `Trm I`
+: Type where
+  index (k : K) : I × (V -> Unit)
+  save (k : K) (v : V) : I :=
+    let i_fn := index k
+    let _ := i_fn.2 v
+    i_fn.1
+  -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
+  load (uid : I) : V -- (k : K) should never be exposed
+  roundtrip : ∀ (k : K) (v : V), load (save k v) = v
+  isomorph : ∀ (k1 k2: K), (index k1 = index k2) -> (k1 = k2) -- not sure if useful, just leave it here
 
 /--
-System of which multiple FBounds can depends on, they share the same `(K : Type)` & correspondence `(UID.key <-> key)`
--/
-class FBoundSys
-  (K : Type) -- key type, in PL reasoning this is always `Trm I`
-: Type where
-  indexK: K -> I
-  indexKIsomorph : ∀ (i1 i2: K), (indexK i1 = indexK i2) -> (i1 = i2) -- not sure if useful, just leave it here
+Depending on an existing FBoundBase to get the first part of the key
 
-class FBoundV2 {K : Type} [Sys: FBoundSys I K] (V : Type): Type where -- depends on FBoundSys
-  indexV (kID: I) (v: V) : I
-  save (key: K) (value : V) : UID I :=
-    let ik := Sys.indexK key
-    let iv := indexV ik value
-    UID.mk ik iv
-   -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
-  load (uid: UID I) : V
-  roundtrip : ∀ (k : K) (v : V), load (save k v) = v -- TODO: downstream of a simplier axiom on indexV
-  -- sameKeyAxiom : ∀ (k1 k2 : K) (v : V), (k1 = k2) -> (save k1 v = save k2 v) -- TODO: remove
+multiple FBoundExt can depend on 1 FBoundBase
+-/
+class FBoundV2
+  {K1 _V : Type} [Base: FBoundBase I K1 _V]
+  (K2 V : Type)
+: Type extends FBoundBase (I × I) (K1 × K2) V where
+  indexPart (i1: I) (k2 : K2) : I × (V -> Unit)
+  index := fun k =>
+    let i1 := (Base.index k.1).1
+    let i2_fn := indexPart i1 k.2
+    ((i1, i2_fn.1), i2_fn.2)
 
 end
 

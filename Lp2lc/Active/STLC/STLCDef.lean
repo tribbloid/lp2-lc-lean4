@@ -76,8 +76,7 @@ namespace AST.Val
 
 end AST.Val
 
-class HasFBoundSys : Type where
-  system: FBoundSys I.Index (AST.Trm I)
+class HasFBoundSys : Type extends FBoundBase I.Index (AST.Trm I) Unit where
 
 class RuntimeEnv extends @HasFBoundSys I where
   CanSave : Permission (AST.Val I)
