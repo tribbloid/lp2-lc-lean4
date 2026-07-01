@@ -10,13 +10,13 @@ inductive Symbol where -- no constructor, it can only be retrieved from FBound
 
 namespace Symbolic
 
-@[reducible] def I : Free where
+@[reducible] def F : Free where
   Index := Symbol
   Data := String
 
-abbrev Typ := AST.Typ I
-abbrev Val := AST.Val I
-abbrev Trm := AST.Trm I
+abbrev Typ := AST.Typ F
+abbrev Val := AST.Val F
+abbrev Trm := AST.Trm F
 
 end Symbolic
 

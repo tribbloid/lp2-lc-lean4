@@ -9,10 +9,10 @@ namespace STLC
 /- Shared STLC syntax family, currently exposing function types over the common representation. -/
 open Lp2lc.Active.Util
 
-section variable {I : Free}
+section variable {F : Free}
 
 namespace AST
-section variable (I : Free)
+section variable (F : Free)
 
 mutual
 
@@ -39,7 +39,7 @@ They are not intrinsic typing indices on terms.
 inductive Trm : Type where
 | val (v : Val) -- AKA literal
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
-| ref (s: I.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
+| ref (s: F.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
 
 /--
@@ -51,18 +51,18 @@ used by function application after both sides have been evaluated.
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
 inductive Val : Type where
-| primitive (repr : I.Data) -- most specific type is always `primitive`
-| fn (body : (arg : I.Index) → Trm) (tIn : Typ) -- most specific type is always `.fn tIn _`
+| primitive (repr : F.Data) -- most specific type is always `primitive`
+| fn (body : (arg : F.Index) → Trm) (tIn : Typ) -- most specific type is always `.fn tIn _`
 
 end
 end
 end AST
 
 /-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE : LE (AST.Typ I) := ⟨Eq⟩
+instance typLE : LE (AST.Typ F) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
-instance typDecidableLE : DecidableLE (AST.Typ I)
+instance typDecidableLE : DecidableLE (AST.Typ F)
   | .primitive, .primitive => isTrue rfl
   | .primitive, .fn _ _
   | .fn _ _, .primitive => isFalse (fun equality => nomatch equality)
@@ -76,13 +76,13 @@ namespace AST.Val
 
 end AST.Val
 
-class HasFBoundSys : Type extends FBoundBase I.Index (AST.Trm I) Unit where
+class HasFBoundSys : Type where
+  base: FBoundBase F.Index (AST.Trm F) Unit
 
-class RuntimeEnv extends @HasFBoundSys I where
-  CanSave : Permission (AST.Val I)
-  canEvalAny: (v: AST.Val I) -> CanSave v
-  valueRefs: FBound I.Index { value : AST.Val I // CanSave value }
-
+class RuntimeEnv extends @HasFBoundSys F where
+  CanSave : Permission (AST.Val F)
+  canEvalAny: (v: AST.Val F) -> CanSave v
+  valueRefs: base.FBoundV2 (AST.Val F) { value : AST.Val F // CanSave value }
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
@@ -94,7 +94,7 @@ Evaluates a term by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm I) : RecOption (AST.Val I)
+def eval (self : AST.Trm F) : RecOption (AST.Val F)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -114,9 +114,9 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
 
 end
 
-section variable (self : AST.Trm I)
+section variable (self : AST.Trm F)
 
-def recCanSatisfy (condition : Condition I) : ∀ [@RuntimeEnv I], Rec Prop := fun fuel =>
+def recCanSatisfy (condition : Condition F) : ∀ [@RuntimeEnv I], Rec Prop := fun fuel =>
   (self.eval fuel).map (fun
     | some v => condition v
     | none => False)
@@ -125,11 +125,11 @@ def recCanSatisfy (condition : Condition I) : ∀ [@RuntimeEnv I], Rec Prop := f
 An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
-def CanSatisfy_semi (condition : Condition I) : Prop :=
+def CanSatisfy_semi (condition : Condition F) : Prop :=
   ∀ fuel, ∀ [@RuntimeEnv I], (self.recCanSatisfy condition fuel).getOrElse True
 
 /-- Converts semantic outcomes into obligations over all fuel and runtime environments. -/
-abbrev WeakestPre := @CanSatisfy_semi I -- weakest precondition in Iris framework
+abbrev WeakestPre := @CanSatisfy_semi F -- weakest precondition in Iris framework
 
 def IsSafe : Prop :=
   self.CanSatisfy_semi (fun _ => true)
@@ -174,16 +174,15 @@ end AST.Trm
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
-class CompilerEnv : Type extends @HasFBoundSys I where
-  -- trmRefs : @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
-  typeRefs : FBound I.Index (AST.Typ I)
+class CompilerEnv : Type extends @HasFBoundSys F where
+  typeRefs : base.FBoundV2 Unit (AST.Typ F)
   -- TODO: revise this trmRefs if necessary
 
 section variable [env: @CompilerEnv I]
 open AST
 
 namespace AST.Trm
-section variable (self : Trm I)
+section variable (self : Trm F)
 
 /--
 AKA compile, recursively produce a proof target.
@@ -193,20 +192,20 @@ used in Fundamental theorem (thus the `_total` suffix)
 
 Structurally it should be similar to infer, but return `.some Unit` or `.none` instead of a precise type bound
 -/
-def recCanInhabit (self : Trm I) (typ : Typ I) : RecOption Unit :=
+def recCanInhabit (self : Trm F) (typ : Typ F) : RecOption Unit :=
   sorry
 
 /--
 determine if a term can can inhabit a type bound.
 -/
-def CanInhabit_total (self : Trm I) (typ : Typ I) : Prop :=
+def CanInhabit_total (self : Trm F) (typ : Typ F) : Prop :=
   RecOption.isDecidable (self.recCanInhabit typ)
 
 end
 end AST.Trm
 
 /-- Interprets source types as semantic conditions over values. -/
-def AST.Typ.ToCondition (typ: Typ I): Condition I := fun value =>
+def AST.Typ.ToCondition (typ: Typ F): Condition F := fun value =>
   let trm := Trm.val value
   (trm.CanInhabit_total typ)
 
@@ -218,7 +217,7 @@ def AST.Typ.ToCondition (typ: Typ I): Condition I := fun value =>
 
 /-- States that syntactic typing entails semantic typing by the interpreted type. -/
 def Fundamental : Prop :=
-  ∀ (term : Trm I) (type : Typ I),
+  ∀ (term : Trm F) (type : Typ F),
   ∀ (compilerFuel: Nat),
     term.recCanInhabit type compilerFuel = .yield (some ()) → term.CanSatisfy_semi (type.ToCondition)
 
@@ -227,19 +226,19 @@ def Fundamental : Prop :=
 --   ∀ (term : Trm I) (type : Typ I),
 --     term.CanInhabit type → term.SemiCanSatisfy (type.ToCondition)
 
-def fundamentalProof : @Fundamental I := by
+def fundamentalProof : @Fundamental F := by
   sorry
 
 end
 
 /-- States that semantic typing of a closed term entails operational safety. -/
 def Adequacy : Prop :=
-  ∀ (term : AST.Trm I) (postcondition : Condition I),
+  ∀ (term : AST.Trm F) (postcondition : Condition F),
     term.WeakestPre postcondition → term.IsSafe
 
 namespace Adequacy
 
-def proof : @Adequacy I := by
+def proof : @Adequacy F := by
   intro term postcondition weakest fuel runtimeEnv
   specialize weakest fuel
   cases evalResult : term.eval fuel with

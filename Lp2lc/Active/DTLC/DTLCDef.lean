@@ -11,10 +11,10 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 
 open Lp2lc.Active.Util
 
-section variable {I : Free}
+section variable {F : Free}
 
 namespace AST
-section variable (I : Free)
+section variable (F : Free)
 
 mutual
 
@@ -27,7 +27,7 @@ wildcard annotation accepted by any value.
 -/
 inductive Typ : Type where
 | primitive -- `AnyVal` in Scala, accepts only primitive values
-| depFn (tIn : Typ) (tOut : (arg : I.Index) → Typ) -- dependent function
+| depFn (tIn : Typ) (tOut : (arg : F.Index) → Typ) -- dependent function
 | top -- anything/wildcard type, can accept any value.
 
 /--
@@ -48,7 +48,7 @@ inductive Trm : Type where
 | typeHinted (self : Trm) (hint : Typ) -- AKA type annotation, each term can have 0, 1, or many hints (e.g. `((1: Tuple): Product): AnyRef`), required for fundamental/composability theorem
 | val (v : Val) -- AKA literal
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
-| ref (s: I.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
+| ref (s: F.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
 /--
 Value syntax, containing neither references nor applications.
@@ -57,42 +57,42 @@ Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
 -/
 inductive Val : Type where
-| primitive (repr : I.Data) -- most specific type is always `primitive`
-| primitiveFn (body: (arg: I.Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
-| fn (body : (arg : I.Index) → Trm) -- most specific type is always `.depFn _ _`
+| primitive (repr : F.Data) -- most specific type is always `primitive`
+| primitiveFn (body: (arg: F.Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
+| fn (body : (arg : F.Index) → Trm) -- most specific type is always `.depFn _ _`
 
 end
 
-abbrev Condition := (value : AST.Val I) -> Prop -- AKA semantic type
+abbrev Condition := (value : AST.Val F) -> Prop -- AKA semantic type
 end
 /-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
-instance valIsTrm : Coe (Val I) (Trm I) where
+instance valIsTrm : Coe (Val F) (Trm F) where
   coe := fun v => Trm.val v
 
 namespace Typ
 
-inductive SubtypeEv : (under: Typ I) -> (over: Typ I) -> Prop
-| x2x (t: Typ I) : SubtypeEv t t
-| x2Top (t : Typ I) : SubtypeEv t Typ.top
+inductive SubtypeEv : (under: Typ F) -> (over: Typ F) -> Prop
+| x2x (t: Typ F) : SubtypeEv t t
+| x2Top (t : Typ F) : SubtypeEv t Typ.top
 
 end Typ
 
 namespace Trm
 
-structure TypeView where (self: Trm I)
+structure TypeView where (self: Trm F)
 
-def typeHint (self: Trm I) := TypeView.mk self
+def typeHint (self: Trm F) := TypeView.mk self
 
 namespace TypeView
 
 /-- Reads the optional annotation attached to the outer term constructor. -/
-def get (view : @TypeView I) : Option (Typ I) :=
+def get (view : @TypeView F) : Option (Typ F) :=
   match view.self with
   | typeHinted _ t => some t
   | _ => none
 
 /-- Removes all optional type annotations from a term. -/
-def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
+def eraseRecursively (view : @TypeView F) (self : Trm F := view.self) : Trm F :=
   match self with
   | typeHinted self _ => self.typeHint.eraseRecursively self
   | .val (.primitiveFn body) => .val (.primitiveFn fun arg => (body arg).typeHint.eraseRecursively (body arg))
@@ -101,7 +101,7 @@ def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
   | _ => self
 
 /-- Predicate that all annotations have been removed from a term. -/
-def IsErased (view : @TypeView I) (self : Trm I := view.self) : Prop :=
+def IsErased (view : @TypeView F) (self : Trm F := view.self) : Prop :=
   match self with
   | typeHinted _ _ => false
   | .val (.primitiveFn body) => ∀ arg, (body arg).typeHint.IsErased (body arg)
@@ -120,12 +120,12 @@ namespace AST.Val
 end AST.Val
 
 class RuntimeEnv where
-  EvalPermission : Permission (AST.Val I)
+  EvalPermission : Permission (AST.Val F)
   -- fuel: Nat -- this can't be used, ewww
-  forVals: FBound I.Index { value : AST.Val I // EvalPermission value }
-  canEvalAny: (v: AST.Val I) -> EvalPermission v
+  forVals: FBound F.Index { value : AST.Val F // EvalPermission value }
+  canEvalAny: (v: AST.Val F) -> EvalPermission v
 
-section variable [env: @RuntimeEnv I]
+section variable [env: @RuntimeEnv F]
 
 namespace AST.Trm
 
@@ -134,7 +134,7 @@ Evaluates a source or compiled program by spending 1 fuel at each semantic
 descent. Runtime evaluation uses `FBound I Val` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm I) : RecOption (AST.Val I)
+def eval (self : AST.Trm F) : RecOption (AST.Val F)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -161,7 +161,7 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
 An safe program may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
-def IsSafeBy (self : AST.Trm I) (condition : Condition I) : Prop :=
+def IsSafeBy (self : AST.Trm F) (condition : Condition F) : Prop :=
   ∀ fuel, match self.eval fuel with
   | .yield (some value) => condition value
   | .yield none => false
@@ -177,7 +177,7 @@ Semantic membership of a value in a type annotation.
 Function values must satisfy their body obligation at the same runtime reference
 that application evaluation will allocate for the argument.
 -/
-def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
+def CanBind (type : AST.Typ F) (value : AST.Val F) : Prop :=
   match type, value with
   | .top, _ => true
   | .primitive, .primitive _ => true
@@ -204,7 +204,7 @@ end AST.Val
 
 namespace AST.Trm
 
-def IsSafeUnder (self : AST.Trm I) (binding : Typ I) : Prop :=
+def IsSafeUnder (self : AST.Trm F) (binding : Typ F) : Prop :=
   self.IsSafeBy (fun trm => trm.CanBind binding)
 
 end AST.Trm
@@ -212,17 +212,17 @@ end AST.Trm
 /--
 a compiled term with safety proof
 -/
-structure Program (condition : AST.Condition I) where
-  trm: AST.Trm I
+structure Program (condition : AST.Condition F) where
+  trm: AST.Trm F
   isSafe: trm.IsSafeBy condition
 
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class CompilerEnv where
-  forSemantic: FBound I.Index { _semantic : AST.Val I -> AST.Condition I // True }
+  forSemantic: FBound F.Index { _semantic : AST.Val F -> AST.Condition F // True }
 
-section variable [@CompilerEnv I]
+section variable [@CompilerEnv F]
 open AST
 
 
@@ -250,7 +250,7 @@ applications remain applications of recursively compiled subterms.
 
 Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
 -/
-def compile (trm : Trm I) (desired: Condition I)
+def compile (trm : Trm F) (desired: Condition F)
 : RecOption (Program desired)
   | 0 => .outOfFuel
   | _fuel + 1 =>
@@ -261,9 +261,9 @@ def compile (trm : Trm I) (desired: Condition I)
     | .ref _i => .yield none
 
 
-def compileToTrm (trm : Trm I)
-  (condition: Condition I := fun _ => true)-- by default, accept any condition
-: RecOption (Trm I) := fun (fuel : Nat) =>
+def compileToTrm (trm : Trm F)
+  (condition: Condition F := fun _ => true)-- by default, accept any condition
+: RecOption (Trm F) := fun (fuel : Nat) =>
   (trm.compile condition fuel).map (fun out => out.map (fun v => v.trm))
 
 end AST.Trm

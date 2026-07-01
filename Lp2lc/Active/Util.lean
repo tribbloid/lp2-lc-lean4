@@ -94,7 +94,7 @@ Single key, of which multiple FBoundExt can depends on, they share the same `(K 
 V can be Unit, this is a common pattern if it is only useful as a base of other FBoundExt
 -/
 class FBoundBase
-  (K : Type) (V : Type) -- key type, in PL reasoning this is always `Trm I`
+  (K V : Type) -- key type, in PL reasoning this is always `Trm I`
 : Type where
   index (k : K) : I × (V -> Unit)
   save (k : K) (v : V) : I :=
@@ -106,13 +106,15 @@ class FBoundBase
   roundtrip : ∀ (k : K) (v : V), load (save k v) = v
   isomorph : ∀ (k1 k2: K), (index k1 = index k2) -> (k1 = k2) -- not sure if useful, just leave it here
 
+namespace FBoundBase
+
 /--
 Depending on an existing FBoundBase to get the first part of the key
 
 multiple FBoundExt can depend on 1 FBoundBase
 -/
 class FBoundV2
-  {K1 _V : Type} [Base: FBoundBase I K1 _V]
+  {I: TIndex} {K1 _V : Type} (Base: FBoundBase I K1 _V)
   (K2 V : Type)
 : Type extends FBoundBase (I × I) (K1 × K2) V where
   indexPart (i1: I) (k2 : K2) : I × (V -> Unit)
@@ -120,6 +122,9 @@ class FBoundV2
     let i1 := (Base.index k.1).1
     let i2_fn := indexPart i1 k.2
     ((i1, i2_fn.1), i2_fn.2)
+
+
+end FBoundBase
 
 end
 
