@@ -9,10 +9,15 @@ namespace STLC
 /- Shared STLC syntax family, currently exposing function types over the common representation. -/
 open Lp2lc.Active.Util
 
+attribute [simp] FBoundBase.roundtrip
+
 section variable {F : Free}
 
 namespace AST
 section variable (F : Free)
+
+/-- PHOAS reference carrier produced by keyed STLC stores. -/
+abbrev Ref : Type := F.Index × F.Index
 
 mutual
 
@@ -39,7 +44,7 @@ They are not intrinsic typing indices on terms.
 inductive Trm : Type where
 | val (v : Val) -- AKA literal
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
-| ref (s: F.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
+| ref (s: Ref F) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
 
 /--
@@ -52,7 +57,7 @@ Function values carry their input type so the compiler can type-check HOAS bodie
 -/
 inductive Val : Type where
 | primitive (repr : F.Data) -- most specific type is always `primitive`
-| fn (body : (arg : F.Index) → Trm) (tIn : Typ) -- most specific type is always `.fn tIn _`
+| fn (body : (arg : Ref F) → Trm) (tIn : Typ) -- most specific type is always `.fn tIn _`
 
 end
 end
@@ -91,10 +96,10 @@ section variable [env: @RuntimeEnv I]
 
 /--
 Evaluates a term by spending 1 fuel at each semantic
-descent. Runtime evaluation uses `FBound I Val` for references and deliberately
-does not inspect compile-time typing evidence.
+descent. Runtime evaluation uses keyed value references and deliberately does
+not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm F) : RecOption (AST.Val F)
+def eval (self : AST.Trm I) : RecOption (AST.Val I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -102,9 +107,10 @@ def eval (self : AST.Trm F) : RecOption (AST.Val F)
     | .apply fn arg =>
       let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
-      | (.yield (some (.fn body _tIn)), .yield (some input)) =>
+      | (.yield (some (.fn body tIn)), .yield (some input)) =>
         let permission := env.canEvalAny input
-        let index := env.valueRefs.save ⟨input, permission⟩
+        let fnKey := AST.Trm.val (.fn body tIn)
+        let index := env.valueRefs.save (fnKey, input) ⟨input, permission⟩
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
@@ -116,7 +122,7 @@ end
 
 section variable (self : AST.Trm F)
 
-def recCanSatisfy (condition : Condition F) : ∀ [@RuntimeEnv I], Rec Prop := fun fuel =>
+def recCanSatisfy (condition : Condition F) : ∀ [@RuntimeEnv F], Rec Prop := fun fuel =>
   (self.eval fuel).map (fun
     | some v => condition v
     | none => False)
@@ -126,7 +132,7 @@ An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
 def CanSatisfy_semi (condition : Condition F) : Prop :=
-  ∀ fuel, ∀ [@RuntimeEnv I], (self.recCanSatisfy condition fuel).getOrElse True
+  ∀ fuel, ∀ [@RuntimeEnv F], (self.recCanSatisfy condition fuel).getOrElse True
 
 /-- Converts semantic outcomes into obligations over all fuel and runtime environments. -/
 abbrev WeakestPre := @CanSatisfy_semi F -- weakest precondition in Iris framework
@@ -172,7 +178,7 @@ end AST.Trm
 -- end AdequateTrm
 
 /--
-Contains compile-time FBound bridges for semantic obligations.
+Contains compile-time keyed reference bridges for semantic obligations.
 -/
 class CompilerEnv : Type extends @HasFBoundSys F where
   typeRefs : base.FBoundV2 Unit (AST.Typ F)

@@ -2,16 +2,15 @@
 
 ## `Safety.proof` infrastructure
 
-`Safety.proof` in `STLCInfer.lean` is now discharged by recursion, but it is
-relative to two `ProvingEnv` obligations that are not derivable from the
-current `FBound` store interface alone:
+`Safety.proof` in `STLCInfer.lean` is now discharged by recursion. It still
+depends on `ProvingEnv.refSafety`, while `bindInfer` is derived from keyed
+saves and PHOAS inference coherence:
 
 - [x] `refSafety`: a runtime value loaded from `valueRefs` must infer to a type
   bounded by the type loaded from `typRefs` at the same index.
-- [ ] `bindInfer`: if a Val.fn body infers at the compile-time type binder, then the
+- [x] `bindInfer`: if a Val.fn body infers at the compile-time type binder, then the
   same body must infer at the runtime value binder when the runtime input
   satisfies the expected input type.
 
-Concrete `ProvingEnv` instances must provide these proofs, or the environment
-representation should be strengthened so they can be proved once from store
-coherence.
+Concrete `ProvingEnv` instances must provide `refSafety` and the PHOAS
+coherence instance used to prove `bindInfer`.

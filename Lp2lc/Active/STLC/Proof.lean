@@ -56,20 +56,23 @@ theorem termEvalMonotone [env : @RuntimeEnv I]
                 | primitive repr =>
                   simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                 | fn body tIn =>
+                  let fnKey := AST.Trm.val (.fn body tIn)
                   cases argResult with
                   | none =>
                     simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                   | some input =>
                     cases hBody :
-                        (body (env.valueRefs.save { val := input, property := env.canEvalAny input })).eval fuel with
+                        (body (env.valueRefs.save
+                          (fnKey, input) { val := input, property := env.canEvalAny input })).eval fuel with
                     | outOfFuel =>
-                      simp [AST.Trm.eval, hFn, hArg, hBody] at hEval
+                      simp [AST.Trm.eval, hFn, hArg, hBody, fnKey] at hEval
                     | yield bodyResult =>
                       have hBodyTop :=
                         ih fuel (Nat.lt_succ_self fuel)
-                          (body (env.valueRefs.save { val := input, property := env.canEvalAny input }))
+                          (body (env.valueRefs.save
+                            (fnKey, input) { val := input, property := env.canEvalAny input }))
                           toFuel bodyResult hFuelTail hBody
-                      simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop, hBody, hBodyTop] using hEval
+                      simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop, hBody, hBodyTop, fnKey] using hEval
         | ref id =>
           simpa [AST.Trm.eval] using hEval
 
