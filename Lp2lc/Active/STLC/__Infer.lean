@@ -29,7 +29,7 @@ def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remo
     match self with
     | .val (.primitive _) => .yield (some .primitive)
     | .val (.fn body tIn) =>
-      let index := env.typeRefs.save tIn
+      let index := env.typeRefs.save (AST.Trm.val (.fn body tIn), ()) tIn
       ((body index).infer fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
     | .apply fn arg =>
       match fn.infer fuel, arg.infer fuel with
@@ -60,10 +60,10 @@ theorem termInferMonotone [env : @CompilerEnv I]
           cases value with
           | primitive repr => simpa [AST.Trm.infer] using hInfer
           | fn body tIn =>
-            cases hBody : (body (env.typeRefs.save tIn)).infer fuel with
+            cases hBody : (body (env.typeRefs.save (AST.Trm.val (.fn body tIn), ()) tIn)).infer fuel with
             | outOfFuel => simp [AST.Trm.infer, hBody, Outcome.map] at hInfer
             | yield bodyResult =>
-              have hBodyTop := ih fuel (Nat.lt_succ_self fuel) (body (env.typeRefs.save tIn)) toFuel bodyResult hFuelTail hBody
+              have hBodyTop := ih fuel (Nat.lt_succ_self fuel) (body (env.typeRefs.save (AST.Trm.val (.fn body tIn), ()) tIn)) toFuel bodyResult hFuelTail hBody
               simpa [AST.Trm.infer, Outcome.map, hBody, hBodyTop] using hInfer
         | apply fnTerm arg =>
           cases hFn : fnTerm.infer fuel with
@@ -86,24 +86,45 @@ theorem valueInferMonotone [env : @CompilerEnv I]
 
 end AST.Trm
 
-class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
+class PHOASCoherence (I : Free) : Prop where
+  inferStable :
+    ∀ [_env : @CompilerEnv I]
+      (body : Prod I.Index I.Index -> AST.Trm I)
+      (left right : Prod I.Index I.Index) (fuel : Nat),
+      left.1 = right.1 ->
+        (body left).infer fuel = (body right).infer fuel
+
+class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I), PHOASCoherence I where
   refSafety : -- consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
-    ∀ (id : I.Index),
+    ∀ (id : Prod I.Index I.Index),
         (AST.Trm.val (valueRefs.load id).1).infer.isDecidable (fun typ =>
           typ <= typeRefs.load id
-        ) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
-  bindInfer : -- fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
-    ∀ (body : I.Index -> AST.Trm I) (v : AST.Val I) (fuel : Nat),
-      (AST.Trm.val v).infer.isDecidable (fun tIn =>
-        (body (typeRefs.save tIn)).infer fuel =
-          (body (valueRefs.save { val := v, property := canEvalAny v })).infer fuel
-      )
--- TODO: can these be corollaries of a cross-FBound axiom? Namely:
--- - [x] body is a pure function, `(typeRefs.save tIn) = (valueRefs.save { val := v, property := canEvalAny v })` can be inferred if save requires an AST to generate UID
+        )
+
+namespace ProvingEnv
+
+-- fn body applied on a value index can always inhabit the same type of the same fn body applied on the corresponding type index
+theorem bindInfer [env : @ProvingEnv I]
+    (body : Prod I.Index I.Index -> AST.Trm I) (tIn : AST.Typ I)
+    (v : AST.Val I) (fuel : Nat) :
+    (body (env.typeRefs.save (AST.Trm.val (.fn body tIn), ()) tIn)).infer fuel =
+      (body (env.valueRefs.save (AST.Trm.val (.fn body tIn), ()) { val := v, property := env.canEvalAny v })).infer fuel := by
+  have hType := env.typeRefsBase (AST.Trm.val (.fn body tIn)) tIn
+  have hValue := env.valueRefsBase (AST.Trm.val (.fn body tIn)) { val := v, property := env.canEvalAny v }
+  exact PHOASCoherence.inferStable body
+    (env.typeRefs.save (AST.Trm.val (.fn body tIn), ()) tIn)
+    (env.valueRefs.save (AST.Trm.val (.fn body tIn), ()) { val := v, property := env.canEvalAny v })
+    fuel
+    (hType.trans hValue.symm)
+
+end ProvingEnv
+
+-- TODO: can these be corollaries of a shared keyed store axiom? Namely:
+-- - [x] body is a pure function, `(typeRefs.save (AST.Trm.val (.fn body tIn), ()) tIn)` and `valueRefs.save` for the same term key share the same base index
 -- - [ ] (same id <-> same term), immutable binding (1 id only refers to 1 type/value) |- mappings in valueRefs & typeRefs are always compatible
 --   - TODO: how to make it more obvious?
---     -- By making typeRefs stronger: saving a term into typeRefs will get a UID, it automatically implies that the same UID in valueRefs automatically evaluates to the same type.
---   - [by making a dual UID hashtable UID -> (Option Typ, Option Tr] -- TODO: not necessary, remove
+--     -- By making typeRefs stronger: saving a term into typeRefs will get a paired index, it automatically implies that the same base index in valueRefs automatically evaluates to the same type.
+--   - [by making a dual hashtable index -> (Option Typ, Option Tr] -- TODO: not necessary, remove
 
 -- typeRefs only accepts well-formed AST that is guaranteed to compile, so
 
@@ -190,7 +211,7 @@ def proof : @Safety I env := by
                           | zero => simp [AST.Trm.infer] at hFnSafe
                           | succ bodyFuel =>
                             simp [AST.Trm.infer] at hFnSafe
-                            cases hBodyCompile : (body (env.typeRefs.save runtimeTIn)).infer bodyFuel with
+                            cases hBodyCompile : (body (env.typeRefs.save (AST.Trm.val (.fn body runtimeTIn), ()) runtimeTIn)).infer bodyFuel with
                             | outOfFuel =>
                               rw [hBodyCompile] at hFnSafe
                               simp [Outcome.map] at hFnSafe
@@ -211,7 +232,7 @@ def proof : @Safety I env := by
                                   cases argEvalResult with
                                   | none => cases hArgSafe
                                   | some input =>
-                                    let inputIndex := env.valueRefs.save { val := input, property := env.canEvalAny input }
+                                    let inputIndex := env.valueRefs.save (AST.Trm.val (.fn body tIn), ()) { val := input, property := env.canEvalAny input }
                                     rcases hArgSafe with ⟨inputFuel, hArgSafe⟩
                                     match hInputInfer : (AST.Trm.val input).infer inputFuel with
                                     | .yield (some inputTyp) =>
@@ -219,16 +240,8 @@ def proof : @Safety I env := by
                                         change inputTyp = argTyp at hArgSafe
                                         change argTyp = tIn at hArgLe
                                         have hBodySafe := ih (body inputIndex) typ bodyFuel (by
-                                          rcases ProvingEnv.bindInfer body input bodyFuel with ⟨bindFuel, hBind⟩
-                                          match hBindInput : (AST.Trm.val input).infer bindFuel with
-                                          | .yield (some bindTyp) =>
-                                              simp [hBindInput] at hBind
-                                              have hBindTop := AST.Trm.valueInferMonotone input bindFuel (bindFuel + inputFuel) (some bindTyp) (Nat.le_add_right bindFuel inputFuel) hBindInput
-                                              have hInputTop := AST.Trm.valueInferMonotone input inputFuel (bindFuel + inputFuel) (some inputTyp) (Nat.le_add_left inputFuel bindFuel) hInputInfer
-                                              rw [← hBind]
-                                              simpa [Option.some.inj (Outcome.yield.inj (hBindTop.symm.trans hInputTop)), hArgSafe, hArgLe] using hBodyCompile
-                                          | .outOfFuel
-                                          | .yield none => simp [hBindInput] at hBind
+                                          have hBind := ProvingEnv.bindInfer body tIn input bodyFuel
+                                          simpa [inputIndex] using hBind.symm.trans hBodyCompile
                                         )
                                         cases hBodyEval : (body inputIndex).eval runtimeFuel with
                                         | outOfFuel => simp [AST.Trm.eval, hFnEval, hArgEval, hBodyEval, inputIndex]

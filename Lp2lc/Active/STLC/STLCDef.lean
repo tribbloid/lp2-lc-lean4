@@ -9,6 +9,8 @@ namespace STLC
 /- Shared STLC syntax family, currently exposing function types over the common representation. -/
 open Lp2lc.Active.Util
 
+attribute [simp] FBoundBase.roundtrip
+
 section variable {I : Free}
 
 namespace AST
@@ -39,7 +41,7 @@ They are not intrinsic typing indices on terms.
 inductive Trm : Type where
 | val (v : Val) -- AKA literal
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
-| ref (s: I.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
+| ref (s: I.Index × I.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
 
 /--
@@ -52,7 +54,7 @@ Function values carry their input type so the compiler can type-check HOAS bodie
 -/
 inductive Val : Type where
 | primitive (repr : I.Data) -- most specific type is always `primitive`
-| fn (body : (arg : I.Index) → Trm) (tIn : Typ) -- most specific type is always `.fn tIn _`
+| fn (body : (arg : I.Index × I.Index) → Trm) (tIn : Typ) -- most specific type is always `.fn tIn _`
 
 end
 end
@@ -81,8 +83,11 @@ class HasFBoundSys : Type extends FBoundBase I.Index (AST.Trm I) Unit where
 class RuntimeEnv extends @HasFBoundSys I where
   CanSave : Permission (AST.Val I)
   canEvalAny: (v: AST.Val I) -> CanSave v
-  valueRefs: FBound I.Index { value : AST.Val I // CanSave value }
-
+  valueRefs: FBoundV2 (I := I.Index) (K1 := AST.Trm I) (_V := Unit) Unit { value : AST.Val I // CanSave value }
+  valueRefsBase :
+    ∀ (key : AST.Trm I) (value : { value : AST.Val I // CanSave value }),
+      ((valueRefs.save (key, ()) value : I.Index × I.Index).1 =
+        (FBoundBase.index (I := I.Index) (K := AST.Trm I) (V := Unit) key).1)
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
@@ -91,7 +96,7 @@ section variable [env: @RuntimeEnv I]
 
 /--
 Evaluates a term by spending 1 fuel at each semantic
-descent. Runtime evaluation uses `FBound I Val` for references and deliberately
+descent. Runtime evaluation uses keyed references for runtime values and deliberately
 does not inspect compile-time typing evidence.
 -/
 def eval (self : AST.Trm I) : RecOption (AST.Val I)
@@ -104,7 +109,7 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
       match anf with
       | (.yield (some (.fn body _tIn)), .yield (some input)) =>
         let permission := env.canEvalAny input
-        let index := env.valueRefs.save ⟨input, permission⟩
+        let index := env.valueRefs.save (AST.Trm.val (.fn body _tIn), ()) ⟨input, permission⟩
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
@@ -172,11 +177,15 @@ end AST.Trm
 -- end AdequateTrm
 
 /--
-Contains compile-time FBound bridges for semantic obligations.
+Contains compile-time keyed bridges for semantic obligations.
 -/
 class CompilerEnv : Type extends @HasFBoundSys I where
-  -- trmRefs : @DepFBound (Condition I) (Condition.DepIndex) (AdequateTrm)
-  typeRefs : FBound I.Index (AST.Typ I)
+  -- trmRefs : keyed proof bridge for semantic obligations
+  typeRefs : FBoundV2 (I := I.Index) (K1 := AST.Trm I) (_V := Unit) Unit (AST.Typ I)
+  typeRefsBase :
+    ∀ (key : AST.Trm I) (typ : AST.Typ I),
+      ((typeRefs.save (key, ()) typ : I.Index × I.Index).1 =
+        (FBoundBase.index (I := I.Index) (K := AST.Trm I) (V := Unit) key).1)
   -- TODO: revise this trmRefs if necessary
 
 section variable [env: @CompilerEnv I]
