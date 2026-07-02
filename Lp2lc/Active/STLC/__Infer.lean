@@ -93,7 +93,7 @@ end AST.Trm
 class PHOASCoherence (I : Free) : Prop where
   inferStable :
     ∀ [runtimeEnv : @RuntimeEnv I] [compilerEnv : @CompilerEnv I]
-      (body : AST.Ref I -> AST.Trm I) (typ : AST.Typ I)
+      (body : I.Ref -> AST.Trm I) (typ : AST.Typ I)
       (value : AST.Val I) (fuel : Nat),
       let fnKey := AST.Trm.val (.fn body typ)
       (body (compilerEnv.typeRefs.save (fnKey, ()) typ)).infer fuel =
@@ -102,12 +102,12 @@ class PHOASCoherence (I : Free) : Prop where
 
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I), PHOASCoherence I where
   refSafety : -- consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
-    ∀ (id : AST.Ref I),
+    ∀ (id : I.Ref),
         (AST.Trm.val (valueRefs.load id).1).infer.isDecidable (fun typ =>
           typ <= typeRefs.load id
         ) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
   bindInfer : -- fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
-    ∀ (body : AST.Ref I -> AST.Trm I) (typ : AST.Typ I) (value : AST.Val I) (fuel : Nat),
+    ∀ (body : I.Ref -> AST.Trm I) (typ : AST.Typ I) (value : AST.Val I) (fuel : Nat),
       let fnKey := AST.Trm.val (.fn body typ)
       (body (typeRefs.save (fnKey, ()) typ)).infer fuel =
         (body (valueRefs.save

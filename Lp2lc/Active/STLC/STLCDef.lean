@@ -16,9 +16,6 @@ section variable {F : Free}
 namespace AST
 section variable (F : Free)
 
-/-- PHOAS reference carrier produced by keyed STLC stores. -/
-abbrev Ref : Type := F.Index × F.Index
-
 mutual
 
 /--
@@ -44,7 +41,7 @@ They are not intrinsic typing indices on terms.
 inductive Trm : Type where
 | val (v : Val) -- AKA literal
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
-| ref (s: Ref F) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
+| ref (s: F.Ref) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
 
 /--
@@ -57,7 +54,7 @@ Function values carry their input type so the compiler can type-check HOAS bodie
 -/
 inductive Val : Type where
 | primitive (repr : F.Data) -- most specific type is always `primitive`
-| fn (body : (arg : Ref F) → Trm) (tIn : Typ) -- most specific type is always `.fn tIn _`
+| fn (body : (arg : F.Ref) → Trm) (tIn : Typ) -- most specific type is always `.fn tIn _`
 
 end
 end
