@@ -84,7 +84,7 @@ class HasFBoundSys : Type where
 class RuntimeEnv extends @HasFBoundSys F where
   CanSave : Permission (AST.Val F)
   canEvalAny: (v: AST.Val F) -> CanSave v
-  valueRefs: base.FBoundV2 (AST.Val F) { value : AST.Val F // CanSave value }
+  valueRefs: base.FBoundV2 Unit { value : AST.Val F // CanSave value }
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
@@ -107,7 +107,7 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
       | (.yield (some (.fn body tIn)), .yield (some input)) =>
         let permission := env.canEvalAny input
         let fnKey := AST.Trm.val (.fn body tIn)
-        let index := env.valueRefs.save (fnKey, input) ⟨input, permission⟩
+        let index := env.valueRefs.save (fnKey, ()) ⟨input, permission⟩
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
