@@ -124,10 +124,30 @@ class FBoundV2
   (K2 V : Type)
 : Type extends FBoundBase (I × I) (K1 × K2) V where
   indexPart (i1: I) (k2 : K2) : I × (V -> Unit)
-  index := fun k =>
+  private index := fun k =>
     let i1 := (Base.index k.1).1
     let i2_fn := indexPart i1 k.2
     ((i1, i2_fn.1), i2_fn.2)
+
+class FBoundV3
+  {I: TIndex} {K1 _V : Type} (Base: FBoundBase I K1 _V)
+  (V : Type)
+: Type extends FBoundBase I K1 V where
+  doSave (i1: I) : (V -> Unit)
+  private index := fun k =>
+    let i1 : I := (Base.index k).1
+    let fn: V -> Unit := doSave i1
+    (i1, fn)
+
+theorem FBoundV3.saveOfSubsingletonKey
+    {I : TIndex} {K1 _V V V2 : Type}
+    {Base : FBoundBase I K1 _V}
+    [self : Base.FBoundV3 V]
+    [other : Base.FBoundV3 V2]
+    [Subsingleton K2]
+    (k1 : K1) (k2 : K2) (v : V) (v2 : V2) :
+    self.save (k1) v = other.save (k1) v2 := by
+  sorry
 
 
 end FBoundBase
