@@ -98,7 +98,7 @@ class PHOASCoherence (I : Free) : Prop where
       let fnKey := AST.Trm.val (.fn body typ)
       (body (compilerEnv.typeRefs.save (fnKey, ()) typ)).infer fuel =
         (body (runtimeEnv.valueRefs.save
-          (fnKey, value) { val := value, property := runtimeEnv.canEvalAny value })).infer fuel
+          (fnKey, ()) { val := value, property := runtimeEnv.canEvalAny value })).infer fuel
 
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I), PHOASCoherence I where
   refSafety : -- consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
@@ -106,13 +106,6 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I), PHOASCoherence I whe
         (AST.Trm.val (valueRefs.load id).1).infer.isDecidable (fun typ =>
           typ <= typeRefs.load id
         ) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
-  bindInfer : -- fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
-    ∀ (body : I.Ref -> AST.Trm I) (typ : AST.Typ I) (value : AST.Val I) (fuel : Nat),
-      let fnKey := AST.Trm.val (.fn body typ)
-      (body (typeRefs.save (fnKey, ()) typ)).infer fuel =
-        (body (valueRefs.save
-          (fnKey, value) { val := value, property := canEvalAny value })).infer fuel := by
-    exact PHOASCoherence.inferStable body typ value fuel
 -- TODO: can these be corollaries of cross-reference coherence? Namely:
 -- - [x] body is coherent under binder references generated from the same AST key
 -- - [ ] (same id <-> same term), immutable binding (1 id only refers to 1 type/value) |- mappings in valueRefs & typeRefs are always compatible
@@ -227,7 +220,7 @@ def proof : @Safety I env := by
                                   cases argEvalResult with
                                   | none => cases hArgSafe
                                   | some input =>
-                                    let inputIndex := env.valueRefs.save (fnKey, input) { val := input, property := env.canEvalAny input }
+                                    let inputIndex := env.valueRefs.save (fnKey, ()) { val := input, property := env.canEvalAny input }
                                     rcases hArgSafe with ⟨inputFuel, hArgSafe⟩
                                     match hInputInfer : (AST.Trm.val input).infer inputFuel with
                                     | .yield (some inputTyp) =>
@@ -236,7 +229,7 @@ def proof : @Safety I env := by
                                         change argTyp = tIn at hArgLe
                                         have hBodySafe := ih (body inputIndex) typ bodyFuel (by
                                           dsimp [inputIndex, fnKey]
-                                          rw [← ProvingEnv.bindInfer body tIn input bodyFuel]
+                                          rw [← PHOASCoherence.inferStable body tIn input bodyFuel]
                                           exact hBodyCompile
                                         )
                                         cases hBodyEval : (body inputIndex).eval runtimeFuel with
