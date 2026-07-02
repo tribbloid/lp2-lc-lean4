@@ -30,6 +30,10 @@ class Free : Type 1 extends DepFree where
   Payload := Unit
   DepIndex := fun _ => Index
 
+namespace Free
+abbrev Ref (self : Free) := self.Index × self.Index
+end Free
+
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
 
@@ -96,7 +100,7 @@ V can be Unit, this is a common pattern if it is only useful as a base of other 
 class FBoundBase
   (K V : Type) -- key type, in PL reasoning this is always `Trm I`
 : Type where
-  index (k : K) : I × (V -> Unit)
+  private index (k : K) : I × (V -> Unit)
   save (k : K) (v : V) : I :=
     let i_fn := index k
     let _ := i_fn.2 v
@@ -105,6 +109,8 @@ class FBoundBase
   load (uid : I) : V -- (k : K) should never be exposed
   roundtrip : ∀ (k : K) (v : V), load (save k v) = v
   isomorph : ∀ (k1 k2: K), (index k1 = index k2) -> (k1 = k2) -- not sure if useful, just leave it here
+
+attribute [simp] FBoundBase.roundtrip
 
 namespace FBoundBase
 
