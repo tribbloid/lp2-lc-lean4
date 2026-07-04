@@ -98,17 +98,13 @@ Single key, of which multiple FBoundExt can depends on, they share the same `(K 
 V can be Unit, this is a common pattern if it is only useful as a base of other FBoundExt
 -/
 class FBoundBase
-  (K V : Type) -- key type, in PL reasoning this is always `Trm I`
+  (K: Type) -- key type, in PL reasoning this is always `Trm I`
 : Type where
-  private index (k : K) : I × (V -> Unit)
-  save (k : K) (v : V) : I :=
-    let i_fn := index k
-    let _ := i_fn.2 v
-    i_fn.1
+  save (k : K) : I
   -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
-  load (uid : I) : V -- (k : K) should never be exposed
-  roundtrip : ∀ (k : K) (v : V), load (save k v) = v
-  isomorph : ∀ (k1 k2: K), (index k1 = index k2) -> (k1 = k2) -- not sure if useful, just leave it here
+  load (uid : I) : K -- (k : K) should never be exposed
+  roundtrip : ∀ (k : K), load (save k) = k
+  isomorph : ∀ (k1 k2 : K), (save k1 = save k2) -> (k1 = k2) -- not sure if useful, just leave it here
 
 attribute [simp] FBoundBase.roundtrip
 
@@ -120,35 +116,40 @@ Depending on an existing FBoundBase to get the first part of the key
 multiple FBoundExt can depend on 1 FBoundBase
 -/
 class FBoundV2
-  {I: TIndex} {K1 _V : Type} (Base: FBoundBase I K1 _V)
+  {I: TIndex} {K1 : Type} (Base: FBoundBase I K1)
   (K2 V : Type)
-: Type extends FBoundBase (I × I) (K1 × K2) V where
-  indexPart (i1: I) (k2 : K2) : I × (V -> Unit)
-  private index := fun k =>
-    let i1 := (Base.index k.1).1
-    let i2_fn := indexPart i1 k.2
-    ((i1, i2_fn.1), i2_fn.2)
+: Type where
+  savePart (i1: I) (k2 : K2) : I × I
+  save (k : K1 × K2) (v: V) : I × I :=
+    let i1 := (Base.save k.1) -- TODO: not true, to ensure consistency, any save must be chained to dependent FBoundBase
+    savePart i1 k.2
 
 class FBoundV3
-  {I: TIndex} {K1 _V : Type} (Base: FBoundBase I K1 _V)
+  {I: TIndex} {K1 : Type} (Base: FBoundBase I K1)
   (V : Type)
-: Type extends FBoundBase I K1 V where
-  doSave (i1: I) : (V -> Unit)
-  private index := fun k =>
-    let i1 : I := (Base.index k).1
-    let fn: V -> Unit := doSave i1
-    (i1, fn)
+: Type where
+  doSave (i1: I) (v : V) : Unit
 
-theorem FBoundV3.saveOfSubsingletonKey
+namespace FBoundV3
+
+def save -- implemented function inside class are just a default argument value. Only dot-methods in the companion namespace are final
+    {I : TIndex} {K1 V : Type}
+    {Base : FBoundBase I K1}
+    (self : Base.FBoundV3 V) (k : K1) (v : V) : I :=
+  let i1 := (Base.save k)
+  let _ := self.doSave i1 v
+  i1
+
+end FBoundV3
+
+theorem FBoundV3.saveIso
     {I : TIndex} {K1 _V V V2 : Type}
-    {Base : FBoundBase I K1 _V}
+    {Base : FBoundBase I K1}
     [self : Base.FBoundV3 V]
     [other : Base.FBoundV3 V2]
-    [Subsingleton K2]
-    (k1 : K1) (k2 : K2) (v : V) (v2 : V2) :
+    (k1 : K1) (v : V) (v2 : V2) :
     self.save (k1) v = other.save (k1) v2 := by
-  sorry
-
+  rfl
 
 end FBoundBase
 
