@@ -1,0 +1,144 @@
+import Std
+import «Lp2lc».Active.Util
+
+namespace Lp2lc.Active
+
+namespace STLC_CE
+
+open Lp2lc.Active.Util
+
+namespace AST
+
+/-- Primitive payloads used by the closed CE version of STLC. -/
+inductive Data : Type where
+| unit
+deriving DecidableEq, Repr
+
+/--
+Source type syntax.
+
+`primitive` classifies primitive values and `fn` classifies functions.
+-/
+inductive Typ : Type where
+| primitive
+| fn (tIn : Typ) (tOut : Typ)
+deriving DecidableEq, Repr
+
+/-- Current STLC subtyping coincides with structural type equality. -/
+instance typLE : LE Typ := ⟨Eq⟩
+
+/-- Decides the current structural subtyping relation. -/
+instance typDecidableLE : DecidableLE Typ
+  | .primitive, .primitive => isTrue rfl
+  | .primitive, .fn _ _
+  | .fn _ _, .primitive => isFalse (fun equality => nomatch equality)
+  | .fn leftIn leftOut, .fn rightIn rightOut =>
+    match typDecidableLE leftIn rightIn, typDecidableLE leftOut rightOut with
+    | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
+    | isFalse notEqual, _ => isFalse (fun equality => notEqual (Typ.fn.inj equality).1)
+    | _, isFalse notEqual => isFalse (fun equality => notEqual (Typ.fn.inj equality).2)
+
+/-- CE typing contexts used by variable proxies. -/
+inductive Ctx : Type where
+| empty
+| snoc (ctx : Ctx) (typ : Typ)
+deriving DecidableEq, Repr
+
+infixl:90 " :/: " => Ctx.snoc
+
+/-- The most recently bound variable of a CE context. -/
+inductive ProxyTop : Ctx -> Typ -> Type where
+| ptop {ctx : Ctx} {typ : Typ} : ProxyTop (ctx :/: typ) typ
+deriving Repr
+
+/--
+Evidence that the variable introduced in `varCtx` is still visible from
+`targetCtx`.
+-/
+inductive ReifyIndex : Ctx -> Ctx -> Typ -> Type where
+| refl {ctx : Ctx} {typ : Typ} : ReifyIndex (ctx :/: typ) (ctx :/: typ) typ
+| snoc {varCtx targetCtx : Ctx} {typ extra : Typ} :
+    ReifyIndex varCtx targetCtx typ -> ReifyIndex varCtx (targetCtx :/: extra) typ
+
+attribute [class] ReifyIndex
+
+instance instReifyIndexRefl : ReifyIndex (ctx :/: typ) (ctx :/: typ) typ :=
+  ReifyIndex.refl
+
+instance instReifyIndexSnoc [inst : ReifyIndex varCtx targetCtx typ] :
+    ReifyIndex varCtx (targetCtx :/: extra) typ :=
+  ReifyIndex.snoc inst
+
+mutual
+
+/--
+Source term syntax.
+
+Terms are indexed by their CE context but not by their result type, so typing
+remains extrinsic while bound references are represented by CE proxy evidence.
+-/
+inductive Trm : Ctx -> Type where
+| val {ctx : Ctx} (value : Val) : Trm ctx
+| apply {ctx : Ctx} (fn : Trm ctx) (arg : Trm ctx) : Trm ctx
+| ref {ctx varCtx : Ctx} {typ : Typ} (inst : ReifyIndex varCtx ctx typ) :
+    ProxyTop varCtx typ -> Trm ctx
+
+/--
+Value syntax.
+
+Function values carry the CE runtime environment that gives meaning to their
+captured references.
+-/
+inductive Val : Type where
+| primitive (repr : Data)
+| fn {ctx : Ctx} (env : RuntimeEnv ctx) (tIn : Typ)
+    (body : ProxyTop (ctx :/: tIn) tIn -> Trm (ctx :/: tIn))
+
+/-- Runtime values assigned to every variable in a CE context. -/
+inductive RuntimeEnv : Ctx -> Type where
+| empty : RuntimeEnv .empty
+| snoc {ctx : Ctx} {typ : Typ} (env : RuntimeEnv ctx) (value : Val) :
+    RuntimeEnv (ctx :/: typ)
+
+end
+
+namespace RuntimeEnv
+
+/-- Loads the value assigned to a CE variable from the runtime context. -/
+def load : (self : RuntimeEnv targetCtx) ->
+    (inst : ReifyIndex varCtx targetCtx typ) -> ProxyTop varCtx typ -> Val
+  | .snoc _ value, .refl, .ptop => value
+  | .snoc env _, .snoc inst, ref => load env inst ref
+
+end RuntimeEnv
+
+namespace Trm
+
+/--
+Evaluates a term by spending one fuel at each semantic descent.
+
+Function application extends the function closure's CE runtime context with the
+evaluated argument, so no free `FBound` bridge is needed.
+-/
+def eval {ctx : Ctx} (self : Trm ctx) (env : RuntimeEnv ctx) : RecOption Val
+  | 0 => .outOfFuel
+  | fuel + 1 =>
+    match self with
+    | .val value => .yield (some value)
+    | .apply fn arg =>
+      match eval fn env fuel, eval arg env fuel with
+      | .yield (some (.fn closureEnv _tIn body)), .yield (some input) =>
+        eval (body .ptop) (.snoc closureEnv input) fuel
+      | .outOfFuel, _ => .outOfFuel
+      | _, .outOfFuel => .outOfFuel
+      | _, _ => .yield none
+    | .ref inst top =>
+      .yield (some (env.load inst top))
+
+end Trm
+
+end AST
+
+end STLC_CE
+
+end Lp2lc.Active
