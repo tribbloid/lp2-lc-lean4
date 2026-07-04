@@ -51,24 +51,6 @@ inductive ProxyTop : Ctx -> Typ -> Type where
 | ptop {ctx : Ctx} {typ : Typ} : ProxyTop (ctx :/: typ) typ
 deriving Repr
 
-/--
-Evidence that the variable introduced in `varCtx` is still visible from
-`targetCtx`.
--/
-inductive ReifyIndex : Ctx -> Ctx -> Typ -> Type where
-| refl {ctx : Ctx} {typ : Typ} : ReifyIndex (ctx :/: typ) (ctx :/: typ) typ
-| snoc {varCtx targetCtx : Ctx} {typ extra : Typ} :
-    ReifyIndex varCtx targetCtx typ -> ReifyIndex varCtx (targetCtx :/: extra) typ
-
-attribute [class] ReifyIndex
-
-instance instReifyIndexRefl : ReifyIndex (ctx :/: typ) (ctx :/: typ) typ :=
-  ReifyIndex.refl
-
-instance instReifyIndexSnoc [inst : ReifyIndex varCtx targetCtx typ] :
-    ReifyIndex varCtx (targetCtx :/: extra) typ :=
-  ReifyIndex.snoc inst
-
 mutual
 
 /--
@@ -80,7 +62,7 @@ remains extrinsic while bound references are represented by CE proxy evidence.
 inductive Trm : Ctx -> Type where
 | val {ctx : Ctx} (value : Val) : Trm ctx
 | apply {ctx : Ctx} (fn : Trm ctx) (arg : Trm ctx) : Trm ctx
-| ref {ctx varCtx : Ctx} {typ : Typ} (inst : ReifyIndex varCtx ctx typ) :
+| ref {ctx varCtx : Ctx} {typ : Typ} :
     ProxyTop varCtx typ -> Trm ctx
 
 /--
@@ -106,7 +88,7 @@ namespace RuntimeEnv
 
 /-- Loads the value assigned to a CE variable from the runtime context. -/
 def load : (self : RuntimeEnv targetCtx) ->
-    (inst : ReifyIndex varCtx targetCtx typ) -> ProxyTop varCtx typ -> Val
+    ProxyTop varCtx typ -> Val
   | .snoc _ value, .refl, .ptop => value
   | .snoc env _, .snoc inst, ref => load env inst ref
 
