@@ -29,7 +29,7 @@ def infer {ctx : AST.Ctx} (self : AST.Trm ctx) : RecOption AST.Typ
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | @AST.Trm.ref _ _ typ _ _ => .yield (some typ)
+    | @AST.Trm.ref _ typ _ => .yield (some typ)
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone {ctx : AST.Ctx}
@@ -67,7 +67,7 @@ theorem termInferMonotone {ctx : AST.Ctx}
               have hFnTop := ih fuel (Nat.lt_succ_self fuel) fnTerm toFuel fnResult hFuelTail hFn
               have hArgTop := ih fuel (Nat.lt_succ_self fuel) arg toFuel argResult hFuelTail hArg
               simpa [AST.Trm.infer, hFn, hArg, hFnTop, hArgTop] using hInfer
-        | ref inst top =>
+        | ref top =>
           simpa [AST.Trm.infer] using hInfer
 
 /-- Source value inference monotonicity follows from term inference monotonicity. -/
@@ -113,9 +113,9 @@ inductive AST.Trm.Valid : {ctx : AST.Ctx} -> AST.Trm ctx -> Prop where
     AST.Val.Valid value -> AST.Trm.Valid (ctx := ctx) (.val value)
 | apply {ctx : AST.Ctx} {fn arg : AST.Trm ctx} :
     AST.Trm.Valid fn -> AST.Trm.Valid arg -> AST.Trm.Valid (.apply fn arg)
-| ref {ctx varCtx : AST.Ctx} {typ : AST.Typ}
-    {inst : AST.ReifyIndex varCtx ctx typ} {top : AST.ProxyTop varCtx typ} :
-    AST.Trm.Valid (.ref inst top)
+| ref {ctx : AST.Ctx} {typ : AST.Typ}
+    {top : AST.ProxyTop ctx typ} :
+    AST.Trm.Valid (.ref top)
 
 end
 
@@ -130,26 +130,17 @@ end AST.Val
 namespace AST.RuntimeEnv
 
 /-- Loading from a valid CE environment produces a value safe for the variable type. -/
-theorem loadSafety {targetCtx varCtx : AST.Ctx} {typ : AST.Typ}
+theorem loadSafety {targetCtx : AST.Ctx} {typ : AST.Typ}
     {env : AST.RuntimeEnv targetCtx}
     (hEnv : AST.RuntimeEnv.Valid env)
-    (inst : AST.ReifyIndex varCtx targetCtx typ)
-    (top : AST.ProxyTop varCtx typ) :
-    (env.load inst top).SafeAs typ := by
-  induction inst with
-  | refl =>
-    cases top
-    cases env with
-    | snoc env value =>
-      cases hEnv with
-      | snoc hTail hValue hInfer =>
-        exact ⟨hValue, hInfer⟩
-  | snoc inst ih =>
-    cases env with
-    | snoc env value =>
-      cases hEnv with
-      | snoc hTail hValue hInfer =>
-        exact ih hTail top
+    (top : AST.ProxyTop targetCtx typ) :
+    (env.load top).SafeAs typ := by
+  cases top
+  cases env with
+  | snoc env value =>
+    cases hEnv with
+    | snoc hTail hValue hInfer =>
+      exact ⟨hValue, hInfer⟩
 
 end AST.RuntimeEnv
 
@@ -199,12 +190,12 @@ def proof : Safety := by
                 simp [AST.Val.infer, AST.Trm.infer, hFnInfer]
                 change typ = typ
                 rfl⟩⟩
-      | ref inst top =>
+      | ref top =>
         cases hTrm
         simp [AST.Trm.eval]
         simp [AST.Trm.infer] at hInfer
         cases hInfer
-        exact AST.RuntimeEnv.loadSafety hEnv inst top
+        exact AST.RuntimeEnv.loadSafety hEnv top
       | apply fnTerm arg =>
         cases hTrm with
         | apply hFnTrm hArgTrm =>

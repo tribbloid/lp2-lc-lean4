@@ -62,8 +62,8 @@ remains extrinsic while bound references are represented by CE proxy evidence.
 inductive Trm : Ctx -> Type where
 | val {ctx : Ctx} (value : Val) : Trm ctx
 | apply {ctx : Ctx} (fn : Trm ctx) (arg : Trm ctx) : Trm ctx
-| ref {ctx varCtx : Ctx} {typ : Typ} :
-    ProxyTop varCtx typ -> Trm ctx
+| ref {ctx : Ctx} {typ : Typ} :
+    ProxyTop ctx typ -> Trm ctx
 
 /--
 Value syntax.
@@ -88,9 +88,8 @@ namespace RuntimeEnv
 
 /-- Loads the value assigned to a CE variable from the runtime context. -/
 def load : (self : RuntimeEnv targetCtx) ->
-    ProxyTop varCtx typ -> Val
-  | .snoc _ value, .refl, .ptop => value
-  | .snoc env _, .snoc inst, ref => load env inst ref
+    ProxyTop targetCtx typ -> Val
+  | .snoc _ value, .ptop => value
 
 end RuntimeEnv
 
@@ -114,8 +113,8 @@ def eval {ctx : Ctx} (self : Trm ctx) (env : RuntimeEnv ctx) : RecOption Val
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | .ref inst top =>
-      .yield (some (env.load inst top))
+    | .ref top =>
+      .yield (some (env.load top))
 
 end Trm
 

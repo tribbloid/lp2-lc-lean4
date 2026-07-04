@@ -57,7 +57,7 @@ theorem termEvalMonotone {ctx : AST.Ctx}
                           (.snoc closureEnv input) (body .ptop) toFuel bodyResult
                           hFuelTail hBody
                       simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop, hBody, hBodyTop] using hEval
-        | ref inst top =>
+        | ref top =>
           simpa [AST.Trm.eval] using hEval
 
 end AST.Trm
