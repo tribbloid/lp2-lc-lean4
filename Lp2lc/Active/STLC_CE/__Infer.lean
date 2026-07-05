@@ -84,23 +84,23 @@ namespace AST.Val
 def infer (self : AST.Val) : RecOption AST.Typ :=
   AST.Trm.infer (ctx := AST.Ctx.empty) (AST.Trm.val self)
 
-end AST.Val
-
-namespace AST.Val
-
 /-- Value validity plus inference to a requested type bound. -/
-def SafeAs (self : AST.Val) (typ : AST.Typ) : Prop :=
+def CanInhabit (self : AST.Val) (typ : AST.Typ) : Prop :=
   self.infer.isDecidable (fun inferred => inferred <= typ)
 
 end AST.Val
 
+def Safety {ctx : AST.Ctx} (env : {typ : AST.Typ} -> AST.ProxyTop ctx typ -> AST.Val)
+    (trm : AST.Trm ctx) (typ : AST.Typ) : Prop :=
+  (trm.eval env).isSemiDecidable (fun value => value.CanInhabit typ)
+
 def InferAdequacy : Prop :=
   ∀ {ctx : AST.Ctx} (env : {typ : AST.Typ} -> AST.ProxyTop ctx typ -> AST.Val),
-  (∀ {typ : AST.Typ} (top : AST.ProxyTop ctx typ), (env top).SafeAs typ) ->
+  (∀ {typ : AST.Typ} (top : AST.ProxyTop ctx typ), (env top).CanInhabit typ) ->
   ∀ (trm : AST.Trm ctx),
   ∀ (typ : AST.Typ) (fuel : Nat),
     trm.infer fuel = Outcome.yield (.some typ) ->
-    (trm.eval env).isSemiDecidable (fun value => value.SafeAs typ)
+    Safety env trm typ
 
 namespace InferAdequacy
 
@@ -217,7 +217,7 @@ def proof : InferAdequacy := by
                                     | some input =>
                                       rcases hArgSafe with ⟨inputFuel, hInputInfer⟩
                                       have hInputInferIn :
-                                          input.infer.isDecidable (fun inferred => inferred <= tIn) :=
+                                          input.CanInhabit tIn :=
                                         ⟨inputFuel, by
                                           have hArgEq : argTyp = tIn := hArgLe
                                           simpa [hArgEq] using hInputInfer⟩
