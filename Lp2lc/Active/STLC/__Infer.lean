@@ -113,19 +113,17 @@ variable [env : @ProvingEnv I]
 def Safety (trm : AST.Trm I) (typ : AST.Typ I) : Prop :=
   trm.eval.isSemiDecidable (fun v => (AST.Trm.val v).CanInhabit typ)
 
-def InferAdequacy : Prop := -- TODO: this conjecture shouldn't be too long
-  ∀ (trm : AST.Trm I) (typ : AST.Typ I) (fuel : Nat),
-  ∀ (_: (trm.infer fuel) = Outcome.yield (.some typ)),
-  Safety trm typ
-
-def InferAdequacy2 : Prop :=
+def InferAdequacy : Prop :=
   ∀ (trm : AST.Trm I) (typ : AST.Typ I),
   trm.CanInhabit typ ->
   Safety trm typ
 
 namespace InferAdequacy
 
-theorem proof : @InferAdequacy I env := by
+private theorem proofExact :
+    ∀ (trm : AST.Trm I) (typ : AST.Typ I) (fuel : Nat),
+    (trm.infer fuel) = Outcome.yield (.some typ) ->
+    Safety trm typ := by
   intro trm typ fuel hInfer runtimeFuel
   induction runtimeFuel generalizing trm typ fuel with
   | zero => rfl
@@ -251,6 +249,18 @@ theorem proof : @InferAdequacy I env := by
                   case neg =>
                     rw [hFn, hArg] at hInfer
                     simp [hArgLe] at hInfer
+
+theorem proof : @InferAdequacy I env := by
+  intro trm typ hInhabit
+  rcases hInhabit with ⟨fuel, hInfer⟩
+  cases hInferResult : trm.infer fuel with
+  | outOfFuel => simp [hInferResult] at hInfer
+  | yield inferResult =>
+    cases inferResult with
+    | none => simp [hInferResult] at hInfer
+    | some inferredTyp =>
+      simp [hInferResult] at hInfer
+      exact hInfer ▸ proofExact trm inferredTyp fuel hInferResult
 
 end InferAdequacy
 
