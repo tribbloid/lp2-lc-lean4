@@ -20,7 +20,7 @@ def infer {ctx : AST.Ctx} (self : AST.Trm ctx) : RecOption AST.Typ
   | fuel + 1 =>
     match self with
     | .val (.primitive _) => .yield (some .primitive)
-    | .val (.fn _ tIn body) =>
+    | .val (.fn tIn body) =>
       (infer (body .ptop) fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
     | .apply fn arg =>
       match infer fn fuel, infer arg fuel with
@@ -51,7 +51,7 @@ theorem termInferMonotone {ctx : AST.Ctx}
           cases value with
           | primitive repr =>
             simpa [AST.Trm.infer] using hInfer
-          | fn _ tIn body =>
+          | fn tIn body =>
             cases hBody : AST.Trm.infer (body .ptop) fuel with
             | outOfFuel => simp [AST.Trm.infer, hBody, Outcome.map] at hInfer
             | yield bodyResult =>
@@ -86,69 +86,18 @@ def infer (self : AST.Val) : RecOption AST.Typ :=
 
 end AST.Val
 
-mutual
-
-/-- Values whose captured CE environments and function bodies are valid. -/
-inductive AST.Val.Valid : AST.Val -> Prop where
-| primitive {repr : AST.Data} : AST.Val.Valid (.primitive repr)
-| fn {ctx : AST.Ctx} {env : AST.RuntimeEnv ctx} {tIn : AST.Typ}
-    {body : AST.ProxyTop (ctx :/: tIn) tIn -> AST.Trm (ctx :/: tIn)} :
-    AST.RuntimeEnv.Valid env ->
-    ((top : AST.ProxyTop (ctx :/: tIn) tIn) -> AST.Trm.Valid (body top)) ->
-    AST.Val.Valid (.fn env tIn body)
-
-/-- Runtime environments whose entries are valid and infer to their context type. -/
-inductive AST.RuntimeEnv.Valid : {ctx : AST.Ctx} -> AST.RuntimeEnv ctx -> Prop where
-| empty : AST.RuntimeEnv.Valid .empty
-| snoc {ctx : AST.Ctx} {typ : AST.Typ} {env : AST.RuntimeEnv ctx}
-    {value : AST.Val} :
-    AST.RuntimeEnv.Valid env ->
-    AST.Val.Valid value ->
-    value.infer.isDecidable (fun inferred => inferred <= typ) ->
-    AST.RuntimeEnv.Valid (.snoc (typ := typ) env value)
-
-/-- Terms whose embedded values carry valid captured environments. -/
-inductive AST.Trm.Valid : {ctx : AST.Ctx} -> AST.Trm ctx -> Prop where
-| val {ctx : AST.Ctx} {value : AST.Val} :
-    AST.Val.Valid value -> AST.Trm.Valid (ctx := ctx) (.val value)
-| apply {ctx : AST.Ctx} {fn arg : AST.Trm ctx} :
-    AST.Trm.Valid fn -> AST.Trm.Valid arg -> AST.Trm.Valid (.apply fn arg)
-| ref {ctx : AST.Ctx} {typ : AST.Typ}
-    {top : AST.ProxyTop ctx typ} :
-    AST.Trm.Valid (.ref top)
-
-end
-
 namespace AST.Val
 
 /-- Value validity plus inference to a requested type bound. -/
 def SafeAs (self : AST.Val) (typ : AST.Typ) : Prop :=
-  self.Valid ∧ self.infer.isDecidable (fun inferred => inferred <= typ)
+  self.infer.isDecidable (fun inferred => inferred <= typ)
 
 end AST.Val
 
-namespace AST.RuntimeEnv
-
-/-- Loading from a valid CE environment produces a value safe for the variable type. -/
-theorem loadSafety {targetCtx : AST.Ctx} {typ : AST.Typ}
-    {env : AST.RuntimeEnv targetCtx}
-    (hEnv : AST.RuntimeEnv.Valid env)
-    (top : AST.ProxyTop targetCtx typ) :
-    (env.load top).SafeAs typ := by
-  cases top
-  cases env with
-  | snoc env value =>
-    cases hEnv with
-    | snoc hTail hValue hInfer =>
-      exact ⟨hValue, hInfer⟩
-
-end AST.RuntimeEnv
-
 def Safety : Prop :=
-  ∀ {ctx : AST.Ctx} (env : AST.RuntimeEnv ctx),
-  AST.RuntimeEnv.Valid env ->
+  ∀ {ctx : AST.Ctx} (env : {typ : AST.Typ} -> AST.ProxyTop ctx typ -> AST.Val),
+  (∀ {typ : AST.Typ} (top : AST.ProxyTop ctx typ), (env top).SafeAs typ) ->
   ∀ (trm : AST.Trm ctx),
-    AST.Trm.Valid trm ->
   ∀ (typ : AST.Typ) (fuel : Nat),
     trm.infer fuel = Outcome.yield (.some typ) ->
     (trm.eval env).isSemiDecidable (fun value => value.SafeAs typ)
@@ -156,8 +105,8 @@ def Safety : Prop :=
 namespace Safety
 
 def proof : Safety := by
-  intro ctx env hEnv trm hTrm typ fuel hInfer runtimeFuel
-  induction runtimeFuel generalizing ctx env hEnv trm hTrm typ fuel with
+  intro ctx env hEnv trm typ fuel hInfer runtimeFuel
+  induction runtimeFuel generalizing ctx env hEnv trm typ fuel with
   | zero => rfl
   | succ runtimeFuel ih =>
     cases fuel with
@@ -166,39 +115,32 @@ def proof : Safety := by
     | succ fuel =>
       cases trm with
       | val value =>
-        cases hTrm with
-        | val hValue =>
-          cases value with
-          | primitive repr =>
-            have hPrim : AST.Typ.primitive = typ := by
-              simpa [AST.Trm.infer] using hInfer
-            simp [AST.Trm.eval]
-            exact ⟨hValue,
-              ⟨fuel + 1, by
-                simp [AST.Val.infer, AST.Trm.infer]
-                change AST.Typ.primitive = typ
-                exact hPrim⟩⟩
-          | fn closureEnv tIn body =>
-            have hFnInfer :
-                ((body AST.ProxyTop.ptop).infer fuel).map
-                  (fun out => Option.map (fun tOut => AST.Typ.fn tIn tOut) out)
-                  = Outcome.yield (some typ) := by
-              simpa [AST.Trm.infer] using hInfer
-            simp [AST.Trm.eval]
-            exact ⟨hValue,
-              ⟨fuel + 1, by
-                simp [AST.Val.infer, AST.Trm.infer, hFnInfer]
-                change typ = typ
-                rfl⟩⟩
+        cases value with
+        | primitive repr =>
+          have hPrim : AST.Typ.primitive = typ := by
+            simpa [AST.Trm.infer] using hInfer
+          simp [AST.Trm.eval]
+          exact ⟨fuel + 1, by
+            simp [AST.Val.infer, AST.Trm.infer]
+            change AST.Typ.primitive = typ
+            exact hPrim⟩
+        | fn tIn body =>
+          have hFnInfer :
+              ((body AST.ProxyTop.ptop).infer fuel).map
+                (fun out => Option.map (fun tOut => AST.Typ.fn tIn tOut) out)
+                = Outcome.yield (some typ) := by
+            simpa [AST.Trm.infer] using hInfer
+          simp [AST.Trm.eval]
+          exact ⟨fuel + 1, by
+            simp [AST.Val.infer, AST.Trm.infer, hFnInfer]
+            change typ = typ
+            rfl⟩
       | ref top =>
-        cases hTrm
         simp [AST.Trm.eval]
         simp [AST.Trm.infer] at hInfer
         cases hInfer
-        exact AST.RuntimeEnv.loadSafety hEnv top
+        exact hEnv top
       | apply fnTerm arg =>
-        cases hTrm with
-        | apply hFnTrm hArgTrm =>
           simp [AST.Trm.infer] at hInfer
           cases hFn : fnTerm.infer fuel with
           | outOfFuel => simp [hFn] at hInfer
@@ -226,8 +168,8 @@ def proof : Safety := by
                       rw [hFn, hArg] at hInfer
                       simp [hArgLe] at hInfer
                       cases hInfer
-                      have hFnSafe := ih env hEnv fnTerm hFnTrm (.fn tIn typ) fuel hFn
-                      have hArgSafe := ih env hEnv arg hArgTrm argTyp fuel hArg
+                      have hFnSafe := ih env hEnv fnTerm (.fn tIn typ) fuel hFn
+                      have hArgSafe := ih env hEnv arg argTyp fuel hArg
                       cases hFnEval : fnTerm.eval env runtimeFuel with
                       | outOfFuel => simp [AST.Trm.eval, hFnEval]
                       | yield fnEvalResult =>
@@ -235,18 +177,16 @@ def proof : Safety := by
                         cases fnEvalResult with
                         | none => cases hFnSafe
                         | some fnValue =>
-                          rcases hFnSafe with ⟨hFnValid, hFnInfer⟩
+                          rcases hFnSafe with ⟨fnFuel, hFnInfer⟩
                           cases fnValue with
                           | primitive repr =>
-                            rcases hFnInfer with ⟨fnFuel, hFnInfer⟩
                             cases fnFuel with
                             | zero => simp [AST.Val.infer, AST.Trm.infer] at hFnInfer
                             | succ fnFuel =>
                               simp [AST.Val.infer, AST.Trm.infer] at hFnInfer
                               change AST.Typ.primitive = AST.Typ.fn tIn typ at hFnInfer
                               cases hFnInfer
-                          | fn closureEnv runtimeTIn body =>
-                            rcases hFnInfer with ⟨fnFuel, hFnInfer⟩
+                          | fn runtimeTIn body =>
                             cases fnFuel with
                             | zero => simp [AST.Val.infer, AST.Trm.infer] at hFnInfer
                             | succ bodyFuel =>
@@ -268,37 +208,37 @@ def proof : Safety := by
                                   have hBodyTyp : bodyTyp = typ := (AST.Typ.fn.inj hFnInfer).2
                                   cases hRuntimeTIn
                                   cases hBodyTyp
-                                  cases hFnValid with
-                                  | fn hClosureEnv hBodyTrm =>
-                                    cases hArgEval : arg.eval env runtimeFuel with
-                                    | outOfFuel => simp [AST.Trm.eval, hFnEval, hArgEval]
-                                    | yield argEvalResult =>
-                                      rw [hArgEval] at hArgSafe
-                                      cases argEvalResult with
-                                      | none => cases hArgSafe
-                                      | some input =>
-                                        rcases hArgSafe with ⟨hInputValid, hInputInfer⟩
-                                        have hInputInferIn :
-                                            input.infer.isDecidable (fun inferred => inferred <= tIn) := by
-                                          rcases hInputInfer with ⟨inputFuel, hInputInfer⟩
+                                  cases hArgEval : arg.eval env runtimeFuel with
+                                  | outOfFuel => simp [AST.Trm.eval, hFnEval, hArgEval]
+                                  | yield argEvalResult =>
+                                    rw [hArgEval] at hArgSafe
+                                    cases argEvalResult with
+                                    | none => cases hArgSafe
+                                    | some input =>
+                                      rcases hArgSafe with ⟨inputFuel, hInputInfer⟩
+                                      have hInputInferIn :
+                                          input.infer.isDecidable (fun inferred => inferred <= tIn) :=
+                                        ⟨inputFuel, by
                                           have hArgEq : argTyp = tIn := hArgLe
-                                          exact ⟨inputFuel, by
-                                            simpa [hArgEq] using hInputInfer⟩
-                                        have hBodySafe :=
-                                          ih (.snoc closureEnv input)
-                                            (AST.RuntimeEnv.Valid.snoc hClosureEnv hInputValid hInputInferIn)
-                                            (body .ptop) (hBodyTrm .ptop) typ bodyFuel hBodyCompile
-                                        cases hBodyEval :
-                                            (body .ptop).eval (.snoc closureEnv input) runtimeFuel with
-                                        | outOfFuel =>
+                                          simpa [hArgEq] using hInputInfer⟩
+                                      have hBodySafe :=
+                                        ih (AST.Val.bindTop input)
+                                          (by
+                                            intro bodyTyp top
+                                            cases top
+                                            exact hInputInferIn)
+                                          (body .ptop) typ bodyFuel hBodyCompile
+                                      cases hBodyEval :
+                                          (body .ptop).eval (AST.Val.bindTop input) runtimeFuel with
+                                      | outOfFuel =>
+                                        simp [AST.Trm.eval, hFnEval, hArgEval, hBodyEval]
+                                      | yield bodyEvalResult =>
+                                        rw [hBodyEval] at hBodySafe
+                                        cases bodyEvalResult with
+                                        | none => cases hBodySafe
+                                        | some output =>
                                           simp [AST.Trm.eval, hFnEval, hArgEval, hBodyEval]
-                                        | yield bodyEvalResult =>
-                                          rw [hBodyEval] at hBodySafe
-                                          cases bodyEvalResult with
-                                          | none => cases hBodySafe
-                                          | some output =>
-                                            simp [AST.Trm.eval, hFnEval, hArgEval, hBodyEval]
-                                            exact hBodySafe
+                                          exact hBodySafe
                     case neg =>
                       rw [hFn, hArg] at hInfer
                       simp [hArgLe] at hInfer

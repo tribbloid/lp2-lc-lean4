@@ -68,53 +68,45 @@ inductive Trm : Ctx -> Type where
 /--
 Value syntax.
 
-Function values carry the CE runtime environment that gives meaning to their
-captured references.
+Function values carry only their CE body and input type.
 -/
 inductive Val : Type where
 | primitive (repr : Data)
-| fn {ctx : Ctx} (env : RuntimeEnv ctx) (tIn : Typ)
+| fn {ctx : Ctx} (tIn : Typ)
     (body : ProxyTop (ctx :/: tIn) tIn -> Trm (ctx :/: tIn))
-
-/-- Runtime values assigned to every variable in a CE context. -/
-inductive RuntimeEnv : Ctx -> Type where
-| empty : RuntimeEnv .empty
-| snoc {ctx : Ctx} {typ : Typ} (env : RuntimeEnv ctx) (value : Val) :
-    RuntimeEnv (ctx :/: typ)
 
 end
 
-namespace RuntimeEnv
+namespace Val
 
-/-- Loads the value assigned to a CE variable from the runtime context. -/
-def load : (self : RuntimeEnv targetCtx) ->
-    ProxyTop targetCtx typ -> Val
-  | .snoc _ value, .ptop => value
+def bindTop {ctx : Ctx} {tIn : Typ} (input : Val) :
+    {typ : Typ} -> ProxyTop (ctx :/: tIn) typ -> Val
+  | _, .ptop => input
 
-end RuntimeEnv
+end Val
 
 namespace Trm
 
 /--
 Evaluates a term by spending one fuel at each semantic descent.
 
-Function application extends the function closure's CE runtime context with the
-evaluated argument, so no free `FBound` bridge is needed.
+Runtime reference resolution is injected only as an argument to this evaluator.
 -/
-def eval {ctx : Ctx} (self : Trm ctx) (env : RuntimeEnv ctx) : RecOption Val
+def eval {ctx : Ctx} (self : Trm ctx)
+    (env : {typ : Typ} -> ProxyTop ctx typ -> Val) : RecOption Val
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
     | .val value => .yield (some value)
     | .apply fn arg =>
       match eval fn env fuel, eval arg env fuel with
-      | .yield (some (.fn closureEnv _tIn body)), .yield (some input) =>
-        eval (body .ptop) (.snoc closureEnv input) fuel
+      | .yield (some (.fn _tIn body)), .yield (some input) =>
+        eval (body .ptop) (Val.bindTop input) fuel
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
     | .ref top =>
-      .yield (some (env.load top))
+      .yield (some (env top))
 
 end Trm
 

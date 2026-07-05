@@ -11,7 +11,7 @@ namespace AST.Trm
 
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
 theorem termEvalMonotone {ctx : AST.Ctx}
-    (env : AST.RuntimeEnv ctx) (trm : AST.Trm ctx) :
+    (env : {typ : AST.Typ} -> AST.ProxyTop ctx typ -> AST.Val) (trm : AST.Trm ctx) :
     (trm.eval env).Monotone := by
   intro less more result hFuel hEval
   induction less using Nat.strongRecOn generalizing ctx env trm more result with
@@ -43,18 +43,18 @@ theorem termEvalMonotone {ctx : AST.Ctx}
                 cases fnValue with
                 | primitive repr =>
                   simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop] using hEval
-                | fn closureEnv tIn body =>
+                | fn tIn body =>
                   cases argResult with
                   | none =>
                     simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                   | some input =>
-                    cases hBody : AST.Trm.eval (body .ptop) (.snoc closureEnv input) fuel with
+                    cases hBody : AST.Trm.eval (body .ptop) (AST.Val.bindTop input) fuel with
                     | outOfFuel =>
                       simp [AST.Trm.eval, hFn, hArg, hBody] at hEval
                     | yield bodyResult =>
                       have hBodyTop :=
                         ih fuel (Nat.lt_succ_self fuel)
-                          (.snoc closureEnv input) (body .ptop) toFuel bodyResult
+                          (AST.Val.bindTop input) (body .ptop) toFuel bodyResult
                           hFuelTail hBody
                       simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop, hBody, hBodyTop] using hEval
         | ref top =>
