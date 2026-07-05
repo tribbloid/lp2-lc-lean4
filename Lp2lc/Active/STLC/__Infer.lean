@@ -86,6 +86,9 @@ theorem valueInferMonotone [env : @CompilerEnv I]
 
 end AST.Trm
 
+def CanInhabit (trm : AST.Trm I) (typ: AST.Typ I) [@CompilerEnv I] :=
+  trm.infer.isDecidable (fun t2 => t2 <= typ)
+
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
   refSafety : -- consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : I.Index),
@@ -109,16 +112,20 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
 
 variable [env : @ProvingEnv I]
 
-def Safety : Prop := -- TODO: this conjecture shouldn't be too long
-  ∀ (trm : AST.Trm I) (typ : AST.Typ I) (fuel : Nat),
-  ∀ (_: (trm.infer fuel) = Outcome.yield (.some typ)),
+def Safety : Prop :=
+  ∀ (trm : AST.Trm I) (typ: AST.Typ I),
   trm.eval.isSemiDecidable ( fun v =>
-    (AST.Trm.val v).infer.isDecidable (fun t2 => t2 <= typ)
+    (AST.Trm.val v).CanInhabit typ
   )
 
-namespace Safety
+def InferAdequacy : Prop := -- TODO: this conjecture shouldn't be too long
+  ∀ (trm : AST.Trm I) (typ : AST.Typ I) (fuel : Nat),
+  ∀ (_: (trm.infer fuel) = Outcome.yield (.some typ)),
+  Safety trm typ
 
-def proof : @Safety I env := by
+namespace InferAdequacy
+
+def proof : @InferAdequacy I env := by
   intro trm typ fuel hInfer runtimeFuel
   induction runtimeFuel generalizing trm typ fuel with
   | zero => rfl
@@ -245,7 +252,7 @@ def proof : @Safety I env := by
                     rw [hFn, hArg] at hInfer
                     simp [hArgLe] at hInfer
 
-end Safety
+end InferAdequacy
 
 end
 end STLC

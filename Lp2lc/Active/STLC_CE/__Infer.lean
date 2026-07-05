@@ -94,7 +94,7 @@ def SafeAs (self : AST.Val) (typ : AST.Typ) : Prop :=
 
 end AST.Val
 
-def Safety : Prop :=
+def InferAdequacy : Prop :=
   ∀ {ctx : AST.Ctx} (env : {typ : AST.Typ} -> AST.ProxyTop ctx typ -> AST.Val),
   (∀ {typ : AST.Typ} (top : AST.ProxyTop ctx typ), (env top).SafeAs typ) ->
   ∀ (trm : AST.Trm ctx),
@@ -102,9 +102,9 @@ def Safety : Prop :=
     trm.infer fuel = Outcome.yield (.some typ) ->
     (trm.eval env).isSemiDecidable (fun value => value.SafeAs typ)
 
-namespace Safety
+namespace InferAdequacy
 
-def proof : Safety := by
+def proof : InferAdequacy := by
   intro ctx env hEnv trm typ fuel hInfer runtimeFuel
   induction runtimeFuel generalizing ctx env hEnv trm typ fuel with
   | zero => rfl
@@ -243,7 +243,7 @@ def proof : Safety := by
                       rw [hFn, hArg] at hInfer
                       simp [hArgLe] at hInfer
 
-end Safety
+end InferAdequacy
 
 end STLC_CE
 
