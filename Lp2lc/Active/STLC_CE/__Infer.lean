@@ -104,7 +104,7 @@ def InferAdequacy : Prop :=
 
 namespace InferAdequacy
 
-def proof : InferAdequacy := by
+theorem proof : InferAdequacy := by
   intro ctx env hEnv trm typ fuel hInfer runtimeFuel
   induction runtimeFuel generalizing ctx env hEnv trm typ fuel with
   | zero => rfl

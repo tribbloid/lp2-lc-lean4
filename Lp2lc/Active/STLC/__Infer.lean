@@ -118,9 +118,14 @@ def InferAdequacy : Prop := -- TODO: this conjecture shouldn't be too long
   ∀ (_: (trm.infer fuel) = Outcome.yield (.some typ)),
   Safety trm typ
 
+def InferAdequacy2 : Prop :=
+  ∀ (trm : AST.Trm I) (typ : AST.Typ I),
+  trm.CanInhabit typ ->
+  Safety trm typ
+
 namespace InferAdequacy
 
-def proof : @InferAdequacy I env := by
+theorem proof : @InferAdequacy I env := by
   intro trm typ fuel hInfer runtimeFuel
   induction runtimeFuel generalizing trm typ fuel with
   | zero => rfl
