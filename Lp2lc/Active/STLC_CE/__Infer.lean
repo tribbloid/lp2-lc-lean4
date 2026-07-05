@@ -90,12 +90,12 @@ def CanInhabit (self : AST.Val) (typ : AST.Typ) : Prop :=
 
 end AST.Val
 
-def Safety {ctx : AST.Ctx} (env : {typ : AST.Typ} -> AST.ProxyTop ctx typ -> AST.Val)
+def Safety {ctx : AST.Ctx} (env : AST.RuntimeEnv ctx)
     (trm : AST.Trm ctx) (typ : AST.Typ) : Prop :=
   (trm.eval env).isSemiDecidable (fun value => value.CanInhabit typ)
 
 def InferAdequacy : Prop :=
-  ∀ {ctx : AST.Ctx} (env : {typ : AST.Typ} -> AST.ProxyTop ctx typ -> AST.Val),
+  ∀ {ctx : AST.Ctx} (env : AST.RuntimeEnv ctx),
   (∀ {typ : AST.Typ} (top : AST.ProxyTop ctx typ), (env top).CanInhabit typ) ->
   ∀ (trm : AST.Trm ctx),
   ∀ (typ : AST.Typ) (fuel : Nat),

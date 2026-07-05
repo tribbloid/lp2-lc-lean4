@@ -11,7 +11,7 @@ namespace AST.Trm
 
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
 theorem termEvalMonotone {ctx : AST.Ctx}
-    (env : {typ : AST.Typ} -> AST.ProxyTop ctx typ -> AST.Val) (trm : AST.Trm ctx) :
+    (env : AST.RuntimeEnv ctx) (trm : AST.Trm ctx) :
     (trm.eval env).Monotone := by
   intro less more result hFuel hEval
   induction less using Nat.strongRecOn generalizing ctx env trm more result with

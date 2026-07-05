@@ -77,10 +77,13 @@ inductive Val : Type where
 
 end
 
+abbrev RuntimeEnv (ctx : Ctx) : Type :=
+  {typ : Typ} -> ProxyTop ctx typ -> Val
+
 namespace Val
 
 def bindTop {ctx : Ctx} {tIn : Typ} (input : Val) :
-    {typ : Typ} -> ProxyTop (ctx :/: tIn) typ -> Val
+    RuntimeEnv (ctx :/: tIn)
   | _, .ptop => input
 
 end Val
@@ -93,7 +96,7 @@ Evaluates a term by spending one fuel at each semantic descent.
 Runtime reference resolution is injected only as an argument to this evaluator.
 -/
 def eval {ctx : Ctx} (self : Trm ctx)
-    (env : {typ : Typ} -> ProxyTop ctx typ -> Val) : RecOption Val
+    (env : RuntimeEnv ctx) : RecOption Val
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
