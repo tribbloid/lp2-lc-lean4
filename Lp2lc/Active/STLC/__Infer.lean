@@ -84,17 +84,15 @@ theorem valueInferMonotone [env : @CompilerEnv I]
     (AST.Trm.val value).infer.Monotone :=
   termInferMonotone (AST.Trm.val value)
 
-end AST.Trm
-
-def CanInhabit (trm : AST.Trm I) (typ: AST.Typ I) [@CompilerEnv I] :=
+def CanInhabit (trm : Trm I) (typ : AST.Typ I) [@CompilerEnv I] :=
   trm.infer.isDecidable (fun t2 => t2 <= typ)
+
+end AST.Trm
 
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
   refSafety : -- consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : I.Index),
-        (AST.Trm.val (valueRefs.load id).1).infer.isDecidable (fun typ =>
-          typ <= typeRefs.load id
-        ) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
+        (AST.Trm.val (valueRefs.load id).1).CanInhabit (typeRefs.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
   bindInfer : -- fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
     ∀ (body : I.Index -> AST.Trm I) (v : AST.Val I) (fuel : Nat),
       (AST.Trm.val v).infer.isDecidable (fun tIn =>
@@ -112,11 +110,8 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
 
 variable [env : @ProvingEnv I]
 
-def Safety : Prop :=
-  ∀ (trm : AST.Trm I) (typ: AST.Typ I),
-  trm.eval.isSemiDecidable ( fun v =>
-    (AST.Trm.val v).CanInhabit typ
-  )
+def Safety (trm : AST.Trm I) (typ : AST.Typ I) : Prop :=
+  trm.eval.isSemiDecidable (fun v => (AST.Trm.val v).CanInhabit typ)
 
 def InferAdequacy : Prop := -- TODO: this conjecture shouldn't be too long
   ∀ (trm : AST.Trm I) (typ : AST.Typ I) (fuel : Nat),
