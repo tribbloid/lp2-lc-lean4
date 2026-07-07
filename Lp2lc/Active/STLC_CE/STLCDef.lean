@@ -10,8 +10,7 @@ open Lp2lc.Active.Util
 namespace AST
 
 /-- Primitive payloads used by the closed CE version of STLC. -/
-inductive Data : Type where
-| unit
+structure Data : Type
 deriving DecidableEq, Repr
 
 /--

@@ -90,13 +90,34 @@ def CanInhabit (self : AST.Val) (typ : AST.Typ) : Prop :=
 
 end AST.Val
 
-def Safety {ctx : AST.Ctx} (env : AST.RuntimeEnv ctx)
+section variable {ctx : AST.Ctx} (rt : AST.RuntimeEnv ctx)
+
+def RuntimeEnvCanInhabit : Prop :=
+  ∀ {typ : AST.Typ} (top : AST.ProxyTop ctx typ), (
+    let k := rt top
+    k.CanInhabit typ
+  )
+
+namespace AST.Trm
+
+/-- Value validity plus inference to a requested type bound. -/
+def CanInhabit (self : AST.Trm ctx) (typ : AST.Typ) : Prop :=
+  self.infer.isDecidable (fun inferred => inferred <= typ)
+
+end AST.Trm
+
+def Safety
     (trm : AST.Trm ctx) (typ : AST.Typ) : Prop :=
-  (trm.eval env).isSemiDecidable (fun value => value.CanInhabit typ)
+  (trm.eval rt).isSemiDecidable (fun value => value.CanInhabit typ)
+
+def InferAdequacy2 : Prop :=
+  ∀ (trm : AST.Trm ctx) (typ : AST.Typ),
+  trm.CanInhabit typ ->
+  Safety rt trm typ
 
 def InferAdequacy : Prop :=
   ∀ {ctx : AST.Ctx} (env : AST.RuntimeEnv ctx),
-  (∀ {typ : AST.Typ} (top : AST.ProxyTop ctx typ), (env top).CanInhabit typ) ->
+  RuntimeEnvCanInhabit env ->
   ∀ (trm : AST.Trm ctx),
   ∀ (typ : AST.Typ) (fuel : Nat),
     trm.infer fuel = Outcome.yield (.some typ) ->
@@ -243,7 +264,36 @@ theorem proof : InferAdequacy := by
                       rw [hFn, hArg] at hInfer
                       simp [hArgLe] at hInfer
 
+theorem iffInferAdequacy2 :
+    InferAdequacy ↔
+      ∀ {ctx : AST.Ctx} (env : AST.RuntimeEnv ctx),
+        RuntimeEnvCanInhabit env ->
+        InferAdequacy2 env := by
+  constructor
+  · intro h ctx env hEnv trm typ hCan
+    rcases hCan with ⟨fuel, hFuel⟩
+    cases hInfer : trm.infer fuel with
+    | outOfFuel =>
+      rw [hInfer] at hFuel
+      cases hFuel
+    | yield result =>
+      cases result with
+      | none =>
+        rw [hInfer] at hFuel
+        cases hFuel
+      | some inferred =>
+        rw [hInfer] at hFuel
+        change inferred = typ at hFuel
+        simpa [hFuel] using h env hEnv trm inferred fuel hInfer
+  · intro h ctx env hEnv trm typ fuel hInfer
+    exact h env hEnv trm typ ⟨fuel, by
+      rw [hInfer]
+      change typ = typ
+      rfl⟩
+
 end InferAdequacy
+
+end
 
 end STLC_CE
 
