@@ -1,4 +1,4 @@
-namespace ContextualEmbedding.CEExtrinsic
+namespace ContextualEmbedding.Extrinsic.CE
 
 /-
 derived from CE.lean, but using extrinsic typing instead of intrinsic typing
