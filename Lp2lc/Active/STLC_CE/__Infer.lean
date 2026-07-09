@@ -29,7 +29,9 @@ def infer {ctx : AST.Ctx} (self : AST.Trm ctx) : RecOption AST.Typ
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | @AST.Trm.ref _ typ _ => .yield (some typ)
+    | @AST.Trm.ref source _ _ proxy =>
+      match proxy with
+      | @AST.ProxyTop.ptop _ typ => .yield (some typ)
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone {ctx : AST.Ctx}
@@ -68,11 +70,12 @@ theorem termInferMonotone {ctx : AST.Ctx}
               have hArgTop := ih fuel (Nat.lt_succ_self fuel) arg toFuel argResult hFuelTail hArg
               simpa [AST.Trm.infer, hFn, hArg, hFnTop, hArgTop] using hInfer
         | ref top =>
+          cases top
           simpa [AST.Trm.infer] using hInfer
 
 /-- Source value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone {ctx : AST.Ctx}
-    (value : AST.Val) :
+    (value : AST.Val ctx) :
     (AST.Trm.infer (ctx := ctx) (AST.Trm.val value)).Monotone :=
   termInferMonotone (AST.Trm.val value)
 
@@ -81,14 +84,31 @@ end AST.Trm
 namespace AST.Val
 
 /-- Infers a value by viewing it as a value term. -/
-def infer (self : AST.Val) : RecOption AST.Typ :=
-  AST.Trm.infer (ctx := AST.Ctx.empty) (AST.Trm.val self)
+def infer {ctx : AST.Ctx} (self : AST.Val ctx) : RecOption AST.Typ :=
+  AST.Trm.infer (AST.Trm.val self)
 
 /-- Value validity plus inference to a requested type bound. -/
-def CanInhabit (self : AST.Val) (typ : AST.Typ) : Prop :=
+def CanInhabit {ctx : AST.Ctx} (self : AST.Val ctx) (typ : AST.Typ) : Prop :=
   self.infer.isDecidable (fun inferred => inferred <= typ)
 
 end AST.Val
+
+namespace AST.RuntimeVal
+
+/-- Infers a runtime value by inspecting the source body stored in closures. -/
+def infer (self : AST.RuntimeVal) : RecOption AST.Typ
+  | 0 => .outOfFuel
+  | fuel + 1 =>
+    match self with
+    | .primitive _ => .yield (some .primitive)
+    | .fn _ tIn body =>
+      (AST.Trm.infer (body .ptop) fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
+
+/-- Runtime-value validity plus inference to a requested type bound. -/
+def CanInhabit (self : AST.RuntimeVal) (typ : AST.Typ) : Prop :=
+  self.infer.isDecidable (fun inferred => inferred <= typ)
+
+end AST.RuntimeVal
 
 section variable {ctx : AST.Ctx} (rt : AST.RuntimeEnv ctx)
 

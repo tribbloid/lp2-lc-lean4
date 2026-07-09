@@ -43,18 +43,18 @@ theorem termEvalMonotone {ctx : AST.Ctx}
                 cases fnValue with
                 | primitive repr =>
                   simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop] using hEval
-                | fn tIn body =>
+                | fn savedEnv tIn body =>
                   cases argResult with
                   | none =>
                     simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                   | some input =>
-                    cases hBody : AST.Trm.eval (body .ptop) (AST.Val.bindTop input) fuel with
+                    cases hBody : AST.Trm.eval (body .ptop) (savedEnv.snoc input) fuel with
                     | outOfFuel =>
                       simp [AST.Trm.eval, hFn, hArg, hBody] at hEval
                     | yield bodyResult =>
                       have hBodyTop :=
                         ih fuel (Nat.lt_succ_self fuel)
-                          (AST.Val.bindTop input) (body .ptop) toFuel bodyResult
+                          (savedEnv.snoc input) (body .ptop) toFuel bodyResult
                           hFuelTail hBody
                       simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop, hBody, hBodyTop] using hEval
         | ref top =>

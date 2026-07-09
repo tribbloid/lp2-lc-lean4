@@ -45,10 +45,35 @@ deriving DecidableEq, Repr
 
 infixl:90 " :/: " => Ctx.snoc
 
-/-- The most recently bound variable of a CE context. -/
-inductive ProxyTop : Ctx -> Typ -> Type where
-| ptop {ctx : Ctx} {typ : Typ} : ProxyTop (ctx :/: typ) typ
+/-- De Bruijn indices into CE contexts. -/
+inductive Index : Ctx -> Type where
+| top {ctx : Ctx} {typ : Typ} : Index (ctx :/: typ)
+| pop {ctx : Ctx} {typ : Typ} : Index ctx -> Index (ctx :/: typ)
+deriving DecidableEq, Repr
+
+/-- Extrinsic evidence that an index points at a value of a type. -/
+inductive Lookup : (ctx : Ctx) -> Index ctx -> Typ -> Type where
+| top {ctx : Ctx} {typ : Typ} : Lookup (ctx :/: typ) .top typ
+| pop {ctx : Ctx} {typ typ' : Typ} {index : Index ctx} :
+    Lookup ctx index typ -> Lookup (ctx :/: typ') (.pop index) typ
 deriving Repr
+
+/-- The most recently bound variable of a CE context. -/
+inductive ProxyTop : Ctx -> Type where
+| ptop {ctx : Ctx} {typ : Typ} : ProxyTop (ctx :/: typ)
+deriving DecidableEq, Repr
+
+/-- Reifies a contextual top proxy into an index of a larger use context. -/
+class ReifyIndex (source : Ctx) (ctx : Ctx) where
+  reify : ProxyTop source -> Index ctx
+
+instance instReifyIndexRefl : ReifyIndex ctx ctx where
+  reify
+    | .ptop => .top
+
+instance instReifyIndexSnoc [instRec : ReifyIndex source ctx] :
+    ReifyIndex source (ctx :/: typ) where
+  reify := fun proxy => .pop (ReifyIndex.reify (self := instRec) proxy)
 
 mutual
 
@@ -59,56 +84,127 @@ Terms are indexed by their CE context but not by their result type, so typing
 remains extrinsic while bound references are represented by CE proxy evidence.
 -/
 inductive Trm : Ctx -> Type where
-| val {ctx : Ctx} (value : Val) : Trm ctx
+| val {ctx : Ctx} (value : Val ctx) : Trm ctx
 | apply {ctx : Ctx} (fn : Trm ctx) (arg : Trm ctx) : Trm ctx
-| ref {ctx : Ctx} {typ : Typ} :
-    ProxyTop ctx typ -> Trm ctx
+| ref {source ctx : Ctx} [inst : ReifyIndex source ctx] :
+    ProxyTop source -> Trm ctx
 
 /--
 Value syntax.
 
-Function values carry only their CE body and input type.
+Function values carry their CE body and input type in the same context as the
+term that contains them.
 -/
-inductive Val : Type where
-| primitive (repr : Data)
+inductive Val : Ctx -> Type where
+| primitive {ctx : Ctx} (repr : Data) : Val ctx
 | fn {ctx : Ctx} (tIn : Typ)
-    (body : ProxyTop (ctx :/: tIn) tIn -> Trm (ctx :/: tIn))
+    (body : ProxyTop (ctx :/: tIn) -> Trm (ctx :/: tIn)) : Val ctx
+
+/--
+Runtime values produced by evaluation.
+
+Function values are closures: they retain the lexical environment from the
+point where the source function was evaluated.
+-/
+inductive RuntimeVal : Type where
+| primitive (repr : Data)
+| fn {ctx : Ctx} (env : RuntimeEnv ctx) (tIn : Typ)
+    (body : ProxyTop (ctx :/: tIn) -> Trm (ctx :/: tIn))
+
+/--
+Runtime lexical environments.
+
+`snoc env value` extends `env` with one newest binding, while older bindings
+remain reachable through `Index.pop`.
+-/
+inductive RuntimeEnv : Ctx -> Type where
+| empty : RuntimeEnv .empty
+| snoc {ctx : Ctx} {typ : Typ} (env : RuntimeEnv ctx) (value : RuntimeVal) :
+    RuntimeEnv (ctx :/: typ)
 
 end
 
-abbrev RuntimeEnv (ctx : Ctx) : Type :=
-  {typ : Typ} -> ProxyTop ctx typ -> Val
+namespace RuntimeEnv
 
-namespace Val
+/-- Resolves a runtime index by walking the lexical environment. -/
+def lookup {ctx : Ctx} (env : RuntimeEnv ctx) : Index ctx -> RuntimeVal
+  | .top =>
+    match env with
+    | .snoc _ value => value
+  | .pop index =>
+    match env with
+    | .snoc env _ => env.lookup index
 
-def bindTop {ctx : Ctx} {tIn : Typ} (input : Val) :
-    RuntimeEnv (ctx :/: tIn)
-  | _, .ptop => input
+end RuntimeEnv
 
-end Val
+/--
+Typed contextual syntax.
+
+The reference case mirrors `STLCCtx.CVar`: it types a contextual proxy by
+reifying it into the current context and proving a lookup for that index.
+-/
+inductive HasType : (ctx : Ctx) -> Trm ctx -> Typ -> Type where
+| valPrimitive {ctx : Ctx} {repr : Data} :
+    HasType ctx (.val (.primitive repr)) .primitive
+| valFn {ctx : Ctx} {tIn tOut : Typ}
+    {body : ProxyTop (ctx :/: tIn) -> Trm (ctx :/: tIn)} :
+    ((proxy : ProxyTop (ctx :/: tIn)) -> HasType (ctx :/: tIn) (body proxy) tOut) ->
+    HasType ctx (.val (.fn tIn body)) (.fn tIn tOut)
+| ref {source ctx : Ctx} {typ : Typ} [inst : ReifyIndex source ctx]
+    (proxy : ProxyTop source) :
+    Lookup ctx (ReifyIndex.reify (self := inst) proxy) typ ->
+    HasType ctx (.ref proxy) typ
+| apply {ctx : Ctx} {tIn tOut : Typ} {fn arg : Trm ctx} :
+    HasType ctx fn (.fn tIn tOut) -> HasType ctx arg tIn ->
+    HasType ctx (.apply fn arg) tOut
+
+/-- Contextual variables paired with their reification evidence. -/
+inductive ProxyVar (ctx : Ctx) where
+| pvar {source : Ctx} [inst : ReifyIndex source ctx] :
+    ProxyTop source -> ProxyVar ctx
+deriving Repr
+
+namespace ProxyVar
+
+def weaken {ctx : Ctx} {typ : Typ} : ProxyVar ctx -> ProxyVar (ctx :/: typ)
+  | @pvar _ _source _ proxy => pvar proxy
+
+end ProxyVar
+
+def varTop {ctx : Ctx} {typ : Typ} : ProxyVar (ctx :/: typ) :=
+  .pvar (.ptop (ctx := ctx) (typ := typ))
+
+def fromIndex : Index ctx -> ProxyVar ctx
+  | .top => varTop
+  | .pop index => (fromIndex index).weaken
+
+def toRef (index : Index ctx) : Trm ctx :=
+  match fromIndex index with
+  | @ProxyVar.pvar _ _ inst proxy => .ref (inst := inst) proxy
 
 namespace Trm
 
 /--
 Evaluates a term by spending one fuel at each semantic descent.
 
-Runtime reference resolution is injected only as an argument to this evaluator.
+Runtime reference resolution follows `ReifyIndex` into a lexical environment.
 -/
 def eval {ctx : Ctx} (self : Trm ctx)
-    (env : RuntimeEnv ctx) : RecOption Val
+    (env : RuntimeEnv ctx) : RecOption RuntimeVal
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val value => .yield (some value)
+    | .val (.primitive repr) => .yield (some (.primitive repr))
+    | .val (.fn tIn body) => .yield (some (.fn env tIn body))
     | .apply fn arg =>
       match eval fn env fuel, eval arg env fuel with
-      | .yield (some (.fn _tIn body)), .yield (some input) =>
-        eval (body .ptop) (Val.bindTop input) fuel
+      | .yield (some (.fn savedEnv _tIn body)), .yield (some input) =>
+        eval (body .ptop) (savedEnv.snoc input) fuel
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | .ref top =>
-      .yield (some (env top))
+    | @Trm.ref _source _ inst proxy =>
+      .yield (some (env.lookup (ReifyIndex.reify (self := inst) proxy)))
 
 end Trm
 
