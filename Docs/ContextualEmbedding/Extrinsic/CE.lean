@@ -59,7 +59,7 @@ instance instReifyIndexRefl : ReifyIndex ts ts where
     | PTop => Top
 
 instance instReifyIndexSnoc [instRec : ReifyIndex ts1 ts2] : ReifyIndex ts1 (ts2 :/: t') where
-  reify := fun i => Pop (ReifyIndex.reify (self := instRec) i)
+  reify := fun i => Pop (ReifyIndex.reify i)
 
 inductive STLCCtx : Ctx -> Type where
   | CVar {ts ts' : Ctx} [inst : ReifyIndex ts ts'] (proxy : ProxyTop ts) : STLCCtx ts'
@@ -74,7 +74,7 @@ open STLCCtx
 
 def unembed : STLCCtx ts -> STLC ts
   | STLCCtx.CStar => STLC.Star
-  | @STLCCtx.CVar _ _ inst proxy => STLC.Var (ReifyIndex.reify (self := inst) proxy)
+  | @STLCCtx.CVar _ _ _ proxy => STLC.Var (ReifyIndex.reify proxy)
   | @STLCCtx.CLam ts a body => STLC.Lambda a (unembed (body (@PTop ts a)))
   | STLCCtx.CApp e1 e2 => STLC.Apply (unembed e1) (unembed e2)
 
@@ -88,14 +88,14 @@ deriving Repr
 open ProxyVar
 
 def weakenPVar : ProxyVar ts' -> ProxyVar (ts' :/: t')
-  | @PVar _ _ inst proxy =>
-      PVar (inst := instReifyIndexSnoc (instRec := inst)) proxy
+  | @PVar _ _ _ proxy =>
+      PVar proxy
 
 def varTop : ProxyVar (ts :/: t) :=
-  PVar (inst := instReifyIndexRefl) (@PTop ts t)
+  PVar (@PTop ts t)
 
 def fromVar : ProxyVar ts' -> STLCCtx ts'
-  | @PVar _ _ inst proxy => STLCCtx.CVar (inst := inst) proxy
+  | @PVar _ _ _ proxy => STLCCtx.CVar proxy
 
 def fromIndex : Index ts -> ProxyVar ts
   | Top => varTop
@@ -106,7 +106,7 @@ def toCVar : Index ts -> STLCCtx ts :=
 
 def contextualise : STLC ts -> STLCCtx ts
   | STLC.Var i => toCVar i
-  | STLC.Lambda a e => STLCCtx.CLam (ts := ts) a (fun _ => contextualise e)
+  | STLC.Lambda a e => STLCCtx.CLam a (fun _ => contextualise e)
   | STLC.Apply e1 e2 => STLCCtx.CApp (contextualise e1) (contextualise e2)
   | STLC.Star => STLCCtx.CStar
 
@@ -208,7 +208,7 @@ def showSTLCCtx : STLCCtx ts -> String
   | STLCCtx.CApp f x => "CApp (" ++ showSTLCCtx f ++ ") (" ++ showSTLCCtx x ++ ")"
 
 def idSTLC {ts : Ctx} {a : Ty} : STLCCtx ts :=
-  STLCCtx.CLam (ts := ts) a (fun x => STLCCtx.CVar (ts' := ts :/: a) x)
+  STLCCtx.CLam a (fun x => STLCCtx.CVar x)
 
 def idSTLC' := @idSTLC Ctx.Empty Unit
 
@@ -219,9 +219,9 @@ def idSTLC' := @idSTLC Ctx.Empty Unit
 #eval unembed (contextualise (unembed idSTLC'))
 
 def const {ts : Ctx} {a b : Ty} : STLCCtx ts :=
-  STLCCtx.CLam (ts := ts) a
-    (fun x => STLCCtx.CLam (ts := ts :/: a) b
-      (fun _y => STLCCtx.CVar (ts' := (ts :/: a) :/: b) x))
+  STLCCtx.CLam a
+    (fun x => STLCCtx.CLam b
+      (fun _y => STLCCtx.CVar x))
 
 def const' := @const Ctx.Empty Unit Unit
 
@@ -231,9 +231,9 @@ def const' := @const Ctx.Empty Unit Unit
 #eval unembed (contextualise (unembed const'))
 
 def flipConst {ts : Ctx} {a b : Ty} : STLCCtx ts :=
-  STLCCtx.CLam (ts := ts) a
-    (fun _x => STLCCtx.CLam (ts := ts :/: a) b
-      (fun y => STLCCtx.CVar (ts' := (ts :/: a) :/: b) y))
+  STLCCtx.CLam a
+    (fun _x => STLCCtx.CLam b
+      (fun y => STLCCtx.CVar y))
 
 def flipConst' := @flipConst Ctx.Empty Unit Unit
 
@@ -244,12 +244,12 @@ def flipConst' := @flipConst Ctx.Empty Unit Unit
 #eval unembed (contextualise (unembed flipConst'))
 
 def const5 {ts : Ctx} {a b c d e : Ty} : STLCCtx ts :=
-  STLCCtx.CLam (ts := ts) a (fun x1 =>
-    STLCCtx.CLam (ts := ts :/: a) b (fun _x2 =>
-      STLCCtx.CLam (ts := (ts :/: a) :/: b) c (fun _x3 =>
-        STLCCtx.CLam (ts := ((ts :/: a) :/: b) :/: c) d (fun _x4 =>
-          STLCCtx.CLam (ts := (((ts :/: a) :/: b) :/: c) :/: d) e (fun _x5 =>
-            STLCCtx.CVar (ts' := ((((ts :/: a) :/: b) :/: c) :/: d) :/: e) x1)))))
+  STLCCtx.CLam a (fun x1 =>
+    STLCCtx.CLam b (fun _x2 =>
+      STLCCtx.CLam c (fun _x3 =>
+        STLCCtx.CLam d (fun _x4 =>
+          STLCCtx.CLam e (fun _x5 =>
+            STLCCtx.CVar x1)))))
 
 def const5' := @const5 Ctx.Empty Unit Unit Unit Unit Unit
 
@@ -263,13 +263,13 @@ def const5' := @const5 Ctx.Empty Unit Unit Unit Unit Unit
 ------------------------
 
 example {ts : Ctx} {a : Ty}
-  : @STLCCtx.CLam ts a (fun x => STLCCtx.CVar (ts' := ts :/: a) x) =
-    @STLCCtx.CLam ts a (fun y => STLCCtx.CVar (ts' := ts :/: a) y) := by
+  : (STLCCtx.CLam a (fun x => STLCCtx.CVar x) : STLCCtx ts) =
+    (STLCCtx.CLam a (fun y => STLCCtx.CVar y) : STLCCtx ts) := by
   rfl
 
 example {ts : Ctx} {a : Ty}
-  : @contextualise ts (STLC.Lambda a (STLC.Var Index.Top)) =
-    @STLCCtx.CLam ts a (fun y => STLCCtx.CVar (ts' := ts :/: a) y) := by
+  : (contextualise (STLC.Lambda a (STLC.Var Index.Top)) : STLCCtx ts) =
+    (STLCCtx.CLam a (fun y => STLCCtx.CVar y) : STLCCtx ts) := by
   simp [contextualise, toCVar, fromIndex, fromVar]
   funext x
   cases x
