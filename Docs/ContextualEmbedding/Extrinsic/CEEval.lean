@@ -86,7 +86,7 @@ def eval (typed : CtxHasType ts expr t) (env : Env ts) (fuel : Nat) : Option (Va
           let argValue <- eval argTyped env fuel
           match fnValue with
           | @Val.closure savedTs argTy _ savedEnv body bodyTyped =>
-            let proxy := ProxyTop.PTop (ts := savedTs :/: argTy)
+            let proxy := ProxyTop.PTop (ts := savedTs) (t := argTy)
             eval (bodyTyped proxy) (savedEnv.snoc argValue) fuel
 termination_by fuel
 
