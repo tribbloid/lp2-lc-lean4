@@ -1,6 +1,6 @@
-# STLC soundness proof using 
+# STLC soundness proof
 
-Syntax definition follows the style of HOAS Contextual Embedding:
+Syntax definition derived from @Lp2lc/Active/STLC, but follow the style of HOAS Contextual Embedding:
 
 - Main article: https://research-information.bris.ac.uk/en/publications/contextual-embeddings-implementing-bound-variables-through-instan/
 - Example: @Docs/ContextualEmbedding/CE.lean
