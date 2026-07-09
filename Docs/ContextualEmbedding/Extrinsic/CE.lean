@@ -54,7 +54,7 @@ class ReifyIndex (ts : Ctx) (ts' : Ctx) where
   reify : ProxyTop ts -> Index ts'
 open ReifyIndex
 
-instance instReifyIndexRefl : ReifyIndex (ts :/: t) (ts :/: t) where
+instance instReifyIndexRefl : ReifyIndex ts ts where
   reify
     | PTop => Top
 
@@ -129,6 +129,12 @@ theorem indexIsoL (i : Index ts)
       change Pop (ReifyIndex.reify (self := (fromIndex i').2) (fromIndex i').3) = Pop i'
       exact congrArg Pop ih
 
+axiom closedWorld {ts1 ts2 : Ctx} (inst : ReifyIndex ts1 ts2)
+  : (∃ hEq : ts1 = ts2, hEq ▸ inst = instReifyIndexRefl)
+    \/
+    (∃ (ts2' : Ctx) (t : Ty) (hEq : ts2 = ts2' :/: t) (inst' : ReifyIndex ts1 ts2'),
+      hEq ▸ inst = instReifyIndexSnoc (instRec := inst'))
+
 theorem unembedToCVar (i : Index ts) : unembed (toCVar i) = STLC.Var i := by
   induction i with
   | Top => rfl
@@ -137,9 +143,24 @@ theorem unembedToCVar (i : Index ts) : unembed (toCVar i) = STLC.Var i := by
         STLC.Var (Index.Pop i')
       exact congrArg (fun index => STLC.Var (Index.Pop index)) (indexIsoL i')
 
-theorem indexIsoR (i : Index ts)
-  : contextualise (STLC.Var i) = toCVar i := by
-  rfl
+theorem indexIsoR (inst : ReifyIndex ts ts') (i : ProxyTop ts)
+  : fromIndex (ReifyIndex.reify (self := inst) i) = PVar (inst := inst) i :=
+  Or.elim (closedWorld inst)
+    (fun h => by
+      rcases h with ⟨hEq, instEqRefl⟩
+      subst hEq
+      simp at instEqRefl
+      rw [instEqRefl]
+      cases i
+      rfl)
+    (fun h => by
+      rcases h with ⟨ts2', t', hEq, inst', instEqSnoc⟩
+      subst hEq
+      simp at instEqSnoc
+      rw [instEqSnoc]
+      change weakenPVar (fromIndex (ReifyIndex.reify (self := inst') i)) =
+        weakenPVar (PVar (inst := inst') i)
+      rw [indexIsoR inst' i])
 
 def unembedTyped : CtxHasType ts e t -> HasType ts (unembed e) t
   | CtxHasType.CVar lookup => by
