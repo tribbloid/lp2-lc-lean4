@@ -62,7 +62,7 @@ instance instReifyIndexSnoc [instRec : ReifyIndex ts1 ts2] : ReifyIndex ts1 (ts2
   reify := fun i => Pop (ReifyIndex.reify ts2 (self := instRec) i)
 
 def reify {ts ts' : Ctx} [inst : ReifyIndex ts ts'] : ProxyTop ts -> Index :=
-  reifyWith inst
+  ReifyIndex.reify (self := inst)
 
 inductive STLCCtx : Type where
   | CVar {ts ts' : Ctx} [inst : ReifyIndex ts ts'] : ProxyTop ts -> STLCCtx
@@ -71,14 +71,6 @@ inductive STLCCtx : Type where
   | CApp : STLCCtx -> STLCCtx -> STLCCtx
 open STLCCtx
 
-inductive CtxHasType : Ctx -> STLCCtx -> Ty -> Type where
-  | CVar [inst : ReifyIndex ts ts'] (proxy : ProxyTop ts) :
-      Lookup ts' (reify (inst := inst) proxy) t -> CtxHasType ts' (CVar (inst := inst) proxy) t
-  | CStar : CtxHasType ts CStar Unit
-  | CLam : ((proxy : ProxyTop (ts :/: a)) -> CtxHasType (ts :/: a) (body proxy) b) ->
-      CtxHasType ts (CLam (ts := ts) a body) (a :-> b)
-  | CApp : CtxHasType ts e1 (a :-> b) -> CtxHasType ts e2 a -> CtxHasType ts (CApp e1 e2) b
-
 
 -- Unembed
 -----------
@@ -86,14 +78,8 @@ inductive CtxHasType : Ctx -> STLCCtx -> Ty -> Type where
 def unembed : STLCCtx -> STLC
   | STLCCtx.CStar => STLC.Star
   | @STLCCtx.CVar _ _ inst proxy => STLC.Var (reify (inst := inst) proxy)
-  | @STLCCtx.CLam ts a body => STLC.Lambda a (unembed (body (@PTop ts a)))
+  | @STLCCtx.CLam ts a body => STLC.Lambda a (unembed (body (@PTop (ts :/: a))))
   | STLCCtx.CApp e1 e2 => STLC.Apply (unembed e1) (unembed e2)
-
-def unembedTyped : CtxHasType ts e t -> HasType ts (unembed e) t
-  | CtxHasType.CStar => HasType.Star
-  | @CtxHasType.CVar _ _ _ inst proxy lookup => HasType.Var lookup
-  | @CtxHasType.CLam ts a _ _ bodyTyped => HasType.Lambda (unembedTyped (bodyTyped (@PTop ts a)))
-  | CtxHasType.CApp e1 e2 => HasType.Apply (unembedTyped e1) (unembedTyped e2)
 
 
 -- Contextualise
@@ -106,9 +92,11 @@ deriving Repr
 open ProxyVar
 
 def weakenPVar : ProxyVar ts' t -> ProxyVar (ts' :/: t') t
-  | @PVar _ _ _ inst proxy lookup => PVar (inst := Snoc inst) proxy (Lookup.Pop lookup)
+  | @PVar _ _ _ inst proxy lookup =>
+      PVar (inst := instReifyIndexSnoc (instRec := inst)) proxy (Lookup.Pop lookup)
 
-def varTop : ProxyVar (ts :/: t) t := PVar (inst := Refl) (@PTop ts t) Lookup.Top
+def varTop : ProxyVar (ts :/: t) t :=
+  PVar (inst := instReifyIndexRefl) (@PTop (ts :/: t)) Lookup.Top
 
 def fromVar : ProxyVar ts' t -> STLCCtx
   | @PVar _ _ _ inst proxy _ => STLCCtx.CVar (inst := inst) proxy
@@ -119,6 +107,13 @@ def fromLookup : Lookup ts i t -> ProxyVar ts t
 
 def toCVar : Lookup ts i t -> STLCCtx :=
   fun i => fromVar (fromLookup i)
+
+inductive CtxHasType : Ctx -> STLCCtx -> Ty -> Type where
+  | CVar : (lookup : Lookup ts i t) -> CtxHasType ts (toCVar lookup) t
+  | CStar : CtxHasType ts CStar Unit
+  | CLam : ((proxy : ProxyTop (ts :/: a)) -> CtxHasType (ts :/: a) (body proxy) b) ->
+      CtxHasType ts (CLam (ts := ts) a body) (a :-> b)
+  | CApp : CtxHasType ts e1 (a :-> b) -> CtxHasType ts e2 a -> CtxHasType ts (CApp e1 e2) b
 
 def contextualise : HasType ts e t -> STLCCtx
   | HasType.Var i => toCVar i
@@ -131,27 +126,48 @@ def contextualise : HasType ts e t -> STLCCtx
 --------------------------------------------
 
 theorem indexIsoL (i : Lookup ts idx t)
-  : reifyWith (fromLookup i).2 (fromLookup i).3 = idx := by
+  : reify (inst := (fromLookup i).2) (fromLookup i).3 = idx := by
   induction i with
   | Top => rfl
   | Pop i' ih =>
-      change Pop (reifyWith (fromLookup i').2 (fromLookup i').3) = Pop _
+      change Pop (reify (inst := (fromLookup i').2) (fromLookup i').3) = Pop _
       exact congrArg Pop ih
 
-theorem indexIsoR (inst : ReifyIndex ts ts') (proxy : ProxyTop ts)
-    (lookup : Lookup ts' (reifyWith inst proxy) t) :
-    fromLookup lookup = PVar (inst := inst) proxy lookup := by
-  induction inst generalizing t with
-  | Refl =>
-      cases proxy
-      cases lookup
-      rfl
-  | Snoc instRec ih =>
-      cases lookup with
-      | Pop lookup =>
-          change weakenPVar (fromLookup lookup) =
-            weakenPVar (PVar (inst := instRec) proxy lookup)
-          rw [ih proxy lookup]
+theorem unembedToCVar (lookup : Lookup ts i t) : unembed (toCVar lookup) = STLC.Var i := by
+  induction lookup with
+  | Top => rfl
+  | Pop lookup ih =>
+      change STLC.Var (Index.Pop (reify (inst := (fromLookup lookup).2) (fromLookup lookup).3)) =
+        STLC.Var (Index.Pop _)
+      exact congrArg (fun index => STLC.Var (Index.Pop index)) (indexIsoL lookup)
+
+theorem indexIsoR (lookup : Lookup ts i t)
+  : contextualise (HasType.Var lookup) = toCVar lookup := by
+  rfl
+
+theorem contextualiseCast {e1 e2 : STLC} (h : e1 = e2) (typed : HasType ts e1 t) :
+    contextualise (h ▸ typed) = contextualise typed := by
+  cases h
+  rfl
+
+def cvarUnembedTyped (lookup : Lookup ts i t) : HasType ts (unembed (toCVar lookup)) t :=
+  (unembedToCVar lookup).symm ▸ HasType.Var lookup
+
+theorem contextualiseCvarUnembedTyped (lookup : Lookup ts i t) :
+    contextualise (cvarUnembedTyped lookup) = toCVar lookup := by
+  calc
+    contextualise (cvarUnembedTyped lookup)
+        = contextualise (HasType.Var lookup) := by
+          unfold cvarUnembedTyped
+          exact contextualiseCast (unembedToCVar lookup).symm (HasType.Var lookup)
+    _ = toCVar lookup := indexIsoR lookup
+
+def unembedTyped : CtxHasType ts e t -> HasType ts (unembed e) t
+  | CtxHasType.CVar lookup => cvarUnembedTyped lookup
+  | CtxHasType.CStar => HasType.Star
+  | @CtxHasType.CLam ts a _ _ bodyTyped =>
+      HasType.Lambda (unembedTyped (bodyTyped (@PTop (ts :/: a))))
+  | CtxHasType.CApp e1 e2 => HasType.Apply (unembedTyped e1) (unembedTyped e2)
 
 theorem isoL {h : HasType ts e t}
   : unembed (contextualise h) = e := by
@@ -173,16 +189,13 @@ theorem isoL' {h : HasType ts e t}
 
 theorem isoR {ts : Ctx} {e : STLCCtx} {t : Ty}
   : (h : CtxHasType ts e t) -> contextualise (unembedTyped h) = e
+  | CtxHasType.CVar lookup => contextualiseCvarUnembedTyped lookup
   | CtxHasType.CStar => rfl
-  | @CtxHasType.CVar _ _ _ inst proxy lookup => by
-      simp [unembedTyped, contextualise, toCVar]
-      change fromVar (fromLookup lookup) = fromVar (PVar (inst := inst) proxy lookup)
-      exact congrArg fromVar (indexIsoR inst proxy lookup)
   | @CtxHasType.CLam ts a _ _ bodyTyped => by
       simp [unembedTyped, contextualise, unembed]
       funext x
       cases x
-      simp [isoR (bodyTyped (@PTop ts a))]
+      simp [isoR (bodyTyped (@PTop (ts :/: a)))]
   | CtxHasType.CApp e1 e2 => by
       simp [unembedTyped, contextualise, isoR e1, isoR e2]
 
@@ -193,9 +206,9 @@ theorem isoR' {h : CtxHasType ts e t}
 ------------
 
 def showSTLCCtx : STLCCtx -> String
-  | @STLCCtx.CVar _ _ inst proxy => "CVar " ++ reprStr proxy ++ "[reified = " ++ reprStr (reifyWith inst proxy) ++ "]"
+  | @STLCCtx.CVar _ _ inst proxy => "CVar " ++ reprStr proxy ++ "[reified = " ++ reprStr (reify (inst := inst) proxy) ++ "]"
   | STLCCtx.CStar => "CStar"
-  | @STLCCtx.CLam ts a body => "CLam (\\<ProxyTop> -> " ++ showSTLCCtx (body (@PTop ts a)) ++ ")"
+  | @STLCCtx.CLam ts a body => "CLam (\\<ProxyTop> -> " ++ showSTLCCtx (body (@PTop (ts :/: a))) ++ ")"
   | STLCCtx.CApp f x => "CApp (" ++ showSTLCCtx f ++ ") (" ++ showSTLCCtx x ++ ")"
 
 def idSTLC {ts : Ctx} {a : Ty} : STLCCtx :=
@@ -204,7 +217,7 @@ def idSTLC {ts : Ctx} {a : Ty} : STLCCtx :=
 def idSTLCTyped {ts : Ctx} {a : Ty} : CtxHasType ts (@idSTLC ts a) (a :-> a) :=
   CtxHasType.CLam (fun x => by
     cases x
-    exact CtxHasType.CVar (inst := Refl) PTop Lookup.Top)
+    exact CtxHasType.CVar Lookup.Top)
 
 def idSTLC' := @idSTLC Ctx.Empty Unit
 def idSTLCTyped' := @idSTLCTyped Ctx.Empty Unit
@@ -224,7 +237,7 @@ def constTyped {ts : Ctx} {a b : Ty} : CtxHasType ts (@const ts a b) (a :-> b :-
   CtxHasType.CLam (fun x => by
     cases x
     exact CtxHasType.CLam (fun _y =>
-      CtxHasType.CVar (inst := Snoc Refl) PTop (Lookup.Pop Lookup.Top)))
+      CtxHasType.CVar (Lookup.Pop Lookup.Top)))
 
 def const' := @const Ctx.Empty Unit Unit
 def constTyped' := @constTyped Ctx.Empty Unit Unit
@@ -243,7 +256,7 @@ def flipConstTyped {ts : Ctx} {a b : Ty} : CtxHasType ts (@flipConst ts a b) (a 
   CtxHasType.CLam (fun _x =>
     CtxHasType.CLam (fun y => by
       cases y
-      exact CtxHasType.CVar (inst := Refl) PTop Lookup.Top))
+      exact CtxHasType.CVar Lookup.Top))
 
 def flipConst' := @flipConst Ctx.Empty Unit Unit
 def flipConstTyped' := @flipConstTyped Ctx.Empty Unit Unit
@@ -270,7 +283,7 @@ def const5Typed {ts : Ctx} {a b c d e : Ty} :
       CtxHasType.CLam (fun _x3 =>
         CtxHasType.CLam (fun _x4 =>
           CtxHasType.CLam (fun _x5 =>
-            CtxHasType.CVar (inst := Snoc (Snoc (Snoc (Snoc Refl)))) PTop
+            CtxHasType.CVar
               (Lookup.Pop (Lookup.Pop (Lookup.Pop (Lookup.Pop Lookup.Top)))))))))
 
 def const5' := @const5 Ctx.Empty Unit Unit Unit Unit Unit
