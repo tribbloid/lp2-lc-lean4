@@ -2,6 +2,14 @@ import «ContextualEmbedding».Extrinsic.CE
 
 namespace ContextualEmbedding.Extrinsic.CE
 
+inductive CtxHasType : (ts : Ctx) -> STLCCtx ts -> Ty -> Type where
+  | CVar : (lookup : Lookup ts i t) -> CtxHasType ts (toCVar i) t
+  | CStar : CtxHasType ts STLCCtx.CStar Ty.Unit
+  | CLam : ((proxy : ProxyTop (ts :/: a)) -> CtxHasType (ts :/: a) (body proxy) b) ->
+      CtxHasType ts (STLCCtx.CLam (ts := ts) a body) (a :-> b)
+  | CApp : CtxHasType ts e1 (a :-> b) -> CtxHasType ts e2 a ->
+      CtxHasType ts (STLCCtx.CApp e1 e2) b
+
 namespace Runtime
 
 mutual
@@ -95,6 +103,21 @@ end STLCCtx
 namespace Runtime.Examples
 
 open Runtime
+
+def idSTLCTyped {ts : Ctx} {a : Ty} : CtxHasType ts (@idSTLC ts a) (a :-> a) :=
+  CtxHasType.CLam (fun x => by
+    cases x
+    exact CtxHasType.CVar Lookup.Top)
+
+def idSTLCTyped' := @idSTLCTyped Ctx.Empty Ty.Unit
+
+def constTyped {ts : Ctx} {a b : Ty} : CtxHasType ts (@const ts a b) (a :-> b :-> a) :=
+  CtxHasType.CLam (fun x => by
+    cases x
+    exact CtxHasType.CLam (fun _y =>
+      CtxHasType.CVar (Lookup.Pop Lookup.Top)))
+
+def constTyped' := @constTyped Ctx.Empty Ty.Unit Ty.Unit
 
 def showResult (result : Option (Val t)) : String :=
   match result with
