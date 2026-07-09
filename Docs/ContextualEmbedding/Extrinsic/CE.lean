@@ -25,11 +25,6 @@ inductive Index : Type where
 deriving Repr, DecidableEq
 open Index
 
-inductive Lookup : Ctx -> Index -> Ty -> Type where
-  | Top {ts : Ctx} {t : Ty} : Lookup (ts :/: t) Top t
-  | Pop {ts : Ctx} {t t' : Ty} {i : Index} : Lookup ts i t -> Lookup (ts :/: t') (Pop i) t
-deriving Repr
-
 inductive STLC : Type where
   | Var : Index -> STLC
   | Star : STLC
@@ -37,6 +32,11 @@ inductive STLC : Type where
   | Apply : STLC -> STLC -> STLC
 deriving Repr, DecidableEq
 open STLC
+
+inductive Lookup : Ctx -> Index -> Ty -> Type where
+  | Top {ts : Ctx} {t : Ty} : Lookup (ts :/: t) Top t
+  | Pop {ts : Ctx} {t t' : Ty} {i : Index} : Lookup ts i t -> Lookup (ts :/: t') (Pop i) t
+deriving Repr
 
 inductive HasType : Ctx -> STLC -> Ty -> Type where
   | Var : Lookup ts i t -> HasType ts (Var i) t
@@ -82,23 +82,22 @@ def unembed : STLCCtx -> STLC
 -- Contextualise
 -----------------
 
-inductive ProxyVar ts' t where
-  | PVar [inst : ReifyIndex ts ts'] (proxy : ProxyTop ts) :
-      Lookup ts' (ReifyIndex.reify ts' (self := inst) proxy) t -> ProxyVar ts' t
+inductive ProxyVar ts' where
+  | PVar [inst : ReifyIndex ts ts'] : ProxyTop ts -> ProxyVar ts'
 deriving Repr
 open ProxyVar
 
-def weakenPVar : ProxyVar ts' t -> ProxyVar (ts' :/: t') t
-  | @PVar _ _ _ inst proxy lookup =>
-      PVar (inst := instReifyIndexSnoc (instRec := inst)) proxy (Lookup.Pop lookup)
+def weakenPVar : ProxyVar ts' -> ProxyVar (ts' :/: t')
+  | @PVar _ _ inst proxy =>
+      PVar (inst := instReifyIndexSnoc (instRec := inst)) proxy
 
-def varTop : ProxyVar (ts :/: t) t :=
-  PVar (inst := instReifyIndexRefl) (@PTop ts t) Lookup.Top
+def varTop : ProxyVar (ts :/: t) :=
+  PVar (inst := instReifyIndexRefl) (@PTop ts t)
 
-def fromVar : ProxyVar ts' t -> STLCCtx
-  | @PVar _ _ _ inst proxy _ => STLCCtx.CVar (inst := inst) proxy
+def fromVar : ProxyVar ts' -> STLCCtx
+  | @PVar _ _ inst proxy => STLCCtx.CVar (inst := inst) proxy
 
-def fromIndex : Lookup ts i t -> ProxyVar ts t
+def fromIndex : Lookup ts i t -> ProxyVar ts
   | Lookup.Top => varTop
   | Lookup.Pop i => weakenPVar (fromIndex i)
 
