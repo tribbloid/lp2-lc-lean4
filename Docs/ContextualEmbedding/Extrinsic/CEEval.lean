@@ -17,7 +17,7 @@ inductive Val : Ty -> Type where
   | star : Val Ty.Unit
   | closure {ts : Ctx} {a b : Ty}
       (env : Env ts)
-      (body : ProxyTop (ts :/: a) -> STLCCtx)
+      (body : ProxyTop (ts :/: a) -> STLCCtx (ts :/: a))
       (bodyTyped : (proxy : ProxyTop (ts :/: a)) -> CtxHasType (ts :/: a) (body proxy) b)
       : Val (a :-> b)
 
