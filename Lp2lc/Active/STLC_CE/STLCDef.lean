@@ -148,8 +148,6 @@ def toRef (index : AST.Index ctx) : AST.Trm ctx :=
   match fromIndex index with
   | @ProxyVar.pvar _ _ inst proxy => .ref (inst := inst) proxy
 
-namespace Trm
-
 
 /--
 Runtime lexical environments.
@@ -176,6 +174,9 @@ def lookup {ctx : AST.Ctx} (env : RuntimeEnv ctx) :
     | .snoc env _ _ => env.lookup index
 
 end RuntimeEnv
+
+
+namespace Trm
 
 /--
 Evaluates a term by spending one fuel at each semantic descent.

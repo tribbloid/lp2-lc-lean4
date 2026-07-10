@@ -95,12 +95,12 @@ end AST.Val
 
 class ProvingEnv where
   refSafety :
-    ∀ {ctx source : AST.Ctx} (rt : AST.RuntimeEnv ctx)
+    ∀ {ctx source : AST.Ctx} (rt : Trm.RuntimeEnv ctx)
       [inst : AST.ReifyIndex source ctx] (proxy : AST.ProxyTop source),
-      let value := rt.lookup (AST.ReifyIndex.reify (self := inst) proxy)
+      let value := Trm.RuntimeEnv.lookup rt (AST.ReifyIndex.reify (self := inst) proxy)
       value.2.2.CanInhabit (match proxy with | @AST.ProxyTop.ptop _ typ => typ)
 
-section variable {ctx : AST.Ctx} (rt : AST.RuntimeEnv ctx) [ProvingEnv]
+section variable {ctx : AST.Ctx} (rt : Trm.RuntimeEnv ctx) [ProvingEnv]
 
 
 namespace AST.Trm
