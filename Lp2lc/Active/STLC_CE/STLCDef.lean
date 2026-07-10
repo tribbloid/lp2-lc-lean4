@@ -51,13 +51,6 @@ inductive Index : Ctx -> Type where
 | pop {ctx : Ctx} {typ : Typ} : Index ctx -> Index (ctx :/: typ)
 deriving DecidableEq, Repr
 
-/-- Extrinsic evidence that an index points at a value of a type. -/
-inductive Lookup : (ctx : Ctx) -> Index ctx -> Typ -> Type where
-| top {ctx : Ctx} {typ : Typ} : Lookup (ctx :/: typ) .top typ
-| pop {ctx : Ctx} {typ typ' : Typ} {index : Index ctx} :
-    Lookup ctx index typ -> Lookup (ctx :/: typ') (.pop index) typ
-deriving Repr
-
 /-- The most recently bound variable of a CE context. -/
 inductive ProxyTop : Ctx -> Type where
 | ptop {ctx : Ctx} {typ : Typ} : ProxyTop (ctx :/: typ)
@@ -101,6 +94,14 @@ inductive Val : Ctx -> Type where
     (body : ProxyTop (ctx :/: tIn) -> Trm (ctx :/: tIn)) : Val ctx
 
 end
+end AST
+
+/-- Extrinsic evidence that an index points at a value of a type. -/
+inductive Lookup : (ctx : Ctx) -> Index ctx -> Typ -> Type where
+| top {ctx : Ctx} {typ : Typ} : Lookup (ctx :/: typ) .top typ
+| pop {ctx : Ctx} {typ typ' : Typ} {index : Index ctx} :
+    Lookup ctx index typ -> Lookup (ctx :/: typ') (.pop index) typ
+deriving Repr
 
 /--
 Typed contextual syntax.
@@ -198,8 +199,6 @@ def eval {ctx : Ctx} (self : Trm ctx)
       .yield (some (env.lookup (ReifyIndex.reify (self := inst) proxy)))
 
 end Trm
-
-end AST
 
 end STLC_CE
 
