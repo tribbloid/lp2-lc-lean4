@@ -53,7 +53,7 @@ continues in the preserved outer environment.
 def lookup (env : RuntimeEnv ts) (lookup : Lookup ts index t) : Val t :=
   match env, lookup with
   | .snoc _ value, .Top => value
-  | .snoc env _, .Pop lookup => env.lookup lookup
+  | .snoc env _, .Pop lookup => Env.lookup env lookup
 
 end Env
 
@@ -86,7 +86,7 @@ def eval (typed : CtxHasType ts expr t) (env : RuntimeEnv ts) (fuel : Nat) : Opt
       match typed with
       | CtxHasType.CStar => some .star
       | CtxHasType.CVar lookup =>
-          some (env.lookup lookup)
+          some (Env.lookup env lookup)
       | @CtxHasType.CLam _ _ body _ bodyTyped =>
           some (.closure env body bodyTyped)
       | CtxHasType.CApp fnTyped argTyped => do
@@ -128,17 +128,17 @@ def idStarTyped : CtxHasType Ctx.Empty (STLCCtx.CApp idSTLC' STLCCtx.CStar) Ty.U
   CtxHasType.CApp idSTLCTyped' CtxHasType.CStar
 
 def idStar : Option (Val Ty.Unit) :=
-  STLCCtx.eval idStarTyped Env.empty 4
+  STLCCtx.eval idStarTyped RuntimeEnv.empty 4
 
 def constStarTyped :
     CtxHasType Ctx.Empty (STLCCtx.CApp (STLCCtx.CApp const' STLCCtx.CStar) STLCCtx.CStar) Ty.Unit :=
   CtxHasType.CApp (CtxHasType.CApp constTyped' CtxHasType.CStar) CtxHasType.CStar
 
 def constStar : Option (Val Ty.Unit) :=
-  STLCCtx.eval constStarTyped Env.empty 8
+  STLCCtx.eval constStarTyped RuntimeEnv.empty 8
 
 example (env : RuntimeEnv ts) (outer : Val a) (inner : Val b) :
-    ((env.snoc outer).snoc inner).lookup (Lookup.Pop Lookup.Top) = outer := by
+    Env.lookup ((env.snoc outer).snoc inner) (Lookup.Pop Lookup.Top) = outer := by
   rfl
 
 #eval showResult idStar

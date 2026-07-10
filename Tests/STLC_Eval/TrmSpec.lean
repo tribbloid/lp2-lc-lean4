@@ -1,4 +1,4 @@
-import «Tests».STLC_Eval.Fixture
+import «Tests».STLC_Eval.TrmDemo
 
 namespace Tests.STLC_Eval.Sanity
 
@@ -7,6 +7,43 @@ namespace Trm
 open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
 open Tests.STLC_Eval.Sanity.Symbolic
+
+namespace Fixture
+
+@[reducible] def RuntimeCanEval : Permission Val := fun _value => True
+
+@[reducible] unsafe def _unsafeFBound (T : Type) :
+    FBound I.Index T :=
+  let saved : IO.Ref (Array T) := unsafeBaseIO (IO.mkRef #[])
+  let save : T → I.Index := fun value =>
+    unsafeBaseIO do
+      let values ← saved.get
+      saved.set (values.push value)
+      pure (unsafeCast values.size)
+  let load : I.Index → T := fun ref =>
+    let index : Nat := unsafeCast ref
+    match (unsafeBaseIO saved.get)[index]? with
+    | some t => t
+    | none => unsafeCast ()
+  {
+    save := fun value => save value
+    load := fun ref => load ref
+    roundtrip := by
+      intro value
+      exact unsafeCast True.intro
+  }
+
+@[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
+  {
+    CanSave := RuntimeCanEval
+    valueRefs := _unsafeFBound { value : Val // RuntimeCanEval value }
+    canEvalAny := fun _value => True.intro
+  }
+
+@[instance, implemented_by _runtimeEnv]
+axiom runtimeEnv : @RuntimeEnv I
+
+end Fixture
 
 section eval
 

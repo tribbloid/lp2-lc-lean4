@@ -97,9 +97,9 @@ end
 end AST
 
 /-- Extrinsic evidence that an index points at a value of a type. -/
-inductive Lookup : (ctx : Ctx) -> Index ctx -> Typ -> Type where
-| top {ctx : Ctx} {typ : Typ} : Lookup (ctx :/: typ) .top typ
-| pop {ctx : Ctx} {typ typ' : Typ} {index : Index ctx} :
+inductive Lookup : (ctx : AST.Ctx) -> AST.Index ctx -> AST.Typ -> Type where
+| top {ctx : AST.Ctx} {typ : AST.Typ} : Lookup (ctx :/: typ) .top typ
+| pop {ctx : AST.Ctx} {typ typ' : AST.Typ} {index : AST.Index ctx} :
     Lookup ctx index typ -> Lookup (ctx :/: typ') (.pop index) typ
 deriving Repr
 
@@ -109,42 +109,42 @@ Typed contextual syntax.
 The reference case mirrors `STLCCtx.CVar`: it types a contextual proxy by
 reifying it into the current context and proving a lookup for that index.
 -/
-inductive HasType : (ctx : Ctx) -> Trm ctx -> Typ -> Type where
-| valPrimitive {ctx : Ctx} {repr : Data} :
+inductive HasType : (ctx : AST.Ctx) -> AST.Trm ctx -> AST.Typ -> Type where
+| valPrimitive {ctx : AST.Ctx} {repr : AST.Data} :
     HasType ctx (.val (.primitive repr)) .primitive
-| valFn {ctx : Ctx} {tIn tOut : Typ}
-    {body : ProxyTop (ctx :/: tIn) -> Trm (ctx :/: tIn)} :
-    ((proxy : ProxyTop (ctx :/: tIn)) -> HasType (ctx :/: tIn) (body proxy) tOut) ->
+| valFn {ctx : AST.Ctx} {tIn tOut : AST.Typ}
+    {body : AST.ProxyTop (ctx :/: tIn) -> AST.Trm (ctx :/: tIn)} :
+    ((proxy : AST.ProxyTop (ctx :/: tIn)) -> HasType (ctx :/: tIn) (body proxy) tOut) ->
     HasType ctx (.val (.fn tIn body)) (.fn tIn tOut)
-| ref {source ctx : Ctx} {typ : Typ} [inst : ReifyIndex source ctx]
-    (proxy : ProxyTop source) :
-    Lookup ctx (ReifyIndex.reify (self := inst) proxy) typ ->
+| ref {source ctx : AST.Ctx} {typ : AST.Typ} [inst : AST.ReifyIndex source ctx]
+    (proxy : AST.ProxyTop source) :
+    Lookup ctx (AST.ReifyIndex.reify (self := inst) proxy) typ ->
     HasType ctx (.ref proxy) typ
-| apply {ctx : Ctx} {tIn tOut : Typ} {fn arg : Trm ctx} :
+| apply {ctx : AST.Ctx} {tIn tOut : AST.Typ} {fn arg : AST.Trm ctx} :
     HasType ctx fn (.fn tIn tOut) -> HasType ctx arg tIn ->
     HasType ctx (.apply fn arg) tOut
 
 /-- Contextual variables paired with their reification evidence. -/
-inductive ProxyVar (ctx : Ctx) where
-| pvar {source : Ctx} [inst : ReifyIndex source ctx] :
-    ProxyTop source -> ProxyVar ctx
+inductive ProxyVar (ctx : AST.Ctx) where
+| pvar {source : AST.Ctx} [inst : AST.ReifyIndex source ctx] :
+    AST.ProxyTop source -> ProxyVar ctx
 deriving Repr
 
 namespace ProxyVar
 
-def weaken {ctx : Ctx} {typ : Typ} : ProxyVar ctx -> ProxyVar (ctx :/: typ)
+def weaken {ctx : AST.Ctx} {typ : AST.Typ} : ProxyVar ctx -> ProxyVar (ctx :/: typ)
   | @pvar _ _source _ proxy => pvar proxy
 
 end ProxyVar
 
-def varTop {ctx : Ctx} {typ : Typ} : ProxyVar (ctx :/: typ) :=
+def varTop {ctx : AST.Ctx} {typ : AST.Typ} : ProxyVar (ctx :/: typ) :=
   .pvar (.ptop (ctx := ctx) (typ := typ))
 
-def fromIndex : Index ctx -> ProxyVar ctx
+def fromIndex : AST.Index ctx -> ProxyVar ctx
   | .top => varTop
   | .pop index => (fromIndex index).weaken
 
-def toRef (index : Index ctx) : Trm ctx :=
+def toRef (index : AST.Index ctx) : AST.Trm ctx :=
   match fromIndex index with
   | @ProxyVar.pvar _ _ inst proxy => .ref (inst := inst) proxy
 
@@ -157,17 +157,17 @@ Runtime lexical environments.
 `snoc env value` extends `env` with one newest binding, while older bindings
 remain reachable through `Index.pop`.
 -/
-inductive RuntimeEnv : Ctx -> Type where
+inductive RuntimeEnv : AST.Ctx -> Type where
 | empty : RuntimeEnv .empty
-| snoc {ctx valueCtx : Ctx} {typ : Typ}
-    (env : RuntimeEnv ctx) (valueEnv : RuntimeEnv valueCtx) (value : Val valueCtx) :
+| snoc {ctx valueCtx : AST.Ctx} {typ : AST.Typ}
+    (env : RuntimeEnv ctx) (valueEnv : RuntimeEnv valueCtx) (value : AST.Val valueCtx) :
     RuntimeEnv (ctx :/: typ)
 
 namespace RuntimeEnv
 
 /-- Resolves a runtime index by walking the lexical environment. -/
-def lookup {ctx : Ctx} (env : RuntimeEnv ctx) :
-    Index ctx -> (valueCtx : Ctx) × RuntimeEnv valueCtx × Val valueCtx
+def lookup {ctx : AST.Ctx} (env : RuntimeEnv ctx) :
+    AST.Index ctx -> (valueCtx : AST.Ctx) × RuntimeEnv valueCtx × AST.Val valueCtx
   | .top =>
     match env with
     | .snoc _ valueEnv value => ⟨_, valueEnv, value⟩
@@ -182,8 +182,8 @@ Evaluates a term by spending one fuel at each semantic descent.
 
 Runtime reference resolution follows `ReifyIndex` into a lexical environment.
 -/
-def eval {ctx : Ctx} (self : Trm ctx)
-    (env : RuntimeEnv ctx) : RecOption ((valueCtx : Ctx) × RuntimeEnv valueCtx × Val valueCtx)
+def eval {ctx : AST.Ctx} (self : AST.Trm ctx)
+    (env : RuntimeEnv ctx) : RecOption ((valueCtx : AST.Ctx) × RuntimeEnv valueCtx × AST.Val valueCtx)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -195,8 +195,8 @@ def eval {ctx : Ctx} (self : Trm ctx)
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | @Trm.ref _source _ inst proxy =>
-      .yield (some (env.lookup (ReifyIndex.reify (self := inst) proxy)))
+    | @AST.Trm.ref _source _ inst proxy =>
+      .yield (some (env.lookup (AST.ReifyIndex.reify (self := inst) proxy)))
 
 end Trm
 
