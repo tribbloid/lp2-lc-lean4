@@ -93,23 +93,6 @@ def CanInhabit {ctx : AST.Ctx} (self : AST.Val ctx) (typ : AST.Typ) : Prop :=
 
 end AST.Val
 
-namespace AST.RuntimeVal
-
-/-- Infers a runtime value by inspecting the source body stored in closures. -/
-def infer (self : AST.RuntimeVal) : RecOption AST.Typ
-  | 0 => .outOfFuel
-  | fuel + 1 =>
-    match self with
-    | .primitive _ => .yield (some .primitive)
-    | .fn _ tIn body =>
-      (AST.Trm.infer (body .ptop) fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
-
-/-- Runtime-value validity plus inference to a requested type bound. -/
-def CanInhabit (self : AST.RuntimeVal) (typ : AST.Typ) : Prop :=
-  self.infer.isDecidable (fun inferred => inferred <= typ)
-
-end AST.RuntimeVal
-
 section variable {ctx : AST.Ctx} (rt : AST.RuntimeEnv ctx)
 
 
@@ -123,7 +106,7 @@ end AST.Trm
 
 def Safety
     (trm : AST.Trm ctx) (typ : AST.Typ) : Prop :=
-  (trm.eval rt).isSemiDecidable (fun value => value.CanInhabit typ)
+  (trm.eval rt).isSemiDecidable (fun value => value.2.2.CanInhabit typ)
 
 def InferAdequacy : Prop :=
   ∀ (trm : AST.Trm ctx) (typ : AST.Typ),

@@ -101,17 +101,6 @@ inductive Val : Ctx -> Type where
     (body : ProxyTop (ctx :/: tIn) -> Trm (ctx :/: tIn)) : Val ctx
 
 /--
-Runtime values produced by evaluation.
-
-Function values are closures: they retain the lexical environment from the
-point where the source function was evaluated.
--/
-inductive RuntimeVal : Type where
-| primitive (repr : Data)
-| fn {ctx : Ctx} (env : RuntimeEnv ctx) (tIn : Typ)
-    (body : ProxyTop (ctx :/: tIn) -> Trm (ctx :/: tIn))
-
-/--
 Runtime lexical environments.
 
 `snoc env value` extends `env` with one newest binding, while older bindings
@@ -119,7 +108,8 @@ remain reachable through `Index.pop`.
 -/
 inductive RuntimeEnv : Ctx -> Type where
 | empty : RuntimeEnv .empty
-| snoc {ctx : Ctx} {typ : Typ} (env : RuntimeEnv ctx) (value : RuntimeVal) :
+| snoc {ctx valueCtx : Ctx} {typ : Typ}
+    (env : RuntimeEnv ctx) (valueEnv : RuntimeEnv valueCtx) (value : Val valueCtx) :
     RuntimeEnv (ctx :/: typ)
 
 end
@@ -127,13 +117,14 @@ end
 namespace RuntimeEnv
 
 /-- Resolves a runtime index by walking the lexical environment. -/
-def lookup {ctx : Ctx} (env : RuntimeEnv ctx) : Index ctx -> RuntimeVal
+def lookup {ctx : Ctx} (env : RuntimeEnv ctx) :
+    Index ctx -> (valueCtx : Ctx) × RuntimeEnv valueCtx × Val valueCtx
   | .top =>
     match env with
-    | .snoc _ value => value
+    | .snoc _ valueEnv value => ⟨_, valueEnv, value⟩
   | .pop index =>
     match env with
-    | .snoc env _ => env.lookup index
+    | .snoc env _ _ => env.lookup index
 
 end RuntimeEnv
 
@@ -190,16 +181,15 @@ Evaluates a term by spending one fuel at each semantic descent.
 Runtime reference resolution follows `ReifyIndex` into a lexical environment.
 -/
 def eval {ctx : Ctx} (self : Trm ctx)
-    (env : RuntimeEnv ctx) : RecOption RuntimeVal
+    (env : RuntimeEnv ctx) : RecOption ((valueCtx : Ctx) × RuntimeEnv valueCtx × Val valueCtx)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val (.primitive repr) => .yield (some (.primitive repr))
-    | .val (.fn tIn body) => .yield (some (.fn env tIn body))
+    | .val value => .yield (some ⟨ctx, env, value⟩)
     | .apply fn arg =>
       match eval fn env fuel, eval arg env fuel with
-      | .yield (some (.fn savedEnv _tIn body)), .yield (some input) =>
-        eval (body .ptop) (savedEnv.snoc input) fuel
+      | .yield (some ⟨_, savedEnv, .fn _tIn body⟩), .yield (some ⟨_, inputEnv, input⟩) =>
+        eval (body .ptop) (savedEnv.snoc inputEnv input) fuel
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
