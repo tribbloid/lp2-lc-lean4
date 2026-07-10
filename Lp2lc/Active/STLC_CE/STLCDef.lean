@@ -100,33 +100,7 @@ inductive Val : Ctx -> Type where
 | fn {ctx : Ctx} (tIn : Typ)
     (body : ProxyTop (ctx :/: tIn) -> Trm (ctx :/: tIn)) : Val ctx
 
-/--
-Runtime lexical environments.
-
-`snoc env value` extends `env` with one newest binding, while older bindings
-remain reachable through `Index.pop`.
--/
-inductive RuntimeEnv : Ctx -> Type where
-| empty : RuntimeEnv .empty
-| snoc {ctx valueCtx : Ctx} {typ : Typ}
-    (env : RuntimeEnv ctx) (valueEnv : RuntimeEnv valueCtx) (value : Val valueCtx) :
-    RuntimeEnv (ctx :/: typ)
-
 end
-
-namespace RuntimeEnv
-
-/-- Resolves a runtime index by walking the lexical environment. -/
-def lookup {ctx : Ctx} (env : RuntimeEnv ctx) :
-    Index ctx -> (valueCtx : Ctx) × RuntimeEnv valueCtx × Val valueCtx
-  | .top =>
-    match env with
-    | .snoc _ valueEnv value => ⟨_, valueEnv, value⟩
-  | .pop index =>
-    match env with
-    | .snoc env _ _ => env.lookup index
-
-end RuntimeEnv
 
 /--
 Typed contextual syntax.
@@ -174,6 +148,33 @@ def toRef (index : Index ctx) : Trm ctx :=
   | @ProxyVar.pvar _ _ inst proxy => .ref (inst := inst) proxy
 
 namespace Trm
+
+
+/--
+Runtime lexical environments.
+
+`snoc env value` extends `env` with one newest binding, while older bindings
+remain reachable through `Index.pop`.
+-/
+inductive RuntimeEnv : Ctx -> Type where
+| empty : RuntimeEnv .empty
+| snoc {ctx valueCtx : Ctx} {typ : Typ}
+    (env : RuntimeEnv ctx) (valueEnv : RuntimeEnv valueCtx) (value : Val valueCtx) :
+    RuntimeEnv (ctx :/: typ)
+
+namespace RuntimeEnv
+
+/-- Resolves a runtime index by walking the lexical environment. -/
+def lookup {ctx : Ctx} (env : RuntimeEnv ctx) :
+    Index ctx -> (valueCtx : Ctx) × RuntimeEnv valueCtx × Val valueCtx
+  | .top =>
+    match env with
+    | .snoc _ valueEnv value => ⟨_, valueEnv, value⟩
+  | .pop index =>
+    match env with
+    | .snoc env _ _ => env.lookup index
+
+end RuntimeEnv
 
 /--
 Evaluates a term by spending one fuel at each semantic descent.

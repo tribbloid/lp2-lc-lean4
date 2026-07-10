@@ -24,7 +24,7 @@ extrinsic typing witness.
 inductive Val : Ty -> Type where
   | star : Val Ty.Unit
   | closure {ts : Ctx} {a b : Ty}
-      (env : Env ts)
+      (env : RuntimeEnv ts)
       (body : ProxyTop (ts :/: a) -> STLCCtx (ts :/: a))
       (bodyTyped : (proxy : ProxyTop (ts :/: a)) -> CtxHasType (ts :/: a) (body proxy) b)
       : Val (a :-> b)
@@ -36,9 +36,9 @@ Runtime lexical environments indexed by the same context as the typing witness.
 `Lookup.Top` proof, and every older binding in `env` remains available under
 one `Lookup.Pop`.
 -/
-inductive Env : Ctx -> Type where
-  | empty : Env Ctx.Empty
-  | snoc {ts : Ctx} {t : Ty} (env : Env ts) (value : Val t) : Env (ts :/: t)
+inductive RuntimeEnv : Ctx -> Type where
+  | empty : RuntimeEnv Ctx.Empty
+  | snoc {ts : Ctx} {t : Ty} (env : RuntimeEnv ts) (value : Val t) : RuntimeEnv (ts :/: t)
 
 end
 
@@ -50,7 +50,7 @@ Look up a runtime value by extrinsic lookup evidence.
 The `Top` case reads the newest frame, while `Pop` moves through that frame and
 continues in the preserved outer environment.
 -/
-def lookup (env : Env ts) (lookup : Lookup ts index t) : Val t :=
+def lookup (env : RuntimeEnv ts) (lookup : Lookup ts index t) : Val t :=
   match env, lookup with
   | .snoc _ value, .Top => value
   | .snoc env _, .Pop lookup => env.lookup lookup
@@ -79,7 +79,7 @@ The syntax is raw, so evaluation follows a `CtxHasType` witness. Application
 creates a fresh frame with `savedEnv.snoc argValue`; no `ProxyTop` is stored as
 a mutable runtime location.
 -/
-def eval (typed : CtxHasType ts expr t) (env : Env ts) (fuel : Nat) : Option (Val t) :=
+def eval (typed : CtxHasType ts expr t) (env : RuntimeEnv ts) (fuel : Nat) : Option (Val t) :=
   match fuel with
   | 0 => none
   | fuel + 1 =>
@@ -137,7 +137,7 @@ def constStarTyped :
 def constStar : Option (Val Ty.Unit) :=
   STLCCtx.eval constStarTyped Env.empty 8
 
-example (env : Env ts) (outer : Val a) (inner : Val b) :
+example (env : RuntimeEnv ts) (outer : Val a) (inner : Val b) :
     ((env.snoc outer).snoc inner).lookup (Lookup.Pop Lookup.Top) = outer := by
   rfl
 
