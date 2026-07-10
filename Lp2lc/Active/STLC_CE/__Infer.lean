@@ -95,12 +95,12 @@ end AST.Val
 
 class ProvingEnv where
   refSafety :
-    ∀ {ctx source : AST.Ctx} (rt : Trm.RuntimeEnv ctx)
+    ∀ {ctx source : AST.Ctx} (rt : RuntimeEnv ctx)
       [inst : AST.ReifyIndex source ctx] (proxy : AST.ProxyTop source),
-      let value := Trm.RuntimeEnv.lookup rt (AST.ReifyIndex.reify (self := inst) proxy)
+      let value := RuntimeEnv.lookup rt (AST.ReifyIndex.reify (self := inst) proxy)
       value.2.2.CanInhabit (match proxy with | @AST.ProxyTop.ptop _ typ => typ)
 
-section variable {ctx : AST.Ctx} (rt : Trm.RuntimeEnv ctx) [ProvingEnv]
+section variable {ctx : AST.Ctx} (rt : RuntimeEnv ctx) [ProvingEnv]
 
 
 namespace AST.Trm
@@ -113,7 +113,7 @@ end AST.Trm
 
 def Safety
     (trm : AST.Trm ctx) (typ : AST.Typ) : Prop :=
-  (trm.eval rt).isSemiDecidable (fun value => value.2.2.CanInhabit typ)
+  (Trm.eval trm rt).isSemiDecidable (fun value => value.2.2.CanInhabit typ)
 
 def InferAdequacy : Prop :=
   ∀ (trm : AST.Trm ctx) (typ : AST.Typ),
@@ -136,21 +136,21 @@ theorem proof : InferAdequacy rt := by
       clear hInferResult hInfer
       intro runtimeFuel
       induction runtimeFuel generalizing ctx rt trm typ fuel with
-      | zero => simp [AST.Trm.eval]
+      | zero => simp [Trm.eval]
       | succ runtimeFuel ih =>
         cases fuel with
         | zero => cases trm <;> simp [AST.Trm.infer] at hInferCombined
         | succ fuel =>
           cases trm with
           | val value =>
-            simp [AST.Trm.eval]
+            simp [Trm.eval]
             exact ⟨fuel + 1, by
               simpa [AST.Val.infer, hInferCombined] using (show typ ≤ typ from rfl)⟩
           | ref top =>
             cases top
             simp [AST.Trm.infer] at hInferCombined
             cases hInferCombined
-            simpa [AST.Trm.eval] using (ProvingEnv.refSafety rt (proxy := AST.ProxyTop.ptop))
+            simpa [Trm.eval] using (ProvingEnv.refSafety rt (proxy := AST.ProxyTop.ptop))
           | apply fnTerm arg =>
             simp [AST.Trm.infer] at hInferCombined
             cases hFn : fnTerm.infer fuel with
@@ -180,8 +180,8 @@ theorem proof : InferAdequacy rt := by
                         cases hInferCombined
                         have hFnSafe := ih rt fnTerm (.fn tIn typ) fuel hFn
                         have hArgSafe := ih rt arg argTyp fuel hArg
-                        simp [AST.Trm.eval]
-                        cases hFnEval : fnTerm.eval rt runtimeFuel with
+                        simp [Trm.eval]
+                        cases hFnEval : Trm.eval fnTerm rt runtimeFuel with
                         | outOfFuel => simp
                         | yield fnEvalResult =>
                           rw [hFnEval] at hFnSafe
@@ -221,7 +221,7 @@ theorem proof : InferAdequacy rt := by
                                     have hBodyTyp : bodyTyp = typ := (AST.Typ.fn.inj hFnValueInfer).2
                                     cases hRuntimeTIn
                                     cases hBodyTyp
-                                    cases hArgEval : arg.eval rt runtimeFuel with
+                                    cases hArgEval : Trm.eval arg rt runtimeFuel with
                                     | outOfFuel => simp
                                     | yield argEvalResult =>
                                       rw [hArgEval] at hArgSafe
@@ -236,7 +236,7 @@ theorem proof : InferAdequacy rt := by
                                           ih (savedEnv.snoc (typ := tIn) inputEnv inputValue)
                                             (body .ptop) typ bodyFuel hBodyInfer
                                         cases hBodyEval :
-                                            (body .ptop).eval
+                                            Trm.eval (body .ptop)
                                               (savedEnv.snoc (typ := tIn) inputEnv inputValue) runtimeFuel with
                                         | outOfFuel => simp [hBodyEval]
                                         | yield bodyEvalResult =>
