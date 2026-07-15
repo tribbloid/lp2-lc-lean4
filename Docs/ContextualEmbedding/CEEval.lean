@@ -65,10 +65,12 @@ def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
         some (env.load (ReifyIndex.reify (self := inst) proxy))
     | .CLam body =>
         some (fun input => eval (env.snoc input) (body .PTop))
-    | .CApp fn arg => do
-        let fnValue <- eval env fn fuel
-        let argValue <- eval env arg fuel
-        fnValue argValue fuel
+    | .CApp fn arg =>
+        let fnValue := eval env fn fuel
+        let argValue := eval env arg fuel
+        match fnValue, argValue with
+        | some fnValue, some argValue => fnValue argValue fuel
+        | _, _ => none
 
 namespace Examples
 

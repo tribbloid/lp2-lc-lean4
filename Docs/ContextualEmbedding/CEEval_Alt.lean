@@ -36,10 +36,13 @@ def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
     | .CStar => some .CStar
     | @STLCCtx.CVar _ _ _ inst proxy =>
         some (env.load (ReifyIndex.reify (self := inst) proxy))
-    | .CLam body => some (env.closeLam body)
+    | .CLam body =>
+        some (env.closeLam body) -- TODO: construct the body of Val.CLam from the body of STLCCtx.CLam
     | .CApp fn argument =>
-        match eval env fn fuel, eval env argument fuel with
-        | some (.CLam body), some argument => some (env.save argument body)
+        let fnValue := eval env fn fuel
+        let argValue := eval env argument fuel
+        match fnValue, argValue with
+        | some (.CLam body), some argValue => some (env.save argValue body)
         | _, _ => none
 
 namespace AltExamples
