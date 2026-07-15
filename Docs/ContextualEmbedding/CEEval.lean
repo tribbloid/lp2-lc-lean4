@@ -33,7 +33,8 @@ abbrev ClosedVal (ty : Ty) : Type := Val Ctx.Empty ty
 /-- Closed runtime values interpret object-language functions as HOAS functions. -/
 def ClosedValRT : Ty -> Type
   | Ty.Unit => PUnit
-  | Ty.Fun input output => ClosedValRT input -> ClosedValRT output
+  | Ty.Fun input output =>
+      ClosedValRT input -> Nat -> Option (ClosedValRT output)
 
 /-- A typed store of closed values for the variables in a contextual term. -/
 class RuntimeEnv (ctx : Ctx) where
@@ -53,16 +54,21 @@ namespace RuntimeEnv
 
 end RuntimeEnv
 
-/-- Evaluates contextual syntax to a closed value without names or substitution. -/
-def eval (env : RuntimeEnv ctx) :
-    (term : STLCCtx ctx ty) -> ClosedValRT ty
-  | .CStar => PUnit.unit
-  | @STLCCtx.CVar _ _ _ inst proxy =>
-      env.load (ReifyIndex.reify (self := inst) proxy)
-  | .CLam body =>
-      fun input => eval (env.snoc input) (body .PTop)
-  | .CApp fn arg =>
-      eval env fn (eval env arg)
+/-- Evaluates contextual syntax while spending one fuel at each semantic descent. -/
+def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
+    Nat -> Option (ClosedValRT ty)
+  | 0 => none
+  | fuel + 1 =>
+    match term with
+    | .CStar => some PUnit.unit
+    | @STLCCtx.CVar _ _ _ inst proxy =>
+        some (env.load (ReifyIndex.reify (self := inst) proxy))
+    | .CLam body =>
+        some (fun input => eval (env.snoc input) (body .PTop))
+    | .CApp fn arg => do
+        let fnValue <- eval env fn fuel
+        let argValue <- eval env arg fuel
+        fnValue argValue fuel
 
 namespace Examples
 
@@ -88,16 +94,16 @@ def get1stOnTuple : STLCCtx Ctx.Empty Unit :=
 def get2ndOnTuple : STLCCtx Ctx.Empty Unit :=
   .CApp (.CApp get2nd vFalse) vTrue
 
-example : eval .empty primitiveIdFnOnFalse = PUnit.unit := by
+example : eval .empty primitiveIdFnOnFalse 0 = none := by
   rfl
 
-example : eval .empty primitiveIdFn PUnit.unit = PUnit.unit := by
+example : eval .empty primitiveIdFnOnFalse 2 = some PUnit.unit := by
   rfl
 
-example : eval .empty get1stOnTuple = PUnit.unit := by
+example : eval .empty get1stOnTuple 3 = some PUnit.unit := by
   rfl
 
-example : eval .empty get2ndOnTuple = PUnit.unit := by
+example : eval .empty get2ndOnTuple 3 = some PUnit.unit := by
   rfl
 
 end Examples
