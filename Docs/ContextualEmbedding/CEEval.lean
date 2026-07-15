@@ -46,11 +46,11 @@ namespace RuntimeEnv
   load index := nomatch index
 
 /-- Adds a closed value as the newest runtime binding. -/
-@[reducible] def snoc (env : RuntimeEnv ctx) (value : ClosedValRT ty) :
+@[reducible] def snoc (prev : RuntimeEnv ctx) (value : ClosedValRT ty) :
     RuntimeEnv (ctx :/: ty) where
   load
     | .Top => value
-    | .Pop index => env.load index
+    | .Pop index => prev.load index
 
 end RuntimeEnv
 
