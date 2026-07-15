@@ -16,20 +16,27 @@ inductive Val : Ctx -> Ty -> Type where
 /-- Contextually embedded value syntax with no free variables. -/
 abbrev ClosedVal (ty : Ty) : Type := Val Ctx.Empty ty
 
-/-- Runtime operations for closing functions and saving arguments for HOAS bodies. -/
+/-- Runtime operations for loading and saving contextual values. -/
 class RuntimeEnv (ctx : Ctx) where
-  load {ty : Ty} (index : Index ctx ty) : ClosedVal ty
-  closeLam {input output : Ty}
-      (body : ProxyTop (ctx :/: input) input ->
-        STLCCtx (ctx :/: input) output) :
-    ClosedVal (input :-> output)
-  save {input output : Ty} (argument : ClosedVal input)
-      (body : ProxyTop (Ctx.Empty :/: input) input ->
-        STLCCtx (Ctx.Empty :/: input) output) : ClosedVal output
+  load {ty : Ty} (index : Index ctx ty) : Val ctx ty
+
+namespace RuntimeEnv
+
+@[reducible] def empty : RuntimeEnv Ctx.Empty where
+  load index := nomatch index
+
+/-- Adds a closed value as the newest runtime binding. -/
+@[reducible] def snoc (env : RuntimeEnv ctx) (value : Val ctx ty) :
+    RuntimeEnv (ctx :/: ty) where
+  load
+    | .Top => value
+    | .Pop index => env.load index
+
+end RuntimeEnv
 
 /-- Evaluates contextual syntax while spending one fuel at each semantic descent. -/
 def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
-    Nat -> Option (ClosedVal ty)
+    Nat -> Option (Val ctx ty)
   | 0 => none
   | fuel + 1 =>
     match term with
@@ -37,12 +44,12 @@ def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
     | @STLCCtx.CVar _ _ _ inst proxy =>
         some (env.load (ReifyIndex.reify (self := inst) proxy))
     | .CLam body =>
-        some (env.closeLam body) -- TODO: construct the body of Val.CLam from the body of STLCCtx.CLam
+        some (.CLam body)
     | .CApp fn argument =>
         let fnValue := eval env fn fuel
         let argValue := eval env argument fuel
         match fnValue, argValue with
-        | some (.CLam body), some argValue => some (env.save argValue body)
+        | some (.CLam body), some argValue => some (env.snoc argValue)
         | _, _ => none
 
 namespace AltExamples
@@ -63,23 +70,31 @@ def get1st : STLCCtx Ctx.Empty (Unit :-> Unit :-> Unit) :=
 def get1stOnTuple : STLCCtx Ctx.Empty Unit :=
   .CApp (.CApp get1st vFalse) vTrue
 
-example (env : RuntimeEnv Ctx.Empty) : eval env vFalse 0 = none := by
+section variable (env : RuntimeEnv Ctx.Empty):
+
+example : eval env vFalse 0 = none := by
   rfl
 
-example (env : RuntimeEnv Ctx.Empty) : eval env vFalse 1 = some .CStar := by
+example : eval env vFalse 1 = some .CStar := by
   rfl
 
-example (env : RuntimeEnv Ctx.Empty) : Option (ClosedVal (Unit :-> Unit)) :=
+example : Option (ClosedVal (Unit :-> Unit)) :=
   eval env primitiveIdFn 1
 
-example (env : RuntimeEnv Ctx.Empty) : eval env primitiveIdFnOnFalse 1 = none := by
+example : eval env primitiveIdFn 1 =
+    some (.CLam (fun input => .CVar input)) := by
   rfl
 
-example (env : RuntimeEnv Ctx.Empty) : Option (ClosedVal Unit) :=
-  eval env primitiveIdFnOnFalse 2
+example : eval env primitiveIdFnOnFalse 0 = none := by
+  rfl
 
-example (env : RuntimeEnv Ctx.Empty) : Option (ClosedVal Unit) :=
-  eval env get1stOnTuple 3
+example : eval env primitiveIdFnOnFalse 2 = .some .CStar := by
+  rfl
+
+example : eval env get1stOnTuple 3 = .some .CStar := by
+  rfl
+
+end
 
 end AltExamples
 
