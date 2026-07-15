@@ -26,11 +26,12 @@ namespace RuntimeEnv
   load index := nomatch index
 
 /-- Adds a closed value as the newest runtime binding. -/
-@[reducible] def save (env : RuntimeEnv ctx) (value : Val ctx ty) :
+@[reducible] def save (env : RuntimeEnv ctx)
+  (value : Val (ctx :/: ty) ty) :
     RuntimeEnv (ctx :/: ty) where
   load
-    | .Top => value
-    | .Pop index => env.load index
+  | .Top => value
+  | .Pop index => env.load index
 
 end RuntimeEnv
 
