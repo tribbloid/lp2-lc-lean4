@@ -26,7 +26,7 @@ namespace RuntimeEnv
   load index := nomatch index
 
 /-- Adds a closed value as the newest runtime binding. -/
-@[reducible] def snoc (env : RuntimeEnv ctx) (value : Val ctx ty) :
+@[reducible] def save (env : RuntimeEnv ctx) (value : Val ctx ty) :
     RuntimeEnv (ctx :/: ty) where
   load
     | .Top => value
@@ -49,7 +49,7 @@ def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
         let fnValue := eval env fn fuel
         let argValue := eval env argument fuel
         match fnValue, argValue with
-        | some (.CLam body), some argValue => some (env.snoc argValue)
+        | some (.CLam body), some argValue => some (env.save argValue)
         | _, _ => none
 
 namespace AltExamples
