@@ -8,32 +8,32 @@ namespace STLC
 
 /-- STLC value syntax for unit and function values in a configurable context. -/
 inductive Val : Ctx -> Ty -> Type where
-  | Star {ctx : Ctx} : Val ctx Unit
+  | Star {ctx : Ctx} : Val ctx .Unit
   | Lambda {ctx : Ctx} {input output : Ty}
       (body : STLC (ctx :/: input) output) : Val ctx (input :-> output)
 deriving Repr, DecidableEq
 
 /-- STLC values with no free variables. -/
-abbrev ClosedVal (ty : Ty) : Type := Val Ctx.Empty ty
+abbrev ClosedVal (ty : Ty) : Type := Val .Empty ty
 
 end STLC
 
 namespace STLCCtx
 
 inductive Val : Ctx -> Ty -> Type where
-  | CStar {ctx : Ctx} : Val ctx Unit
+  | CStar {ctx : Ctx} : Val ctx .Unit
   | CLam {ctx : Ctx} {input output : Ty}
       (body : ProxyTop (ctx :/: input) input ->
         STLCCtx (ctx :/: input) output) :
       Val ctx (input :-> output)
 
 /-- Contextually embedded value syntax with no free variables. -/
-abbrev ClosedVal (ty : Ty) : Type := Val Ctx.Empty ty
+abbrev ClosedVal (ty : Ty) : Type := Val .Empty ty
 
 /-- Closed runtime values interpret object-language functions as HOAS functions. -/
 def ClosedValRT : Ty -> Type
-  | Ty.Unit => PUnit
-  | Ty.Fun input output =>
+  | .Unit => PUnit
+  | .Fun input output =>
       ClosedValRT input -> Nat -> Option (ClosedValRT output)
 
 /-- A typed store of closed values for the variables in a contextual term. -/
@@ -42,7 +42,7 @@ class RuntimeEnv (ctx : Ctx) where
 
 namespace RuntimeEnv
 
-@[reducible] def empty : RuntimeEnv Ctx.Empty where
+@[reducible] def empty : RuntimeEnv .Empty where
   load index := nomatch index
 
 /-- Adds a closed value as the newest runtime binding. -/
@@ -57,55 +57,55 @@ end RuntimeEnv
 /-- Evaluates contextual syntax while spending one fuel at each semantic descent. -/
 def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
     Nat -> Option (ClosedValRT ty)
-  | 0 => none
+  | 0 => .none
   | fuel + 1 =>
     match term with
-    | .CStar => some PUnit.unit
+    | .CStar => .some .unit
     | @STLCCtx.CVar _ _ _ inst proxy =>
-        some (env.load (ReifyIndex.reify (self := inst) proxy))
+        .some (env.load (ReifyIndex.reify (self := inst) proxy))
     | .CLam body =>
-        some (fun input => eval (env.snoc input) (body .PTop))
+        .some (fun input => eval (env.snoc input) (body .PTop))
     | .CApp fn arg =>
         let fnValue := eval env fn fuel
         let argValue := eval env arg fuel
         match fnValue, argValue with
-        | some fnValue, some argValue => fnValue argValue fuel
-        | _, _ => none
+        | .some fnValue, .some argValue => fnValue argValue fuel
+        | _, _ => .none
 
 namespace Examples
 
-def vFalse : STLCCtx Ctx.Empty Unit := .CStar
+def vFalse : STLCCtx .Empty .Unit := .CStar
 
-def vTrue : STLCCtx Ctx.Empty Unit := .CStar
+def vTrue : STLCCtx .Empty .Unit := .CStar
 
-def primitiveIdFn : STLCCtx Ctx.Empty (Unit :-> Unit) :=
+def primitiveIdFn : STLCCtx .Empty (.Unit :-> .Unit) :=
   .CLam (fun input => .CVar input)
 
-def primitiveIdFnOnFalse : STLCCtx Ctx.Empty Unit :=
+def primitiveIdFnOnFalse : STLCCtx .Empty .Unit :=
   .CApp primitiveIdFn vFalse
 
-def get1st : STLCCtx Ctx.Empty (Unit :-> Unit :-> Unit) :=
+def get1st : STLCCtx .Empty (.Unit :-> .Unit :-> .Unit) :=
   .CLam (fun first => .CLam (fun _second => .CVar first))
 
-def get2nd : STLCCtx Ctx.Empty (Unit :-> Unit :-> Unit) :=
+def get2nd : STLCCtx .Empty (.Unit :-> .Unit :-> .Unit) :=
   .CLam (fun _first => .CLam (fun second => .CVar second))
 
-def get1stOnTuple : STLCCtx Ctx.Empty Unit :=
+def get1stOnTuple : STLCCtx .Empty .Unit :=
   .CApp (.CApp get1st vFalse) vTrue
 
-def get2ndOnTuple : STLCCtx Ctx.Empty Unit :=
+def get2ndOnTuple : STLCCtx .Empty .Unit :=
   .CApp (.CApp get2nd vFalse) vTrue
 
-example : eval .empty primitiveIdFnOnFalse 0 = none := by
+example : eval .empty primitiveIdFnOnFalse 0 = .none := by
   rfl
 
-example : eval .empty primitiveIdFnOnFalse 2 = some PUnit.unit := by
+example : eval .empty primitiveIdFnOnFalse 2 = .some .unit := by
   rfl
 
-example : eval .empty get1stOnTuple 3 = some PUnit.unit := by
+example : eval .empty get1stOnTuple 3 = .some .unit := by
   rfl
 
-example : eval .empty get2ndOnTuple 3 = some PUnit.unit := by
+example : eval .empty get2ndOnTuple 3 = .some .unit := by
   rfl
 
 end Examples

@@ -7,23 +7,22 @@ open Ty
 namespace STLCCtx
 
 inductive Val : Ctx -> Ty -> Type where
-  | CStar {ctx : Ctx} : Val ctx Unit
+  | CStar {ctx : Ctx} : Val ctx .Unit
   | CLam {ctx : Ctx} {input output : Ty}
       (body : ProxyTop (ctx :/: input) input ->
         STLCCtx (ctx :/: input) output) :
       Val ctx (input :-> output)
 
 /-- Contextually embedded value syntax with no free variables. -/
-abbrev ClosedVal (ty : Ty) : Type := Val Ctx.Empty ty
+abbrev ClosedVal (ty : Ty) : Type := Val .Empty ty
 
 /-- A runtime stack retaining each previous lexical environment. -/
 inductive RuntimeEnv : Ctx -> Type where
-  | empty : RuntimeEnv Ctx.Empty
-  | save {ctx valueCtx : Ctx} {ty : Ty}
+  | empty : RuntimeEnv .Empty
+  | saved {ctx valueCtx : Ctx} {ty : Ty}
       (previous : RuntimeEnv ctx)
       (valueEnv : RuntimeEnv valueCtx)
-      (value : Val valueCtx ty) :
-      RuntimeEnv (ctx :/: ty)
+      (value : Val valueCtx ty) : RuntimeEnv (ctx :/: ty)
 
 /-- A contextual value suspended with the environment in which it was produced. -/
 structure Closure (ty : Ty) : Type where
@@ -35,27 +34,80 @@ namespace RuntimeEnv
 
 /-- Loads the suspended value selected by a contextual index. -/
 def load : (env : RuntimeEnv ctx) -> Index ctx ty -> Closure ty
-  | .save _ valueEnv value, .Top => ⟨valueEnv, value⟩
-  | .save previous _ _, .Pop index => previous.load index
+  | .saved _ valueEnv value, .Top => ⟨valueEnv, value⟩
+  | .saved previous _ _, .Pop index => previous.load index
 
 end RuntimeEnv
 
 /-- Evaluates contextual syntax while spending one fuel at each semantic descent. -/
 def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
     Nat -> Option (Closure ty)
-  | 0 => none
+  | 0 => .none
   | fuel + 1 =>
     match term with
-    | .CStar => some (.mk env .CStar)
+    | .CStar => .some (.mk env .CStar)
     | @STLCCtx.CVar _ _ _ inst proxy =>
-        some (env.load (ReifyIndex.reify (self := inst) proxy))
+        .some (env.load (ReifyIndex.reify (self := inst) proxy))
     | .CLam body =>
-        some (.mk env (.CLam body))
-    | .CApp fn argument =>
-        match eval env fn fuel, eval env argument fuel with
-        | some (.mk savedEnv (.CLam body)), some (.mk argEnv argValue) =>
-            eval (.save savedEnv argEnv argValue) (body .PTop) fuel
-        | _, _ => none
+        .some (.mk env (.CLam body))
+    | .CApp fn arg =>
+        let fnC := eval env fn fuel
+        let argC := eval env arg fuel
+        match fnC, argC with
+        | .some (.mk fnEnv (.CLam body)), .some (.mk argEnv argValue) =>
+            eval (.saved fnEnv argEnv argValue) (body .PTop) fuel
+        | _, _ => .none
+
+namespace Spike
+
+
+
+end Spike
+
+-- namespace Spike
+
+-- /-- A runtime stack retaining each previous lexical environment. -/
+-- inductive RuntimeEnv : Ctx -> Type where
+--   | empty : RuntimeEnv Ctx.Empty
+--   | saved {ctx valueCtx : Ctx} {ty : Ty}
+--       (previous : RuntimeEnv ctx)
+--       (value : Val valueCtx ty) :
+--       RuntimeEnv (ctx :/: ty)
+
+-- /-- A contextual value suspended with the environment in which it was produced. -/
+-- structure Closure (ty : Ty) : Type where
+--   {ctx : Ctx}
+--   value : Val ctx ty
+
+-- namespace RuntimeEnv
+
+-- /-- Loads the suspended value selected by a contextual index. -/
+-- def load : (env : RuntimeEnv ctx) -> Index ctx ty -> Closure ty
+--   | saved _ value, .Top => ⟨value⟩
+--   | saved previous _, .Pop index => previous.load index
+
+-- end RuntimeEnv
+
+-- /-- Evaluates contextual syntax while spending one fuel at each semantic descent. -/
+-- def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
+--     Nat -> Option (Closure ty)
+--   | 0 => none
+--   | fuel + 1 =>
+--     match term with
+--     | .CStar => some (.mk .CStar)
+--     | @STLCCtx.CVar _ _ _ inst proxy =>
+--         some (env.load (ReifyIndex.reify (self := inst) proxy))
+--     | .CLam body =>
+--         some (.mk (.CLam body))
+--     | .CApp fn arg =>
+--         let fnC := eval env fn fuel
+--         let argC := eval env arg fuel
+--         match fnC, argC with
+--         | some (.mk (.CLam body)), some (.mk argValue) =>
+--             eval (.saved env argValue) (body .PTop) fuel -- justified using 2 different context
+--         | _, _ => none
+
+-- end Spike
 
 -- namespace SuspendedVal
 
@@ -78,44 +130,44 @@ def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
 
 namespace AltExamples
 
-def vFalse : STLCCtx Ctx.Empty Unit := .CStar
+def vFalse : STLCCtx .Empty .Unit := .CStar
 
-def vTrue : STLCCtx Ctx.Empty Unit := .CStar
+def vTrue : STLCCtx .Empty .Unit := .CStar
 
-def primitiveIdFn : STLCCtx Ctx.Empty (Unit :-> Unit) :=
+def primitiveIdFn : STLCCtx .Empty (.Unit :-> .Unit) :=
   .CLam (fun input => .CVar input)
 
-def primitiveIdFnOnFalse : STLCCtx Ctx.Empty Unit :=
+def primitiveIdFnOnFalse : STLCCtx .Empty .Unit :=
   .CApp primitiveIdFn vFalse
 
-def get1st : STLCCtx Ctx.Empty (Unit :-> Unit :-> Unit) :=
+def get1st : STLCCtx .Empty (.Unit :-> .Unit :-> .Unit) :=
   .CLam (fun first => .CLam (fun _second => .CVar first))
 
-def get1stOnTuple : STLCCtx Ctx.Empty Unit :=
+def get1stOnTuple : STLCCtx .Empty .Unit :=
   .CApp (.CApp get1st vFalse) vTrue
 
-section variable (env : RuntimeEnv Ctx.Empty)
+section variable (env : RuntimeEnv .Empty)
 
-example : eval env vFalse 0 = none := by
+example : eval env vFalse 0 = .none := by
   rfl
 
-example : eval env vFalse 1 = some (.mk env .CStar) := by
+example : eval env vFalse 1 = .some (.mk env .CStar) := by
   rfl
 
-example : Option (Closure (Unit :-> Unit)) :=
+example : Option (Closure (.Unit :-> .Unit)) :=
   eval env primitiveIdFn 1
 
 example : eval env primitiveIdFn 1 =
-    some (.mk env (.CLam (fun input => .CVar input))) := by
+    .some (.mk env (.CLam (fun input => .CVar input))) := by
   rfl
 
-example : eval env primitiveIdFnOnFalse 0 = none := by
+example : eval env primitiveIdFnOnFalse 0 = .none := by
   rfl
 
-example : eval env primitiveIdFnOnFalse 2 = some (.mk env .CStar) := by
+example : eval env primitiveIdFnOnFalse 2 = .some (.mk env .CStar) := by
   rfl
 
-example : eval env get1stOnTuple 3 = some (.mk env .CStar) := by
+example : eval env get1stOnTuple 3 = .some (.mk env .CStar) := by
   rfl
 
 -- example (value : SuspendedVal ty) :
