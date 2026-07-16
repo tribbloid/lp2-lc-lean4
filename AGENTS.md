@@ -77,7 +77,12 @@ Every task can be classified into one of the following Categories:
 ##### Definitions
 
 - Use camelCase for definitions and functions that yield values.
+- Use camelCase for inductive cases/constructors
 - Use PascalCase for types, propositions, properties, type constructors and predicates that yield `Type`/`Type u`/`Prop`/`Sort u`, first letter capitalized.
+
+##### References
+
+- Inductive constructor at call-site should omit type name if possible, in this case, the constructor should always be preceded by `.`
 
 ##### Glossary/Abbreviations
 
