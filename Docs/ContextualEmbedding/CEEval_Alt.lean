@@ -33,9 +33,15 @@ structure Closure (ty : Ty) : Type where
 namespace RuntimeEnv
 
 /-- Loads the suspended value selected by a contextual index. -/
-def load : (env : RuntimeEnv ctx) -> Index ctx ty -> Closure ty
+def lookup : (env : RuntimeEnv ctx) -> Index ctx ty -> Closure ty
   | .saved _ valueEnv value, .Top => ⟨valueEnv, value⟩
-  | .saved previous _ _, .Pop index => previous.load index
+  | .saved previous _ _, .Pop index => previous.lookup index
+
+/-- Loads the suspended value denoted by a contextual variable proxy. -/
+def load (env : RuntimeEnv ctx) {source : Ctx}
+    [inst : ReifyIndex source ctx]
+    (proxy : ProxyTop source ty) : Closure ty :=
+  env.lookup (ReifyIndex.reify (self := inst) proxy)
 
 end RuntimeEnv
 
@@ -47,7 +53,7 @@ def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
     match term with
     | .CStar => .some (.mk env .CStar)
     | @STLCCtx.CVar _ _ _ inst proxy =>
-        .some (env.load (ReifyIndex.reify (self := inst) proxy))
+        .some (env.load (inst := inst) proxy)
     | .CLam body =>
         .some (.mk env (.CLam body))
     | .CApp fn arg =>

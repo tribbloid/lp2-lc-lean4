@@ -38,19 +38,25 @@ def ClosedValRT : Ty -> Type
 
 /-- A typed store of closed values for the variables in a contextual term. -/
 class RuntimeEnv (ctx : Ctx) where
-  load {ty : Ty} (index : Index ctx ty) : ClosedValRT ty
+  lookup {ty : Ty} (index : Index ctx ty) : ClosedValRT ty
 
 namespace RuntimeEnv
 
 @[reducible] def empty : RuntimeEnv .Empty where
-  load index := nomatch index
+  lookup index := nomatch index
 
 /-- Adds a closed value as the newest runtime binding. -/
 @[reducible] def snoc (prev : RuntimeEnv ctx) (value : ClosedValRT ty) :
     RuntimeEnv (ctx :/: ty) where
-  load
+  lookup
     | .Top => value
-    | .Pop index => prev.load index
+    | .Pop index => prev.lookup index
+
+/-- Loads the value denoted by a contextual variable proxy. -/
+def load (env : RuntimeEnv ctx) {source : Ctx}
+    [inst : ReifyIndex source ctx]
+    (proxy : ProxyTop source ty) : ClosedValRT ty :=
+  env.lookup (ReifyIndex.reify (self := inst) proxy)
 
 end RuntimeEnv
 
@@ -62,7 +68,7 @@ def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
     match term with
     | .CStar => .some .unit
     | @STLCCtx.CVar _ _ _ inst proxy =>
-        .some (env.load (ReifyIndex.reify (self := inst) proxy))
+        .some (env.load (inst := inst) proxy)
     | .CLam body =>
         .some (fun input => eval (env.snoc input) (body .PTop))
     | .CApp fn arg =>
