@@ -57,6 +57,12 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 - Do not export definition, only open at callsite.
 - Do not write unnecessary argument at callsite.
 - Do not create Lean file with `.` in file name.
+- Do not use the following Lean keywords:
+  - `forall` (use `∀`)
+  - `exists` (use `∃`)
+  - `fun` (use `λ`)
+  - `show` (use simple type annotation)
+  - `suffices` (use `have`)
 
 #### Task-specific Guardrails
 
