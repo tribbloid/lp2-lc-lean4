@@ -305,6 +305,6 @@ end
 
 /- Map a term-substitution on types across an environment -/
 def map_subst_t (Z : Var) (u : Trm) (E : Env) : Env :=
-  Env.mapSecond (fun T => subst_t Z u T) E
+  Env.mapSecond (λ T => subst_t Z u T) E
 
 end Lp2lc.Active.Dsub

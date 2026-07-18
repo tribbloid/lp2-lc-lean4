@@ -30,12 +30,12 @@ instance typLE : LE Typ := ⟨Eq⟩
 instance typDecidableLE : DecidableLE Typ
   | .primitive, .primitive => isTrue rfl
   | .primitive, .fn _ _
-  | .fn _ _, .primitive => isFalse (fun equality => nomatch equality)
+  | .fn _ _, .primitive => isFalse (λ equality => nomatch equality)
   | .fn leftIn leftOut, .fn rightIn rightOut =>
     match typDecidableLE leftIn rightIn, typDecidableLE leftOut rightOut with
     | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
-    | isFalse notEqual, _ => isFalse (fun equality => notEqual (Typ.fn.inj equality).1)
-    | _, isFalse notEqual => isFalse (fun equality => notEqual (Typ.fn.inj equality).2)
+    | isFalse notEqual, _ => isFalse (λ equality => notEqual (Typ.fn.inj equality).1)
+    | _, isFalse notEqual => isFalse (λ equality => notEqual (Typ.fn.inj equality).2)
 
 /-- CE typing contexts used by variable proxies. -/
 inductive Ctx : Type where
@@ -66,7 +66,7 @@ instance instReifyIndexRefl : ReifyIndex ctx ctx where
 
 instance instReifyIndexSnoc [instRec : ReifyIndex source ctx] :
     ReifyIndex source (ctx :/: typ) where
-  reify := fun proxy => .pop (ReifyIndex.reify (self := instRec) proxy)
+  reify := λ proxy => .pop (ReifyIndex.reify (self := instRec) proxy)
 
 mutual
 

@@ -30,7 +30,7 @@ def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remo
     | .val (.primitive _) => .yield (some .primitive)
     | .val (.fn body tIn) =>
       let index := env.typeRefs.save tIn
-      ((body index).infer fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
+      ((body index).infer fuel).map (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fn arg =>
       match fn.infer fuel, arg.infer fuel with
       | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
@@ -85,7 +85,7 @@ theorem valueInferMonotone [env : @CompilerEnv I]
   termInferMonotone (AST.Trm.val value)
 
 def CanInhabit (trm : Trm I) (typ : AST.Typ I) [@CompilerEnv I] :=
-  trm.infer.isDecidable (fun t2 => t2 <= typ)
+  trm.infer.isDecidable (λ t2 => t2 <= typ)
 
 end AST.Trm
 
@@ -95,7 +95,7 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
         (AST.Trm.val (valueRefs.load id).1).CanInhabit (typeRefs.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
   bindInfer : -- fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
     ∀ (body : I.Index -> AST.Trm I) (v : AST.Val I) (fuel : Nat),
-      (AST.Trm.val v).infer.isDecidable (fun tIn =>
+      (AST.Trm.val v).infer.isDecidable (λ tIn =>
         (body (typeRefs.save tIn)).infer fuel =
           (body (valueRefs.save { val := v, property := canEvalAny v })).infer fuel
       )
@@ -111,7 +111,7 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
 variable [env : @ProvingEnv I]
 
 def Safety (trm : AST.Trm I) (typ : AST.Typ I) : Prop :=
-  trm.eval.isSemiDecidable (fun v => (AST.Trm.val v).CanInhabit typ)
+  trm.eval.isSemiDecidable (λ v => (AST.Trm.val v).CanInhabit typ)
 
 def InferAdequacy : Prop :=
   ∀ (trm : AST.Trm I) (typ : AST.Typ I),
@@ -141,7 +141,8 @@ theorem proof : @InferAdequacy I env := by
           | val value =>
             simp [AST.Trm.eval]
             exact Exists.intro (fuel + 1) (by
-              simpa [hInferCombined] using (show typ <= typ from rfl))
+              have hReflexive : typ <= typ := rfl
+              simpa [hInferCombined] using hReflexive)
           | ref id =>
             simp [AST.Trm.eval]
             rcases ProvingEnv.refSafety id with ⟨refFuel, hRef⟩
@@ -199,7 +200,7 @@ theorem proof : @InferAdequacy I env := by
                                  cases hFnValueInfer
                                | fn body runtimeTIn =>
                                  have hInferUnfold : (AST.Trm.val (AST.Val.fn body runtimeTIn)).infer (fnFuel.succ) =
-                                   ((body (env.typeRefs.save runtimeTIn)).infer fnFuel).map (fun out => out.map (fun tOut => .fn runtimeTIn tOut)) := rfl
+                                   ((body (env.typeRefs.save runtimeTIn)).infer fnFuel).map (λ out => out.map (λ tOut => .fn runtimeTIn tOut)) := rfl
                                  rw [hInferUnfold] at hFnValueInfer
                                  cases hBodyCompile : (body (env.typeRefs.save runtimeTIn)).infer fnFuel with
                                   | outOfFuel =>

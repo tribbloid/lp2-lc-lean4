@@ -67,7 +67,7 @@ abbrev Condition := (value : AST.Val I) -> Prop -- AKA semantic type
 end
 /-- Embeds values as value terms for dot-notation-friendly syntax construction. -/
 instance valIsTrm : Coe (Val I) (Trm I) where
-  coe := fun v => Trm.val v
+  coe := λ v => Trm.val v
 
 namespace Typ
 
@@ -95,8 +95,8 @@ def get (view : @TypeView I) : Option (Typ I) :=
 def eraseRecursively (view : @TypeView I) (self : Trm I := view.self) : Trm I :=
   match self with
   | typeHinted self _ => self.typeHint.eraseRecursively self
-  | .val (.primitiveFn body) => .val (.primitiveFn fun arg => (body arg).typeHint.eraseRecursively (body arg))
-  | .val (.fn body) => .val (.fn fun arg => (body arg).typeHint.eraseRecursively (body arg))
+  | .val (.primitiveFn body) => .val (.primitiveFn λ arg => (body arg).typeHint.eraseRecursively (body arg))
+  | .val (.fn body) => .val (.fn λ arg => (body arg).typeHint.eraseRecursively (body arg))
   | .apply fn arg => .apply (fn.typeHint.eraseRecursively fn) (arg.typeHint.eraseRecursively arg)
   | _ => self
 
@@ -191,21 +191,21 @@ def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
         let fBound := RuntimeEnv.forVals
         let permission := RuntimeEnv.canEvalAny arg
         (body repr).IsSafeBy
-          (fun value => value.CanBind (tOut (fBound.save ⟨arg, permission⟩)))
+          (λ value => value.CanBind (tOut (fBound.save ⟨arg, permission⟩)))
   | .depFn tIn tOut, .fn body =>
     ∀ arg,
       arg.CanBind tIn →
         let fBound := RuntimeEnv.forVals
         let permission := RuntimeEnv.canEvalAny arg
         (body (fBound.save ⟨arg, permission⟩)).IsSafeBy
-          (fun value => value.CanBind (tOut (fBound.save ⟨arg, permission⟩)))
+          (λ value => value.CanBind (tOut (fBound.save ⟨arg, permission⟩)))
 
 end AST.Val
 
 namespace AST.Trm
 
 def IsSafeUnder (self : AST.Trm I) (binding : Typ I) : Prop :=
-  self.IsSafeBy (fun trm => trm.CanBind binding)
+  self.IsSafeBy (λ trm => trm.CanBind binding)
 
 end AST.Trm
 
@@ -262,9 +262,9 @@ def compile (trm : Trm I) (desired: Condition I)
 
 
 def compileToTrm (trm : Trm I)
-  (condition: Condition I := fun _ => true)-- by default, accept any condition
-: RecOption (Trm I) := fun (fuel : Nat) =>
-  (trm.compile condition fuel).map (fun out => out.map (fun v => v.trm))
+  (condition: Condition I := λ _ => true)-- by default, accept any condition
+: RecOption (Trm I) := λ (fuel : Nat) =>
+  (trm.compile condition fuel).map (λ out => out.map (λ v => v.trm))
 
 end AST.Trm
 

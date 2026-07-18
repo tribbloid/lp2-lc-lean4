@@ -27,7 +27,7 @@ def fromFunction (f : α → β) : FunctionWrapper α β :=
 instance : Coe (α → β) (FunctionWrapper α β) where
   coe := fromFunction
 
-instance : CoeFun (FunctionWrapper α β) (fun _ => α → β) where
+instance : CoeFun (FunctionWrapper α β) (λ _ => α → β) where
   coe self := self.executable
 
 instance : Repr (FunctionWrapper α β) where
@@ -96,7 +96,7 @@ private def sourceFromDecl? (fileMap : FileMap) (declName : Name) : TermElabM (O
 
 syntax (name := sourceFunction) "source_function% " term : term
 
-@[term_elab sourceFunction] def elabSourceFunction : TermElab := fun stx expectedType? => do
+@[term_elab sourceFunction] def elabSourceFunction : TermElab := λ stx expectedType? => do
   let term : Term := ⟨stx[1]⟩
   let executable ← elabTerm term (← expectedFunctionType? expectedType?)
   synthesizeSyntheticMVarsNoPostponing
@@ -114,12 +114,12 @@ syntax (name := sourceFunction) "source_function% " term : term
 
 private def sourceFunctionExample (x : Nat) := x + 1
 
-example : (((fun x : Nat => x + 1) : FunctionWrapper Nat Nat) 2) = 3 := rfl
+example : (((λ x : Nat => x + 1) : FunctionWrapper Nat Nat) 2) = 3 := rfl
 
-example : ((source_function% (fun x => x + 1) : FunctionWrapper Nat Nat) 2) = 3 := rfl
+example : ((source_function% (λ x => x + 1) : FunctionWrapper Nat Nat) 2) = 3 := rfl
 
 example :
-    (source_function% (fun x => x + 1) : FunctionWrapper Nat Nat).source.text.isSome =
+    (source_function% (λ x => x + 1) : FunctionWrapper Nat Nat).source.text.isSome =
       true := rfl
 
 example :

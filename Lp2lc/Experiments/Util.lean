@@ -12,11 +12,11 @@ abbrev Lookup := Key → Option V
 
 namespace Lookup
 
-def empty : Lookup (Key := Key) (V := V) := fun _ => none
+def empty : Lookup (Key := Key) (V := V) := λ _ => none
 
 def set [DecidableEq Key] (σ : Lookup (Key := Key) (V := V)) (x : Key) (v : V) :
     Lookup (Key := Key) (V := V) :=
-  fun y => if y = x then some v else σ y
+  λ y => if y = x then some v else σ y
 
 @[simp] theorem set_same [DecidableEq Key] (σ : Lookup (Key := Key) (V := V)) (x : Key)
     (v : V) :

@@ -351,7 +351,7 @@ def subst_tb (Z : Var) (P : Typ) (b : Bind) : Bind :=
 -- Note: This mirrors Fsub map_subst_tb with pair mapping
 -- line 383
 def map_subst_tb (Z : Var) (P : Typ) (E : Env) : Env :=
-  E.map (fun p => match p with
+  E.map (λ p => match p with
     | (x, Bind.bind_typ T)     => (x, Bind.bind_typ (subst_tt Z P T))
     | (x, Bind.bind_sub T0 T1) => (x, Bind.bind_sub (subst_tt Z P T0) (subst_tt Z P T1)))
 

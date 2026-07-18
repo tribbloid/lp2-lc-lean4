@@ -174,7 +174,7 @@ end
 
 /-- Map a term-substitution on types across an environment. -/
 def mapSubst (Z : Var) (u : Trm) (E : Env) : Env :=
-  Env.mapSecond (fun T => substT Z u T) E
+  Env.mapSecond (λ T => substT Z u T) E
 
 /- Additional inductives that appear in Coq within the proofs ---------------- -/
 

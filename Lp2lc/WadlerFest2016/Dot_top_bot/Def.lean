@@ -270,7 +270,7 @@ end
 
 -- [Coq: Dot_top_bot.v line 189]
 def fv_ctx_types (G : Ctx) : Vars :=
-  G.foldl (init := (∅ : Vars)) (fun acc (_, T) => acc ∪ fv_typ T)
+  G.foldl (init := (∅ : Vars)) (λ acc (_, T) => acc ∪ fv_typ T)
 
 -- ######################################################################
 -- Substitution
@@ -329,7 +329,7 @@ end
 
 -- [Coq: Dot_top_bot.v line 709]
 def subst_ctx (z : Var) (u : Var) (G : Ctx) : Ctx :=
-  G.map (fun p => (p.1, subst_typ z u p.2))
+  G.map (λ p => (p.1, subst_typ z u p.2))
 
 -- [Coq: Dot_top_bot.v line 773]
 def subst_fvar (x : Var) (y : Var) (z : Var) : Var := if z = x then y else z

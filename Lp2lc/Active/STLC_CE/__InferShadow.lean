@@ -21,7 +21,7 @@ def infer {ctx : AST.Ctx} (self : AST.Trm ctx) : RecOption AST.Typ
     match self with
     | .val (.primitive _) => .yield (some .primitive)
     | .val (.fn tIn body) =>
-      (infer (body .ptop) fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
+      (infer (body .ptop) fuel).map (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fn arg =>
       match infer fn fuel, infer arg fuel with
       | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
@@ -85,7 +85,7 @@ namespace AST.Trm
 
 /-- Value validity plus inference to a requested type bound. -/
 def CanInhabit (self : AST.Trm ctx) (typ : AST.Typ) : Prop :=
-  self.infer.isDecidable (fun inferred => inferred <= typ)
+  self.infer.isDecidable (λ inferred => inferred <= typ)
 
 end AST.Trm
 
@@ -98,13 +98,13 @@ def infer {ctx : AST.Ctx} (self : AST.Val ctx) : RecOption AST.Typ :=
 
 /-- Value validity plus inference to a requested type bound. -/
 def CanInhabit {ctx : AST.Ctx} (self : AST.Val ctx) (typ : AST.Typ) : Prop :=
-  self.infer.isDecidable (fun inferred => inferred <= typ)
+  self.infer.isDecidable (λ inferred => inferred <= typ)
 
 end AST.Val
 
 def Safety
     (trm : AST.Trm ctx) (typ : AST.Typ) : Prop :=
-  (Trm.eval trm rt).isSemiDecidable (fun value => value.2.2.CanInhabit typ)
+  (Trm.eval trm rt).isSemiDecidable (λ value => value.2.2.CanInhabit typ)
 
 end STLC_CE
 

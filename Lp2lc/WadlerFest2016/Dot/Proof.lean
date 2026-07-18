@@ -16,7 +16,7 @@ namespace Lp2lc.Active.DOT
   classical
   have hx_mem : x ∈ Env.dom (E ++ [(x, a)]) := by
     -- dom (E ++ [(x,a)]) == toFinset (map fst E ++ [x])
-    change x ∈ ((List.map (fun p : Var × A => p.fst) (E ++ [(x, a)])).toFinset)
+    change x ∈ ((List.map (λ p : Var × A => p.fst) (E ++ [(x, a)])).toFinset)
     simp [List.map_append]
   exact hx hx_mem
 

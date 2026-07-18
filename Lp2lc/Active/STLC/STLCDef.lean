@@ -65,12 +65,12 @@ instance typLE : LE (AST.Typ I) := ⟨Eq⟩
 instance typDecidableLE : DecidableLE (AST.Typ I)
   | .primitive, .primitive => isTrue rfl
   | .primitive, .fn _ _
-  | .fn _ _, .primitive => isFalse (fun equality => nomatch equality)
+  | .fn _ _, .primitive => isFalse (λ equality => nomatch equality)
   | .fn leftIn leftOut, .fn rightIn rightOut =>
     match typDecidableLE leftIn rightIn, typDecidableLE leftOut rightOut with
     | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
-    | isFalse notEqual, _ => isFalse (fun equality => notEqual (AST.Typ.fn.inj equality).1)
-    | _, isFalse notEqual => isFalse (fun equality => notEqual (AST.Typ.fn.inj equality).2)
+    | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).1)
+    | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).2)
 
 namespace AST.Val
 
@@ -114,8 +114,8 @@ end
 
 section variable (self : AST.Trm I)
 
-def recCanSatisfy (condition : Condition I) : ∀ [@RuntimeEnv I], Rec Prop := fun fuel =>
-  (self.eval fuel).map (fun
+def recCanSatisfy (condition : Condition I) : ∀ [@RuntimeEnv I], Rec Prop := λ fuel =>
+  (self.eval fuel).map (λ
     | some v => condition v
     | none => False)
 
@@ -130,7 +130,7 @@ def CanSatisfy_semi (condition : Condition I) : Prop :=
 abbrev WeakestPre := @CanSatisfy_semi I -- weakest precondition in Iris framework
 
 def IsSafe : Prop :=
-  self.CanSatisfy_semi (fun _ => true)
+  self.CanSatisfy_semi (λ _ => true)
 
 end
 end AST.Trm
@@ -203,7 +203,7 @@ end
 end AST.Trm
 
 /-- Interprets source types as semantic conditions over values. -/
-def AST.Typ.ToCondition (typ: Typ I): Condition I := fun value =>
+def AST.Typ.ToCondition (typ: Typ I): Condition I := λ value =>
   let trm := Trm.val value
   (trm.CanInhabit_total typ)
 

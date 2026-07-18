@@ -241,7 +241,7 @@ namespace Subst
 
   -- [Coq: Dot.v line 697]
   def subst_ctx (z u : Var) (G : Ctx) : Ctx :=
-    G.map (fun p => (p.1, subst_typ z u p.2))
+    G.map (λ p => (p.1, subst_typ z u p.2))
 end Subst
 
 -- Free variables (Vars is Finset Var)
@@ -298,7 +298,7 @@ end
 
 -- [Coq: Dot.v line 183]
 def fv_ctx_types (G : Ctx) : Vars :=
-  G.foldl (init := (∅ : Vars)) (fun acc (_, T) => acc ∪ fv_typ T)
+  G.foldl (init := (∅ : Vars)) (λ acc (_, T) => acc ∪ fv_typ T)
 
 -- Relations (inductives in Prop)
 

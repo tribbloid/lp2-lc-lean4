@@ -21,7 +21,7 @@ def infer {ctx : AST.Ctx} (self : AST.Trm ctx) : RecOption AST.Typ
     match self with
     | .val (.primitive _) => .yield (some .primitive)
     | .val (.fn tIn body) =>
-      (infer (body .ptop) fuel).map (fun out => out.map (fun tOut => .fn tIn tOut))
+      (infer (body .ptop) fuel).map (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fn arg =>
       match infer fn fuel, infer arg fuel with
       | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
@@ -89,7 +89,7 @@ def infer {ctx : AST.Ctx} (self : AST.Val ctx) : RecOption AST.Typ :=
 
 /-- Value validity plus inference to a requested type bound. -/
 def CanInhabit {ctx : AST.Ctx} (self : AST.Val ctx) (typ : AST.Typ) : Prop :=
-  self.infer.isDecidable (fun inferred => inferred <= typ)
+  self.infer.isDecidable (λ inferred => inferred <= typ)
 
 end AST.Val
 
@@ -107,13 +107,13 @@ namespace AST.Trm
 
 /-- Value validity plus inference to a requested type bound. -/
 def CanInhabit (self : AST.Trm ctx) (typ : AST.Typ) : Prop :=
-  self.infer.isDecidable (fun inferred => inferred <= typ)
+  self.infer.isDecidable (λ inferred => inferred <= typ)
 
 end AST.Trm
 
 def Safety
     (trm : AST.Trm ctx) (typ : AST.Typ) : Prop :=
-  (Trm.eval trm rt).isSemiDecidable (fun value => value.2.2.CanInhabit typ)
+  (Trm.eval trm rt).isSemiDecidable (λ value => value.2.2.CanInhabit typ)
 
 def InferAdequacy : Prop :=
   ∀ (trm : AST.Trm ctx) (typ : AST.Typ),
@@ -145,7 +145,8 @@ theorem proof : InferAdequacy rt := by
           | val value =>
             simp [Trm.eval]
             exact ⟨fuel + 1, by
-              simpa [AST.Val.infer, hInferCombined] using (show typ ≤ typ from rfl)⟩
+              have hReflexive : typ ≤ typ := rfl
+              simpa [AST.Val.infer, hInferCombined] using hReflexive⟩
           | ref top =>
             cases top
             simp [AST.Trm.infer] at hInferCombined

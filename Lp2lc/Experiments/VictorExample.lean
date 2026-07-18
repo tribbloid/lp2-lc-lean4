@@ -37,9 +37,9 @@ toHOAS d (LLam f) ctx =
 -/
 def toHOAS (fuel : Nat) (d : Nat) (l : LLam) (Ctx : Type) : Type × Function Ctx :=
   match fuel with
-  | 0 => (Ctx, fun _ _ => none)
+  | 0 => (Ctx, λ _ _ => none)
   | fuel + 1 =>
       match l with
       | .mk f =>
           let (ctx, body) := toHOAS fuel (d + 1) (f { d := d }) Ctx
-          (ctx, fun _ v => some (HLam.mk (fun c => body c v)))
+          (ctx, λ _ v => some (HLam.mk (λ c => body c v)))

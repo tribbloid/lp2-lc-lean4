@@ -326,23 +326,23 @@ theorem subst_te_open_te : ∀ e T X U, DefType U →
   subst_te X U (open_te e T) =
   open_te (subst_te X U e) (subst_tt X U T) := by
   intro e T X U hU
-  suffices h : ∀ k, subst_te X U (open_te_rec k T e) =
-      open_te_rec k (subst_tt X U T) (subst_te X U e) by
-    simpa [open_te] using h 0
-  intro k
-  induction e generalizing k with
-  | trm_bvar n =>
+  have h : ∀ k, subst_te X U (open_te_rec k T e) =
+      open_te_rec k (subst_tt X U T) (subst_te X U e) := by
+    intro k
+    induction e generalizing k with
+    | trm_bvar n =>
       simp [open_te_rec, subst_te]
-  | trm_fvar x =>
+    | trm_fvar x =>
       simp [open_te_rec, subst_te]
-  | trm_abs V e1 ih =>
+    | trm_abs V e1 ih =>
       simp [open_te_rec, subst_te, subst_tt_open_tt_rec V T X U k hU, ih]
-  | trm_app e1 e2 ih1 ih2 =>
+    | trm_app e1 e2 ih1 ih2 =>
       simp [open_te_rec, subst_te, ih1, ih2]
-  | trm_tabs V e1 ih =>
+    | trm_tabs V e1 ih =>
       simp [open_te_rec, subst_te, subst_tt_open_tt_rec V T X U k hU, ih]
-  | trm_tapp e1 V ih =>
+    | trm_tapp e1 V ih =>
       simp [open_te_rec, subst_te, subst_tt_open_tt_rec V T X U k hU, ih]
+  simpa [open_te] using h 0
 
 -- Coq line 546: Lemma subst_te_open_te_var
 theorem subst_te_open_te_var : ∀ X Y U e, Y ≠ X → DefType U →
@@ -524,30 +524,30 @@ theorem subst_ee_open_ee : ∀ t1 t2 u x, DefTerm u →
   subst_ee x u (open_ee t1 t2) =
   open_ee (subst_ee x u t1) (subst_ee x u t2) := by
   intro t1 t2 u x hu
-  suffices h : ∀ k, subst_ee x u (open_ee_rec k t2 t1) =
-      open_ee_rec k (subst_ee x u t2) (subst_ee x u t1) by
-    simpa [open_ee] using h 0
-  intro k
-  induction t1 generalizing k with
-  | trm_bvar n =>
+  have h : ∀ k, subst_ee x u (open_ee_rec k t2 t1) =
+      open_ee_rec k (subst_ee x u t2) (subst_ee x u t1) := by
+    intro k
+    induction t1 generalizing k with
+    | trm_bvar n =>
       by_cases hkn : k = n
       · simp [open_ee_rec, subst_ee, hkn]
       · simp [open_ee_rec, subst_ee, hkn]
-  | trm_fvar y =>
+    | trm_fvar y =>
       by_cases hyx : y = x
       · subst hyx
         have hopenU : u = open_ee_rec k (subst_ee y u t2) u :=
           open_ee_rec_term (subst_ee y u t2) u hu k
         simpa [subst_ee, open_ee_rec] using hopenU
       · simp [subst_ee, open_ee_rec, hyx]
-  | trm_abs V e1 ih =>
+    | trm_abs V e1 ih =>
       simp [open_ee_rec, subst_ee, ih]
-  | trm_app e1 e2 ih1 ih2 =>
+    | trm_app e1 e2 ih1 ih2 =>
       simp [open_ee_rec, subst_ee, ih1, ih2]
-  | trm_tabs V e1 ih =>
+    | trm_tabs V e1 ih =>
       simp [open_ee_rec, subst_ee, ih]
-  | trm_tapp e1 V ih =>
+    | trm_tapp e1 V ih =>
       simp [open_ee_rec, subst_ee, ih]
+  simpa [open_ee] using h 0
 
 -- Coq line 612: Lemma subst_ee_open_ee_var
 theorem subst_ee_open_ee_var : ∀ x y u e, y ≠ x → DefTerm u →
@@ -583,52 +583,52 @@ theorem subst_te_open_ee_var : ∀ Z P x e,
   simp only [open_ee]
   -- Need to prove the general version with open_ee_rec
   intro e
-  suffices h : ∀ k, open_ee_rec k (trm_fvar x) (subst_te Z P e) = 
-                     subst_te Z P (open_ee_rec k (trm_fvar x) e) by
-    exact h 0
-  intro k
-  induction e generalizing k with
-  | trm_bvar n =>
-    simp [open_ee_rec, subst_te]
-    split_ifs <;> rfl
-  | trm_fvar y =>
-    simp [open_ee_rec, subst_te]
-  | trm_abs V e1 ih =>
-    simp only [open_ee_rec, subst_te]
-    congr 1
-    exact ih (k + 1)
-  | trm_app e1 e2 ih1 ih2 =>
-    simp [open_ee_rec, subst_te, ih1, ih2]
-  | trm_tabs V e1 ih =>
-    simp [open_ee_rec, subst_te, ih]
-  | trm_tapp e1 V ih =>
-    simp [open_ee_rec, subst_te, ih]
+  have h : ∀ k, open_ee_rec k (trm_fvar x) (subst_te Z P e) =
+      subst_te Z P (open_ee_rec k (trm_fvar x) e) := by
+    intro k
+    induction e generalizing k with
+    | trm_bvar n =>
+      simp [open_ee_rec, subst_te]
+      split_ifs <;> rfl
+    | trm_fvar y =>
+      simp [open_ee_rec, subst_te]
+    | trm_abs V e1 ih =>
+      simp only [open_ee_rec, subst_te]
+      congr 1
+      exact ih (k + 1)
+    | trm_app e1 e2 ih1 ih2 =>
+      simp [open_ee_rec, subst_te, ih1, ih2]
+    | trm_tabs V e1 ih =>
+      simp [open_ee_rec, subst_te, ih]
+    | trm_tapp e1 V ih =>
+      simp [open_ee_rec, subst_te, ih]
+  exact h 0
 
 -- Coq line 626: Lemma subst_ee_open_te_var
 theorem subst_ee_open_te_var : ∀ z u e V, DefTerm u →
   open_te (subst_ee z u e) V = subst_ee z u (open_te e V) := by
   intro z u e V hu
-  suffices h : ∀ k, open_te_rec k V (subst_ee z u e) = subst_ee z u (open_te_rec k V e) by
-    simpa [open_te] using h 0
-  intro k
-  induction e generalizing k with
-  | trm_bvar n =>
+  have h : ∀ k, open_te_rec k V (subst_ee z u e) = subst_ee z u (open_te_rec k V e) := by
+    intro k
+    induction e generalizing k with
+    | trm_bvar n =>
       simp [open_te_rec, subst_ee]
-  | trm_fvar x =>
+    | trm_fvar x =>
       by_cases hx : x = z
       · subst hx
         simp [subst_ee, open_te_rec]
         symm
         exact open_te_rec_term u V hu k
       · simp [subst_ee, open_te_rec, hx]
-  | trm_abs T e1 ih =>
+    | trm_abs T e1 ih =>
       simp [open_te_rec, subst_ee, ih]
-  | trm_app e1 e2 ih1 ih2 =>
+    | trm_app e1 e2 ih1 ih2 =>
       simp [open_te_rec, subst_ee, ih1, ih2]
-  | trm_tabs T e1 ih =>
+    | trm_tabs T e1 ih =>
       simp [open_te_rec, subst_ee, ih]
-  | trm_tapp e1 T ih =>
+    | trm_tapp e1 T ih =>
       simp [open_te_rec, subst_ee, ih]
+  simpa [open_te] using h 0
 
 -- Substitutions preserve local closure
 

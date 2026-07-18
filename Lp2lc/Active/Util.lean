@@ -28,7 +28,7 @@ class DepFree : Type 1 where
 class Free : Type 1 extends DepFree where
   Index : TIndex
   Payload := Unit
-  DepIndex := fun _ => Index
+  DepIndex := λ _ => Index
 
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
@@ -45,7 +45,7 @@ def Permission (T : Type) := (v: T) -> Prop -- no instance will be provided ever
 
 namespace Permission
 
-def WideOpen {T} : Permission T := fun _ => true
+def WideOpen {T} : Permission T := λ _ => true
 
 end Permission
 
@@ -147,19 +147,19 @@ abbrev RecOption (T : Type u) := Rec (Option T)
 namespace RecOption
 section variable {T : Type u} (self : Lp2lc.Active.Util.RecOption T)
 
-def isDecidable (condition: T -> Prop := fun _ => True) : Prop :=
+def isDecidable (condition: T -> Prop := λ _ => True) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with
   | .yield (some v) => condition v
   | _ => false
 
-def isSemiDecidable (condition: T -> Prop := fun _ => True) : Prop :=
+def isSemiDecidable (condition: T -> Prop := λ _ => True) : Prop :=
   ∀ (fuel : Nat), match (self fuel) with
   | .yield none => false
   | .outOfFuel => true
   | .yield (some v) => condition v
 
 def shouldYields (expectedV : T) : Prop :=
-  let hasFuel := RecOption.isDecidable self (fun v => v = expectedV)
+  let hasFuel := RecOption.isDecidable self (λ v => v = expectedV)
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 

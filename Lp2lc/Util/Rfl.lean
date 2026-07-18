@@ -7,12 +7,12 @@ private partial def normalize_expr (e : Expr) : MetaM Expr := do
   match e with
   | .lam n d b bi =>
       let d ← normalize_expr d
-      withLocalDecl n bi d fun x => do
+      withLocalDecl n bi d λ x => do
         let b ← normalize_expr (b.instantiate1 x)
         mkLambdaFVars #[x] b
   | .forallE n d b bi =>
       let d ← normalize_expr d
-      withLocalDecl n bi d fun x => do
+      withLocalDecl n bi d λ x => do
         let b ← normalize_expr (b.instantiate1 x)
         mkForallFVars #[x] b
   | _ =>
@@ -22,7 +22,7 @@ syntax (name := rflCmd) "#rfl " term : command
 
 @[command_elab rflCmd] def elab_rfl_cmd : CommandElab
   | `(#rfl $t:term) =>
-      withoutModifyingEnv <| runTermElabM fun _ =>
+      withoutModifyingEnv <| runTermElabM λ _ =>
         Term.withDeclName `_rfl do
           let lhs ← Term.elabTerm t none
           Term.synthesizeSyntheticMVarsNoPostponing
