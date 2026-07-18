@@ -164,73 +164,69 @@ def captureGet1stOn1st : STLCCtx .Empty (.Unit :-> (.Unit :-> .Unit)) :=
   .CApp captureFn get1stOn1st
 
 
-section variable (emptyEnv : RuntimeEnv .Empty)
-
-example : eval emptyEnv vFalse 0 = .none := by
+example : eval .empty vFalse 0 = .none := by
   rfl
 
-example : eval emptyEnv vFalse 1 = .some (.mk emptyEnv .CStar) := by
+example : eval .empty vFalse 1 = .some (.mk .empty .CStar) := by
   rfl
 
 example : Option (Closure (.Unit :-> .Unit)) :=
-  eval emptyEnv primitiveIdFn 1
+  eval .empty primitiveIdFn 1
 
-example : eval emptyEnv primitiveIdFn 1 =
-    .some (.mk emptyEnv (.CLam (λ input => .CVar input))) := by
+example : eval .empty primitiveIdFn 1 =
+    .some (.mk .empty (.CLam (λ input => .CVar input))) := by
   rfl
 
-example : eval emptyEnv primitiveIdFnOnFalse 0 = .none := by
+example : eval .empty primitiveIdFnOnFalse 0 = .none := by
   rfl
 
-example : eval emptyEnv primitiveIdFnOnFalse 2 = .some (.mk emptyEnv .CStar) := by
+example : eval .empty primitiveIdFnOnFalse 2 = .some (.mk .empty .CStar) := by
   rfl
 
-example : eval emptyEnv get1stOnTuple 3 = .some (.mk emptyEnv .CStar) := by
+example : eval .empty get1stOnTuple 3 = .some (.mk .empty .CStar) := by
   rfl
 
 namespace get1stOn1st
 
 abbrev _ctx := .Empty :/: .Unit
 
-abbrev _env : RuntimeEnv _ctx := .saved emptyEnv emptyEnv .CStar
+abbrev _env : RuntimeEnv _ctx := .saved .empty .empty .CStar
 
-def result (emptyEnv : RuntimeEnv .Empty) :
-    Option (Closure (.Unit :-> .Unit)) :=
+def result : Option (Closure (.Unit :-> .Unit)) :=
   let _v : Val _ctx (.Unit :-> .Unit) :=
     .CLam (λ (_second : ProxyTop (_ctx :/: .Unit) .Unit) =>
       .CVar (.PTop : ProxyTop _ctx .Unit))
-  .some (.mk (_env emptyEnv) _v)
+  .some (.mk _env _v)
 
-example : eval emptyEnv get1stOn1st 3 = -- CAUTION: this is a demo of how eval can change the environment in CE. Therefore breaking the
-    result emptyEnv := by
+example : eval .empty get1stOn1st 3 = -- CAUTION: this is a demo of how eval can change the environment in CE. Therefore breaking the
+    result := by
   rfl
 
 end get1stOn1st
 
 namespace captureFn
 
-def result (emptyEnv : RuntimeEnv .Empty) :
-    Option (Closure ((.Unit :-> .Unit) :-> .Unit :-> (.Unit :-> .Unit))) :=
-  .some (.mk emptyEnv (.CLam (λ fn => .CLam (λ _ => .CVar fn))))
+def result : Option (Closure
+    ((.Unit :-> .Unit) :-> .Unit :-> (.Unit :-> .Unit))) :=
+  .some (.mk .empty (.CLam (λ fn => .CLam (λ _ => .CVar fn))))
 
-example : eval emptyEnv captureFn 3 = -- CAUTION: this is a demo of how eval can change the environment in CE. Therefore breaking the
-    result emptyEnv := by
+example : eval .empty captureFn 3 = -- CAUTION: this is a demo of how eval can change the environment in CE. Therefore breaking the
+    result := by
   rfl
 
 end captureFn
 
 namespace captureGet1stOn1st
 
-def result (emptyEnv : RuntimeEnv .Empty) :
-    Option (Closure (.Unit :-> (.Unit :-> .Unit))) :=
+def result : Option (Closure (.Unit :-> (.Unit :-> .Unit))) :=
   let valueCtx := (.Empty :/: .Unit)
   let valueEnv : RuntimeEnv valueCtx :=
-    .saved emptyEnv emptyEnv .CStar
+    .saved .empty .empty .CStar
   let value : Val valueCtx (.Unit :-> .Unit) :=
     .CLam (λ (_second : ProxyTop (valueCtx :/: .Unit) .Unit) =>
       .CVar (.PTop : ProxyTop valueCtx .Unit))
   let env : RuntimeEnv (.Empty :/: (.Unit :-> .Unit)) :=
-    .saved emptyEnv valueEnv value
+    .saved .empty valueEnv value
   let result : Val (.Empty :/: (.Unit :-> .Unit))
       (.Unit :-> (.Unit :-> .Unit)) :=
     .CLam (λ (_input : ProxyTop
@@ -239,7 +235,7 @@ def result (emptyEnv : RuntimeEnv .Empty) :
         (.Unit :-> .Unit)))
   .some (.mk env result)
 
-example : eval emptyEnv captureGet1stOn1st 4 = result emptyEnv := by
+example : eval .empty captureGet1stOn1st 4 = result := by
   rfl
 
 end captureGet1stOn1st
@@ -249,8 +245,6 @@ end captureGet1stOn1st
 --     (value.compile 1).bind (fun compiled => compiled.compile 1) =
 --       value.compile 1 := by
 --   exact value.compile_idempotent 0
-
-end
 
 end AltExamples
 
