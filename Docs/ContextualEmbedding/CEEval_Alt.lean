@@ -149,31 +149,36 @@ def primitiveIdFnOnFalse : STLCCtx .Empty .Unit :=
 def get1st : STLCCtx .Empty (.Unit :-> .Unit :-> .Unit) :=
   .CLam (fun first => .CLam (fun _second => .CVar first))
 
+def save1st: STLCCtx .Empty (.Unit :-> .Unit) := .CApp get1st vFalse
+
 def get1stOnTuple : STLCCtx .Empty .Unit :=
-  .CApp (.CApp get1st vFalse) vTrue
+  .CApp save1st vTrue
 
-section variable (env : RuntimeEnv .Empty)
+section variable (emptyEnv : RuntimeEnv .Empty)
 
-example : eval env vFalse 0 = .none := by
+example : eval emptyEnv vFalse 0 = .none := by
   rfl
 
-example : eval env vFalse 1 = .some (.mk env .CStar) := by
+example : eval emptyEnv vFalse 1 = .some (.mk emptyEnv .CStar) := by
   rfl
 
 example : Option (Closure (.Unit :-> .Unit)) :=
-  eval env primitiveIdFn 1
+  eval emptyEnv primitiveIdFn 1
 
-example : eval env primitiveIdFn 1 =
-    .some (.mk env (.CLam (fun input => .CVar input))) := by
+example : eval emptyEnv primitiveIdFn 1 =
+    .some (.mk emptyEnv (.CLam (fun input => .CVar input))) := by
   rfl
 
-example : eval env primitiveIdFnOnFalse 0 = .none := by
+example : eval emptyEnv primitiveIdFnOnFalse 0 = .none := by
   rfl
 
-example : eval env primitiveIdFnOnFalse 2 = .some (.mk env .CStar) := by
+example : eval emptyEnv primitiveIdFnOnFalse 2 = .some (.mk emptyEnv .CStar) := by
   rfl
 
-example : eval env get1stOnTuple 3 = .some (.mk env .CStar) := by
+example : eval emptyEnv get1stOnTuple 3 = .some (.mk emptyEnv .CStar) := by
+  rfl
+
+example : eval emptyEnv save1st 3 = .some (.mk emptyEnv STLCCtx.CLam (fun _ => .Unit)) := by
   rfl
 
 -- example (value : SuspendedVal ty) :
