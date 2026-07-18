@@ -70,7 +70,7 @@ def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
     | @STLCCtx.CVar _ _ _ inst proxy =>
         .some (env.load (inst := inst) proxy)
     | .CLam body =>
-        .some (fun input => eval (env.snoc input) (body .PTop))
+        .some (λ input => eval (env.snoc input) (body .PTop))
     | .CApp fn arg =>
         let fnValue := eval env fn fuel
         let argValue := eval env arg fuel
@@ -85,16 +85,16 @@ def vFalse : STLCCtx .Empty .Unit := .CStar
 def vTrue : STLCCtx .Empty .Unit := .CStar
 
 def primitiveIdFn : STLCCtx .Empty (.Unit :-> .Unit) :=
-  .CLam (fun input => .CVar input)
+  .CLam (λ input => .CVar input)
 
 def primitiveIdFnOnFalse : STLCCtx .Empty .Unit :=
   .CApp primitiveIdFn vFalse
 
 def get1st : STLCCtx .Empty (.Unit :-> .Unit :-> .Unit) :=
-  .CLam (fun first => .CLam (fun _second => .CVar first))
+  .CLam (λ first => .CLam (λ _second => .CVar first))
 
 def get2nd : STLCCtx .Empty (.Unit :-> .Unit :-> .Unit) :=
-  .CLam (fun _first => .CLam (fun second => .CVar second))
+  .CLam (λ _first => .CLam (λ second => .CVar second))
 
 def get1stOnTuple : STLCCtx .Empty .Unit :=
   .CApp (.CApp get1st vFalse) vTrue

@@ -52,12 +52,12 @@ namespace FirstTry
 
 def Term := (rep : Type) → Term' rep
 
-def add : Term := fun _rep =>
-  Term'.lam Ty.nat (fun x =>
-    Term'.lam Ty.nat (fun y =>
+def add : Term := λ _rep =>
+  Term'.lam Ty.nat (λ x =>
+    Term'.lam Ty.nat (λ y =>
       Term'.plus (Term'.var x) (Term'.var y)))
 
-def three_the_hard_way : Term := fun rep =>
+def three_the_hard_way : Term := λ rep =>
   Term'.app (Term'.app (add rep) (Term'.const 1)) (Term'.const 2)
 
 example : HasType (add Ty) (Ty.fn Ty.nat (Ty.fn Ty.nat Ty.nat)) :=
@@ -78,8 +78,8 @@ def HasType (term : Term) (ty : Ty) : Prop :=
 end Term
 
 def add : Term :=
-  Term'.lam Ty.nat (fun x =>
-    Term'.lam Ty.nat (fun y =>
+  Term'.lam Ty.nat (λ x =>
+    Term'.lam Ty.nat (λ y =>
       Term'.plus (Term'.var x) (Term'.var y)))
 
 def three_the_hard_way : Term :=
@@ -121,9 +121,9 @@ def squash : Term' (Term' rep) → Term' rep
   | Term'.var term => term
   | Term'.const n => Term'.const n
   | Term'.plus left right => Term'.plus (squash left) (squash right)
-  | Term'.lam dom body => Term'.lam dom (fun x => squash (body (Term'.var x)))
+  | Term'.lam dom body => Term'.lam dom (λ x => squash (body (Term'.var x)))
   | Term'.app function argument => Term'.app (squash function) (squash argument)
-  | Term'.let value body => Term'.let (squash value) (fun x => squash (body (Term'.var x)))
+  | Term'.let value body => Term'.let (squash value) (λ x => squash (body (Term'.var x)))
 
 def Term1 := {rep : Type} → rep → Term' rep
 
@@ -137,7 +137,7 @@ end Term1
 def subst (term : Term1) (replacement : Term) : Term :=
   squash (term replacement)
 
-#eval pretty <| subst (fun x => Term'.plus (Term'.var x) (Term'.const 5)) three_the_hard_way
+#eval pretty <| subst (λ x => Term'.plus (Term'.var x) (Term'.const 5)) three_the_hard_way
 
 @[reducible] def Ty.denotePartial : Ty → Type
   | Ty.nat => Nat
@@ -145,7 +145,7 @@ def subst (term : Term1) (replacement : Term) : Term :=
 
 def Ty.defaultPartial : (ty : Ty) → ty.denotePartial
   | Ty.nat => 0
-  | Ty.fn _ _ => fun _ => none
+  | Ty.fn _ _ => λ _ => none
 
 structure Value where
   ty : Ty
@@ -170,7 +170,7 @@ def denoteAt : (ty : Ty) → Term' Value → Option ty.denotePartial
   | Ty.nat, Term'.lam _ _ => none
   | Ty.fn dom ran, Term'.lam annotatedDom body =>
     if h : annotatedDom = dom then
-      some (fun x => denoteAt ran (body ⟨annotatedDom, h.symm ▸ x⟩))
+      some (λ x => denoteAt ran (body ⟨annotatedDom, h.symm ▸ x⟩))
     else
       none
   | ty, Term'.app function argument =>
@@ -205,8 +205,8 @@ example : denote three_the_hard_way = some ⟨Ty.nat, 3⟩ :=
   | Term'.var x => Term'.var x
   | Term'.const n => Term'.const n
   | Term'.app function argument => Term'.app (constFold function) (constFold argument)
-  | Term'.lam dom body => Term'.lam dom (fun x => constFold (body x))
-  | Term'.let value body => Term'.let (constFold value) (fun x => constFold (body x))
+  | Term'.lam dom body => Term'.lam dom (λ x => constFold (body x))
+  | Term'.let value body => Term'.let (constFold value) (λ x => constFold (body x))
   | Term'.plus left right =>
     match constFold left, constFold right with
     | Term'.const n, Term'.const m => Term'.const (n + m)
@@ -282,7 +282,7 @@ def eval : Nat → Term' (Value rep) → Term' (Value rep)
     match squash left', squash right' with
     | Term'.const n, Term'.const m => Term'.const (n + m)
     | _, _ => Term'.plus left' right'
-  | fuel + 1, Term'.lam dom body => Term'.lam dom (fun x => eval fuel (body x))
+  | fuel + 1, Term'.lam dom body => Term'.lam dom (λ x => eval fuel (body x))
   | fuel + 1, Term'.app function argument =>
     let function' := eval fuel function
     let argument' := eval fuel argument
@@ -294,7 +294,7 @@ def eval : Nat → Term' (Value rep) → Term' (Value rep)
     eval fuel (body (squash value'))
 
 def normalize (term : Term) : Term :=
-  fun {rep} =>
+  λ {rep} =>
     squash (eval 16 (term (rep := Value rep)))
 
 def eval_three {rep : Type} :
@@ -304,7 +304,7 @@ def eval_three {rep : Type} :
 end NbE
 
 def assumedPureIncrement : Term :=
-  Term'.lam Ty.nat (fun x => Term'.plus (Term'.var x) (Term'.const 1))
+  Term'.lam Ty.nat (λ x => Term'.plus (Term'.var x) (Term'.const 1))
 
 def pureIncrementOnConst : Term :=
   Term'.app assumedPureIncrement (Term'.const 41)
@@ -321,7 +321,7 @@ example : denote pureIncrementOnConst = some ⟨Ty.nat, 42⟩ :=
 example {rep : Type} :
     constFold (pureIncrementOnConst (rep := rep)) =
       Term'.app
-        (Term'.lam Ty.nat (fun x => Term'.plus (Term'.var x) (Term'.const 1)))
+        (Term'.lam Ty.nat (λ x => Term'.plus (Term'.var x) (Term'.const 1)))
         (Term'.const 41) :=
   rfl
 

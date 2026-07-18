@@ -25,7 +25,7 @@ abbrev TermClosed (t : Ty) := (var : Ty → Type) → Term var t
   | _, .tru => true
   | _, .fals => false
   | _, .app e1 e2 => (Term.denote e1) (Term.denote e2)
-  | _, .abs e => fun x => Term.denote (e x)
+  | _, .abs e => λ x => Term.denote (e x)
 
 @[simp] def TermClosed.denote {t : Ty} (e : TermClosed t) : Ty.denote t :=
   Term.denote (e Ty.denote)

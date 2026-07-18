@@ -18,28 +18,28 @@ mutual
   @[simp] def splicePrim {var : CType → Type} {t t' : PType} :
       CPrimops var t → (var (.data t) → CPrimops var t') → CPrimops var t'
     | .ret v, k => k v
-    | .let_ p k1, k2 => .let_ p (fun x => splicePrim (k1 x) k2)
+    | .let_ p k1, k2 => .let_ p (λ x => splicePrim (k1 x) k2)
 
   @[simp] def spliceTerm {var : CType → Type} {result t : PType} :
       CPrimops var t → (var (.data t) → CTerm var result) → CTerm var result
     | .ret v, k => k v
-    | .let_ p k1, k2 => .bind p (fun x => spliceTerm (k1 x) k2)
+    | .let_ p k1, k2 => .bind p (λ x => spliceTerm (k1 x) k2)
 end
 
 @[simp] def spliceFuncs' {var : CType → Type} {result : PType} {α β : Type} :
     CFuncs var result α → (α → β) → CFuncs var result β
   | .main v, f => .main (f v)
-  | .abs e fs, f => .abs e (fun code => spliceFuncs' (fs code) f)
+  | .abs e fs, f => .abs e (λ code => spliceFuncs' (fs code) f)
 
 @[simp] def spliceFuncs {var : CType → Type} {result : PType} {α β γ : Type} :
     CFuncs var result α → CFuncs var result β → (α → β → γ) → CFuncs var result γ
   | .main v, fs2, f => spliceFuncs' fs2 (f v)
-  | .abs e fs1, fs2, f => .abs e (fun code => spliceFuncs (fs1 code) fs2 f)
+  | .abs e fs1, fs2, f => .abs e (λ code => spliceFuncs (fs1 code) fs2 f)
 
 @[simp] def inside {var : CType → Type} {result : PType} {α β : Type} :
     CFuncs var result α → (α → CFuncs var result β) → CFuncs var result β
   | .main v, f => f v
-  | .abs e fs, f => .abs e (fun code => inside (fs code) f)
+  | .abs e fs, f => .abs e (λ code => inside (fs code) f)
 
 structure NatVar (_ : PType) : Type where
   idx : Nat
@@ -122,25 +122,25 @@ end
 
 @[simp] def packTerm {var : CType → Type} :
     (envT : List PType) → envOf var envT → CPrimops var (envType envT)
-  | [], _ => .let_ .unitIntro (fun u => .ret u)
+  | [], _ => .let_ .unitIntro (λ u => .ret u)
   | _t :: envT, (x, env) =>
-      splicePrim (packTerm envT env) (fun envx =>
-        .let_ (.pair x envx) (fun p => .ret p))
+      splicePrim (packTerm envT env) (λ envx =>
+        .let_ (.pair x envx) (λ p => .ret p))
 
 @[simp] def unpackVar {var : CType → Type} {result : PType} :
     (envT : List PType) → var (.data (envType envT)) →
       (envOf var envT → CTerm var result) → CTerm var result
   | [], _envx, k => k PUnit.unit
   | _t :: envT, envx, k =>
-      .bind (.fst envx) (fun x =>
-        .bind (.snd envx) (fun envx' =>
-          unpackVar envT envx' (fun env => k (x, env))))
+      .bind (.fst envx) (λ x =>
+        .bind (.snd envx) (λ envx' =>
+          unpackVar envT envx' (λ env => k (x, env))))
 
 @[simp] def unpackTerm {var : CType → Type} {result : PType} :
     (envT : List PType) → CPrimops var (envType envT) →
       (envOf var envT → CTerm var result) → CTerm var result
   | envT, ps, k =>
-      spliceTerm ps (fun envx => unpackVar envT envx k)
+      spliceTerm ps (λ envx => unpackVar envT envx k)
 
 abbrev EnvProg (var : CType → Type) (result : PType) (envT : List PType) : Type :=
   CFuncs var result (envOf var envT → CTerm var result)
@@ -215,74 +215,74 @@ mutual
       WfTerm envT e → EnvProg var result envT :=
     match e with
     | .halt n =>
-        fun hWf =>
-          .main (fun env =>
+        λ hWf =>
+          .main (λ env =>
             .halt (lookup envT n.idx env (t := result) (wfTerm_halt_inv hWf)))
     | .app (t := t) n1 n2 =>
-        fun hWf =>
-          .main (fun env =>
+        λ hWf =>
+          .main (λ env =>
             .app
               (lookup envT n1.idx env (t := .cont t) (wfTerm_app_inv hWf).1)
               (lookup envT n2.idx env (t := t) (wfTerm_app_inv hWf).2))
     | .bind (t := t) p e' =>
-        fun hWf =>
+        λ hWf =>
           let hBind := wfTerm_bind_inv hWf
           spliceFuncs
             (ccPrimop var result t p envT hBind.1)
             (ccTerm var result (e' ⟨envT.length⟩) (t :: envT) hBind.2)
-            (fun p' e'' env =>
-              spliceTerm (p' env) (fun x => e'' (x, env)))
+            (λ p' e'' env =>
+              spliceTerm (p' env) (λ x => e'' (x, env)))
 
   def ccPrimop (var : CType → Type) (result t : PType)
       (p : PPrimop NatVar result t) (envT : List PType) :
       WfPrimop envT p → EnvPrimops var result envT t :=
     match p with
     | .var (t := t) n =>
-        fun hWf =>
-          .main (fun env =>
-            .let_ (.var (lookup envT n.idx env (t := t) (wfPrimop_var_inv hWf))) (fun x => .ret x))
+        λ hWf =>
+          .main (λ env =>
+            .let_ (.var (lookup envT n.idx env (t := t) (wfPrimop_var_inv hWf))) (λ x => .ret x))
     | .tru =>
-        fun _hWf =>
-          .main (fun _ =>
-            .let_ .tru (fun x => .ret x))
+        λ _hWf =>
+          .main (λ _ =>
+            .let_ .tru (λ x => .ret x))
     | .fals =>
-        fun _hWf =>
-          .main (fun _ =>
-            .let_ .fals (fun x => .ret x))
+        λ _hWf =>
+          .main (λ _ =>
+            .let_ .fals (λ x => .ret x))
     | .abs (t := t) body =>
-        fun hWf =>
+        λ hWf =>
           inside (ccTerm var result (body ⟨envT.length⟩) (t :: envT) (wfPrimop_abs_inv hWf))
-            (fun body' =>
+            (λ body' =>
               .abs (env := envType envT)
-                (fun envx arg =>
-                  unpackTerm envT (.ret envx) (fun env => body' (arg, env)))
-                (fun code =>
-                  .main (fun env =>
-                    splicePrim (packTerm envT env) (fun envx =>
-                      .let_ (.pack code envx) (fun closure => .ret closure)))))
+                (λ envx arg =>
+                  unpackTerm envT (.ret envx) (λ env => body' (arg, env)))
+                (λ code =>
+                  .main (λ env =>
+                    splicePrim (packTerm envT env) (λ envx =>
+                      .let_ (.pack code envx) (λ closure => .ret closure)))))
     | .pair (t1 := t1) (t2 := t2) n1 n2 =>
-        fun hWf =>
-          .main (fun env =>
+        λ hWf =>
+          .main (λ env =>
             .let_ (.pair
               (lookup envT n1.idx env (t := t1) (wfPrimop_pair_inv hWf).1)
               (lookup envT n2.idx env (t := t2) (wfPrimop_pair_inv hWf).2))
-              (fun x => .ret x))
+              (λ x => .ret x))
     | .fst (t1 := t1) (t2 := t2) n =>
-        fun hWf =>
-          .main (fun env =>
+        λ hWf =>
+          .main (λ env =>
             .let_ (.fst (lookup envT n.idx env (t := .prod t1 t2) (wfPrimop_fst_inv hWf)))
-              (fun x => .ret x))
+              (λ x => .ret x))
     | .snd (t1 := t1) (t2 := t2) n =>
-        fun hWf =>
-          .main (fun env =>
+        λ hWf =>
+          .main (λ env =>
             .let_ (.snd (lookup envT n.idx env (t := .prod t1 t2) (wfPrimop_snd_inv hWf)))
-              (fun x => .ret x))
+              (λ x => .ret x))
 end
 
 @[simp] def mapFuncs {var : CType → Type} {result : PType} {α β : Type}
     (f : α → β) : CFuncs var result α → CFuncs var result β
   | .main v => .main (f v)
-  | .abs e fs => .abs e (fun x => mapFuncs f (fs x))
+  | .abs e fs => .abs e (λ x => mapFuncs f (fs x))
 
 theorem mapFuncs_correct {result : PType} {α β : Type}
     (f : α → β)
@@ -420,7 +420,7 @@ theorem unpackTerm_correct {result : PType}
     CTerm.denote (unpackTerm envT ps e) k
         = CTerm.denote (unpackVar envT (CPrimops.denote ps) e) k := by
           simpa [unpackTerm]
-            using spliceTerm_correct (ps := ps) (e := fun envx => unpackVar envT envx e) (k := k)
+            using spliceTerm_correct (ps := ps) (e := λ envx => unpackVar envT envx e) (k := k)
     _ = CTerm.denote (e (envUnpackVal envT (CPrimops.denote ps))) k := by
           simpa using unpackVar_correct (envT := envT) (envx := CPrimops.denote ps) (e := e) (k := k)
 
@@ -608,9 +608,9 @@ theorem wfTerm_of_equiv :
   intro result envT G e1 e2 hEq hCtx
   exact
     (PTermEquiv.rec
-      (motive_1 := fun G e1 _e2 _hEq =>
+      (motive_1 := λ G e1 _e2 _hEq =>
         ∀ {envT : List PType}, CtxOk envT G → WfTerm envT e1)
-      (motive_2 := fun G {t} p1 _p2 _hEq =>
+      (motive_2 := λ G {t} p1 _p2 _hEq =>
         ∀ {envT : List PType}, CtxOk envT G → WfPrimop envT p1)
       (halt := by
         intro G v1 v2 hMem envT hCtx
@@ -681,13 +681,13 @@ theorem ccTerm_correct_of_equiv :
   intro result G e1 e2 hEq
   exact
     (PTermEquiv.rec
-      (motive_1 := fun G e1 e2 _hEq =>
+      (motive_1 := λ G e1 e2 _hEq =>
         ∀ {envT : List PType} (env : envOf CType.denote envT) (k : PType.denote result → Bool),
           (hWf : WfTerm envT e2) →
           CtxRel envT env G →
           PTerm.denote e1 k =
             CTerm.denote (CFuncs.denote (ccTerm CType.denote result e2 envT hWf) k env) k)
-      (motive_2 := fun G {t} p1 p2 _hEq =>
+      (motive_2 := λ G {t} p1 p2 _hEq =>
         ∀ {envT : List PType} (env : envOf CType.denote envT) (k : PType.denote result → Bool),
           (hWf : WfPrimop envT p2) →
           CtxRel envT env G →
@@ -823,7 +823,7 @@ theorem ccTerm_correct_of_equiv :
               x
                 = CTerm.denote
                     (unpackTerm envT (.ret (envPackVal envT env))
-                      (fun env' =>
+                      (λ env' =>
                         CFuncs.denote
                           (ccTerm CType.denote result (f2 ⟨envT.length⟩) (t :: envT)
                             (wfPrimop_abs_inv hWf))
@@ -840,7 +840,7 @@ theorem ccTerm_correct_of_equiv :
                     calc
                       CTerm.denote
                         (unpackTerm envT (.ret (envPackVal envT env))
-                          (fun env' =>
+                          (λ env' =>
                             CFuncs.denote
                               (ccTerm CType.denote result (f2 ⟨envT.length⟩) (t :: envT)
                                 (wfPrimop_abs_inv hWf))
@@ -848,7 +848,7 @@ theorem ccTerm_correct_of_equiv :
                               (x, env')))
                         k
                           = CTerm.denote
-                              ((fun env' =>
+                              ((λ env' =>
                                 CFuncs.denote
                                   (ccTerm CType.denote result (f2 ⟨envT.length⟩) (t :: envT)
                                     (wfPrimop_abs_inv hWf))
@@ -859,7 +859,7 @@ theorem ccTerm_correct_of_equiv :
                                   simpa using unpackTerm_correct (result := result)
                                     (envT := envT)
                                     (ps := (.ret (envPackVal envT env)))
-                                    (e := fun env' =>
+                                    (e := λ env' =>
                                       CFuncs.denote
                                         (ccTerm CType.denote result (f2 ⟨envT.length⟩) (t :: envT)
                                           (wfPrimop_abs_inv hWf))
@@ -889,8 +889,8 @@ theorem ccTerm_correct_of_equiv :
 
 @[simp] def CcTerm [PTermParametricity] {result : PType}
     (E : PTermClosed result) : CProgClosed result :=
-  fun var =>
-    mapFuncs (fun f => f PUnit.unit)
+  λ var =>
+    mapFuncs (λ f => f PUnit.unit)
       (ccTerm var result (E NatVar) [] (ptermWf E))
 
 theorem CcTerm_correct [PTermParametricity] :

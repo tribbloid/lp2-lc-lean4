@@ -58,7 +58,7 @@ abbrev CProg (var : CType → Type) (result : PType) : Type :=
     CFuncs CType.denote result α → (PType.denote result → Bool) → α
   | .main v, _ => v
   | .abs e fs, k =>
-      CFuncs.denote (fs (fun env arg => CTerm.denote (e env arg) k)) k
+      CFuncs.denote (fs (λ env arg => CTerm.denote (e env arg) k)) k
 
 @[simp] def CProg.denote {result : PType} (p : CProg CType.denote result)
     (k : PType.denote result → Bool) : Bool :=

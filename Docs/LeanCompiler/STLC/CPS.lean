@@ -46,7 +46,7 @@ mutual
     | .var v, _ => v
     | .tru, _ => true
     | .fals, _ => false
-    | .abs e, k => fun x => PTerm.denote (e x) k
+    | .abs e, k => λ x => PTerm.denote (e x) k
     | .pair v1 v2, _ => (v1, v2)
     | .fst v, _ => v.1
     | .snd v, _ => v.2

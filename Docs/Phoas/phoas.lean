@@ -77,10 +77,10 @@ def Term (ty : Ty) := (rep : Ty → Type) → Term' rep ty
 In the next two example, note how each is written as a function over a `rep` choice,
 such that the specific choice has no impact on the structure of the term.
 -/
-def add : Term (Ty.fn Ty.nat (Ty.fn Ty.nat Ty.nat)) := fun _rep =>
-  Term'.lam (fun x => Term'.lam (fun y => Term'.plus (Term'.var x) (Term'.var y)))
+def add : Term (Ty.fn Ty.nat (Ty.fn Ty.nat Ty.nat)) := λ _rep =>
+  Term'.lam (λ x => Term'.lam (λ y => Term'.plus (Term'.var x) (Term'.var y)))
 
-def three_the_hard_way : Term Ty.nat := fun rep =>
+def three_the_hard_way : Term Ty.nat := λ rep =>
   Term'.app (Term'.app (add rep) (Term'.const 1)) (Term'.const 2)
 
 
@@ -97,7 +97,7 @@ we can completely hide `rep` in these examples.
 def Term (ty : Ty) := {rep : Ty → Type} → Term' rep ty
 
 def add : Term (Ty.fn Ty.nat (Ty.fn Ty.nat Ty.nat)) :=
-  Term'.lam (fun x => Term'.lam (fun y => Term'.plus (Term'.var x) (Term'.var y)))
+  Term'.lam (λ x => Term'.lam (λ y => Term'.plus (Term'.var x) (Term'.var y)))
 
 def three_the_hard_way : Term Ty.nat :=
   Term'.app (Term'.app add (Term'.const 1)) (Term'.const 2)
@@ -113,7 +113,7 @@ cases for `lam` and `let`, we must provide the data value to annotate on the new
 pass beneath. For our current choice of `Unit` data, we always pass `()`.
 -/
 
-def countVars : Term' (fun _ => Unit) ty → Nat
+def countVars : Term' (λ _ => Unit) ty → Nat
   | Term'.var _    => 1
   | Term'.const _  => 0
   | Term'.plus a b => countVars a + countVars b
@@ -133,7 +133,7 @@ The function takes as an additional input `i` which is used to create variable n
 We also use the string interpolation available in Lean. For example, `s!"x_{i}"` is expanded to
 `"x_" ++ toString i`.
 -/
-def pretty (e : Term' (fun _ => String) ty) (i : Nat := 1) : String :=
+def pretty (e : Term' (λ _ => String) ty) (i : Nat := 1) : String :=
   match e with
   | Term'.var s     => s
   | Term'.const n   => toString n
@@ -161,9 +161,9 @@ def squash : Term' (Term' rep) ty → Term' rep ty
  | Term'.var e    => e
  | Term'.const n  => Term'.const n
  | Term'.plus a b => Term'.plus (squash a) (squash b)
- | Term'.lam f    => Term'.lam (fun x => squash (f (Term'.var x)))
+ | Term'.lam f    => Term'.lam (λ x => squash (f (Term'.var x)))
  | Term'.app f a  => Term'.app (squash f) (squash a)
- | Term'.let a b  => Term'.let (squash a) (fun x => squash (b (Term'.var x)))
+ | Term'.let a b  => Term'.let (squash a) (λ x => squash (b (Term'.var x)))
 
 /-!
 To define the final substitution function over terms with single free variables, we define
@@ -188,7 +188,7 @@ We can view `Term1` as a term with hole. In the following example,
 the hole `_` is instantiated by `subst` with `three_the_hard_way`
 -/
 
-#eval pretty <| subst (fun x => Term'.plus (Term'.var x) (Term'.const 5)) three_the_hard_way
+#eval pretty <| subst (λ x => Term'.plus (Term'.var x) (Term'.const 5)) three_the_hard_way
 
 /-!
 One further development, which may seem surprising at first,
@@ -203,7 +203,7 @@ the `simp` tactic. We also say this is a hint for the Lean term simplifier.
   | Term'.const n  => n
   | Term'.plus a b => denote a + denote b
   | Term'.app f a  => denote f (denote a)
-  | Term'.lam f    => fun x => denote (f x)
+  | Term'.lam f    => λ x => denote (f x)
   | Term'.let a b  => denote (b (denote a))
 
 example : denote three_the_hard_way = 3 :=
@@ -223,8 +223,8 @@ We now define the constant folding optimization that traverses a term if replace
   | Term'.var x    => Term'.var x
   | Term'.const n  => Term'.const n
   | Term'.app f a  => Term'.app (constFold f) (constFold a)
-  | Term'.lam f    => Term'.lam (fun x => constFold (f x))
-  | Term'.let a b  => Term'.let (constFold a) (fun x => constFold (b x))
+  | Term'.lam f    => Term'.lam (λ x => constFold (f x))
+  | Term'.let a b  => Term'.let (constFold a) (λ x => constFold (b x))
   | Term'.plus a b =>
     match constFold a, constFold b with
     | Term'.const n, Term'.const m => Term'.const (n + m)
@@ -255,11 +255,11 @@ def Value (rep : Ty → Type) : Ty → Type
 mutual
   def reify {rep} : {ty : Ty} → Value rep ty → Term' rep ty
     | Ty.nat, v => v
-    | Ty.fn _ _, f => Term'.lam (fun x => reify (f (reflect (Term'.var x))))
+    | Ty.fn _ _, f => Term'.lam (λ x => reify (f (reflect (Term'.var x))))
 
   def reflect {rep} : {ty : Ty} → Term' rep ty → Value rep ty
     | Ty.nat, v => v
-    | Ty.fn _ _, v => fun x => reflect (Term'.app v (reify x))
+    | Ty.fn _ _, v => λ x => reflect (Term'.app v (reify x))
 end
 
 def eval {rep} {ty : Ty} : Term' (Value rep) ty → Value rep ty
@@ -269,12 +269,12 @@ def eval {rep} {ty : Ty} : Term' (Value rep) ty → Value rep ty
     match reify (eval a), reify (eval b) with
     | Term'.const n, Term'.const m => reflect (Term'.const (n + m))
     | a', b' => reflect (Term'.plus a' b')
-  | Term'.lam f => fun x => eval (f x)
+  | Term'.lam f => λ x => eval (f x)
   | Term'.app f a => (eval f) (eval a)
   | Term'.let a b => eval (b (eval a))
 
 def normalize {ty : Ty} (e : Term ty) : Term ty :=
-  fun {rep} =>
+  λ {rep} =>
    let evaled := eval (e (rep := Value rep))
    reify evaled
 
@@ -283,7 +283,7 @@ def eval_three {rep : Ty → Type} : normalize three_the_hard_way (rep := rep) =
 end NbE
 
 def assumedPureIncrement : Term (Ty.fn Ty.nat Ty.nat) :=
-  Term'.lam (fun x => Term'.plus (Term'.var x) (Term'.const 1))
+  Term'.lam (λ x => Term'.plus (Term'.var x) (Term'.const 1))
 
 def pureIncrementOnConst : Term Ty.nat :=
   Term'.app assumedPureIncrement (Term'.const 41)
@@ -294,7 +294,7 @@ example : denote pureIncrementOnConst = 42 :=
 example {rep : Ty → Type} :
     constFold (pureIncrementOnConst (rep := rep)) =
       Term'.app
-        (Term'.lam (fun x => Term'.plus (Term'.var x) (Term'.const 1)))
+        (Term'.lam (λ x => Term'.plus (Term'.var x) (Term'.const 1)))
         (Term'.const 41) :=
   rfl
 

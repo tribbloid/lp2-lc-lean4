@@ -5,7 +5,7 @@ namespace ContextualEmbedding.CE
 open STLCCtx
 
 def binaryReturnsFirst : STLCCtx ts (a :-> b :-> a) :=
-  CLam (fun x => CLam (fun _y => CVar x))
+  CLam (λ x => CLam (λ _y => CVar x))
 
 #check binaryReturnsFirst
 
