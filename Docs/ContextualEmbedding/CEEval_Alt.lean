@@ -160,7 +160,7 @@ def captureFn : STLCCtx .Empty ((.Unit :-> .Unit) :-> .Unit :-> (.Unit :-> .Unit
 def capturePrimitiveId :=
   STLCCtx.CApp captureFn primitiveIdFn
 
-def captureSaved1st : STLCCtx .Empty (.Unit :-> (.Unit :-> .Unit)) :=
+def captureGet1stOn1st : STLCCtx .Empty (.Unit :-> (.Unit :-> .Unit)) :=
   .CApp captureFn get1stOn1st
 
 
@@ -220,7 +220,7 @@ def differentSavedCtxResult (emptyEnv : RuntimeEnv .Empty) :
         (.Unit :-> .Unit)))
   .some (.mk env result)
 
-example : eval emptyEnv captureSaved1st 4 =
+example : eval emptyEnv captureGet1stOn1st 4 =
     differentSavedCtxResult emptyEnv := by
   rfl
 
