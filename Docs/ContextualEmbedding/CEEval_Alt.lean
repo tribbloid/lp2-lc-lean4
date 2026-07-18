@@ -149,10 +149,11 @@ def primitiveIdFnOnFalse : STLCCtx .Empty .Unit :=
 def get1st : STLCCtx .Empty (.Unit :-> .Unit :-> .Unit) :=
   .CLam (fun first => .CLam (fun _second => .CVar first))
 
-def save1st: STLCCtx .Empty (.Unit :-> .Unit) := .CApp get1st vFalse
+def get1stOnTuple_Part1: STLCCtx .Empty (.Unit :-> .Unit) := .CApp get1st vFalse
 
 def get1stOnTuple : STLCCtx .Empty .Unit :=
-  .CApp save1st vTrue
+  .CApp get1stOnTuple_Part1 vTrue
+
 
 section variable (emptyEnv : RuntimeEnv .Empty)
 
@@ -178,7 +179,18 @@ example : eval emptyEnv primitiveIdFnOnFalse 2 = .some (.mk emptyEnv .CStar) := 
 example : eval emptyEnv get1stOnTuple 3 = .some (.mk emptyEnv .CStar) := by
   rfl
 
-example : eval emptyEnv save1st 3 = .some (.mk emptyEnv STLCCtx.CLam (fun _ => .Unit)) := by
+def save1stResult (emptyEnv : RuntimeEnv .Empty) :
+    Option (Closure (.Unit :-> .Unit)) :=
+  let _ctx := (.Empty :/: .Unit)
+  let _env : RuntimeEnv _ctx :=
+    .saved emptyEnv emptyEnv .CStar
+  let _v : Val _ctx (.Unit :-> .Unit) :=
+    .CLam (fun (_second : ProxyTop (_ctx :/: .Unit) .Unit) =>
+      .CVar (show ProxyTop _ctx .Unit from .PTop))
+  .some (.mk _env _v)
+
+example : eval emptyEnv get1stOnTuple_Part1 3 = -- CAUTION: this is a demo of how eval can change the environment in CE. Therefore breaking the
+    save1stResult emptyEnv := by
   rfl
 
 -- example (value : SuspendedVal ty) :
