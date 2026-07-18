@@ -209,7 +209,9 @@ end get1stOn1st
 
 namespace captureFn
 
-def result := sorry
+def result (emptyEnv : RuntimeEnv .Empty) :
+    Option (Closure ((.Unit :-> .Unit) :-> .Unit :-> (.Unit :-> .Unit))) :=
+  .some (.mk emptyEnv (.CLam (λ fn => .CLam (λ _ => .CVar fn))))
 
 example : eval emptyEnv captureFn 3 = -- CAUTION: this is a demo of how eval can change the environment in CE. Therefore breaking the
     result emptyEnv := by
@@ -218,7 +220,6 @@ example : eval emptyEnv captureFn 3 = -- CAUTION: this is a demo of how eval can
 end captureFn
 
 namespace captureGet1stOn1st
-
 
 def result (emptyEnv : RuntimeEnv .Empty) :
     Option (Closure (.Unit :-> (.Unit :-> .Unit))) :=
@@ -238,8 +239,7 @@ def result (emptyEnv : RuntimeEnv .Empty) :
         (.Unit :-> .Unit)))
   .some (.mk env result)
 
-example : eval emptyEnv captureGet1stOn1st 4 =
-    result emptyEnv := by
+example : eval emptyEnv captureGet1stOn1st 4 = result emptyEnv := by
   rfl
 
 end captureGet1stOn1st
