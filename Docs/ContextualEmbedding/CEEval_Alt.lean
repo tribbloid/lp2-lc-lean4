@@ -149,10 +149,19 @@ def primitiveIdFnOnFalse : STLCCtx .Empty .Unit :=
 def get1st : STLCCtx .Empty (.Unit :-> .Unit :-> .Unit) :=
   .CLam (λ first => .CLam (λ _second => .CVar first))
 
-def get1stOnTuple_Part1: STLCCtx .Empty (.Unit :-> .Unit) := .CApp get1st vFalse
+def get1stOn1st: STLCCtx .Empty (.Unit :-> .Unit) := .CApp get1st vFalse
 
 def get1stOnTuple : STLCCtx .Empty .Unit :=
-  .CApp get1stOnTuple_Part1 vTrue
+  .CApp get1stOn1st vTrue
+
+def captureFn : STLCCtx .Empty ((.Unit :-> .Unit) :-> .Unit :-> (.Unit :-> .Unit)) :=
+  .CLam (λ fn => .CLam (λ _ => .CVar fn))
+
+def capturePrimitiveId :=
+  STLCCtx.CApp captureFn primitiveIdFn
+
+def captureSaved1st : STLCCtx .Empty (.Unit :-> (.Unit :-> .Unit)) :=
+  .CApp captureFn get1stOn1st
 
 
 section variable (emptyEnv : RuntimeEnv .Empty)
@@ -189,8 +198,30 @@ def save1stResult (emptyEnv : RuntimeEnv .Empty) :
       .CVar (.PTop : ProxyTop _ctx .Unit))
   .some (.mk _env _v)
 
-example : eval emptyEnv get1stOnTuple_Part1 3 = -- CAUTION: this is a demo of how eval can change the environment in CE. Therefore breaking the
+example : eval emptyEnv get1stOn1st 3 = -- CAUTION: this is a demo of how eval can change the environment in CE. Therefore breaking the
     save1stResult emptyEnv := by
+  rfl
+
+def differentSavedCtxResult (emptyEnv : RuntimeEnv .Empty) :
+    Option (Closure (.Unit :-> (.Unit :-> .Unit))) :=
+  let valueCtx := (.Empty :/: .Unit)
+  let valueEnv : RuntimeEnv valueCtx :=
+    .saved emptyEnv emptyEnv .CStar
+  let value : Val valueCtx (.Unit :-> .Unit) :=
+    .CLam (λ (_second : ProxyTop (valueCtx :/: .Unit) .Unit) =>
+      .CVar (.PTop : ProxyTop valueCtx .Unit))
+  let env : RuntimeEnv (.Empty :/: (.Unit :-> .Unit)) :=
+    .saved emptyEnv valueEnv value
+  let result : Val (.Empty :/: (.Unit :-> .Unit))
+      (.Unit :-> (.Unit :-> .Unit)) :=
+    .CLam (λ (_input : ProxyTop
+        ((.Empty :/: (.Unit :-> .Unit)) :/: .Unit) .Unit) =>
+      .CVar (.PTop : ProxyTop (.Empty :/: (.Unit :-> .Unit))
+        (.Unit :-> .Unit)))
+  .some (.mk env result)
+
+example : eval emptyEnv captureSaved1st 4 =
+    differentSavedCtxResult emptyEnv := by
   rfl
 
 -- example (value : SuspendedVal ty) :
