@@ -4,5 +4,6 @@ import «ContextualEmbedding».__CEFnExample
 import «ContextualEmbedding».«1_CleanUpIndex».CE
 import «ContextualEmbedding».«2_SplitVal».CE
 import «ContextualEmbedding».«3_ExtrinsicTyping».CE
+import «ContextualEmbedding».«3_ExtrinsicTyping».CEEval_Alt
 import «ContextualEmbedding».CELeveledUpSTLC
 import «ContextualEmbedding».CELeveledUpLinear
