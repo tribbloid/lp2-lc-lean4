@@ -9,12 +9,9 @@ open Ty
 -- https://lean-lang.org/doc/reference/latest/Notations-and-Macros/Custom-Operators/
 infixr:90 " :-> " => Fun
 
-inductive Ctx : Type
-  | Empty : Ctx
-  | Snoc  : Ctx -> Ctx
-deriving Repr, DecidableEq
+abbrev Ctx : Type := Nat
 
-postfix:max " :/" => Ctx.Snoc
+postfix:max " :/" => Nat.succ
 
 inductive Index : Ctx -> Type where
   | Top {ts : Ctx} : Index (ts :/)
@@ -214,7 +211,7 @@ end
 
 def idSTLC : STLCCtx ts
   := CVal (CLam (λx => CVar x))
-def idSTLC' := @idSTLC Ctx.Empty
+def idSTLC' := @idSTLC 0
 
 #check idSTLC
 #eval showSTLCCtx idSTLC'
@@ -222,13 +219,13 @@ def idSTLC' := @idSTLC Ctx.Empty
 
 def const : STLCCtx ts
   := CVal (CLam (λx => CVal (CLam (λ_y => CVar x))))
-def const' := @const Ctx.Empty
+def const' := @const 0
 
 #eval showSTLCCtx const'
 
 def flipConst : STLCCtx ts
   := CVal (CLam (λ_x => CVal (CLam (λy => CVar y))))
-def flipConst' := @flipConst Ctx.Empty
+def flipConst' := @flipConst 0
 
 #check flipConst
 #eval showSTLCCtx flipConst'
@@ -240,7 +237,7 @@ def const5 : STLCCtx ts
       CVal (CLam (λ_x3 =>
         CVal (CLam (λ_x4 =>
           CVal (CLam (λ_x5 => CVar x1))))))))))
-def const5' := @const5 Ctx.Empty
+def const5' := @const5 0
 
 #eval showSTLCCtx const5'
 

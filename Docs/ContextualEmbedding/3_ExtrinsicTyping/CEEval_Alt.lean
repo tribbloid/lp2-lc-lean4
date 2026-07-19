@@ -7,11 +7,11 @@ open Ty
 namespace STLCCtx
 
 /-- Contextually embedded value syntax with no free variables. -/
-abbrev ClosedVal : Type := ValCtx .Empty
+abbrev ClosedVal : Type := ValCtx 0
 
 /-- A runtime stack retaining each previous lexical environment. -/
 inductive RuntimeEnv : Ctx -> Type where
-  | empty : RuntimeEnv .Empty
+  | empty : RuntimeEnv 0
   | saved {ctx valueCtx : Ctx}
       (previous : RuntimeEnv ctx)
       (valueEnv : RuntimeEnv valueCtx)
@@ -129,31 +129,31 @@ end Spike
 
 namespace AltExamples
 
-def vFalse : STLCCtx .Empty := .CVal .CStar
+def vFalse : STLCCtx 0 := .CVal .CStar
 
-def vTrue : STLCCtx .Empty := .CVal .CStar
+def vTrue : STLCCtx 0 := .CVal .CStar
 
-def primitiveIdFn : STLCCtx .Empty :=
+def primitiveIdFn : STLCCtx 0 :=
   .CVal (.CLam (λ input => .CVar input))
 
-def primitiveIdFnOnFalse : STLCCtx .Empty :=
+def primitiveIdFnOnFalse : STLCCtx 0 :=
   .CApp primitiveIdFn vFalse
 
-def get1st : STLCCtx .Empty :=
+def get1st : STLCCtx 0 :=
   .CVal (.CLam (λ first => .CVal (.CLam (λ _second => .CVar first))))
 
-def get1stOn1st: STLCCtx .Empty := .CApp get1st vFalse
+def get1stOn1st: STLCCtx 0 := .CApp get1st vFalse
 
-def get1stOnTuple : STLCCtx .Empty :=
+def get1stOnTuple : STLCCtx 0 :=
   .CApp get1stOn1st vTrue
 
-def captureFn : STLCCtx .Empty :=
+def captureFn : STLCCtx 0 :=
   .CVal (.CLam (λ fn => .CVal (.CLam (λ _ => .CVar fn))))
 
 def capturePrimitiveId :=
   STLCCtx.CApp captureFn primitiveIdFn
 
-def captureGet1stOn1st : STLCCtx .Empty :=
+def captureGet1stOn1st : STLCCtx 0 :=
   .CApp captureFn get1stOn1st
 
 
@@ -181,7 +181,7 @@ example : eval .empty get1stOnTuple 3 = .some (.mk .empty .CStar) := by
 
 namespace get1stOn1st
 
-abbrev _ctx := .Empty :/
+abbrev _ctx := 0 :/
 
 abbrev _env : RuntimeEnv _ctx := .saved .empty .empty .CStar
 
@@ -199,7 +199,7 @@ end get1stOn1st
 
 namespace captureFn
 
-abbrev _v : ValCtx .Empty :=
+abbrev _v : ValCtx 0 :=
   .CLam (λ fn => .CVal (.CLam (λ _ => .CVar fn)))
 
 def result : Option Closure :=
