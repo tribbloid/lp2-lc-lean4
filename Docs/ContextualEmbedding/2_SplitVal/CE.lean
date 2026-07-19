@@ -161,8 +161,7 @@ Here we need to use our `closedWorld` axiom to perform a case analysis on the `R
 -/
 
 theorem indexIsoR (inst : ReifyIndex ts ts') (i : ProxyTop ts t):
-  (fromIndex (reify (self := inst) i))
-    = PVar (inst := inst) i
+  (fromIndex (reify (self := inst) i)) = PVar (inst := inst) i
   := Or.elim (closedWorld inst)
         -- Option 1: `inst` is the Refl instance, corresponding to `Top`
         (λ⟨hEq, instEqRefl⟩ -- We use `⟨ ⟩` brackets as syntactic sugar for existential elimination
