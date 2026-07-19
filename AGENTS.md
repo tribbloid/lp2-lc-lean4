@@ -49,7 +49,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 - Do not write code contradicting with the comment.
 - Do not uncomment code or duplicate commented code.
 - Do not add `unsafe`, `noncomputable`, or `partial` declarations/blocks.
-- Do not write axiom.
+- Do not introduce axiom without explicit request.
 - Do not write multiple cases in pattern matching in 1 line; each case should be in its own line starting with `|`.
 - Do not add compiler public API for already-defined feature (e.g. type-checking, evaluation). Each feature should only have 1 public definition.
 - Do not use generic universe if possible, use static Prop/Type/Sort level on-demand (Type, Type 1, Type 2).
