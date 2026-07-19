@@ -31,9 +31,8 @@ def lookup : (env : RuntimeEnv ctx) -> Index ctx -> Closure
   | .saved previous _ _, .Pop index => previous.lookup index
 
 /-- Loads the suspended value denoted by a contextual variable proxy. -/
-def load (env : RuntimeEnv ctx) {source : Ctx}
-    [inst : ReifyIndex source ctx]
-    (proxy : ProxyTop source) : Closure :=
+def load [inst : ReifyIndex ts ts'] (env : RuntimeEnv ts')
+    (proxy : ProxyTop ts) : Closure :=
   env.lookup (ReifyIndex.reify (self := inst) proxy)
 
 end RuntimeEnv
@@ -113,7 +112,7 @@ namespace get1stOn1st
 
 abbrev _ctx := 0 + 1
 
-abbrev _env : RuntimeEnv _ctx := .saved .empty .empty .CStar
+abbrev _env : RuntimeEnv _ctx := .saved .empty .empty .CStar -- the first argument is set, but wasn't consumed by STLCCtx.CVar, as a result, the RuntimeEnv cannot be empty.
 
 def result : Option Closure :=
   let _v : ValCtx _ctx :=
