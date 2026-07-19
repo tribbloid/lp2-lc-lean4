@@ -34,16 +34,36 @@ instance instReifyIndexSnoc [instRec : ReifyIndex ts1 ts2] : ReifyIndex ts1 (ts2
   reify := λ p => Pop (reify p)
 
 mutual
-  inductive STLCCtx : Ctx -> Type where
-    | CVal : ValCtx ts -> STLCCtx ts
-    | CVar [ReifyIndex ts ts'] : ProxyTop ts -> STLCCtx ts'
-    | CApp : STLCCtx ts -> STLCCtx ts -> STLCCtx ts
+  inductive STLC : Ctx -> Type where
+    | CVal : Val ts -> STLC ts
+    | CVar [inst : ReifyIndex ts ts'] : ProxyTop ts -> STLC ts'
+    | CApp : STLC ts -> STLC ts -> STLC ts
 
-  inductive ValCtx : Ctx -> Type where
-    | CStar : ValCtx ts
-    | CLam : (ProxyTop (ts + 1) -> STLCCtx (ts + 1)) -> ValCtx ts
+  inductive Val : Ctx -> Type where
+    | CStar : Val ts
+    | CLam (tIn : Ty) (body : ProxyTop (ts + 1) -> STLC (ts + 1)) : Val ts
 end
-open STLCCtx ValCtx
+open STLC Val
+
+inductive Lookup : (ts : Ctx) -> Index ts -> Ty -> Type where
+  | Top {ts : Ctx} {t : Ty} : Lookup (ts + 1) .Top t
+  | Pop {ts : Ctx} {t t' : Ty} {index : Index ts} :
+      Lookup ts index t -> Lookup (ts + 1) (.Pop index) t
+deriving Repr
+
+inductive HasType : (ts : Ctx) -> STLC ts -> Ty -> Type where
+  | CStar {ts : Ctx} : HasType ts (.CVal .CStar) .Unit
+  | CLam {ts : Ctx} {tIn tOut : Ty}
+      {body : ProxyTop (ts + 1) -> STLC (ts + 1)} :
+      ((proxy : ProxyTop (ts + 1)) -> HasType (ts + 1) (body proxy) tOut) ->
+      HasType ts (.CVal (.CLam tIn body)) (tIn :-> tOut)
+  | CVar {source ts : Ctx} {t : Ty} [inst : ReifyIndex source ts]
+      (proxy : ProxyTop source) :
+      Lookup ts (ReifyIndex.reify (self := inst) proxy) t ->
+      HasType ts (.CVar (inst := inst) proxy) t
+  | CApp {ts : Ctx} {tIn tOut : Ty} {fn arg : STLC ts} :
+      HasType ts fn (tIn :-> tOut) -> HasType ts arg tIn ->
+      HasType ts (.CApp fn arg) tOut
 
 -- Contextualise
 -----------------
@@ -58,14 +78,14 @@ def weakenPVar : ProxyVar ts' -> ProxyVar (ts' + 1)
 
 def varTop : ProxyVar (ts + 1) := PVar (@PTop ts)
 
-def fromVar : ProxyVar ts' -> STLCCtx ts'
+def fromVar : ProxyVar ts' -> STLC ts'
   | PVar i => CVar i
 
 def fromIndex : Index ts -> ProxyVar ts
   | Top   => varTop
   | Pop i => weakenPVar (fromIndex i)
 
-def toCVar : Index ts -> STLCCtx ts
+def toCVar : Index ts -> STLC ts
   := λi => fromVar (fromIndex i)
 
 --------------------------------------------
@@ -73,7 +93,7 @@ def toCVar : Index ts -> STLCCtx ts
 --------------------------------------------
 
 /-
-`STLC` and `STLCCtx` correspond very closely, so induction and
+De Bruijn and contextually embedded STLC terms correspond very closely, so induction and
 simplification/rewriting takes care of a large chunk of the proof. The real meat
 of the issue is the isomorphism between `Index` and `ProxyTop` + `ReifyIndex`.
 Once we have that, the rest follows without much trouble.
@@ -183,7 +203,7 @@ theorem indexIsoR (inst : ReifyIndex ts ts') (i : ProxyTop ts):
 -------------------------------
 
 /-
-With the index isomorphisms out of the way, the isomorphism proofs for `STLC` and `STLCCtx` are almost entirely taken care of by inducting on the term, simplifying with function definitions and the inductive hypotheses, and reflexivity (with normalisation). The only slightly more interesting cases are:
+With the index isomorphisms out of the way, the corresponding term isomorphism proofs are almost entirely taken care of by inducting on the term, simplifying with function definitions and the inductive hypotheses, and reflexivity (with normalisation). The only slightly more interesting cases are:
 
 * In `isoL`, `Var` uses the `indexIsoL` isomorphism.
 * In `isoR`, `CVar` uses the `indexIsoR` isomorphism and `CLam` uses function extensionality.
@@ -196,55 +216,55 @@ With the index isomorphisms out of the way, the isomorphism proofs for `STLC` an
 ------------
 
 mutual
-  def showSTLCCtx : STLCCtx ts -> String
-    | CVal v => showValCtx v
+  def showSTLC : STLC ts -> String
+    | CVal v => showVal v
     | CVar i => "CVar " ++ reprStr i ++ "[reified = " ++ reprStr (reify i : Index ts) ++ "]"
-    | CApp f x => "CApp (" ++ showSTLCCtx f ++ ") (" ++ showSTLCCtx x ++ ")"
+    | CApp f x => "CApp (" ++ showSTLC f ++ ") (" ++ showSTLC x ++ ")"
 
-  def showValCtx : ValCtx ts -> String
+  def showVal : Val ts -> String
     | CStar => "CStar"
-    | CLam f => "CLam (\\<ProxyTop> -> " ++ showSTLCCtx (f PTop) ++ ")"
+    | CLam _ f => "CLam (\\<ProxyTop> -> " ++ showSTLC (f PTop) ++ ")"
 end
 
 
-def idSTLC : STLCCtx ts
-  := CVal (CLam (λx => CVar x))
-def idSTLC' := @idSTLC 0
+def idSTLC {t : Ty} : STLC ts
+  := CVal (CLam t (λx => CVar x))
+def idSTLC' := @idSTLC 0 Unit
 
 #check idSTLC
-#eval showSTLCCtx idSTLC'
+#eval showSTLC idSTLC'
 
 
-def const : STLCCtx ts
-  := CVal (CLam (λx => CVal (CLam (λ_y => CVar x))))
-def const' := @const 0
+def const {t1 t2 : Ty} : STLC ts
+  := CVal (CLam t1 (λx => CVal (CLam t2 (λ_y => CVar x))))
+def const' := @const 0 Unit Unit
 
-#eval showSTLCCtx const'
+#eval showSTLC const'
 
-def flipConst : STLCCtx ts
-  := CVal (CLam (λ_x => CVal (CLam (λy => CVar y))))
-def flipConst' := @flipConst 0
+def flipConst {t1 t2 : Ty} : STLC ts
+  := CVal (CLam t1 (λ_x => CVal (CLam t2 (λy => CVar y))))
+def flipConst' := @flipConst 0 Unit Unit
 
 #check flipConst
-#eval showSTLCCtx flipConst'
+#eval showSTLC flipConst'
 
 
-def const5 : STLCCtx ts
-  := CVal (CLam (λx1 =>
-    CVal (CLam (λ_x2 =>
-      CVal (CLam (λ_x3 =>
-        CVal (CLam (λ_x4 =>
-          CVal (CLam (λ_x5 => CVar x1))))))))))
-def const5' := @const5 0
+def const5 {t1 t2 t3 t4 t5 : Ty} : STLC ts
+  := CVal (CLam t1 (λx1 =>
+    CVal (CLam t2 (λ_x2 =>
+      CVal (CLam t3 (λ_x3 =>
+        CVal (CLam t4 (λ_x4 =>
+          CVal (CLam t5 (λ_x5 => CVar x1))))))))))
+def const5' := @const5 0 Unit Unit Unit Unit Unit
 
-#eval showSTLCCtx const5'
+#eval showSTLC const5'
 
 
 -- Examples in theorems
 ------------------------
 
-example {ts : Ctx}
-  : @CLam ts (λx => CVar x) = @CLam ts (λy => CVar y) := by
+example {ts : Ctx} {t : Ty}
+  : @CLam ts t (λx => CVar x) = @CLam ts t (λy => CVar y) := by
   rfl
 
 end ContextualEmbedding.ExtrinsicTyping.CE

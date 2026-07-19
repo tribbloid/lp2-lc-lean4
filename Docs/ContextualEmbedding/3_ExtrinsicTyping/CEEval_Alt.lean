@@ -4,10 +4,10 @@ namespace ContextualEmbedding.ExtrinsicTyping.CE
 
 open Ty
 
-namespace STLCCtx
+namespace STLC
 
 /-- Contextually embedded value syntax with no free variables. -/
-abbrev ClosedVal : Type := ValCtx 0
+abbrev ClosedVal : Type := Val 0
 
 /-- A runtime stack retaining each previous lexical environment. -/
 inductive RuntimeEnv : Ctx -> Type where
@@ -15,13 +15,13 @@ inductive RuntimeEnv : Ctx -> Type where
   | saved {ctx valueCtx : Ctx}
       (previous : RuntimeEnv ctx)
       (valueEnv : RuntimeEnv valueCtx)
-      (value : ValCtx valueCtx) : RuntimeEnv (ctx + 1)
+      (value : Val valueCtx) : RuntimeEnv (ctx + 1)
 
 /-- A contextual value suspended with the environment in which it was produced. -/
 structure Closure : Type where
   {ctx : Ctx}
   env : RuntimeEnv ctx
-  value : ValCtx ctx
+  value : Val ctx
 
 namespace RuntimeEnv
 
@@ -38,51 +38,51 @@ def load [inst : ReifyIndex ts ts'] (env : RuntimeEnv ts')
 end RuntimeEnv
 
 /-- Evaluates contextual syntax while spending one fuel at each semantic descent. -/
-def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx) :
+def eval (env : RuntimeEnv ctx) (term : STLC ctx) :
     Nat -> Option Closure
   | 0 => .none
   | fuel + 1 =>
     match term with
     | .CVal .CStar => .some (.mk env .CStar)
-    | @STLCCtx.CVar _ _ inst proxy =>
+    | @STLC.CVar _ _ inst proxy =>
         .some (env.load (inst := inst) proxy)
-    | .CVal (.CLam body) =>
-        .some (.mk env (.CLam body))
+    | .CVal (.CLam tIn body) =>
+        .some (.mk env (.CLam tIn body))
     | .CApp fn arg =>
         let fnC := eval env fn fuel
         let argC := eval env arg fuel
         match fnC, argC with
-        | .some (.mk fnEnv (.CLam body)), .some (.mk argEnv argValue) =>
+        | .some (.mk fnEnv (.CLam _ body)), .some (.mk argEnv argValue) =>
             eval (.saved fnEnv argEnv argValue) (body .PTop) fuel
         | _, _ => .none
 
 namespace AltExamples
 
-def vFalse : STLCCtx 0 := .CVal .CStar
+def vFalse : STLC 0 := .CVal .CStar
 
-def vTrue : STLCCtx 0 := .CVal .CStar
+def vTrue : STLC 0 := .CVal .CStar
 
-def primitiveIdFn : STLCCtx 0 :=
-  .CVal (.CLam (λ input => .CVar input))
+def primitiveIdFn : STLC 0 :=
+  .CVal (.CLam Unit (λ input => .CVar input))
 
-def primitiveIdFnOnFalse : STLCCtx 0 :=
+def primitiveIdFnOnFalse : STLC 0 :=
   .CApp primitiveIdFn vFalse
 
-def get1st : STLCCtx 0 :=
-  .CVal (.CLam (λ first => .CVal (.CLam (λ _second => .CVar first))))
+def get1st : STLC 0 :=
+  .CVal (.CLam Unit (λ first => .CVal (.CLam Unit (λ _second => .CVar first))))
 
-def get1stOn1st: STLCCtx 0 := .CApp get1st vFalse
+def get1stOn1st: STLC 0 := .CApp get1st vFalse
 
-def get1stOnTuple : STLCCtx 0 :=
+def get1stOnTuple : STLC 0 :=
   .CApp get1stOn1st vTrue
 
-def captureFn : STLCCtx 0 :=
-  .CVal (.CLam (λ fn => .CVal (.CLam (λ _ => .CVar fn))))
+def captureFn : STLC 0 :=
+  .CVal (.CLam (Unit :-> Unit) (λ fn => .CVal (.CLam Unit (λ _ => .CVar fn))))
 
 def capturePrimitiveId :=
-  STLCCtx.CApp captureFn primitiveIdFn
+  STLC.CApp captureFn primitiveIdFn
 
-def captureGet1stOn1st : STLCCtx 0 :=
+def captureGet1stOn1st : STLC 0 :=
   .CApp captureFn get1stOn1st
 
 
@@ -96,7 +96,7 @@ example : Option Closure :=
   eval .empty primitiveIdFn 1
 
 example : eval .empty primitiveIdFn 1 =
-    .some (.mk .empty (.CLam (λ input => .CVar input))) := by
+    .some (.mk .empty (.CLam Unit (λ input => .CVar input))) := by
   rfl
 
 example : eval .empty primitiveIdFnOnFalse 0 = .none := by
@@ -112,11 +112,11 @@ namespace get1stOn1st
 
 abbrev _ctx := 0 + 1
 
-abbrev _env : RuntimeEnv _ctx := .saved .empty .empty .CStar -- the first argument is set, but wasn't consumed by STLCCtx.CVar, as a result, the RuntimeEnv cannot be empty.
+abbrev _env : RuntimeEnv _ctx := .saved .empty .empty .CStar -- the first argument is set, but wasn't consumed by STLC.CVar, as a result, the RuntimeEnv cannot be empty.
 
 def result : Option Closure :=
-  let _v : ValCtx _ctx :=
-    .CLam (λ (_second : ProxyTop (_ctx + 1)) =>
+  let _v : Val _ctx :=
+    .CLam Unit (λ (_second : ProxyTop (_ctx + 1)) =>
       .CVar (.PTop : ProxyTop _ctx))
   .some (.mk _env _v)
 
@@ -128,8 +128,8 @@ end get1stOn1st
 
 namespace captureFn
 
-abbrev _v : ValCtx 0 :=
-  .CLam (λ fn => .CVal (.CLam (λ _ => .CVar fn)))
+abbrev _v : Val 0 :=
+  .CLam (Unit :-> Unit) (λ fn => .CVal (.CLam Unit (λ _ => .CVar fn)))
 
 def result : Option Closure :=
   .some (.mk .empty _v)
@@ -144,7 +144,7 @@ namespace captureGet1stOn1st
 
 def result : Option Closure :=
   match captureFn.result, get1stOn1st.result with
-  | .some (.mk fnEnv (.CLam body)), .some (.mk argEnv argValue) =>
+  | .some (.mk fnEnv (.CLam _ body)), .some (.mk argEnv argValue) =>
       eval (.saved fnEnv argEnv argValue) (body .PTop) 3
   | _, _ => .none
 
@@ -161,6 +161,6 @@ end captureGet1stOn1st
 
 end AltExamples
 
-end STLCCtx
+end STLC
 
 end ContextualEmbedding.ExtrinsicTyping.CE
