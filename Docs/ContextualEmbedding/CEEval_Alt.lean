@@ -198,7 +198,7 @@ def result : Option (Closure (.Unit :-> .Unit)) :=
       .CVar (.PTop : ProxyTop _ctx .Unit))
   .some (.mk _env _v)
 
-example : eval .empty get1stOn1st 3 = -- CAUTION: this is a demo of how eval can change the environment in CE. Therefore breaking the
+example : eval .empty get1stOn1st 3 =
     result := by
   rfl
 
@@ -206,11 +206,15 @@ end get1stOn1st
 
 namespace captureFn
 
+abbrev _v : Val .Empty
+    ((.Unit :-> .Unit) :-> .Unit :-> (.Unit :-> .Unit)) :=
+  .CLam (λ fn => .CLam (λ _ => .CVar fn))
+
 def result : Option (Closure
     ((.Unit :-> .Unit) :-> .Unit :-> (.Unit :-> .Unit))) :=
-  .some (.mk .empty (.CLam (λ fn => .CLam (λ _ => .CVar fn))))
+  .some (.mk .empty _v)
 
-example : eval .empty captureFn 3 = -- CAUTION: this is a demo of how eval can change the environment in CE. Therefore breaking the
+example : eval .empty captureFn 3 =
     result := by
   rfl
 
@@ -219,21 +223,10 @@ end captureFn
 namespace captureGet1stOn1st
 
 def result : Option (Closure (.Unit :-> (.Unit :-> .Unit))) :=
-  let valueCtx := (.Empty :/: .Unit)
-  let valueEnv : RuntimeEnv valueCtx :=
-    .saved .empty .empty .CStar
-  let value : Val valueCtx (.Unit :-> .Unit) :=
-    .CLam (λ (_second : ProxyTop (valueCtx :/: .Unit) .Unit) =>
-      .CVar (.PTop : ProxyTop valueCtx .Unit))
-  let env : RuntimeEnv (.Empty :/: (.Unit :-> .Unit)) :=
-    .saved .empty valueEnv value
-  let result : Val (.Empty :/: (.Unit :-> .Unit))
-      (.Unit :-> (.Unit :-> .Unit)) :=
-    .CLam (λ (_input : ProxyTop
-        ((.Empty :/: (.Unit :-> .Unit)) :/: .Unit) .Unit) =>
-      .CVar (.PTop : ProxyTop (.Empty :/: (.Unit :-> .Unit))
-        (.Unit :-> .Unit)))
-  .some (.mk env result)
+  match captureFn.result, get1stOn1st.result with
+  | .some (.mk fnEnv (.CLam body)), .some (.mk argEnv argValue) =>
+      eval (.saved fnEnv argEnv argValue) (body .PTop) 3
+  | _, _ => .none
 
 example : eval .empty captureGet1stOn1st 4 = result := by
   rfl
