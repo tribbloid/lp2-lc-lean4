@@ -9,26 +9,27 @@ namespace STLC
 /-- Contextually embedded value syntax with no free variables. -/
 abbrev ClosedVal : Type := Val 0
 
-/-- A runtime stack retaining each previous lexical environment. -/
-inductive RuntimeEnv : Ctx -> Type where
-  | empty : RuntimeEnv 0
-  | saved {ctx valueCtx : Ctx}
-      (previous : RuntimeEnv ctx)
-      (valueEnv : RuntimeEnv valueCtx)
-      (value : Val valueCtx) : RuntimeEnv (ctx + 1)
+mutual
+  /-- A runtime stack retaining each previous lexical environment. -/
+  inductive RuntimeEnv : Ctx -> Type where
+    | empty : RuntimeEnv 0
+    | saved {ctx : Ctx}
+        (previous : RuntimeEnv ctx)
+        (value : Closure) : RuntimeEnv (ctx + 1)
 
-/-- A contextual value suspended with the environment in which it was produced. -/
-structure Closure : Type where
-  {ctx : Ctx}
-  env : RuntimeEnv ctx
-  value : Val ctx
+  /-- A contextual value suspended with the environment in which it was produced. -/
+  structure Closure : Type where
+    {ctx : Ctx}
+    env : RuntimeEnv ctx
+    value : Val ctx
+end
 
 namespace RuntimeEnv
 
 /-- Loads the suspended value selected by a contextual index. -/
 def lookup : (env : RuntimeEnv ctx) -> Index ctx -> Closure
-  | .saved _ valueEnv value, .Top => ⟨valueEnv, value⟩
-  | .saved previous _ _, .Pop index => previous.lookup index
+  | .saved _ value, .Top => value
+  | .saved previous _, .Pop index => previous.lookup index
 
 /-- Loads the suspended value denoted by a contextual variable proxy. -/
 def load [inst : ReifyIndex ts ts'] (env : RuntimeEnv ts')
@@ -53,7 +54,7 @@ def eval (env : RuntimeEnv ctx) (term : STLC ctx) :
         let argC := eval env arg fuel
         match fnC, argC with
         | .some (.mk fnEnv (.CLam _ body)), .some (.mk argEnv argValue) =>
-            eval (.saved fnEnv argEnv argValue) (body .PTop) fuel
+            eval (.saved fnEnv (.mk argEnv argValue)) (body .PTop) fuel
         | _, _ => .none
 
 namespace AltExamples
@@ -112,7 +113,7 @@ namespace get1stOn1st
 
 abbrev _ctx := 0 + 1
 
-abbrev _env : RuntimeEnv _ctx := .saved .empty .empty .CStar -- the first argument is set, but wasn't consumed by STLC.CVar, as a result, the RuntimeEnv cannot be empty.
+abbrev _env : RuntimeEnv _ctx := .saved .empty (.mk .empty .CStar) -- the first argument is set, but wasn't consumed by STLC.CVar, as a result, the RuntimeEnv cannot be empty.
 
 def result : Option Closure :=
   let _v : Val _ctx :=
@@ -145,7 +146,7 @@ namespace captureGet1stOn1st
 def result : Option Closure :=
   match captureFn.result, get1stOn1st.result with
   | .some (.mk fnEnv (.CLam _ body)), .some (.mk argEnv argValue) =>
-      eval (.saved fnEnv argEnv argValue) (body .PTop) 3
+      eval (.saved fnEnv (.mk argEnv argValue)) (body .PTop) 3
   | _, _ => .none
 
 example : eval .empty captureGet1stOn1st 4 = result := by
