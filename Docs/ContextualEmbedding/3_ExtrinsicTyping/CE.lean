@@ -31,7 +31,7 @@ instance instReifyIndexRefl : ReifyIndex ts ts where
     | PTop => Top
 
 instance instReifyIndexSnoc [instRec : ReifyIndex ts1 ts2] : ReifyIndex ts1 (ts2 + 1) where
-  reify := λp => Pop (reify p)
+  reify := λ p => Pop (reify p)
 
 mutual
   inductive STLCCtx : Ctx -> Type where
