@@ -11,16 +11,14 @@ infixr:90 " :-> " => Fun
 
 abbrev Ctx : Type := Nat
 
-postfix:max " :/" => Nat.succ
-
 inductive Index : Ctx -> Type where
-  | Top {ts : Ctx} : Index (ts :/)
-  | Pop {ts : Ctx} : Index ts -> Index (ts :/)
+  | Top {ts : Ctx} : Index (ts + 1)
+  | Pop {ts : Ctx} : Index ts -> Index (ts + 1)
 deriving Repr, DecidableEq
 open Index
 
 inductive ProxyTop : Ctx -> Type where
-  | PTop {ts : Ctx} : ProxyTop (ts :/)
+  | PTop {ts : Ctx} : ProxyTop (ts + 1)
 deriving Repr, DecidableEq
 open ProxyTop
 
@@ -32,7 +30,7 @@ instance instReifyIndexRefl : ReifyIndex ts ts where
   reify
     | PTop => Top
 
-instance instReifyIndexSnoc [instRec : ReifyIndex ts1 ts2] : ReifyIndex ts1 (ts2 :/) where
+instance instReifyIndexSnoc [instRec : ReifyIndex ts1 ts2] : ReifyIndex ts1 (ts2 + 1) where
   reify := λp => Pop (reify p)
 
 mutual
@@ -43,7 +41,7 @@ mutual
 
   inductive ValCtx : Ctx -> Type where
     | CStar : ValCtx ts
-    | CLam : (ProxyTop (ts :/) -> STLCCtx (ts :/)) -> ValCtx ts
+    | CLam : (ProxyTop (ts + 1) -> STLCCtx (ts + 1)) -> ValCtx ts
 end
 open STLCCtx ValCtx
 
@@ -55,10 +53,10 @@ inductive ProxyVar ts' where
 deriving Repr
 open ProxyVar
 
-def weakenPVar : ProxyVar ts' -> ProxyVar (ts' :/)
+def weakenPVar : ProxyVar ts' -> ProxyVar (ts' + 1)
   | PVar i => PVar i
 
-def varTop : ProxyVar (ts :/) := PVar (@PTop ts)
+def varTop : ProxyVar (ts + 1) := PVar (@PTop ts)
 
 def fromVar : ProxyVar ts' -> STLCCtx ts'
   | PVar i => CVar i
@@ -144,11 +142,11 @@ axiom closedWorld {ts1 ts2 : Ctx} (inst : ReifyIndex ts1 ts2)
     --           See: https://docs.lean-lang.org/theorem_proving_in_lean4/find/?domain=Verso.Genre.Manual.section&name=equality
   : (∃(hEq : ts1 = ts2), hEq ▸ inst = instReifyIndexRefl)
     \/
-    -- Option 2: `inst` is the Snoc instance, `ts2` must be `ts2' :/` for some `ts2'`,
+    -- Option 2: `inst` is the Snoc instance, `ts2` must be `ts2' + 1` for some `ts2'`,
     --           and there must be another `ReifyIndex` instance for that `ts2'`.
     --           The `:=` notation passes a value to a named implicit variable.
     --           See: https://lean-lang.org/lean4/doc/lean3changes.html?highlight=named%20implicit%20arguments#function-applications
-    (∃(ts2' : Ctx) (hEq : ts2 = ts2' :/) (inst' : ReifyIndex ts1 ts2'),
+    (∃(ts2' : Ctx) (hEq : ts2 = ts2' + 1) (inst' : ReifyIndex ts1 ts2'),
        hEq ▸ inst = instReifyIndexSnoc (instRec := inst'))
 
 /-

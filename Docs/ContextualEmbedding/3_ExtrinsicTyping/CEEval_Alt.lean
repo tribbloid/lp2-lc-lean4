@@ -15,7 +15,7 @@ inductive RuntimeEnv : Ctx -> Type where
   | saved {ctx valueCtx : Ctx}
       (previous : RuntimeEnv ctx)
       (valueEnv : RuntimeEnv valueCtx)
-      (value : ValCtx valueCtx) : RuntimeEnv (ctx :/)
+      (value : ValCtx valueCtx) : RuntimeEnv (ctx + 1)
 
 /-- A contextual value suspended with the environment in which it was produced. -/
 structure Closure : Type where
@@ -56,76 +56,6 @@ def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx) :
         | .some (.mk fnEnv (.CLam body)), .some (.mk argEnv argValue) =>
             eval (.saved fnEnv argEnv argValue) (body .PTop) fuel
         | _, _ => .none
-
-namespace Spike
-
-
-
-end Spike
-
--- namespace Spike
-
--- /-- A runtime stack retaining each previous lexical environment. -/
--- inductive RuntimeEnv : Ctx -> Type where
---   | empty : RuntimeEnv Ctx.Empty
---   | saved {ctx valueCtx : Ctx} {ty : Ty}
---       (previous : RuntimeEnv ctx)
---       (value : Val valueCtx ty) :
---       RuntimeEnv (ctx :/: ty)
-
--- /-- A contextual value suspended with the environment in which it was produced. -/
--- structure Closure (ty : Ty) : Type where
---   {ctx : Ctx}
---   value : Val ctx ty
-
--- namespace RuntimeEnv
-
--- /-- Loads the suspended value selected by a contextual index. -/
--- def load : (env : RuntimeEnv ctx) -> Index ctx ty -> Closure ty
---   | saved _ value, .Top => ⟨value⟩
---   | saved previous _, .Pop index => previous.load index
-
--- end RuntimeEnv
-
--- /-- Evaluates contextual syntax while spending one fuel at each semantic descent. -/
--- def eval (env : RuntimeEnv ctx) (term : STLCCtx ctx ty) :
---     Nat -> Option (Closure ty)
---   | 0 => none
---   | fuel + 1 =>
---     match term with
---     | .CStar => some (.mk .CStar)
---     | @STLCCtx.CVar _ _ _ inst proxy =>
---         some (env.load (ReifyIndex.reify (self := inst) proxy))
---     | .CLam body =>
---         some (.mk (.CLam body))
---     | .CApp fn arg =>
---         let fnC := eval env fn fuel
---         let argC := eval env arg fuel
---         match fnC, argC with
---         | some (.mk (.CLam body)), some (.mk argValue) =>
---             eval (.saved env argValue) (body .PTop) fuel -- justified using 2 different context
---         | _, _ => none
-
--- end Spike
-
--- namespace SuspendedVal
-
--- /-- Compiles a suspended HOAS value again without changing its representation. -/
--- def compile (self : SuspendedVal ty) : Nat -> Option (SuspendedVal ty)
---   | 0 => none
---   | _ + 1 => some self
-
--- @[simp] theorem compile_succ (self : SuspendedVal ty) (fuel : Nat) :
---     self.compile (fuel + 1) = some self := by
---   rfl
-
--- theorem compile_idempotent (self : SuspendedVal ty) (fuel : Nat) :
---     (self.compile (fuel + 1)).bind
---       (fun value => value.compile (fuel + 1)) =
---     self.compile (fuel + 1) := by
---   simp
-
--- end SuspendedVal
 
 namespace AltExamples
 
@@ -181,13 +111,13 @@ example : eval .empty get1stOnTuple 3 = .some (.mk .empty .CStar) := by
 
 namespace get1stOn1st
 
-abbrev _ctx := 0 :/
+abbrev _ctx := 0 + 1
 
 abbrev _env : RuntimeEnv _ctx := .saved .empty .empty .CStar
 
 def result : Option Closure :=
   let _v : ValCtx _ctx :=
-    .CLam (λ (_second : ProxyTop (_ctx :/)) =>
+    .CLam (λ (_second : ProxyTop (_ctx + 1)) =>
       .CVar (.PTop : ProxyTop _ctx))
   .some (.mk _env _v)
 
