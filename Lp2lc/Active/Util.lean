@@ -11,24 +11,16 @@ abbrev TData := Type
 -- DO NOT INTRODUCE BEYOND NECESSITY
 
 /--
-collection of free type variables, with index type depending on payload
+collection of free type variables used in HOAS bindings
 
 They are deliberately left free to ward off unlawful construction:
 
-- the only way to construct a `DepIndex p` is to save `Value p` into a `DepFBound`
-- it is impossible mingle `DepIndex p1` and `DepIndex p2` if p1 & p2 are different in definition: They are different types
+- the only way to construct an `Index` is to save `Value` into an `FBound`
 - the only way to construct a `Data` is to parse a primitive literal in AST
-- if payload is not required, it can be set to `Unit` (see `Free`)
 -/
-class DepFree : Type 1 where
-  Payload : TPayload
-  DepIndex : Payload -> TIndex
-  Data : TData
-
-class Free : Type 1 extends DepFree where
+class Free : Type 1 where
   Index : TIndex
-  Payload := Unit
-  DepIndex := λ _ => Index
+  Data : TData
 
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value
@@ -48,20 +40,6 @@ namespace Permission
 def WideOpen {T} : Permission T := λ _ => true
 
 end Permission
-
--- TODO: this should be removed, dependent type constraint (of Payload) cannot provide more information to the compiler
--- /--
--- Hypothetical bridge between values & UIDs as HOAS carrier
-
--- There is no way to generate a UID except saving a `V`, as a result, loading ALWAYS succeed.
--- As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
-
--- The UID can be a dependent type of P, if unnecessary, use FBound alias instead
--- -/
--- class DepFBound {P : TPayload} (UID : P -> TIndex) (V : P -> Type): Type where
---   save : (value : V p) → UID p -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
---   load : (id : UID p) → V p
---   roundtrip : ∀ (value : V p), load (save value) = value
 
 /--
 thin wrapper of `T` representing outcome of a valid compilation, implying safety of associated code snippet.
