@@ -89,22 +89,25 @@ def CanInhabit (trm : Trm I) (typ : AST.Typ I) [@CompilerEnv I] :=
 
 end AST.Trm
 
+-- TODO: the following axioms assumes consistent, single-part UID between values and types which is not true: 1 type can refer to multiple values
+/-
+Some improvements:
+- RuntimeEnv UID switching to 2-part `(typeUID, valueUID)`
+- refSafety should become introduce a ∀ valueUID.
+  - once rigorous shadow compiler is implemented, refSafety become a corrolary of the store of safety proofs
+- for function bodies that are identical but for different UID, TODO: how to make them consistent
+-/
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
   refSafety : -- consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : I.Index),
         (AST.Trm.val (valueRefs.load id).1).CanInhabit (typeRefs.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
   bindInfer : -- fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
     ∀ (body : I.Index -> AST.Trm I) (v : AST.Val I) (fuel : Nat),
-      (AST.Trm.val v).infer.isDecidable (λ tIn =>
-        (body (typeRefs.save tIn)).infer fuel =
-          (body (valueRefs.save { val := v, property := canEvalAny v })).infer fuel
+      (AST.Trm.val v).infer.isDecidable (λ tV =>
+        let typeUID := typeRefs.save tV
+        let valueUID := valueRefs.save { val := v, property := canEvalAny v }
+        (body typeUID).infer fuel = (body valueUID).infer fuel -- both evaluates to closure: computation with reference that are not substituted yet
       )
--- TODO: can these be corollaries of a cross-FBound axiom? Namely:
--- - [x] body is a pure function, `(typeRefs.save tIn) = (valueRefs.save { val := v, property := canEvalAny v })` can be inferred if save requires an AST to generate UID
--- - [ ] (same id <-> same term), immutable binding (1 id only refers to 1 type/value) |- mappings in valueRefs & typeRefs are always compatible
---   - TODO: how to make it more obvious?
---     -- By making typeRefs stronger: saving a term into typeRefs will get a UID, it automatically implies that the same UID in valueRefs automatically evaluates to the same type.
---   - [by making a dual UID hashtable UID -> (Option Typ, Option Tr] -- TODO: not necessary, remove
 
 -- typeRefs only accepts well-formed AST that is guaranteed to compile, so
 
