@@ -72,6 +72,13 @@ instance typDecidableLE : DecidableLE (AST.Typ F)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).2)
 
+/--
+Contains compile-time FBound bridges for semantic obligations.
+-/
+class CompilerEnv : Type where
+  -- trmRefs :  -- TODO: this may be required for transparent inline function
+  typeRefs : FBound F.Index (AST.Typ F)
+
 class RuntimeEnv where
   CanSave : Permission (AST.Val F)
   -- valueRefGen {TP: Type} : DepFBound (TP -> I.Index) (TP -> { value : AST.Val I // CanSave value }) -- TODO: don't know how to define this prior
@@ -130,47 +137,6 @@ def IsSafe : Prop :=
 
 end
 end AST.Trm
-
--- namespace Internal
-
--- /--
--- a compiled term with safety proof
--- -/
--- private structure _AdequateTrm (condition : Condition I) where
---   trm: AST.Trm I
---   safetyEv: trm.IsSafeBy condition
-
--- end Internal
-
--- abbrev AdequateTrm := @Internal._AdequateTrm I
-
--- namespace AdequateTrm
--- section variable {c: Condition I} (self: AdequateTrm c) [env : @RuntimeEnv I]
-
--- def eval : MaySucceed ({v : AST.Val I // c v}) := fun fuel =>
---   match h : self.trm.eval fuel with
---   | .result value =>
---     ⟨.result ⟨value, by
---       have evidence := self.safetyEv fuel
---       simpa [h] using evidence⟩, by
---         simp [Outcome.isResultOrOutOfFuel]⟩
---   | .error =>
---     have noError := self.safetyEv fuel
---     False.elim (by
---       simp [h] at noError)
---   | .outOfFuel =>
---     ⟨.outOfFuel, by
---       simp [Outcome.isResultOrOutOfFuel]⟩
-
--- end
--- end AdequateTrm
-
-/--
-Contains compile-time FBound bridges for semantic obligations.
--/
-class CompilerEnv : Type where
-  -- trmRefs :  -- TODO: this may be required for transparent inline function
-  typeRefs : FBound F.Index (AST.Typ F)
 
 section variable [env: @CompilerEnv F]
 open AST
