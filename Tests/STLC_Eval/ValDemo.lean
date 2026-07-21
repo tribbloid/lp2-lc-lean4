@@ -11,7 +11,11 @@ namespace Symbolic
 
 @[reducible] def I : Free where
   Index := Symbol
+  Reify := Unit
   Data := String
+
+instance : I.Free.CanReify where
+  payload := ()
 
 abbrev Typ := AST.Typ I
 abbrev Val := AST.Val I

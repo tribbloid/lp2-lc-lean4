@@ -23,7 +23,7 @@ namespace AST.Trm
 /--
 get the strongest post type bound (post-condition) of a term, or throw an error
 -/
-def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remove this, not possible in subtyping
+def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -38,7 +38,7 @@ def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I) -- TODO: remo
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | .ref i => .yield (some (env.typeRefs.load i))
+    | @AST.Trm.ref _ i _reify => .yield (some (env.typeRefs.load i))
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone [env : @CompilerEnv I]
@@ -98,10 +98,10 @@ Some improvements:
 - for function bodies that are identical but for different UID, TODO: how to make them consistent
 -/
 class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
-  refSafety : -- consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
+  refSafety : -- (AKA, all values in FBound are proven) consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : I.Index),
         (AST.Trm.val (valueRefs.load id).1).CanInhabit (typeRefs.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
-  bindInfer : -- fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
+  bindInfer : -- (AKA same input, same output) fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
     ∀ (body : I.Index -> AST.Trm I) (v : AST.Val I) (fuel : Nat),
       (AST.Trm.val v).infer.isDecidable (λ tV =>
         let typeUID := typeRefs.save tV

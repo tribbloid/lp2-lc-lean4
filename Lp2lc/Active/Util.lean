@@ -1,10 +1,8 @@
 
-
 import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Util
 
-abbrev TPayload := Type
 abbrev TIndex := Type
 abbrev TData := Type
 
@@ -21,6 +19,28 @@ They are deliberately left free to ward off unlawful construction:
 class Free : Type 1 where
   Index : TIndex
   Data : TData
+
+namespace Free
+section variable [Free]
+
+namespace Mixin
+
+structure TypMixin (I : Index) : Prop
+structure ValMixin (I : Index) : Prop
+
+
+end Mixin
+
+def TypUIDView : Free where
+  Index := {x: Index // Mixin.TypMixin x}
+  Data := Data
+
+def ValUIDView : Free where
+  Index := {x: Index // Mixin.ValMixin x}
+  Data := Data
+
+end
+end Free
 
 /--
 single-use permission to save v into FBound. The permission is for v only and won't work for other value

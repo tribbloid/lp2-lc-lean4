@@ -72,10 +72,6 @@ instance typDecidableLE : DecidableLE (AST.Typ I)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).2)
 
-namespace AST.Val
-
-end AST.Val
-
 class RuntimeEnv where
   CanSave : Permission (AST.Val I)
   -- valueRefGen {TP: Type} : DepFBound (TP -> I.Index) (TP -> { value : AST.Val I // CanSave value }) -- TODO: don't know how to define this prior
@@ -107,7 +103,7 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
-    | .ref i =>
+    | @AST.Trm.ref _ i =>
       .yield (some (env.valueRefs.load i).1)
 
 end
