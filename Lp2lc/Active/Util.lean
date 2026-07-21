@@ -8,6 +8,10 @@ abbrev TData := Type
 
 -- DO NOT INTRODUCE BEYOND NECESSITY
 
+inductive Phase
+  | compilation
+  | runtime
+
 /--
 collection of free type variables used in HOAS bindings
 
@@ -21,23 +25,17 @@ class Free : Type 1 where
   Data : TData
 
 namespace Free
-section variable [Free]
+section variable [free : Free]
 
-namespace Mixin
+structure UID (kind : Phase) where
+  index : free.Index
 
-structure TypMixin (I : Index) : Prop
-structure ValMixin (I : Index) : Prop
+@[reducible] def UIDView (kind : Phase) : Free where
+  Index := UID kind
+  Data := free.Data
 
-
-end Mixin
-
-@[reducible] def TypUIDView : Free where
-  Index := {x: Index // Mixin.TypMixin x}
-  Data := Data
-
-@[reducible] def ValUIDView : Free where
-  Index := {x: Index // Mixin.ValMixin x}
-  Data := Data
+abbrev TypUIDView := UIDView compilation
+abbrev ValUIDView := UIDView runtime
 
 end
 end Free
