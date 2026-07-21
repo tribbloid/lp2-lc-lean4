@@ -30,12 +30,12 @@ section variable [free : Free]
 structure UID (kind : Phase) where
   index : free.Index
 
-@[reducible] def UIDView (kind : Phase) : Free where
+@[reducible] def For (kind : Phase) : Free where
   Index := UID kind
   Data := free.Data
 
-abbrev TypUIDView := UIDView compilation
-abbrev ValUIDView := UIDView runtime
+abbrev TypUIDView := For .compilation
+abbrev ValUIDView := For .runtime
 
 end
 end Free
