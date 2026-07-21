@@ -34,9 +34,6 @@ structure UID (kind : Phase) where
   Index := UID kind
   Data := free.Data
 
-abbrev TypUIDView := For .compilation
-abbrev ValUIDView := For .runtime
-
 end
 end Free
 
