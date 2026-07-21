@@ -30,7 +30,7 @@ section variable [free : Free]
 structure UID (kind : Phase) where
   index : free.Index
 
-@[reducible] def For (kind : Phase) : Free where
+@[reducible] def AsIn (kind : Phase) : Free where
   Index := UID kind
   Data := free.Data
 

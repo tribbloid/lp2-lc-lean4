@@ -12,23 +12,25 @@ open Lp2lc.Active.Util
 section variable {F : Free}
 
 namespace AST
+section variable (p : Phase)
 
-def Trm.phase1 (v: AST.Trm F): AST.Trm (F.For .compilation) :=
-  match v with
-  | .val value => .val (val.phase1 value)
-  | .apply fn arg => .apply (Trm.phase1 fn) (Trm.phase1 arg)
-  | .ref i => .ref { index := i }
-where
-  Typ.phase1 : AST.Typ F → AST.Typ (F.For .compilation)
+mutual
+  def Trm.asIn : AST.Trm F → AST.Trm (F.AsIn p)
+    | .val value => .val (Val.asIn value)
+    | .apply fn arg => .apply (Trm.asIn fn) (Trm.asIn arg)
+    | .ref i => .ref { index := i }
+
+  def Typ.asIn : AST.Typ F → AST.Typ (F.AsIn p)
     | .primitive => .primitive
-    | .fn tIn tOut => .fn (Typ.phase1 tIn) (Typ.phase1 tOut)
+    | .fn tIn tOut => .fn (Typ.asIn tIn) (Typ.asIn tOut)
 
-  val.phase1 : AST.Val F → AST.Val (F.For .compilation)
+  def Val.asIn : AST.Val F → AST.Val (F.AsIn p)
     | .primitive repr => .primitive repr
     | .fn body tIn =>
-      .fn (λ arg => Trm.phase1 (body arg.index)) (Typ.phase1 tIn)
+      .fn (λ arg => Trm.asIn (body arg.index)) (Typ.asIn tIn)
+end
 
-
+end
 end AST
 
 end
