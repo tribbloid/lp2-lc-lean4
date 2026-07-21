@@ -72,21 +72,6 @@ instance typDecidableLE : DecidableLE (AST.Typ F)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).2)
 
-def makeCompilable (v: AST.Trm F): AST.Trm (F.For .compilation) :=
-  match v with
-  | .val value => .val (makeCompilableVal value)
-  | .apply fn arg => .apply (makeCompilable fn) (makeCompilable arg)
-  | .ref i => .ref { index := i }
-where
-  makeCompilableTyp : AST.Typ F → AST.Typ (F.For .compilation)
-    | .primitive => .primitive
-    | .fn tIn tOut => .fn (makeCompilableTyp tIn) (makeCompilableTyp tOut)
-
-  makeCompilableVal : AST.Val F → AST.Val (F.For .compilation)
-    | .primitive repr => .primitive repr
-    | .fn body tIn =>
-      .fn (λ arg => makeCompilable (body arg.index)) (makeCompilableTyp tIn)
-
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
