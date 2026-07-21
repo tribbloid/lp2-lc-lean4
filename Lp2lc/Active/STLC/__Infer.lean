@@ -89,6 +89,8 @@ def CanInhabit (trm : Trm I) (typ : AST.Typ I) [@CompilerEnv I] :=
 
 end AST.Trm
 
+namespace Proof
+
 -- TODO: the following axioms assumes consistent, single-part UID between values and types which is not true: 1 type can refer to multiple values
 /-
 Some improvements:
@@ -283,7 +285,10 @@ theorem proof : @InferAdequacy I env := by
                         simp at hInferCombined
                         simp [hArgLe] at hInferCombined
 
+end Proof
+
 end
+
 end STLC
 
 end Lp2lc.Active
