@@ -31,11 +31,11 @@ structure ValMixin (I : Index) : Prop
 
 end Mixin
 
-def TypUIDView : Free where
+@[reducible] def TypUIDView : Free where
   Index := {x: Index // Mixin.TypMixin x}
   Data := Data
 
-def ValUIDView : Free where
+@[reducible] def ValUIDView : Free where
   Index := {x: Index // Mixin.ValMixin x}
   Data := Data
 

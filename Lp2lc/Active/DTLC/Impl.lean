@@ -12,7 +12,6 @@ namespace Symbolic
 
 @[reducible] def I : Free where
   Index := Symbol
-  Reify := Unit
   Data := String
 
 abbrev Typ := AST.Typ I
