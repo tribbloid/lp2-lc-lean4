@@ -12,14 +12,24 @@ namespace ShadowProof
 
 /--
 primary key structure to link/associate a CompilerEnv.typeCtx entry and a RuntimeEnv.valueCtx entry
+
+there is no other way that can relate both entries: the keys are usually not different
 -/
-structure UIDBundle where
+structure UIDLink where
   typeUID: F.Index
   valueUID: F.Index
 
-class ProvingEnv extends (@RuntimeEnv F), (@CompilerEnv F) where
+section variable [@ProvingBase F]
 
-def inferShadow [env: @CompilerEnv I] (self : AST.Trm I) : RecOption (AST.Typ I) := -- TODO: return Typ with safety proof
+structure RigorousInferredTyp where
+  trm: AST.Typ F
+  typ: AST.Typ F
+  sameEval: trm.eval = typ
+  safetyProof: Safety trm typ
+
+end
+
+def inferShadow [env: @CompilerEnv F] (self : AST.Trm F) : RecOption (AST.Typ F) := -- TODO: return Typ with safety proof
   sorry
 
 end ShadowProof

@@ -91,6 +91,11 @@ end AST.Trm
 
 namespace Proof
 
+class ProvingBase extends (@RuntimeEnv F), (@CompilerEnv F)
+
+def Safety [@ProvingBase F] (trm : AST.Trm F) (typ : AST.Typ F) : Prop :=
+  trm.eval.isSemiDecidable (λ v => (AST.Trm.val v).CanInhabit typ)
+
 -- TODO: the following axioms assumes consistent, single-part UID between values and types which is not true: 1 type can refer to multiple values
 /-
 Some improvements:
@@ -99,7 +104,7 @@ Some improvements:
   - once rigorous shadow compiler is implemented, refSafety become a corrolary of the store of safety proofs
 - for function bodies that are identical but for different UID, TODO: how to make them consistent
 -/
-class ProvingEnv extends (@RuntimeEnv F), (@CompilerEnv F) where
+class ProvingEnv extends ProvingBase where
   refSafety : -- (AKA, all values in FBound are proven) consistency between valueCtx and typeCtx, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : F.Index),
         (AST.Trm.val (valueCtx.load id).1).CanInhabit (typeCtx.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
@@ -113,10 +118,8 @@ class ProvingEnv extends (@RuntimeEnv F), (@CompilerEnv F) where
 
 -- typeCtx only accepts well-formed AST that is guaranteed to compile, so
 
-variable [env : @ProvingEnv F]
 
-def Safety (trm : AST.Trm F) (typ : AST.Typ F) : Prop :=
-  trm.eval.isSemiDecidable (λ v => (AST.Trm.val v).CanInhabit typ)
+variable [env : @ProvingEnv F]
 
 def InferAdequacy : Prop :=
   ∀ (trm : AST.Trm F) (typ : AST.Typ F),
