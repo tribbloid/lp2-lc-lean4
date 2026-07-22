@@ -100,18 +100,18 @@ Some improvements:
 - for function bodies that are identical but for different UID, TODO: how to make them consistent
 -/
 class ProvingEnv extends (@RuntimeEnv F), (@CompilerEnv F) where
-  refSafety : -- (AKA, all values in FBound are proven) consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
+  refSafety : -- (AKA, all values in FBound are proven) consistency between valueCtx and typeCtx, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : F.Index),
-        (AST.Trm.val (valueRefs.load id).1).CanInhabit (typeRefs.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
+        (AST.Trm.val (valueCtx.load id).1).CanInhabit (typeCtx.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
   bindInfer : -- (AKA same input, same output) fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
     ∀ (body : F.Index -> AST.Trm F) (v : AST.Val F) (fuel : Nat),
       (AST.Trm.val v).infer.isDecidable (λ tV =>
-        let typeUID := typeRefs.save tV
-        let valueUID := valueRefs.save { val := v, property := canEvalAny v }
+        let typeUID := typeCtx.save tV
+        let valueUID := valueCtx.save { val := v, property := canEvalAny v }
         (body typeUID).infer fuel = (body valueUID).infer fuel -- both evaluates to closure: computation with reference that are not substituted yet
       )
 
--- typeRefs only accepts well-formed AST that is guaranteed to compile, so
+-- typeCtx only accepts well-formed AST that is guaranteed to compile, so
 
 variable [env : @ProvingEnv F]
 
