@@ -76,6 +76,7 @@ class FBound (UID : TIndex) (V : Type): Type where
   save : (value : V) → UID -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
   load : (id : UID) → V
   roundtrip : ∀ (value : V), load (save value) = value
+  saveTwice (v1 v2 : V): save v1 = save v2
 
 attribute [simp] FBound.roundtrip
 

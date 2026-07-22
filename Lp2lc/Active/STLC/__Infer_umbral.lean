@@ -31,7 +31,7 @@ there is no guarantee that typeUID & valueUID will be identical, so this is the 
 
 class ProvingEnv where
   base: @ProvingBase F
-  proofStore: FBound F.Index Unit --@InferenceWProof F base trm -- TODO: need a concrete value type to save proof
+  proofCtx: FBound F.Index Unit --@InferenceWProof F base trm -- TODO: need a concrete value type to save proof
 
 instance [env: @ProvingEnv F] : @ProvingBase F := env.base
 
