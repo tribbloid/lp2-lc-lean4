@@ -9,7 +9,7 @@ open Lp2lc.Active.Util
 
 section variable {F : Free}
 
-namespace Proof_umbral
+namespace Umbral
 
 section variable [@ProvingBase F]
 
@@ -46,7 +46,7 @@ but instead of producing only a Typ F, it is obliged to produce all the followin
 - proof that it is equal to the result of Trm.infer
 - proof that it is safe after evaluation
 -/
-def infer [env: @ProvingEnv F] (trm : AST.Trm F) : RecOption (@InferenceWProof F env.base trm) := -- TODO: return Typ with safety proof
+def infer_umbral [env: @ProvingEnv F] (trm : AST.Trm F) : RecOption (@InferenceWProof F env.base trm) :=
   sorry
 
 -- theorem termInferMonotone [env : @ProvingEnv F]
@@ -55,7 +55,7 @@ def infer [env: @ProvingEnv F] (trm : AST.Trm F) : RecOption (@InferenceWProof F
 
 end
 
-end Proof_umbral
+end Umbral
 end
 
 end STLC
