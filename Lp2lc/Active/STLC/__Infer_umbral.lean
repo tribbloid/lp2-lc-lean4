@@ -25,13 +25,13 @@ primary key structure to link/associate a CompilerEnv.typeCtx entry and a Runtim
 
 there is no guarantee that typeUID & valueUID will be identical, so this is the only evidence that they are related
 -/
-structure UIDLink where
-  typeUID: F.Index
-  valueUID: F.Index
+-- structure UIDLink where
+--   typeUID: F.Index
+--   valueUID: F.Index
 
 class ProvingEnv where
   base: @ProvingBase F
-  proofStore: FBound (@UIDLink F) Unit -- TODO: need a concrete value type to save proof
+  proofStore: FBound F.Index Unit --@InferenceWProof F base trm -- TODO: need a concrete value type to save proof
 
 instance [env: @ProvingEnv F] : @ProvingBase F := env.base
 
