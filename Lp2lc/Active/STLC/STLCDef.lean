@@ -77,12 +77,12 @@ Contains compile-time FBound bridges for semantic obligations.
 -/
 class CompilerEnv : Type where
   -- trmRefs :  -- TODO: this may be required for transparent inline function
-  typeRefs : FBound F.Index (AST.Typ F)
+  typeCtx : FBound F.Index (AST.Typ F)
 
 class RuntimeEnv where
   CanSave : Permission (AST.Val F)
   -- valueRefGen {TP: Type} : DepFBound (TP -> I.Index) (TP -> { value : AST.Val I // CanSave value }) -- TODO: don't know how to define this prior
-  valueRefs: FBound F.Index { value : AST.Val F // CanSave value }
+  valueCtx: FBound F.Index { value : AST.Val F // CanSave value }
   canEvalAny: (v: AST.Val F) -> CanSave v
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
@@ -105,13 +105,13 @@ def eval (self : AST.Trm F) : RecOption (AST.Val F)
       match anf with
       | (.yield (some (.fn body _tIn)), .yield (some input)) =>
         let permission := env.canEvalAny input
-        let index := env.valueRefs.save ⟨input, permission⟩
+        let index := env.valueCtx.save ⟨input, permission⟩
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | @AST.Trm.ref _ i =>
-      .yield (some (env.valueRefs.load i).1)
+      .yield (some (env.valueCtx.load i).1)
 
 end
 

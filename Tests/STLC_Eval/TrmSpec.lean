@@ -36,7 +36,7 @@ namespace Fixture
 @[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
   {
     CanSave := RuntimeCanEval
-    valueRefs := _unsafeFBound { value : Val // RuntimeCanEval value }
+    valueCtx := _unsafeFBound { value : Val // RuntimeCanEval value }
     canEvalAny := fun _value => True.intro
   }
 
@@ -57,7 +57,7 @@ example : (vFalse : Trm).eval.shouldYields Val.vFalse := by
   · rfl
 
 example :
-    let ref := env.valueRefs.save ⟨Val.vFalse, env.canEvalAny Val.vFalse⟩
+    let ref := env.valueCtx.save ⟨Val.vFalse, env.canEvalAny Val.vFalse⟩
     (AST.Trm.ref ref).eval 1 = .yield (some Val.vFalse) := by
   simp [AST.Trm.eval]
 

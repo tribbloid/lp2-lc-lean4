@@ -16,20 +16,20 @@ term can be inferred to type using some fuel, evaluating it must leads to either
 Obviously inferring type is not alway available in more complex type system, but it's a good demo for recursive proving
 -/
 
-section variable {I : Free}
+section variable {F : Free}
 
 namespace AST.Trm
 
 /--
 get the strongest post type bound (post-condition) of a term, or throw an error
 -/
-def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I)
+def infer [env: @CompilerEnv F] (self : Trm F) : RecOption (Typ F)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
     | .val (.primitive _) => .yield (some .primitive)
     | .val (.fn body tIn) =>
-      let index := env.typeRefs.save tIn
+      let index := env.typeCtx.save tIn
       ((body index).infer fuel).map (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fn arg =>
       match fn.infer fuel, arg.infer fuel with
@@ -38,11 +38,11 @@ def infer [env: @CompilerEnv I] (self : Trm I) : RecOption (Typ I)
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | @AST.Trm.ref _ i => .yield (some (env.typeRefs.load i))
+    | @AST.Trm.ref _ i => .yield (some (env.typeCtx.load i))
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
-theorem termInferMonotone [env : @CompilerEnv I]
-    (trm : Trm I) :
+theorem termInferMonotone [env : @CompilerEnv F]
+    (trm : Trm F) :
     trm.infer.Monotone := by
   intro less more result hFuel hInfer
   induction less using Nat.strongRecOn generalizing trm more result with
@@ -60,10 +60,10 @@ theorem termInferMonotone [env : @CompilerEnv I]
           cases value with
           | primitive repr => simpa [AST.Trm.infer] using hInfer
           | fn body tIn =>
-            cases hBody : (body (env.typeRefs.save tIn)).infer fuel with
+            cases hBody : (body (env.typeCtx.save tIn)).infer fuel with
             | outOfFuel => simp [AST.Trm.infer, hBody, Outcome.map] at hInfer
             | yield bodyResult =>
-              have hBodyTop := ih fuel (Nat.lt_succ_self fuel) (body (env.typeRefs.save tIn)) toFuel bodyResult hFuelTail hBody
+              have hBodyTop := ih fuel (Nat.lt_succ_self fuel) (body (env.typeCtx.save tIn)) toFuel bodyResult hFuelTail hBody
               simpa [AST.Trm.infer, Outcome.map, hBody, hBodyTop] using hInfer
         | apply fnTerm arg =>
           cases hFn : fnTerm.infer fuel with
@@ -79,12 +79,12 @@ theorem termInferMonotone [env : @CompilerEnv I]
           simpa [AST.Trm.infer] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
-theorem valueInferMonotone [env : @CompilerEnv I]
-    (value : AST.Val I) :
+theorem valueInferMonotone [env : @CompilerEnv F]
+    (value : AST.Val F) :
     (AST.Trm.val value).infer.Monotone :=
   termInferMonotone (AST.Trm.val value)
 
-def CanInhabit (trm : Trm I) (typ : AST.Typ I) [@CompilerEnv I] :=
+def CanInhabit (trm : Trm F) (typ : AST.Typ F) [@CompilerEnv F] :=
   trm.infer.isDecidable (λ t2 => t2 <= typ)
 
 end AST.Trm
@@ -99,12 +99,12 @@ Some improvements:
   - once rigorous shadow compiler is implemented, refSafety become a corrolary of the store of safety proofs
 - for function bodies that are identical but for different UID, TODO: how to make them consistent
 -/
-class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
+class ProvingEnv extends (@RuntimeEnv F), (@CompilerEnv F) where
   refSafety : -- (AKA, all values in FBound are proven) consistency between valRefs and typRefs, runtime variable of value can always inhabit compiletime variable of type with the same name
-    ∀ (id : I.Index),
+    ∀ (id : F.Index),
         (AST.Trm.val (valueRefs.load id).1).CanInhabit (typeRefs.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
   bindInfer : -- (AKA same input, same output) fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
-    ∀ (body : I.Index -> AST.Trm I) (v : AST.Val I) (fuel : Nat),
+    ∀ (body : F.Index -> AST.Trm F) (v : AST.Val F) (fuel : Nat),
       (AST.Trm.val v).infer.isDecidable (λ tV =>
         let typeUID := typeRefs.save tV
         let valueUID := valueRefs.save { val := v, property := canEvalAny v }
@@ -113,17 +113,17 @@ class ProvingEnv extends (@RuntimeEnv I), (@CompilerEnv I) where
 
 -- typeRefs only accepts well-formed AST that is guaranteed to compile, so
 
-variable [env : @ProvingEnv I]
+variable [env : @ProvingEnv F]
 
-def Safety (trm : AST.Trm I) (typ : AST.Typ I) : Prop :=
+def Safety (trm : AST.Trm F) (typ : AST.Typ F) : Prop :=
   trm.eval.isSemiDecidable (λ v => (AST.Trm.val v).CanInhabit typ)
 
 def InferAdequacy : Prop :=
-  ∀ (trm : AST.Trm I) (typ : AST.Typ I),
+  ∀ (trm : AST.Trm F) (typ : AST.Typ F),
   trm.CanInhabit typ ->
   Safety trm typ
 
-theorem proof : @InferAdequacy I env := by
+theorem proof : @InferAdequacy F env := by
   intro trm typ hInhabit
   rcases hInhabit with ⟨fuel, hInfer⟩
   cases hInferResult : trm.infer fuel with
@@ -201,13 +201,13 @@ theorem proof : @InferAdequacy I env := by
                                cases fnValue with
                                | primitive =>
                                  unfold AST.Trm.infer at hFnValueInfer
-                                 change AST.Typ.primitive = (.fn tIn typ : AST.Typ I) at hFnValueInfer
+                                 change AST.Typ.primitive = (.fn tIn typ : AST.Typ F) at hFnValueInfer
                                  cases hFnValueInfer
                                | fn body runtimeTIn =>
                                  have hInferUnfold : (AST.Trm.val (AST.Val.fn body runtimeTIn)).infer (fnFuel.succ) =
-                                   ((body (env.typeRefs.save runtimeTIn)).infer fnFuel).map (λ out => out.map (λ tOut => .fn runtimeTIn tOut)) := rfl
+                                   ((body (env.typeCtx.save runtimeTIn)).infer fnFuel).map (λ out => out.map (λ tOut => .fn runtimeTIn tOut)) := rfl
                                  rw [hInferUnfold] at hFnValueInfer
-                                 cases hBodyCompile : (body (env.typeRefs.save runtimeTIn)).infer fnFuel with
+                                 cases hBodyCompile : (body (env.typeCtx.save runtimeTIn)).infer fnFuel with
                                   | outOfFuel =>
                                     rw [hBodyCompile] at hFnValueInfer
                                     simp at hFnValueInfer
@@ -247,7 +247,7 @@ theorem proof : @InferAdequacy I env := by
                                                   (AST.Trm.val input).infer inputFuel = .yield (some v) := hInferInputCall
                                                   _ = .yield (some tIn) := by
                                                     rw [hvEq, hArgLe]
-                                              let inputIndex := env.valueRefs.save
+                                              let inputIndex := env.valueCtx.save
                                                 { val := input, property := env.canEvalAny input }
                                               rcases ProvingEnv.bindInfer body input fnFuel with ⟨bindFuel, hBind⟩
                                               match hBindInput : (AST.Trm.val input).infer bindFuel with

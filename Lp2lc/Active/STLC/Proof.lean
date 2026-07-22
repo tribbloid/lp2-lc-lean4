@@ -17,13 +17,13 @@ term can be inferred to type using some fuel, evaluating it must leads to either
 Obviously inferring type is not alway available in more complex type system, but it's a good demo for recursive proving
 -/
 
-section variable {I : Free}
+section variable {F : Free}
 
 namespace AST.Trm
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
-theorem termEvalMonotone [env : @RuntimeEnv I]
-    (trm : Trm I) :
+theorem termEvalMonotone [env : @RuntimeEnv F]
+    (trm : Trm F) :
     trm.eval.Monotone := by
   intro less more result hFuel hEval
   induction less using Nat.strongRecOn generalizing trm more result with
@@ -61,13 +61,13 @@ theorem termEvalMonotone [env : @RuntimeEnv I]
                     simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                   | some input =>
                     cases hBody :
-                        (body (env.valueRefs.save { val := input, property := env.canEvalAny input })).eval fuel with
+                        (body (env.valueCtx.save { val := input, property := env.canEvalAny input })).eval fuel with
                     | outOfFuel =>
                       simp [AST.Trm.eval, hFn, hArg, hBody] at hEval
                     | yield bodyResult =>
                       have hBodyTop :=
                         ih fuel (Nat.lt_succ_self fuel)
-                          (body (env.valueRefs.save { val := input, property := env.canEvalAny input }))
+                          (body (env.valueCtx.save { val := input, property := env.canEvalAny input }))
                           toFuel bodyResult hFuelTail hBody
                       simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop, hBody, hBodyTop] using hEval
         | ref id =>
@@ -78,12 +78,12 @@ end AST.Trm
 
 /-- States that semantic typing of a closed term entails operational safety. -/
 def Adequacy : Prop :=
-  ∀ (term : AST.Trm I) (postcondition : Condition I),
+  ∀ (term : AST.Trm F) (postcondition : Condition F),
     term.WeakestPre postcondition → term.IsSafe
 
 namespace Adequacy
 
-def proof : @Adequacy I := by
+def proof : @Adequacy F := by
   intro term postcondition weakest fuel runtimeEnv
   specialize weakest fuel
   cases evalResult : term.eval fuel with
