@@ -89,12 +89,12 @@ def CanInhabit (trm : Trm F) (typ : AST.Typ F) [@CompilerEnv F] :=
 
 end AST.Trm
 
-namespace Proof
-
 class ProvingBase extends (@RuntimeEnv F), (@CompilerEnv F)
 
 def Safety [@ProvingBase F] (trm : AST.Trm F) (typ : AST.Typ F) : Prop :=
   trm.eval.isSemiDecidable (λ v => (AST.Trm.val v).CanInhabit typ)
+
+namespace Proof
 
 -- TODO: the following axioms assumes consistent, single-part UID between values and types which is not true: 1 type can refer to multiple values
 /-
