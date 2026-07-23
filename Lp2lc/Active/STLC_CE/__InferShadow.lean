@@ -13,7 +13,7 @@ namespace AST.Trm
 Gets the strongest post type bound of a term, or fails.
 
 CE references carry their type in the reification evidence, so inference does
-not need a compiler-side `FBoundV2`.
+not need a compiler-side `FBound`.
 -/
 def infer {ctx : AST.Ctx} (self : AST.Trm ctx) : RecOption AST.Typ
   | 0 => .outOfFuel

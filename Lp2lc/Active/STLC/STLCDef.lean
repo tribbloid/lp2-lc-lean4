@@ -73,18 +73,18 @@ instance typDecidableLE : DecidableLE (AST.Typ F)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).2)
 
 /--
-Contains compile-time FBoundV2 bridges for semantic obligations.
+Contains compile-time FBound bridges for semantic obligations.
 -/
 class CompilerEnv : Type where
   -- trmRefs :  -- TODO: this may be required for transparent inline function
   typeGroup : FBoundGroup F.Index (AST.Typ F)
-  typeCtx : FBoundV2 typeGroup (λ _type => Unit)
+  typeCtx : FBound typeGroup (λ _type => Unit)
 
 class RuntimeEnv where
   CanSave : Permission (AST.Val F)
   -- valueRefGen {TP: Type} : DepFBound (TP -> I.Index) (TP -> { value : AST.Val I // CanSave value }) -- TODO: don't know how to define this prior
   valueGroup : FBoundGroup F.Index (AST.Val F)
-  valueCtx : FBoundV2 valueGroup CanSave
+  valueCtx : FBound valueGroup CanSave
   canEvalAny: (v: AST.Val F) -> CanSave v
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
@@ -94,7 +94,7 @@ section variable [env: @RuntimeEnv F]
 
 /--
 Evaluates a term by spending 1 fuel at each semantic
-descent. Runtime evaluation uses `FBoundV2` for references and deliberately
+descent. Runtime evaluation uses `FBound` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
 def eval (self : AST.Trm F) : RecOption (AST.Val F)

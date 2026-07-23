@@ -106,7 +106,7 @@ Some improvements:
 - for function bodies that are identical but for different UID, TODO: how to make them consistent
 -/
 class ProvingEnv extends ProvingBase where
-  refSafety : -- (AKA, all values in FBoundV2 are proven) consistency between valueCtx and typeCtx, runtime variable of value can always inhabit compiletime variable of type with the same name
+  refSafety : -- (AKA, all values in FBound are proven) consistency between valueCtx and typeCtx, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : F.Index),
         (AST.Trm.val (valueCtx.load id).1).CanInhabit (typeCtx.load id).1 -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
   bindInfer : -- (AKA same input, same output) fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value

@@ -8,7 +8,7 @@ This directory contain syntax, typing/semantic/evaluation rules and proof of sou
 
 ## Conventions
 
-- Strong HOAS (higher order abstract syntx) + F-Bound: it's almost identical to raw Strong HOAS (see @Tests/STLC_syntax.scala for a Scala example), with one minor twist: a binded variable in a function is no longer a pending `Val`, but an unknown `{I : Index}` that can correspond to syntax or runtime values through an `FBoundGroup` and `FBoundV2`. Any concrete syntax rule or AST definition can only depend on the given `{I : Index}` and the required F-Bound environment.
+- Strong HOAS (higher order abstract syntx) + F-Bound: it's almost identical to raw Strong HOAS (see @Tests/STLC_syntax.scala for a Scala example), with one minor twist: a binded variable in a function is no longer a pending `Val`, but an unknown `{I : Index}` that can correspond to syntax or runtime values through an `FBoundGroup` and `FBound`. Any concrete syntax rule or AST definition can only depend on the given `{I : Index}` and the required F-Bound environment.
   - As a result, de Bruijn serial, explicit variable name, or environment/context/store definitions are NOT allowed.
 - Big-step semantics, both type-checking and evaluation must follow functional programming style and only use AST information. Evaluation should only happen at runtime and after successful type-checking; compile-time checking must not call runtime `eval`.
 - Type-checking should be rigorous and reject malformed "term: type" even if they may execute successfully (e.g. calling a term argument of "top" type which may be a function)

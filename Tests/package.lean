@@ -1,6 +1,6 @@
 
 import «Tests».EquivIsoDemo
-import «Tests».FBoundV2Spec
+import «Tests».FBoundSpec
 import «Tests».PrimeRefinementProvider
 import «Tests».PrimeRefinementDemo
 import «Tests».DOT.Sanity

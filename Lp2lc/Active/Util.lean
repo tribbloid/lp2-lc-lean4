@@ -38,15 +38,15 @@ end
 end Free
 
 /--
-single-use permission to save v into FBoundV2. The permission is for v only and won't work for other value
+single-use permission to save v into FBound. The permission is for v only and won't work for other value
 
 in runtime, permission to eval is granted for all values
 
-in compiletime, no permission will be granted, you can only save Typ into FBoundV2.
+in compiletime, no permission will be granted, you can only save Typ into FBound.
 
 in the future we may:
 - let transparent inline function carrying their own permission, so they can eval in compiletime and interact with typing
-- add permission to load value From FBoundV2
+- add permission to load value From FBound
 -/
 def Permission (T : Type) := (v: T) -> Prop -- no instance will be provided ever, they are requiremennts to apply AST rules.
 
@@ -61,7 +61,7 @@ thin wrapper of `T` representing outcome of a valid compilation, implying safety
 
 all compilation API should ideally return this.
 
-if saved in an FBoundV2, the result UID should work in any `Env` to get a compatible term or value.
+if saved in an FBound, the result UID should work in any `Env` to get a compatible term or value.
 -/
 structure Valid T : Type where
   self: T
@@ -84,37 +84,37 @@ this is an upgraded bridge which depends on FBoundGroup:
 
 - designed to save/load a value with a `metadata : Type/Prop` that depends on it
 - `save` computes UID only from value, metadata is required but not used
-- all FBoundV2 instances from the same group share the same isomorphism of UID <-> group.V
+- all FBound instances from the same group share the same isomorphism of UID <-> group.V
 - the metadata can be set to Unit type to achieve the original bridge behaviour
 
 The shared bridge is a left inverse rather than a full isomorphism. Metadata is
 total over the group's values and is reconstructed by each instance on load.
 -/
-class FBoundV2 {UID : TIndex} {V : Type}
+class FBound {UID : TIndex} {V : Type}
     (group : FBoundGroup UID V) (D : V → Sort u) where
   loadMetadata : (id : UID) → D (group.load id)
 
-namespace FBoundV2
+namespace FBound
 section variable {UID : TIndex} {V : Type} {group : FBoundGroup UID V} {D : V → Sort u}
 
 /-- A value paired with metadata whose type depends on that value. -/
 abbrev Bundle (D : V → Sort u) := PSigma D
 
 /-- Saves a bundle using only its value through the shared group bridge. -/
-def save (_self : FBoundV2 group D) (bundle : Bundle D) : UID :=
+def save (_self : FBound group D) (bundle : Bundle D) : UID :=
   group.save bundle.fst
 
 /-- Loads a value through the group and reconstructs this instance's metadata. -/
-def load (self : FBoundV2 group D) (id : UID) : Bundle D :=
+def load (self : FBound group D) (id : UID) : Bundle D :=
   ⟨group.load id, self.loadMetadata id⟩
 
 @[simp]
-theorem roundtripValue (self : FBoundV2 group D) (bundle : Bundle D) :
+theorem roundtripValue (self : FBound group D) (bundle : Bundle D) :
     (self.load (self.save bundle)).fst = bundle.fst :=
   group.roundtrip bundle.fst
 
 end
-end FBoundV2
+end FBound
 
 attribute [simp] FBoundGroup.roundtrip
 
