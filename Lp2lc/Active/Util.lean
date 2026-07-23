@@ -76,7 +76,35 @@ class FBound (UID : TIndex) (V : Type): Type where
   save : (value : V) → UID -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
   load : (id : UID) → V
   roundtrip : ∀ (value : V), load (save value) = value
-  saveTwice (v1 v2 : V): save v1 = save v2
+  -- saveTwice (v1 v2 : V): save v1 = save v2
+  -- loadTwice (id1 id2 : UID): load id1 = load id2
+
+
+structure FBoundGroup : Type 1 where
+  (UID: TIndex)
+  (V: Type)
+
+/--
+this is an upgraded FBound which depends on FBoundGroup:
+
+- designed to save/load a value with a `metadata : Type/Prop` that depends on it
+- `save` computes UID only from value, metadata is required but not used
+- all FBoundV2 instances from the same group share the same isomorphism of UID <-> group.V
+- the metadata can be set to Unit type to achieve the original FBound behaviour
+-/
+class FBoundV2 (G : FBoundGroup) (D: G.V -> (Sort u)) where
+  Bundle: (value : G.V) × (metadata: D value)
+  save : (bundle : Bundle) → group.UID -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
+  load : (id : group.UID) → Bundle
+
+-- namespace FBoundGroup
+-- section variable (group : FBoundGroup)
+
+-- end
+-- end FBoundGroup
+
+namespace FBound
+end FBound
 
 attribute [simp] FBound.roundtrip
 

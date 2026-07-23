@@ -84,9 +84,6 @@ theorem valueInferMonotone [env : @CompilerEnv F]
     (AST.Trm.val value).infer.Monotone :=
   termInferMonotone (AST.Trm.val value)
 
-theorem inferTwice (env1 env2 : @CompilerEnv F)
-    (trm : Trm F) :
-    trm.infer (env := env1) = trm.infer (env := env2) := sorry
 
 def CanInhabit (trm : Trm F) (typ : AST.Typ F) [@CompilerEnv F] :=
   trm.infer.isDecidable (λ t2 => t2 <= typ)
