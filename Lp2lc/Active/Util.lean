@@ -17,7 +17,7 @@ collection of free type variables used in HOAS bindings
 
 They are deliberately left free to ward off unlawful construction:
 
-- the only way to construct an `Index` is to save `Value` into an `FBound`
+- the only way to construct an `Index` is to save `Value` through the F-Bound bridge
 - the only way to construct a `Data` is to parse a primitive literal in AST
 -/
 class Free : Type 1 where
@@ -38,15 +38,15 @@ end
 end Free
 
 /--
-single-use permission to save v into FBound. The permission is for v only and won't work for other value
+single-use permission to save v into FBoundV2. The permission is for v only and won't work for other value
 
 in runtime, permission to eval is granted for all values
 
-in compiletime, no permission will be granted, you can only save Typ into FBound.
+in compiletime, no permission will be granted, you can only save Typ into FBoundV2.
 
 in the future we may:
 - let transparent inline function carrying their own permission, so they can eval in compiletime and interact with typing
-- add permission to load value From FBound
+- add permission to load value From FBoundV2
 -/
 def Permission (T : Type) := (v: T) -> Prop -- no instance will be provided ever, they are requiremennts to apply AST rules.
 
@@ -61,7 +61,7 @@ thin wrapper of `T` representing outcome of a valid compilation, implying safety
 
 all compilation API should ideally return this.
 
-if saved in an FBound, the result UID should work in any `Env` to get a compatible term or value.
+if saved in an FBoundV2, the result UID should work in any `Env` to get a compatible term or value.
 -/
 structure Valid T : Type where
   self: T
@@ -72,41 +72,51 @@ Hypothetical bridge between values & UIDs as HOAS carrier
 There is no way to generate a UID except saving a `V`, as a result, loading ALWAYS succeed.
 As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
 -/
-class FBound (UID : TIndex) (V : Type): Type where
+structure FBoundGroup (UID : TIndex) (V : Type) : Type where
   save : (value : V) → UID -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
   load : (id : UID) → V
   roundtrip : ∀ (value : V), load (save value) = value
   -- saveTwice (v1 v2 : V): save v1 = save v2
   -- loadTwice (id1 id2 : UID): load id1 = load id2
 
-
-structure FBoundGroup : Type 1 where
-  (UID: TIndex)
-  (V: Type)
-
 /--
-this is an upgraded FBound which depends on FBoundGroup:
+this is an upgraded bridge which depends on FBoundGroup:
 
 - designed to save/load a value with a `metadata : Type/Prop` that depends on it
 - `save` computes UID only from value, metadata is required but not used
 - all FBoundV2 instances from the same group share the same isomorphism of UID <-> group.V
-- the metadata can be set to Unit type to achieve the original FBound behaviour
+- the metadata can be set to Unit type to achieve the original bridge behaviour
+
+The shared bridge is a left inverse rather than a full isomorphism. Metadata is
+total over the group's values and is reconstructed by each instance on load.
 -/
-class FBoundV2 (G : FBoundGroup) (D: G.V -> (Sort u)) where
-  Bundle: (value : G.V) × (metadata: D value)
-  save : (bundle : Bundle) → group.UID -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
-  load : (id : group.UID) → Bundle
+class FBoundV2 {UID : TIndex} {V : Type}
+    (group : FBoundGroup UID V) (D : V → Sort u) where
+  loadMetadata : (id : UID) → D (group.load id)
 
--- namespace FBoundGroup
--- section variable (group : FBoundGroup)
+namespace FBoundV2
+section variable {UID : TIndex} {V : Type} {group : FBoundGroup UID V} {D : V → Sort u}
 
--- end
--- end FBoundGroup
+/-- A value paired with metadata whose type depends on that value. -/
+abbrev Bundle (D : V → Sort u) := PSigma D
 
-namespace FBound
-end FBound
+/-- Saves a bundle using only its value through the shared group bridge. -/
+def save (_self : FBoundV2 group D) (bundle : Bundle D) : UID :=
+  group.save bundle.fst
 
-attribute [simp] FBound.roundtrip
+/-- Loads a value through the group and reconstructs this instance's metadata. -/
+def load (self : FBoundV2 group D) (id : UID) : Bundle D :=
+  ⟨group.load id, self.loadMetadata id⟩
+
+@[simp]
+theorem roundtripValue (self : FBoundV2 group D) (bundle : Bundle D) :
+    (self.load (self.save bundle)).fst = bundle.fst :=
+  group.roundtrip bundle.fst
+
+end
+end FBoundV2
+
+attribute [simp] FBoundGroup.roundtrip
 
 section variable {T : Sort u}
 

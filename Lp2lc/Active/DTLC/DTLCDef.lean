@@ -122,7 +122,8 @@ end AST.Val
 class RuntimeEnv where
   EvalPermission : Permission (AST.Val I)
   -- fuel: Nat -- this can't be used, ewww
-  forVals: FBound I.Index { value : AST.Val I // EvalPermission value }
+  valueGroup : FBoundGroup I.Index (AST.Val I)
+  forVals : FBoundV2 valueGroup EvalPermission
   canEvalAny: (v: AST.Val I) -> EvalPermission v
 
 section variable [env: @RuntimeEnv I]
@@ -131,7 +132,7 @@ namespace AST.Trm
 
 /--
 Evaluates a source or compiled program by spending 1 fuel at each semantic
-descent. Runtime evaluation uses `FBound I Val` for references and deliberately
+descent. Runtime evaluation uses `FBoundV2` for references and deliberately
 does not inspect compile-time typing evidence.
 -/
 def eval (self : AST.Trm I) : RecOption (AST.Val I)
@@ -217,10 +218,11 @@ structure Program (condition : AST.Condition I) where
   isSafe: trm.IsSafeBy condition
 
 /--
-Contains compile-time FBound bridges for semantic obligations.
+Contains compile-time FBoundV2 bridges for semantic obligations.
 -/
 class CompilerEnv where
-  forSemantic: FBound I.Index { _semantic : AST.Val I -> AST.Condition I // True }
+  semanticGroup : FBoundGroup I.Index (AST.Val I -> AST.Condition I)
+  forSemantic : FBoundV2 semanticGroup (λ _semantic => True)
 
 section variable [@CompilerEnv I]
 open AST

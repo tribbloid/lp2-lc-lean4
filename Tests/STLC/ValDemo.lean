@@ -5,7 +5,7 @@ open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
 
 /--
-it is deliberately unconstructable: FBound can hypothetically make it but this is not deliberately provided anywhere
+it is deliberately unconstructable: FBoundV2 can hypothetically make it but this is not deliberately provided anywhere
 
 test cases are expected to use the roundtrip to demonstrate syntax rules
 -/

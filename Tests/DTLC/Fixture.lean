@@ -13,12 +13,12 @@ namespace Fixture
 @[reducible] def RuntimeCanEval : Permission Val := fun _value => True
 
 /--
-Build an `FBound` over an `IO.Ref (Array T)`. The permission is ignored
+Build an `FBoundGroup` over an `IO.Ref (Array T)`. The permission is ignored
 and `roundtrip` is discharged via `unsafeCast True.intro`; the bridge
 is sound by construction.
 -/
-@[reducible] unsafe def _unsafeFBound (T : Type) :
-    FBound I.Index T :=
+@[reducible] unsafe def _unsafeFBoundGroup (T : Type) :
+    FBoundGroup I.Index T :=
   let saved : IO.Ref (Array T) := unsafeBaseIO (IO.mkRef #[])
   let save : T → I.Index := fun value =>
     unsafeBaseIO do
@@ -39,9 +39,11 @@ is sound by construction.
   }
 
 @[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
+  let valueGroup := _unsafeFBoundGroup Val
   {
     EvalPermission := RuntimeCanEval
-    forVals := _unsafeFBound { value : Val // RuntimeCanEval value }
+    valueGroup := valueGroup
+    forVals := { loadMetadata := λ _id => True.intro }
     canEvalAny := fun _value => True.intro
   }
 
@@ -51,7 +53,11 @@ axiom runtimeEnv : @RuntimeEnv I -- this instance of Runtime.Env is intend to co
 
 
 @[reducible] unsafe def _compilerEnv : @CompilerEnv I :=
-  { forSemantic := _unsafeFBound { _semantic : Val -> AST.Condition I // True } }
+  let semanticGroup := _unsafeFBoundGroup (Val -> AST.Condition I)
+  {
+    semanticGroup := semanticGroup
+    forSemantic := { loadMetadata := λ _id => True.intro }
+  }
 
 @[instance, implemented_by _compilerEnv]
 axiom compilerEnv : @CompilerEnv I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples

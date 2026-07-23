@@ -40,8 +40,8 @@ ideally fnAST is a generator: compiletimeFunction <- fnAST -> runtimeFunction:
 there are 3 ways to enforce this discipline (no eval at compiletime):
 
 - [x] permission to use function body `body: StagePermission -> I -> Trm` (most promising, what's the caveat?)
-- [ ] permission to save Value to FBound `save: StagePermission -> Val -> I` (or just withhold instances of FBound)
-- [ ] permission to load Value to FBound `load: StagePermission -> I -> Val`
+- [ ] permission to save Value to FBoundV2 `save: StagePermission -> Val -> I` (or just withhold instances of FBoundV2)
+- [ ] permission to load Value from FBoundV2 `load: StagePermission -> I -> Val`
 
 
 

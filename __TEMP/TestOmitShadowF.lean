@@ -21,7 +21,8 @@ structure UIDLink (F : Free) where
 
 class ShadowProvingEnv where
   base : @ProvingBase F
-  proofStore : FBound (UIDLink F) (@InferenceWProof F base)
+  proofGroup : FBoundGroup (UIDLink F) (@InferenceWProof F base)
+  proofStore : FBoundV2 proofGroup (λ _proof => Unit)
 
 instance [env : @ShadowProvingEnv F] : @ProvingBase F := env.base
 

@@ -6,7 +6,7 @@ namespace DTLC
 
 open Lp2lc.Active.Util
 
-inductive Symbol where -- no constructor, it can only be retrieved from FBound
+inductive Symbol where -- no constructor, it can only be retrieved from FBoundV2
 
 namespace Symbolic
 

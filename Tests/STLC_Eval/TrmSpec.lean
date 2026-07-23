@@ -12,8 +12,8 @@ namespace Fixture
 
 @[reducible] def RuntimeCanEval : Permission Val := fun _value => True
 
-@[reducible] unsafe def _unsafeFBound (T : Type) :
-    FBound I.Index T :=
+@[reducible] unsafe def _unsafeFBoundGroup (T : Type) :
+    FBoundGroup I.Index T :=
   let saved : IO.Ref (Array T) := unsafeBaseIO (IO.mkRef #[])
   let save : T → I.Index := fun value =>
     unsafeBaseIO do
@@ -34,9 +34,11 @@ namespace Fixture
   }
 
 @[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
+  let valueGroup := _unsafeFBoundGroup Val
   {
     CanSave := RuntimeCanEval
-    valueCtx := _unsafeFBound { value : Val // RuntimeCanEval value }
+    valueGroup := valueGroup
+    valueCtx := { loadMetadata := λ _id => True.intro }
     canEvalAny := fun _value => True.intro
   }
 
