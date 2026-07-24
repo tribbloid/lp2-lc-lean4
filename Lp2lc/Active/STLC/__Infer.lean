@@ -29,7 +29,7 @@ def infer [env: @CompilerEnv F] (self : Trm F) : RecOption (Typ F)
     match self with
     | .val (.primitive _) => .yield (some .primitive)
     | .val (.fn body tIn) =>
-      let index := env.typeCtx.save tIn
+      let index := env.trm2typCtx.save tIn
       ((body index).infer fuel).map (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fn arg =>
       match fn.infer fuel, arg.infer fuel with
@@ -38,7 +38,7 @@ def infer [env: @CompilerEnv F] (self : Trm F) : RecOption (Typ F)
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | @AST.Trm.ref _ i => .yield (some (env.typeCtx.load i))
+    | @AST.Trm.ref _ i => .yield (some (env.trm2typCtx.load i))
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone [env : @CompilerEnv F]
@@ -60,10 +60,10 @@ theorem termInferMonotone [env : @CompilerEnv F]
           cases value with
           | primitive repr => simpa [AST.Trm.infer] using hInfer
           | fn body tIn =>
-            cases hBody : (body (env.typeCtx.save tIn)).infer fuel with
+            cases hBody : (body (env.trm2typCtx.save tIn)).infer fuel with
             | outOfFuel => simp [AST.Trm.infer, hBody, Outcome.map] at hInfer
             | yield bodyResult =>
-              have hBodyTop := ih fuel (Nat.lt_succ_self fuel) (body (env.typeCtx.save tIn)) toFuel bodyResult hFuelTail hBody
+              have hBodyTop := ih fuel (Nat.lt_succ_self fuel) (body (env.trm2typCtx.save tIn)) toFuel bodyResult hFuelTail hBody
               simpa [AST.Trm.infer, Outcome.map, hBody, hBodyTop] using hInfer
         | apply fnTerm arg =>
           cases hFn : fnTerm.infer fuel with
@@ -108,12 +108,12 @@ Some improvements:
 class ProvingEnv extends ProvingBase where
   refSafety : -- (AKA, all values in FBound are proven) consistency between valueCtx and typeGroup, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : F.Index),
-        (AST.Trm.val (toProvingBase.toRuntimeEnv.valueCtx.load id)).CanInhabit (toProvingBase.toCompilerEnv.typeCtx.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
+        (AST.Trm.val (toProvingBase.toRuntimeEnv.trm2valCtx.load id)).CanInhabit (toProvingBase.toCompilerEnv.trm2typCtx.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
   bindInfer : -- (AKA same input, same output) fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
     ∀ (body : F.Index -> AST.Trm F) (v : AST.Val F) (fuel : Nat),
       (AST.Trm.val v).infer.isDecidable (λ tV =>
-        let typeUID := toProvingBase.toCompilerEnv.typeCtx.save tV
-        let valueUID := toProvingBase.toRuntimeEnv.valueCtx.save v
+        let typeUID := toProvingBase.toCompilerEnv.trm2typCtx.save tV
+        let valueUID := toProvingBase.toRuntimeEnv.trm2valCtx.save v
         (body typeUID).infer fuel = (body valueUID).infer fuel -- both evaluates to closure: computation with reference that are not substituted yet
       )
 

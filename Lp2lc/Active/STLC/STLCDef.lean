@@ -55,6 +55,15 @@ inductive Val : Type where
 | fn (body : (arg : F.Index) → Trm) (tIn : Typ) -- most specific type is always `.fn tIn _`
 
 end
+
+structure Trm2Typ where
+  trm : Trm F
+  typ : Typ F
+
+structure Trm2Val where
+  trm : AST.Trm F
+  val : AST.Val F
+
 end
 end AST
 
@@ -73,14 +82,21 @@ instance typDecidableLE : DecidableLE (AST.Typ F)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).2)
 
 /--
-Contains compile-time FBound bridges for semantic obligations.
+Contains compiletime FBound bridges for semantic obligations of terms.
+
+saved Trm2Typ must be relatable
 -/
 class CompilerEnv : Type where
+  trm2typCtx : FBound F.Index (AST.Trm2Typ F)
   -- trmRefs :  -- TODO: this may be required for transparent inline function
-  typeCtx : FBound F.Index (AST.Typ F)
 
+/--
+Contains runtime FBound bridges for value assignment to terms.
+
+saved Trm2Val must be relatable
+-/
 class RuntimeEnv where
-  valueCtx : FBound F.Index (AST.Val F)
+  trm2valCtx : FBound F.Index (AST.Trm2Val F)
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
@@ -102,13 +118,13 @@ def eval (self : AST.Trm F) : RecOption (AST.Val F)
       match anf with
       | (.yield (some (.fn body _tIn)), .yield (some input)) =>
         -- let permission := env.canSaveAny input
-        let index := env.valueCtx.save input
+        let index := env.trm2valCtx.save input
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | @AST.Trm.ref _ i =>
-      .yield (some (env.valueCtx.load i))
+      .yield (some (env.trm2valCtx.load i))
 
 end
 
