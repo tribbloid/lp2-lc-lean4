@@ -121,11 +121,8 @@ namespace AST.Val
 end AST.Val
 
 class RuntimeEnv where
-  EvalPermission : Permission (AST.Val I)
   -- fuel: Nat -- this can't be used, ewww
-  valueGroup : FBound I.Index (AST.Val I)
-  forVals : Aux valueGroup EvalPermission
-  canEvalAny: (v: AST.Val I) -> EvalPermission v
+  valueCtx : FBound I.Index (AST.Val I)
 
 section variable [env: @RuntimeEnv I]
 

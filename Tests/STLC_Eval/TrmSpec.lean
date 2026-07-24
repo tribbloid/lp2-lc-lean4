@@ -34,8 +34,7 @@ namespace Fixture
 @[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
   let valueGroup := _unsafeFBoundGroup Val
   {
-    valueGroup := valueGroup
-    valueCtx := { loadMetadata := λ _id => () }
+    valueCtx := valueGroup
   }
 
 @[instance, implemented_by _runtimeEnv]
@@ -55,7 +54,7 @@ example : (vFalse : Trm).eval.shouldYields Val.vFalse := by
   · rfl
 
 example :
-    let ref := env.valueCtx.save ⟨Val.vFalse, ()⟩
+    let ref := env.valueCtx.save Val.vFalse
     (AST.Trm.ref ref).eval 1 = .yield (some Val.vFalse) := by
   simp [AST.Trm.eval]
 

@@ -42,7 +42,7 @@ is sound by construction.
   let valueGroup := _unsafeFBoundGroup Val
   {
     EvalPermission := RuntimeCanEval
-    valueGroup := valueGroup
+    valueCtx := valueGroup
     forVals := { loadMetadata := λ _id => True.intro }
     canEvalAny := fun _value => True.intro
   }

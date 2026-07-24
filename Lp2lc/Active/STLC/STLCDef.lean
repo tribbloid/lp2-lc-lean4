@@ -8,7 +8,6 @@ namespace STLC
 
 /- Shared STLC syntax family, currently exposing function types over the common representation. -/
 open Lp2lc.Active.Util
-open FBound
 
 section variable {F : Free}
 
@@ -78,12 +77,10 @@ Contains compile-time FBound bridges for semantic obligations.
 -/
 class CompilerEnv : Type where
   -- trmRefs :  -- TODO: this may be required for transparent inline function
-  typeGroup : FBound F.Index (AST.Typ F)
-  typeCtx : Aux typeGroup (λ _type => Unit)
+  typeCtx : FBound F.Index (AST.Typ F)
 
 class RuntimeEnv where
-  valueGroup : FBound F.Index (AST.Val F)
-  valueCtx : Aux valueGroup (λ _ => Unit)
+  valueCtx : FBound F.Index (AST.Val F)
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
@@ -105,13 +102,13 @@ def eval (self : AST.Trm F) : RecOption (AST.Val F)
       match anf with
       | (.yield (some (.fn body _tIn)), .yield (some input)) =>
         -- let permission := env.canSaveAny input
-        let index := env.valueCtx.save ⟨input, ()⟩
+        let index := env.valueCtx.save input
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | @AST.Trm.ref _ i =>
-      .yield (some (env.valueCtx.load i).1)
+      .yield (some (env.valueCtx.load i))
 
 end
 
