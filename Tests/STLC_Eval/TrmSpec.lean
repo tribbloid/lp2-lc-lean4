@@ -10,8 +10,6 @@ open Tests.STLC_Eval.Sanity.Symbolic
 
 namespace Fixture
 
-@[reducible] def RuntimeCanEval : Permission Val := fun _value => True
-
 @[reducible] unsafe def _unsafeFBoundGroup (T : Type) :
     FBoundGroup I.Index T :=
   let saved : IO.Ref (Array T) := unsafeBaseIO (IO.mkRef #[])
@@ -36,10 +34,8 @@ namespace Fixture
 @[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
   let valueGroup := _unsafeFBoundGroup Val
   {
-    CanSave := RuntimeCanEval
     valueGroup := valueGroup
-    valueCtx := { loadMetadata := λ _id => True.intro }
-    canSaveAny := fun _value => True.intro
+    valueCtx := { loadMetadata := λ _id => () }
   }
 
 @[instance, implemented_by _runtimeEnv]
@@ -59,7 +55,7 @@ example : (vFalse : Trm).eval.shouldYields Val.vFalse := by
   · rfl
 
 example :
-    let ref := env.valueCtx.save ⟨Val.vFalse, env.canSaveAny Val.vFalse⟩
+    let ref := env.valueCtx.save ⟨Val.vFalse, ()⟩
     (AST.Trm.ref ref).eval 1 = .yield (some Val.vFalse) := by
   simp [AST.Trm.eval]
 

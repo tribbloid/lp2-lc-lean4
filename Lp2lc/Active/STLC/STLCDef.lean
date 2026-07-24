@@ -104,7 +104,7 @@ def eval (self : AST.Trm F) : RecOption (AST.Val F)
       match anf with
       | (.yield (some (.fn body _tIn)), .yield (some input)) =>
         -- let permission := env.canSaveAny input
-        let index := env.valueCtx.save ⟨input, Unit⟩
+        let index := env.valueCtx.save ⟨input, ()⟩
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel

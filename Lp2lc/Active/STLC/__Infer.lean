@@ -113,7 +113,7 @@ class ProvingEnv extends ProvingBase where
     ∀ (body : F.Index -> AST.Trm F) (v : AST.Val F) (fuel : Nat),
       (AST.Trm.val v).infer.isDecidable (λ tV =>
         let typeUID := typeCtx.save ⟨tV, ()⟩
-        let valueUID := valueCtx.save ⟨v, canEvalAny v⟩
+        let valueUID := valueCtx.save ⟨v, ()⟩
         (body typeUID).infer fuel = (body valueUID).infer fuel -- both evaluates to closure: computation with reference that are not substituted yet
       )
 
@@ -255,7 +255,7 @@ theorem proof : @InferAdequacy F env := by
                                                   _ = .yield (some tIn) := by
                                                     rw [hvEq, hArgLe]
                                               let inputIndex := env.valueCtx.save
-                                                ⟨input, env.canSaveAny input⟩
+                                                ⟨input, ()⟩
                                               rcases ProvingEnv.bindInfer body input fnFuel with ⟨bindFuel, hBind⟩
                                               match hBindInput : (AST.Trm.val input).infer bindFuel with
                                               | .yield (some bindTyp) =>
