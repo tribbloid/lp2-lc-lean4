@@ -72,12 +72,12 @@ Hypothetical bridge between values & UIDs as HOAS carrier
 There is no way to generate a UID except saving a `V`, as a result, loading ALWAYS succeed.
 As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
 -/
-structure FBoundGroup (UID : TIndex) (V : Type) : Type where
+structure FBound (UID : TIndex) (V : Type) : Type where
   save : (value : V) → UID -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
   load : (id : UID) → V
   roundtrip : ∀ (value : V), load (save value) = value
-  -- saveTwice (v1 v2 : V): save v1 = save v2
-  -- loadTwice (id1 id2 : UID): load id1 = load id2
+
+namespace FBound
 
 /--
 this is an upgraded bridge which depends on FBoundGroup:
@@ -90,18 +90,18 @@ this is an upgraded bridge which depends on FBoundGroup:
 The shared bridge is a left inverse rather than a full isomorphism. Metadata is
 total over the group's values and is reconstructed by each instance on load.
 -/
-class FBound {UID : TIndex} {V : Type}
-    (group : FBoundGroup UID V) (D : V → Sort u) where
-  loadMetadata : (id : UID) → D (group.load id)
+class Aux {UID : TIndex} {V : Type}
+    (outer : FBound UID V) (D : V → Sort u) where
+  loadMetadata : (id : UID) → D (outer.load id)
 
-namespace FBound
-section variable {UID : TIndex} {V : Type} {group : FBoundGroup UID V} {D : V → Sort u}
+namespace Aux
+section variable {UID : TIndex} {V : Type} {group : FBound UID V} {D : V → Sort u}
 
 /-- Saves a bundle using only its value through the shared group bridge. -/
-def save (_self : FBound group D) (bundle : PSigma D) : UID :=
+def save (_self : Aux group D) (bundle : PSigma D) : UID :=
   group.save bundle.fst
 
-section variable (self : FBound group D)
+section variable (self : Aux group D)
 
 /-- Loads a value through the group and reconstructs this instance's metadata. -/
 def load (id : UID) : PSigma D :=
@@ -114,9 +114,10 @@ theorem roundtripValue (bundle : PSigma D) :
 
 end
 end
+end Aux
 end FBound
 
-attribute [simp] FBoundGroup.roundtrip
+attribute [simp] FBound.roundtrip
 
 section variable {T : Sort u}
 

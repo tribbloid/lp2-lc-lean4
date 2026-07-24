@@ -3,18 +3,19 @@ import «Lp2lc».Active.Util
 namespace Tests.FBoundSpec
 
 open Lp2lc.Active.Util
+open FBound
 
-def group : FBoundGroup Nat Nat where
+def group : FBound Nat Nat where
   save := id
   load := id
   roundtrip := by
     intro value
     rfl
 
-@[reducible] def boolMetadata : FBound group (λ _value => Bool) where
+@[reducible] def boolMetadata : Aux group (λ _value => Bool) where
   loadMetadata := λ _id => false
 
-@[reducible] def unitMetadata : FBound group (λ _value => Unit) where
+@[reducible] def unitMetadata : Aux group (λ _value => Unit) where
   loadMetadata := λ _id => ()
 
 section save

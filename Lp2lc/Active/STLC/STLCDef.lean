@@ -8,6 +8,7 @@ namespace STLC
 
 /- Shared STLC syntax family, currently exposing function types over the common representation. -/
 open Lp2lc.Active.Util
+open FBound
 
 section variable {F : Free}
 
@@ -77,12 +78,12 @@ Contains compile-time FBound bridges for semantic obligations.
 -/
 class CompilerEnv : Type where
   -- trmRefs :  -- TODO: this may be required for transparent inline function
-  typeGroup : FBoundGroup F.Index (AST.Typ F)
-  typeCtx : FBound typeGroup (λ _type => Unit)
+  typeGroup : FBound F.Index (AST.Typ F)
+  typeCtx : Aux typeGroup (λ _type => Unit)
 
 class RuntimeEnv where
-  valueGroup : FBoundGroup F.Index (AST.Val F)
-  valueCtx : FBound valueGroup (λ _ => Unit)
+  valueGroup : FBound F.Index (AST.Val F)
+  valueCtx : Aux valueGroup (λ _ => Unit)
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 

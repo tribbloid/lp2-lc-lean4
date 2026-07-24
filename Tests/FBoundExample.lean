@@ -3,8 +3,9 @@ import «Lp2lc».Active.Util
 namespace Tests.FBoundExample
 
 open Lp2lc.Active.Util
+open FBound
 
-/-- A simple group where UIDs and values are both `Nat`. -/
+/-- A simpleFBounde UIDs and values are both `Nat`. -/
 def group : FBoundGroup Nat Nat where
   save := id
   load := id
@@ -13,11 +14,11 @@ def group : FBoundGroup Nat Nat where
     rfl
 
 /-- First FBound instance: metadata is a `Bool` per value. -/
-@[reducible] def boolBound : FBound group (λ _value => Bool) where
+@[reducible] def boolBound : Aux group (λ _value => Bool) where
   loadMetadata := λ _id => true
 
 /-- Second FBound instance: metadata is `Unit` per value. -/
-@[reducible] def unitBound : FBound group (λ _value => Unit) where
+@[reducible] def unitBound : Aux group (λ _value => Unit) where
   loadMetadata := λ _id => ()
 
 section roundtrip

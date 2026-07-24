@@ -10,6 +10,7 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 -/
 
 open Lp2lc.Active.Util
+open FBound
 
 section variable {I : Free}
 
@@ -122,8 +123,8 @@ end AST.Val
 class RuntimeEnv where
   EvalPermission : Permission (AST.Val I)
   -- fuel: Nat -- this can't be used, ewww
-  valueGroup : FBoundGroup I.Index (AST.Val I)
-  forVals : FBound valueGroup EvalPermission
+  valueGroup : FBound I.Index (AST.Val I)
+  forVals : Aux valueGroup EvalPermission
   canEvalAny: (v: AST.Val I) -> EvalPermission v
 
 section variable [env: @RuntimeEnv I]
@@ -221,8 +222,8 @@ structure Program (condition : AST.Condition I) where
 Contains compile-time FBound bridges for semantic obligations.
 -/
 class CompilerEnv where
-  semanticGroup : FBoundGroup I.Index (AST.Val I -> AST.Condition I)
-  forSemantic : FBound semanticGroup (λ _semantic => True)
+  semanticGroup : FBound I.Index (AST.Val I -> AST.Condition I)
+  forSemantic : Aux semanticGroup (λ _semantic => True)
 
 section variable [@CompilerEnv I]
 open AST
