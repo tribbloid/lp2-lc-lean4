@@ -255,7 +255,7 @@ theorem proof : @InferAdequacy F env := by
                                                   _ = .yield (some tIn) := by
                                                     rw [hvEq, hArgLe]
                                               let inputIndex := env.valueCtx.save
-                                                ⟨input, env.canEvalAny input⟩
+                                                ⟨input, env.canSaveAny input⟩
                                               rcases ProvingEnv.bindInfer body input fnFuel with ⟨bindFuel, hBind⟩
                                               match hBindInput : (AST.Trm.val input).infer bindFuel with
                                               | .yield (some bindTyp) =>

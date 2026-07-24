@@ -39,7 +39,7 @@ namespace Fixture
     CanSave := RuntimeCanEval
     valueGroup := valueGroup
     valueCtx := { loadMetadata := λ _id => True.intro }
-    canEvalAny := fun _value => True.intro
+    canSaveAny := fun _value => True.intro
   }
 
 @[instance, implemented_by _runtimeEnv]
@@ -59,7 +59,7 @@ example : (vFalse : Trm).eval.shouldYields Val.vFalse := by
   · rfl
 
 example :
-    let ref := env.valueCtx.save ⟨Val.vFalse, env.canEvalAny Val.vFalse⟩
+    let ref := env.valueCtx.save ⟨Val.vFalse, env.canSaveAny Val.vFalse⟩
     (AST.Trm.ref ref).eval 1 = .yield (some Val.vFalse) := by
   simp [AST.Trm.eval]
 

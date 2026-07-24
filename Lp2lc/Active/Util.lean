@@ -97,22 +97,22 @@ class FBound {UID : TIndex} {V : Type}
 namespace FBound
 section variable {UID : TIndex} {V : Type} {group : FBoundGroup UID V} {D : V → Sort u}
 
-/-- A value paired with metadata whose type depends on that value. -/
-abbrev Bundle (D : V → Sort u) := PSigma D
-
 /-- Saves a bundle using only its value through the shared group bridge. -/
-def save (_self : FBound group D) (bundle : Bundle D) : UID :=
+def save (_self : FBound group D) (bundle : PSigma D) : UID :=
   group.save bundle.fst
 
+section variable (self : FBound group D)
+
 /-- Loads a value through the group and reconstructs this instance's metadata. -/
-def load (self : FBound group D) (id : UID) : Bundle D :=
+def load (id : UID) : PSigma D :=
   ⟨group.load id, self.loadMetadata id⟩
 
 @[simp]
-theorem roundtripValue (self : FBound group D) (bundle : Bundle D) :
+theorem roundtripValue (bundle : PSigma D) :
     (self.load (self.save bundle)).fst = bundle.fst :=
   group.roundtrip bundle.fst
 
+end
 end
 end FBound
 

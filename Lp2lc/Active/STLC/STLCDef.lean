@@ -81,11 +81,8 @@ class CompilerEnv : Type where
   typeCtx : FBound typeGroup (λ _type => Unit)
 
 class RuntimeEnv where
-  CanSave : Permission (AST.Val F)
-  -- valueRefGen {TP: Type} : DepFBound (TP -> I.Index) (TP -> { value : AST.Val I // CanSave value }) -- TODO: don't know how to define this prior
   valueGroup : FBoundGroup F.Index (AST.Val F)
-  valueCtx : FBound valueGroup CanSave
-  canEvalAny: (v: AST.Val F) -> CanSave v
+  valueCtx : FBound valueGroup (λ _ => Unit)
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
@@ -106,8 +103,8 @@ def eval (self : AST.Trm F) : RecOption (AST.Val F)
       let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
       | (.yield (some (.fn body _tIn)), .yield (some input)) =>
-        let permission := env.canEvalAny input
-        let index := env.valueCtx.save ⟨input, permission⟩
+        -- let permission := env.canSaveAny input
+        let index := env.valueCtx.save ⟨input, Unit⟩
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
@@ -188,8 +185,8 @@ def Fundamental : Prop :=
 --   ∀ (term : Trm I) (type : Typ I),
 --     term.CanInhabit type → term.SemiCanSatisfy (type.ToCondition)
 
-def fundamentalProof : @Fundamental F := by
-  sorry
+-- def fundamentalProof : @Fundamental F := by
+--   sorry
 
 end
 
