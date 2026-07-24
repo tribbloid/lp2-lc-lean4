@@ -10,7 +10,7 @@ open Tests.STLC_Eval.Sanity.Symbolic
 
 namespace Fixture
 
-@[reducible] unsafe def _unsafeFBoundGroup (T : Type) :
+@[reducible] unsafe def _unsafeFBound (T : Type) :
     FBound I.Index T :=
   let saved : IO.Ref (Array T) := unsafeBaseIO (IO.mkRef #[])
   let save : T → I.Index := fun value =>
@@ -32,9 +32,8 @@ namespace Fixture
   }
 
 @[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
-  let valueGroup := _unsafeFBoundGroup Val
   {
-    valueCtx := valueGroup
+    valueCtx := _unsafeFBound Val
   }
 
 @[instance, implemented_by _runtimeEnv]

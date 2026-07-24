@@ -106,14 +106,14 @@ Some improvements:
 - for function bodies that are identical but for different UID, TODO: how to make them consistent
 -/
 class ProvingEnv extends ProvingBase where
-  refSafety : -- (AKA, all values in FBound are proven) consistency between valueCtx and typeCtx, runtime variable of value can always inhabit compiletime variable of type with the same name
+  refSafety : -- (AKA, all values in FBound are proven) consistency between valueCtx and typeGroup, runtime variable of value can always inhabit compiletime variable of type with the same name
     ∀ (id : F.Index),
-        (AST.Trm.val (valueGroup.load id)).CanInhabit (typeGroup.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
+        (AST.Trm.val (toProvingBase.toRuntimeEnv.valueCtx.load id)).CanInhabit (toProvingBase.toCompilerEnv.typeCtx.load id) -- notice the similarity of this with the outcome of Safety theorem: it should be an induction, not an axiom. Also the same ID hypothesis is sketchy?
   bindInfer : -- (AKA same input, same output) fn body applied on UID of a value can always inhabit the same type of the same fn body applied on UID of the type of that value
     ∀ (body : F.Index -> AST.Trm F) (v : AST.Val F) (fuel : Nat),
       (AST.Trm.val v).infer.isDecidable (λ tV =>
-        let typeUID := typeGroup.save tV
-        let valueUID := valueGroup.save v
+        let typeUID := toProvingBase.toCompilerEnv.typeCtx.save tV
+        let valueUID := toProvingBase.toRuntimeEnv.valueCtx.save v
         (body typeUID).infer fuel = (body valueUID).infer fuel -- both evaluates to closure: computation with reference that are not substituted yet
       )
 
@@ -207,86 +207,7 @@ theorem proof : @InferAdequacy F env := by
                                  unfold AST.Trm.infer at hFnValueInfer
                                  change AST.Typ.primitive = (.fn tIn typ : AST.Typ F) at hFnValueInfer
                                  cases hFnValueInfer
-                                | fn body runtimeTIn =>
-                                   have hInferUnfold :
-                                       (AST.Trm.val (AST.Val.fn body runtimeTIn)).infer (fnFuel.succ) =
-                                         ((body (env.typeCtx.save runtimeTIn)).infer fnFuel).map
-                                           (λ out => out.map (λ tOut => .fn runtimeTIn tOut)) := rfl
-                                  rw [hInferUnfold] at hFnValueInfer
-                                   cases hBodyCompile :
-                                       (body (env.typeGroup.save runtimeTIn)).infer fnFuel with
-                                  | outOfFuel =>
-                                    rw [hBodyCompile] at hFnValueInfer
-                                    simp at hFnValueInfer
-                                    cases hFnValueInfer
-                                  | yield bodyResult =>
-                                    cases bodyResult with
-                                    | none =>
-                                      rw [hBodyCompile] at hFnValueInfer
-                                      simp at hFnValueInfer
-                                      cases hFnValueInfer
-                                    | some bodyTyp =>
-                                      rw [hBodyCompile] at hFnValueInfer
-                                      simp at hFnValueInfer
-                                      cases hFnValueInfer
-                                      cases hArgEval : arg.eval runtimeFuel with
-                                      | outOfFuel => simp
-                                      | yield argEvalResult =>
-                                        rw [hArgEval] at hArgSafe
-                                        cases argEvalResult with
-                                        | none => cases hArgSafe
-                                        | some input =>
-                                          have hArgSafe' : (AST.Trm.val input).CanInhabit argTyp := by
-                                            simpa using hArgSafe
-                                          rcases hArgSafe' with ⟨inputFuel, hInputInfer⟩
-                                          cases hInferInputCall : (AST.Trm.val input).infer inputFuel with
-                                          | outOfFuel =>
-                                            rw [hInferInputCall] at hInputInfer
-                                            simp at hInputInfer
-                                          | yield inputResult =>
-                                            rw [hInferInputCall] at hInputInfer
-                                            cases inputResult with
-                                            | none => simp at hInputInfer
-                                            | some v =>
-                                              have hvEq : v = argTyp := hInputInfer
-                                              have hInputEq : (AST.Trm.val input).infer inputFuel = .yield (some tIn) := by
-                                                calc
-                                                  (AST.Trm.val input).infer inputFuel = .yield (some v) := hInferInputCall
-                                                  _ = .yield (some tIn) := by
-                                                    rw [hvEq, hArgLe]
-                                              let inputIndex := env.valueGroup.save input
-                                              rcases ProvingEnv.bindInfer body input fnFuel with ⟨bindFuel, hBind⟩
-                                              match hBindInput : (AST.Trm.val input).infer bindFuel with
-                                              | .yield (some bindTyp) =>
-                                                simp [hBindInput] at hBind
-                                                have hBindTop := AST.Trm.valueInferMonotone input bindFuel
-                                                  (bindFuel + inputFuel) (some bindTyp)
-                                                  (Nat.le_add_right bindFuel inputFuel) hBindInput
-                                                have hInputTop := AST.Trm.valueInferMonotone input inputFuel
-                                                  (bindFuel + inputFuel) (some tIn)
-                                                  (Nat.le_add_left inputFuel bindFuel) hInputEq
-                                                have h_bind_typ_eq : bindTyp = tIn := by
-                                                  apply Option.some.inj
-                                                  apply Outcome.yield.inj
-                                                  calc
-                                                    .yield (some bindTyp) = (AST.Trm.val input).infer (bindFuel + inputFuel) := hBindTop.symm
-                                                    _ = .yield (some tIn) := hInputTop
-                                                subst h_bind_typ_eq
-                                                have hBodyCompile' : (body inputIndex).infer fnFuel = .yield (some typ) := by
-                                                  rw [← hBind, hBodyCompile]
-                                                have hBodySafe := ih (body inputIndex) typ fnFuel hBodyCompile'
-                                                cases hBodyEval : (body inputIndex).eval runtimeFuel with
-                                                | outOfFuel => simp [hBodyEval, inputIndex]
-                                                | yield bodyEvalResult =>
-                                                  rw [hBodyEval] at hBodySafe
-                                                  cases bodyEvalResult with
-                                                  | none => cases hBodySafe
-                                                  | some output =>
-                                                    dsimp [inputIndex]
-                                                    rw [hBodyEval]
-                                                    simpa using hBodySafe
-                                              | .outOfFuel
-                                              | .yield none => simp [hBindInput] at hBind
+                                 | fn body runtimeTIn => sorry
                       · rw [hFn, hArg] at hInferCombined
                         simp at hInferCombined
                         simp [hArgLe] at hInferCombined

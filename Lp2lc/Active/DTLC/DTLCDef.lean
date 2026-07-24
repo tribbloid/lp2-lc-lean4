@@ -146,15 +146,12 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
       | (.yield (some (.primitiveFn body)), .yield (some (.primitive repr))) =>
         eval (body repr) fuel
       | (.yield (some (.fn body)), .yield (some value)) =>
-        let fBound := env.forVals
-        let permission := RuntimeEnv.canEvalAny value
-        eval (body (fBound.save ⟨value, permission⟩)) fuel
+        eval (body (env.valueCtx.save value)) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref i =>
-      let fBound := RuntimeEnv.forVals
-      .yield (some (fBound.load i).1)
+      .yield (some (env.valueCtx.load i))
 
 /--
 An safe program may run out of runtime fuel, but it must not reach runtime
@@ -187,17 +184,15 @@ def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
     ∀ repr,
       let arg := AST.Val.primitive repr
       arg.CanBind tIn →
-        let fBound := RuntimeEnv.forVals
-        let permission := RuntimeEnv.canEvalAny arg
+        let ref := RuntimeEnv.valueCtx.save arg
         (body repr).IsSafeBy
-          (λ value => value.CanBind (tOut (fBound.save ⟨arg, permission⟩)))
+          (λ value => value.CanBind (tOut ref))
   | .depFn tIn tOut, .fn body =>
     ∀ arg,
       arg.CanBind tIn →
-        let fBound := RuntimeEnv.forVals
-        let permission := RuntimeEnv.canEvalAny arg
-        (body (fBound.save ⟨arg, permission⟩)).IsSafeBy
-          (λ value => value.CanBind (tOut (fBound.save ⟨arg, permission⟩)))
+        let ref := RuntimeEnv.valueCtx.save arg
+        (body ref).IsSafeBy
+          (λ value => value.CanBind (tOut ref))
 
 end AST.Val
 
@@ -218,9 +213,9 @@ structure Program (condition : AST.Condition I) where
 /--
 Contains compile-time FBound bridges for semantic obligations.
 -/
-class CompilerEnv where
-  semanticGroup : FBound I.Index (AST.Val I -> AST.Condition I)
-  forSemantic : Aux semanticGroup (λ _semantic => True)
+class CompilerEnv : Type where
+  -- trmRefs :  -- TODO: this may be required for transparent inline function
+  typeCtx : FBound I.Index (AST.Typ I)
 
 section variable [@CompilerEnv I]
 open AST

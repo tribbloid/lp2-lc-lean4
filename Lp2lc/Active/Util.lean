@@ -80,7 +80,7 @@ structure FBound (UID : TIndex) (V : Type) : Type where
 namespace FBound
 
 /--
-this is an upgraded bridge which depends on FBoundGroup:
+this is an upgraded bridge which depends on FBound:
 
 - designed to save/load a value with a `metadata : Type/Prop` that depends on it
 - `save` computes UID only from value, metadata is required but not used
