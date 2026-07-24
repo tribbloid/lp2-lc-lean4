@@ -14,10 +14,8 @@ namespace Umbral
 section variable [@ProvingBase F]
 
 structure InferenceWProof (trm2typ: AST.Trm2Typ F) : Type where
-  trm := trm2typ.trm
-  typ := trm2typ.typ
-  sameInfer: trm.infer.isDecidable (λ t2 => typ <= t2)
-  safetyProof: Safety trm typ
+  sameInfer: trm2typ.trm.infer.isDecidable (λ t2 => trm2typ.typ <= t2)
+  safetyProof: Safety trm2typ.trm trm2typ.typ
 
 end
 
@@ -32,7 +30,7 @@ there is no guarantee that typeUID & valueUID will be identical, so this is the 
 
 class ProvingEnv where
   base: @ProvingBase F
-  proofCtx : base.trm2typCtx.Aux (λ t => @InferenceWProof t) -- TODO: need a concrete value type to save proof
+  proofCtx : base.trm2typCtx.Aux (λ t => @InferenceWProof F base t) -- TODO: need a concrete value type to save proof
 
 instance [env: @ProvingEnv F] : @ProvingBase F := env.base
 
@@ -46,7 +44,8 @@ but instead of producing only a Typ F, it is obliged to produce all the followin
 - proof that it is equal to the result of Trm.infer
 - proof that it is safe after evaluation
 -/
-def infer_umbral [env: @ProvingEnv F] (trm : AST.Trm F) : RecOption (@InferenceWProof F env.base trm) :=
+def infer_umbral [env: @ProvingEnv F] (trm : AST.Trm F) :
+    RecOption (PSigma (λ typ : AST.Typ F => @InferenceWProof F env.base ⟨trm, typ⟩)) :=
   sorry
 
 -- theorem termInferMonotone [env : @ProvingEnv F]

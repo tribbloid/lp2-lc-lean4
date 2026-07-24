@@ -33,7 +33,7 @@ namespace Fixture
 
 @[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
   {
-    trm2valCtx := _unsafeFBound Val
+    trm2valCtx := _unsafeFBound (AST.Trm2Val I)
   }
 
 @[instance, implemented_by _runtimeEnv]
@@ -53,7 +53,7 @@ example : (vFalse : Trm).eval.shouldYields Val.vFalse := by
   · rfl
 
 example :
-    let ref := env.trm2valCtx.save Val.vFalse
+    let ref := env.trm2valCtx.save ⟨vFalse, Val.vFalse⟩
     (AST.Trm.ref ref).eval 1 = .yield (some Val.vFalse) := by
   simp [AST.Trm.eval]
 
