@@ -36,8 +36,8 @@ structure ProvenConditionV2 (trm2typ: AST.Trm2Typ F) : Type where
   safety: Safety trm2typ.trm trm2typ.typ
 
 structure ProvingTarget (trm: AST.Trm F) : Type where
-  outcome: RecOption ((typ: AST.Typ F) × (Safety <trm, typ>))
-  sameInfer : trm.infer = outcome
+  outcome: RecOption ((typ: AST.Typ F) × (Safety trm typ))
+  sameInfer : trm.infer = outcome.map (λ v => v.fst)
 
 def infer_proveV2 [env: @ProvingEnv F] (trm : AST.Trm F) : ProvingTarget trm := sorry
 
