@@ -91,33 +91,29 @@ The shared bridge is a left inverse rather than a full isomorphism. Metadata is
 total over the group's values and is reconstructed by each instance on load.
 Membership evidence restricts that reconstruction to identifiers registered by
 the auxiliary instance.
+
+Saves a bundle using only its value through the shared group bridge.
+Loads a value through the group and reconstructs this instance's metadata.
 -/
 class Aux {UID : TIndex} {V : Type}
     (outer : FBound UID V) (D : V → Sort u) where
   Member : UID → Type
-  lookup : (id : UID) → Option (Member id)
+  lookup : (id : UID) → Option (Member id) -- TODO: this shouldn't be useful
   saveMember : (bundle : PSigma D) → Member (outer.save bundle.fst)
-  loadMetadata : (id : UID) → Member id → D (outer.load id)
+  loadMetadata : (id2: PSigma Member) → D (outer.load id2.fst)
 
 namespace Aux
 section variable {UID : TIndex} {V : Type} {group : FBound UID V} {D : V → Sort u}
 
-/-- Saves a bundle using only its value through the shared group bridge. -/
-def save (_self : Aux group D) (bundle : PSigma D) : UID :=
-  group.save bundle.fst
-
-section variable (self : Aux group D)
-
-/-- Loads a value through the group and reconstructs this instance's metadata. -/
-def load (id : UID) (member : self.Member id) : PSigma D :=
-  ⟨group.load id, self.loadMetadata id member⟩
-
+/-- Saving membership and reconstructing metadata preserves the original value. -/
 @[simp]
-theorem roundtripValue (bundle : PSigma D) :
-    (self.load (self.save bundle) (self.saveMember bundle)).fst = bundle.fst :=
+theorem roundtripValue (self : Aux group D) (bundle : PSigma D) :
+    (⟨group.load (group.save bundle.fst),
+      self.loadMetadata
+        (group.save bundle.fst)
+        (self.saveMember bundle)⟩ : PSigma D).fst = bundle.fst :=
   group.roundtrip bundle.fst
 
-end
 end
 end Aux
 end FBound

@@ -30,15 +30,15 @@ def group : FBound Nat Nat where
 section roundtrip
 
 example :
-    (boolBound.load
-      (boolBound.save ⟨42, true⟩)
-      (boolBound.saveMember ⟨42, true⟩)).fst = 42 := by
+    boolBound.loadMetadata
+      (group.save 42)
+      (boolBound.saveMember ⟨42, true⟩) = true := by
   rfl
 
 example :
-    (unitBound.load
-      (unitBound.save ⟨7, ()⟩)
-      (unitBound.saveMember ⟨7, ()⟩)).fst = 7 := by
+    unitBound.loadMetadata
+      (group.save 7)
+      (unitBound.saveMember ⟨7, ()⟩) = () := by
   rfl
 
 end roundtrip
@@ -46,8 +46,10 @@ end roundtrip
 section sharedGroup
 
 example :
-    boolBound.save ⟨1, false⟩ = unitBound.save ⟨1, ()⟩ := by
-  rfl
+    boolBound.Member (group.save 1) ×
+      unitBound.Member (group.save 1) :=
+  ⟨boolBound.saveMember ⟨1, false⟩,
+    unitBound.saveMember ⟨1, ()⟩⟩
 
 end sharedGroup
 
