@@ -80,14 +80,15 @@ structure FBound (UID : TIndex) (V : Type) : Type where
 namespace FBound
 
 /--
-this is an upgraded bridge which depends on FBound:
+extension of FBound that can attach more information to each key-value pair:
 
-- designed to save/load a value with a `metadata : Type/Prop` that depends on it
-- `save` computes UID only from value, metadata is required but not used
-- all FBound instances from the same group share the same isomorphism of UID <-> group.V
-- the metadata can be set to Unit type to achieve the original bridge behaviour
+- designed to save/load a value with a metadata `M : Type/Prop` that depends on it
+- `saveMeta` requires both value and its metadata, but UID is only computed from value
+- `loadMeta` requires both UID and the evidence that it's metadata has been saved before
+- all `Aux` instances derived from the same `FBound` share the same isomorphism of UID <-> group.V
+- `M` can be `_ => Unit` which can be a bidirectional coersion from/to `FBound`
 
-The shared bridge is a left inverse rather than a full isomorphism. Metadata is
+The shared bridge is a left inverse rather than a full isomorphism. `M` is
 total over the group's values and is reconstructed by each instance on load.
 Membership evidence restricts that reconstruction to identifiers registered by
 the auxiliary instance.
@@ -96,11 +97,11 @@ Saves a bundle using only its value through the shared group bridge.
 Loads a value through the group and reconstructs this instance's metadata.
 -/
 class Aux {UID : TIndex} {V : Type}
-    (outer : FBound UID V) (D : V → Sort u) where
+    (outer : FBound UID V) (M : V → Sort u) where
   Member : UID → Type
   lookup : (id : UID) → Option (Member id) -- TODO: this shouldn't be useful
-  saveMember : (bundle : PSigma D) → Member (outer.save bundle.fst)
-  loadMetadata : (id2: PSigma Member) → D (outer.load id2.fst)
+  saveMeta : (bundle : PSigma M) → Member (outer.save bundle.fst)
+  loadMeta : (id2: PSigma Member) → M (outer.load id2.fst)
 
 namespace Aux
 section variable {UID : TIndex} {V : Type} {group : FBound UID V} {D : V → Sort u}
@@ -109,8 +110,8 @@ section variable {UID : TIndex} {V : Type} {group : FBound UID V} {D : V → Sor
 @[simp]
 theorem roundtripValue (self : Aux group D) (bundle : PSigma D) :
     (⟨group.load (group.save bundle.fst),
-      self.loadMetadata
-        ⟨group.save bundle.fst, self.saveMember bundle⟩⟩ : PSigma D).fst = bundle.fst :=
+      self.loadMeta
+        ⟨group.save bundle.fst, self.saveMeta bundle⟩⟩ : PSigma D).fst = bundle.fst :=
   group.roundtrip bundle.fst
 
 end

@@ -15,34 +15,34 @@ def group : FBound Nat Nat where
 @[reducible] def boolMetadata : Aux group (λ _value => Bool) where
   Member := λ _id => Bool
   lookup := λ _id => none
-  saveMember := λ bundle => bundle.snd
-  loadMetadata := λ id2 => id2.snd
+  saveMeta := λ bundle => bundle.snd
+  loadMeta := λ id2 => id2.snd
 
 @[reducible] def unitMetadata : Aux group (λ _value => Unit) where
   Member := λ _id => Unit
   lookup := λ _id => none
-  saveMember := λ bundle => bundle.snd
-  loadMetadata := λ id2 => id2.snd
+  saveMeta := λ bundle => bundle.snd
+  loadMeta := λ id2 => id2.snd
 
 section save
 
 example :
     boolMetadata.Member (group.save 1) :=
-  boolMetadata.saveMember ⟨1, true⟩
+  boolMetadata.saveMeta ⟨1, true⟩
 
 example :
     boolMetadata.Member (group.save 1) ×
       unitMetadata.Member (group.save 1) :=
-  ⟨boolMetadata.saveMember ⟨1, true⟩,
-    unitMetadata.saveMember ⟨1, ()⟩⟩
+  ⟨boolMetadata.saveMeta ⟨1, true⟩,
+    unitMetadata.saveMeta ⟨1, ()⟩⟩
 
 example :
     group.load (group.save 1) = 1 := by
   exact boolMetadata.roundtripValue ⟨1, true⟩
 
 example :
-    boolMetadata.loadMetadata
-      ⟨group.save 1, boolMetadata.saveMember ⟨1, true⟩⟩ = true := by
+    boolMetadata.loadMeta
+      ⟨group.save 1, boolMetadata.saveMeta ⟨1, true⟩⟩ = true := by
   rfl
 
 example :
