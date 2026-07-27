@@ -32,15 +32,6 @@ instance [env: @ProvingEnv F] : @ProvingBase F := env.base
 
 section variable [@ProvingEnv F]
 
-structure ProvenConditionV2 (trm2typ: AST.Trm2Typ F) : Type where
-  safety: Safety trm2typ.trm trm2typ.typ
-
-structure ProvingTarget (trm: AST.Trm F) : Type where
-  outcome: RecOption ((typ: AST.Typ F) × (Safety <trm, typ>))
-  sameInfer : trm.infer = outcome
-
-def infer_proveV2 [env: @ProvingEnv F] (trm : AST.Trm F) : ProvingTarget trm := sorry
-
 /--
 like `Trm.infer` it inductively infer `Typ` of a given `Trm`, using the structure of `Trm.infer` as a blueprint.
 
