@@ -72,13 +72,14 @@ Hypothetical bridge between values & UIDs as HOAS carrier
 There is no way to generate a UID except saving a `V`, as a result, loading ALWAYS succeed.
 As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
 
-`FBound.load` is a left inverse of `FBound.save`, as stated by
-`FBound.roundtrip`; `FBound.save (FBound.load id) = id` is not required.
+`FBound.save` and `FBound.load` are inverse: `FBound.roundtrip` starts from a
+value, while `FBound.roundtripId` starts from a UID.
 -/
 structure FBound (UID : TIndex) (V : Type) : Type where
   save : (value : V) → UID -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
   load : (id : UID) → V
   roundtrip : ∀ (value : V), load (save value) = value
+  roundtripId : ∀ (id : UID), save (load id) = id
 
 namespace FBound
 
@@ -118,7 +119,7 @@ end
 end Aux
 end FBound
 
-attribute [simp] FBound.roundtrip
+attribute [simp] FBound.roundtrip FBound.roundtripId
 
 section variable {T : Sort u}
 

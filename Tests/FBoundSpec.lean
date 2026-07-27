@@ -11,6 +11,9 @@ def group : FBound Nat Nat where
   roundtrip := by
     intro value
     rfl
+  roundtripId := by
+    intro id
+    rfl
 
 @[reducible] def boolMetadata : Aux group (λ _value => Bool) where
   Evidence := λ _id => Bool

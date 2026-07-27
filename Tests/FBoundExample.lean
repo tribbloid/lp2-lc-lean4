@@ -12,6 +12,9 @@ def group : FBound Nat Nat where
   roundtrip := by
     intro value
     rfl
+  roundtripId := by
+    intro id
+    rfl
 
 /-- First FBound instance: metadata is a `Bool` per value. -/
 @[reducible] def boolBound : Aux group (λ _value => Bool) where

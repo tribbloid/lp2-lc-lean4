@@ -29,6 +29,9 @@ namespace Fixture
     roundtrip := by
       intro value
       exact unsafeCast True.intro
+    roundtripId := by
+      intro id
+      cases id
   }
 
 @[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
