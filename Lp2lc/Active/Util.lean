@@ -110,8 +110,7 @@ section variable {UID : TIndex} {V : Type} {group : FBound UID V} {D : V → Sor
 theorem roundtripValue (self : Aux group D) (bundle : PSigma D) :
     (⟨group.load (group.save bundle.fst),
       self.loadMetadata
-        (group.save bundle.fst)
-        (self.saveMember bundle)⟩ : PSigma D).fst = bundle.fst :=
+        ⟨group.save bundle.fst, self.saveMember bundle⟩⟩ : PSigma D).fst = bundle.fst :=
   group.roundtrip bundle.fst
 
 end

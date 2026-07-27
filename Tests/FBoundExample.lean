@@ -18,27 +18,25 @@ def group : FBound Nat Nat where
   Member := λ _id => Bool
   lookup := λ _id => none
   saveMember := λ bundle => bundle.snd
-  loadMetadata := λ _id member => member
+  loadMetadata := λ id2 => id2.snd
 
 /-- Second FBound instance: metadata is `Unit` per value. -/
 @[reducible] def unitBound : Aux group (λ _value => Unit) where
   Member := λ _id => Unit
   lookup := λ _id => none
   saveMember := λ bundle => bundle.snd
-  loadMetadata := λ _id member => member
+  loadMetadata := λ id2 => id2.snd
 
 section roundtrip
 
 example :
     boolBound.loadMetadata
-      (group.save 42)
-      (boolBound.saveMember ⟨42, true⟩) = true := by
+      ⟨group.save 42, boolBound.saveMember ⟨42, true⟩⟩ = true := by
   rfl
 
 example :
     unitBound.loadMetadata
-      (group.save 7)
-      (unitBound.saveMember ⟨7, ()⟩) = () := by
+      ⟨group.save 7, unitBound.saveMember ⟨7, ()⟩⟩ = () := by
   rfl
 
 end roundtrip
