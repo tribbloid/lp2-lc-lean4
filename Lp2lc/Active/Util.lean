@@ -82,7 +82,7 @@ namespace FBound
 /--
 extension of FBound that can attach more information to each key-value pair:
 
-- designed to save/load a value with a metadata `M : Type/Prop` that depends on it
+- can save/load value with metadata `M : Type/Prop` that depends on it.
 - `saveMeta` requires both value and its metadata, but UID is only computed from value
 - `loadMeta` requires both UID and the evidence that it's metadata has been saved before
 - all `Aux` instances derived from the same `FBound` share the same isomorphism of UID <-> group.V
@@ -98,10 +98,10 @@ Loads a value through the group and reconstructs this instance's metadata.
 -/
 class Aux {UID : TIndex} {V : Type}
     (outer : FBound UID V) (M : V → Sort u) where
-  Member : UID → Type
-  lookup : (id : UID) → Option (Member id) -- TODO: this shouldn't be useful
-  saveMeta : (bundle : PSigma M) → Member (outer.save bundle.fst)
-  loadMeta : (id2: PSigma Member) → M (outer.load id2.fst)
+  Evidence : UID → Type
+  lookup : (id : UID) → Option (Evidence id) -- TODO: this shouldn't be useful
+  saveMeta : (bundle : PSigma M) → Evidence (outer.save bundle.fst)
+  loadMeta : (ev: PSigma Evidence) → M (outer.load ev.fst)
 
 namespace Aux
 section variable {UID : TIndex} {V : Type} {group : FBound UID V} {D : V → Sort u}

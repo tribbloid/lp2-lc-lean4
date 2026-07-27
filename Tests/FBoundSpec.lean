@@ -13,13 +13,13 @@ def group : FBound Nat Nat where
     rfl
 
 @[reducible] def boolMetadata : Aux group (λ _value => Bool) where
-  Member := λ _id => Bool
+  Evidence := λ _id => Bool
   lookup := λ _id => none
   saveMeta := λ bundle => bundle.snd
   loadMeta := λ id2 => id2.snd
 
 @[reducible] def unitMetadata : Aux group (λ _value => Unit) where
-  Member := λ _id => Unit
+  Evidence := λ _id => Unit
   lookup := λ _id => none
   saveMeta := λ bundle => bundle.snd
   loadMeta := λ id2 => id2.snd
@@ -27,12 +27,12 @@ def group : FBound Nat Nat where
 section save
 
 example :
-    boolMetadata.Member (group.save 1) :=
+    boolMetadata.Evidence (group.save 1) :=
   boolMetadata.saveMeta ⟨1, true⟩
 
 example :
-    boolMetadata.Member (group.save 1) ×
-      unitMetadata.Member (group.save 1) :=
+    boolMetadata.Evidence (group.save 1) ×
+      unitMetadata.Evidence (group.save 1) :=
   ⟨boolMetadata.saveMeta ⟨1, true⟩,
     unitMetadata.saveMeta ⟨1, ()⟩⟩
 

@@ -15,14 +15,14 @@ def group : FBound Nat Nat where
 
 /-- First FBound instance: metadata is a `Bool` per value. -/
 @[reducible] def boolBound : Aux group (λ _value => Bool) where
-  Member := λ _id => Bool
+  Evidence := λ _id => Bool
   lookup := λ _id => none
   saveMeta := λ bundle => bundle.snd
   loadMeta := λ id2 => id2.snd
 
 /-- Second FBound instance: metadata is `Unit` per value. -/
 @[reducible] def unitBound : Aux group (λ _value => Unit) where
-  Member := λ _id => Unit
+  Evidence := λ _id => Unit
   lookup := λ _id => none
   saveMeta := λ bundle => bundle.snd
   loadMeta := λ id2 => id2.snd
@@ -44,8 +44,8 @@ end roundtrip
 section sharedGroup
 
 example :
-    boolBound.Member (group.save 1) ×
-      unitBound.Member (group.save 1) :=
+    boolBound.Evidence (group.save 1) ×
+      unitBound.Evidence (group.save 1) :=
   ⟨boolBound.saveMeta ⟨1, false⟩,
     unitBound.saveMeta ⟨1, ()⟩⟩
 
