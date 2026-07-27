@@ -71,6 +71,9 @@ Hypothetical bridge between values & UIDs as HOAS carrier
 
 There is no way to generate a UID except saving a `V`, as a result, loading ALWAYS succeed.
 As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
+
+`FBound.load` is a left inverse of `FBound.save`, as stated by
+`FBound.roundtrip`; `FBound.save (FBound.load id) = id` is not required.
 -/
 structure FBound (UID : TIndex) (V : Type) : Type where
   save : (value : V) → UID -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
@@ -80,20 +83,18 @@ structure FBound (UID : TIndex) (V : Type) : Type where
 namespace FBound
 
 /--
-extension of FBound that can attach metadata `M : Type/Prop` to existing UID-value pairs in `FBound`:
+extension of `FBound` that can attach metadata `M : Type/Prop` to existing UID-value pairs in `FBound`:
 
-- `saveMeta` requires both value and its metadata, but UID is only computed from value
-- `loadMeta` requires both UID and the evidence that it's metadata has been saved before
-- all `Aux` instances derived from the same `FBound` share the same isomorphism of UID <-> group.V
-- `M` can be `_ => Unit` which can be a bidirectional coersion from/to `FBound`
+- `FBound.Aux.saveMeta` requires both value and its metadata, but UID is only computed from value
+- `FBound.Aux.loadMeta` requires both UID and the evidence that its metadata has been saved before
+- all `FBound.Aux` instances derived from the same `FBound` share its `FBound.save` and `FBound.load`
 
-The shared bridge is a left inverse rather than a full isomorphism. `M` is
-total over the group's values and is reconstructed by each instance on load.
-Membership evidence restricts that reconstruction to identifiers registered by
-the auxiliary instance.
+`M` is a dependent family over `V` and is reconstructed by each `FBound.Aux`
+instance through `FBound.Aux.loadMeta`. `FBound.Aux.Evidence` restricts that
+reconstruction to identifiers carrying evidence for the auxiliary instance.
 
-Saves a bundle using only its value through the shared group bridge.
-Loads a value through the group and reconstructs this instance's metadata.
+`FBound.Aux.saveMeta` saves a bundle using only its value through the shared group bridge.
+`FBound.Aux.loadMeta` loads a value through the group and reconstructs this instance's metadata.
 -/
 class Aux {UID : TIndex} {V : Type}
     (outer : FBound UID V) (M : V → Sort u) where
