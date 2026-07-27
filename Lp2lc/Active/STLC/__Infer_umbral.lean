@@ -32,6 +32,12 @@ instance [env: @ProvingEnv F] : @ProvingBase F := env.base
 
 section variable [@ProvingEnv F]
 
+structure ProvingTarget (trm: AST.Trm F) (outcome: Outcome (Option (AST.Typ F))) (fuel: Nat) : Type where
+  sameInfer : trm.infer (fuel) = outcome
+  safety : outcome.map (λ typ => Safety trm typ).getOrElse (True)
+
+def infer_prove_improved [env: @ProvingEnv F] (trm : AST.Trm F) (fuel: Nat) :
+    RecOption (PSigma (λ typ : AST.Typ F => @ProvenCondition F env.base ⟨trm, typ⟩)) := sorry
 /--
 like `Trm.infer` it inductively infer `Typ` of a given `Trm`, using the structure of `Trm.infer` as a blueprint.
 
@@ -50,7 +56,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
         Option (@ProvenCondition F env.base ⟨term, typ⟩) :=
       let id := env.base.trm2typCtx.getUID ⟨term, typ⟩
       (env.proofCtx.lookup id).map (λ member => by
-        simpa [id] using env.proofCtx.loadMeta ⟨id, member⟩)
+        simpa [id] using env.proofCtx.invEv ⟨id, member⟩)
     match trm with
     | .val (.primitive repr) =>
       .yield ((proven (.val (.primitive repr)) .primitive).map
