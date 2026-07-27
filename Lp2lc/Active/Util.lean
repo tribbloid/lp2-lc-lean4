@@ -89,10 +89,15 @@ this is an upgraded bridge which depends on FBound:
 
 The shared bridge is a left inverse rather than a full isomorphism. Metadata is
 total over the group's values and is reconstructed by each instance on load.
+Membership evidence restricts that reconstruction to identifiers registered by
+the auxiliary instance.
 -/
 class Aux {UID : TIndex} {V : Type}
     (outer : FBound UID V) (D : V → Sort u) where
-  loadMetadata : (id : UID) → D (outer.load id)
+  Member : UID → Type
+  lookup : (id : UID) → Option (Member id)
+  saveMember : (bundle : PSigma D) → Member (outer.save bundle.fst)
+  loadMetadata : (id : UID) → Member id → D (outer.load id)
 
 namespace Aux
 section variable {UID : TIndex} {V : Type} {group : FBound UID V} {D : V → Sort u}
@@ -104,12 +109,12 @@ def save (_self : Aux group D) (bundle : PSigma D) : UID :=
 section variable (self : Aux group D)
 
 /-- Loads a value through the group and reconstructs this instance's metadata. -/
-def load (id : UID) : PSigma D :=
-  ⟨group.load id, self.loadMetadata id⟩
+def load (id : UID) (member : self.Member id) : PSigma D :=
+  ⟨group.load id, self.loadMetadata id member⟩
 
 @[simp]
 theorem roundtripValue (bundle : PSigma D) :
-    (self.load (self.save bundle)).fst = bundle.fst :=
+    (self.load (self.save bundle) (self.saveMember bundle)).fst = bundle.fst :=
   group.roundtrip bundle.fst
 
 end
