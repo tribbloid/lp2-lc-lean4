@@ -80,9 +80,8 @@ structure FBound (UID : TIndex) (V : Type) : Type where
 namespace FBound
 
 /--
-extension of FBound that can attach more information to each key-value pair:
+extension of FBound that can attach metadata `M : Type/Prop` to existing UID-value pairs in `FBound`:
 
-- can save/load value with metadata `M : Type/Prop` that depends on it.
 - `saveMeta` requires both value and its metadata, but UID is only computed from value
 - `loadMeta` requires both UID and the evidence that it's metadata has been saved before
 - all `Aux` instances derived from the same `FBound` share the same isomorphism of UID <-> group.V
