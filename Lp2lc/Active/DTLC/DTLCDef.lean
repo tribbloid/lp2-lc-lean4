@@ -10,7 +10,7 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 -/
 
 open Lp2lc.Active.Util
-open FBound
+open UIDEquiv
 
 section variable {I : Free}
 
@@ -122,7 +122,7 @@ end AST.Val
 
 class RuntimeEnv where
   -- fuel: Nat -- this can't be used, ewww
-  valueCtx : FBound I.Index (AST.Val I)
+  valueCtx : I.Fixpoint (AST.Val I)
 
 section variable [env: @RuntimeEnv I]
 
@@ -130,7 +130,7 @@ namespace AST.Trm
 
 /--
 Evaluates a source or compiled program by spending 1 fuel at each semantic
-descent. Runtime evaluation uses `FBound` for references and deliberately
+descent. Runtime evaluation uses [Free.Fixpoint] for references and deliberately
 does not inspect compile-time typing evidence.
 -/
 def eval (self : AST.Trm I) : RecOption (AST.Val I)
@@ -146,12 +146,12 @@ def eval (self : AST.Trm I) : RecOption (AST.Val I)
       | (.yield (some (.primitiveFn body)), .yield (some (.primitive repr))) =>
         eval (body repr) fuel
       | (.yield (some (.fn body)), .yield (some value)) =>
-        eval (body (env.valueCtx.save value)) fuel
+        eval (body (env.valueCtx.getUID value)) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref i =>
-      .yield (some (env.valueCtx.load i))
+      .yield (some (env.valueCtx.inv i))
 
 /--
 An safe program may run out of runtime fuel, but it must not reach runtime
@@ -184,13 +184,13 @@ def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
     ∀ repr,
       let arg := AST.Val.primitive repr
       arg.CanBind tIn →
-        let ref := RuntimeEnv.valueCtx.save arg
+        let ref := RuntimeEnv.valueCtx.getUID arg
         (body repr).IsSafeBy
           (λ value => value.CanBind (tOut ref))
   | .depFn tIn tOut, .fn body =>
     ∀ arg,
       arg.CanBind tIn →
-        let ref := RuntimeEnv.valueCtx.save arg
+        let ref := RuntimeEnv.valueCtx.getUID arg
         (body ref).IsSafeBy
           (λ value => value.CanBind (tOut ref))
 
@@ -211,11 +211,11 @@ structure Program (condition : AST.Condition I) where
   isSafe: trm.IsSafeBy condition
 
 /--
-Contains compile-time FBound bridges for semantic obligations.
+Contains compile-time fixpoint bridges for semantic obligations.
 -/
 class CompilerEnv : Type where
   -- trmRefs :  -- TODO: this may be required for transparent inline function
-  typeCtx : FBound I.Index (AST.Typ I)
+  typeCtx : I.Fixpoint (AST.Typ I)
 
 section variable [@CompilerEnv I]
 open AST
@@ -231,7 +231,7 @@ Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return 
 It's very similar to `Trm.eval` above in structure, but instead of evaluating
 for the final result, it recursively decompose the safety proof obligation into
 obligations of smaller components that are fulfiled independently and incrementally. The compile-time
-`CompilerEnv.forSemantic` F-bound bridge can be used to save/load proven goal; this
+`CompilerEnv.forSemantic` fixpoint bridge can be used to register/reconstruct proven goals; this
 is separate from runtime value binding and never calls `eval`.
 
 Malformed or incompatible component will immediate cause the compilation to
@@ -302,8 +302,8 @@ end
 --   let argResult := AST.Trm.compile argHinted fuel
 --   match fnResult, argResult with
 --   | .result compiledFn, .result compiledArg =>
---     let fBound := CompilerEnv.forTyps (I := I)
---     let argRef := fBound.save tIn True.intro
+--     let fixpoint := CompilerEnv.forTyps (I := I)
+--     let argRef := fixpoint.getUID tIn True.intro
 --     let pineapplePen := Trm.typeHinted (Trm.apply compiledFn compiledArg) (tOut argRef)
 --     ∃ moreFuel,
 --       (AST.Trm.compile pineapplePen moreFuel).isResult

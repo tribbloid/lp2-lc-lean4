@@ -82,21 +82,21 @@ instance typDecidableLE : DecidableLE (AST.Typ F)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).2)
 
 /--
-Contains compiletime FBound bridges for semantic obligations of terms.
+Contains compiletime fixpoint bridges for semantic obligations of terms.
 
-saved Trm2Typ must be relatable
+registered Trm2Typ must be relatable
 -/
 class CompilerEnv : Type where
-  trm2typCtx : FBound F.Index (AST.Trm2Typ F)
+  trm2typCtx : F.Fixpoint (AST.Trm2Typ F)
   -- trmRefs :  -- TODO: this may be required for transparent inline function
 
 /--
-Contains runtime FBound bridges for value assignment to terms.
+Contains runtime fixpoint bridges for value assignment to terms.
 
-saved Trm2Val must be relatable
+registered Trm2Val must be relatable
 -/
 class RuntimeEnv where
-  trm2valCtx : FBound F.Index (AST.Trm2Val F)
+  trm2valCtx : F.Fixpoint (AST.Trm2Val F)
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
@@ -105,7 +105,7 @@ section variable [env: @RuntimeEnv F]
 
 /--
 Evaluates a term by spending 1 fuel at each semantic
-descent. Runtime evaluation uses `FBound` for references and deliberately
+descent. Runtime evaluation uses [Free.Fixpoint] for references and deliberately
 does not inspect compile-time typing evidence.
 -/
 def eval (self : AST.Trm F) : RecOption (AST.Val F)
@@ -118,13 +118,13 @@ def eval (self : AST.Trm F) : RecOption (AST.Val F)
       match anf with
       | (.yield (some (.fn body _tIn)), .yield (some input)) =>
         -- let permission := env.canSaveAny input
-        let index := env.trm2valCtx.save ⟨arg, input⟩
+        let index := env.trm2valCtx.getUID ⟨arg, input⟩
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | @AST.Trm.ref _ i =>
-      .yield (some (env.trm2valCtx.load i).val)
+      .yield (some (env.trm2valCtx.inv i).val)
 
 end
 

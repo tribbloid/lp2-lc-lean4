@@ -1,17 +1,17 @@
 import «Lp2lc».Active.Util
 
-namespace Tests.FBoundSpec
+namespace Tests.UIDEquivSpec
 
 open Lp2lc.Active.Util
-open FBound
+open UIDEquiv
 
-def group : FBound Nat Nat where
-  save := id
-  load := id
-  roundtrip := by
+def group : UIDEquiv Nat Nat where
+  getUID := id
+  inv := id
+  leftInv := by
     intro value
     rfl
-  roundtripId := by
+  rightInv := by
     intro id
     rfl
 
@@ -27,31 +27,31 @@ def group : FBound Nat Nat where
   saveMeta := λ bundle => bundle.snd
   loadMeta := λ id2 => id2.snd
 
-section save
+section getUID
 
 example :
-    boolMetadata.Evidence (group.save 1) :=
+    boolMetadata.Evidence (group.getUID 1) :=
   boolMetadata.saveMeta ⟨1, true⟩
 
 example :
-    boolMetadata.Evidence (group.save 1) ×
-      unitMetadata.Evidence (group.save 1) :=
+    boolMetadata.Evidence (group.getUID 1) ×
+      unitMetadata.Evidence (group.getUID 1) :=
   ⟨boolMetadata.saveMeta ⟨1, true⟩,
     unitMetadata.saveMeta ⟨1, ()⟩⟩
 
 example :
-    group.load (group.save 1) = 1 := by
-  exact boolMetadata.roundtripValue ⟨1, true⟩
+    group.inv (group.getUID 1) = 1 := by
+  exact boolMetadata.leftInvValue ⟨1, true⟩
 
 example :
     boolMetadata.loadMeta
-      ⟨group.save 1, boolMetadata.saveMeta ⟨1, true⟩⟩ = true := by
+      ⟨group.getUID 1, boolMetadata.saveMeta ⟨1, true⟩⟩ = true := by
   rfl
 
 example :
-    boolMetadata.lookup (group.save 1) = none := by
+    boolMetadata.lookup (group.getUID 1) = none := by
   rfl
 
-end save
+end getUID
 
-end Tests.FBoundSpec
+end Tests.UIDEquivSpec
