@@ -132,7 +132,7 @@ attribute [simp] UIDEquiv.leftInv UIDEquiv.rightInv
 section variable {T : Sort u}
 
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
-inductive Outcome (T : Sort u)
+inductive Outcome (T : Sort u) -- TODO: move into namespace of Rec
 | yield (v: T)
 | outOfFuel
 
