@@ -9,6 +9,37 @@ open Lp2lc.Active.Util
 
 section variable {F : Free}
 
+namespace UmbralV2
+section variable [@ProvingBase F]
+
+structure ProvenCondition (trm: AST.Trm F) : Type where
+  typ : AST.Typ F
+  safety: Safety trm typ
+
+class ProvingEnv where
+  base: @ProvingBase F
+  safetyCtx : base.trm2typCtx.Aux (λ trm2typ =>
+    Safety trm2typ.trm trm2typ.typ)
+
+/--
+the objective of infer_proveV2 contains 2 parts:
+- recursive algorithm that may produce one of the 3 consequences:
+  - successful result
+  - error
+  - out-of-fuel
+- in **all 3** consequences, the algorithm must yield the same result as trm.infer
+-/
+structure ProvingObjective (trm: AST.Trm F) where
+  proving : RecOption (ProvenCondition trm)
+  sameResult: ∀ (fuel : Nat),
+    (proving fuel).map (λ result => result.map (λ condition => condition.typ)) =
+      trm.infer fuel
+
+def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) : ProvingObjective trm := sorry
+
+end
+end UmbralV2
+
 namespace Umbral
 
 section variable [@ProvingBase F]
@@ -26,46 +57,11 @@ contains a [UIDEquiv.Aux] store for intermediate safety proofs over both `AST.Tr
 -/
 class ProvingEnv where
   base: @ProvingBase F
-  safetyCtx : base.trm2typCtx.Aux (λ t => SafetyV2 t)
-  -- sameResultCtx : base.trm2typCtx.Aux (λ t =>)
-  -- proofCtx : base.trm2typCtx.Aux (λ t => ProvenCondition t)
+  proofCtx : base.trm2typCtx.Aux (λ t => ProvenCondition t)
 
 instance [env: @ProvingEnv F] : @ProvingBase F := env.base
 
 section variable [@ProvingEnv F]
-
--- structure ProvenConditionV2 (trm2typ: AST.Trm2Typ F) : Type where
---   safety: SafetyV2 trm2typ
-
-/-
-TODO: the core problem is what to save vs what to produce.
-
-given a Fixpoint:
-
-- should we only save successful result (in which case no need to save fuel due to monotonicity)
-- Or both success & failure? With or without fuel?
-- Or save Safety proof & sameness proof in 2 different locations? is it even possible?
-
-so far, I'm inclined to save 2 different kind of proofs in their own [Aux], so they don't need to wait for each other!
--/
-
-structure ProvenConditionV2 (trm: AST.Trm F) : Type where
-  typ : AST.Typ F
-  safety: Safety trm typ
-
-/--
-the objective of infer_proveV2 contains 2 parts:
-- recursive algorithm that may produce one of the 3 consequences:
-  - successful result
-  - error
-  - out-of-fuel
-- in **all 3** consequences, the algorithm must yield the same result as trm.infer
--/
-structure ProvingObjective (trm: AST.Trm F) where
-  proving : RecOption (ProvenConditionV2 trm)
-  sameResult: RecOption |> (λ o1 => o1.map (λ o2 => o2.map (c => c.typ))) = trm.infer
-
-def infer_proveV2 [env: @ProvingEnv F] (trm : AST.Trm F) (fuel: Nat) : ProvenConditionV2 trm := sorry
 
 /--
 like `Trm.infer` it inductively infer `Typ` of a given `Trm`, using the structure of `Trm.infer` as a blueprint.
@@ -121,6 +117,21 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
 end
 
 end Umbral
+
+namespace UmbralV3
+
+section variable [@ProvingBase F]
+
+/-- A proof-producing inference computation with the same complete outcome as `Trm.infer`. -/
+structure ProvenCondition (trm : AST.Trm F) : Type where
+  result : RecOption (AST.Typ F)
+  sameResult : result = trm.infer
+  safety : ∀ fuel typ,
+    result fuel = .yield (some typ) → Safety trm typ
+
+end
+end UmbralV3
+
 end
 
 end STLC
