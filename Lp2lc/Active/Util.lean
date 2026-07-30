@@ -88,13 +88,13 @@ end UIDEquiv
 
 namespace Free
 
-abbrev Fixpoint (self : Free) (V : Type) := -- TODO: move out from namespace Free
-  UIDEquiv self.Index V
-
-end Free
+abbrev Fixpoint (F : Free) (V : Type) :=
+  UIDEquiv F.Index V
 
 class HasFixpoint (F: Free) : Type 1 where
   mkFixpoint (V: Type) : Free.Fixpoint F V
+
+end Free
 
 namespace UIDEquiv
 
