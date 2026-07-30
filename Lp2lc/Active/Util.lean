@@ -82,12 +82,19 @@ structure UIDEquiv (UID : TIndex) (V : Type) : Type where
   leftInv : ∀ (value : V), inv (getUID value) = value
   rightInv : ∀ (id : UID), getUID (inv id) = id
 
+namespace UIDEquiv
+
+end UIDEquiv
+
 namespace Free
 
-abbrev Fixpoint (self : Free) (V : Type) :=
+abbrev Fixpoint (self : Free) (V : Type) := -- TODO: move out from namespace Free
   UIDEquiv self.Index V
 
 end Free
+
+class HasFixpoint (F: Free) : Type 1 where
+  mkFixpoint (V: Type) : Free.Fixpoint F V
 
 namespace UIDEquiv
 

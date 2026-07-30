@@ -86,7 +86,7 @@ Contains compiletime fixpoint bridges for semantic obligations of terms.
 
 registered Trm2Typ must be relatable
 -/
-class CompilerEnv : Type where
+class CompilerEnv extends (HasFixpoint F) where
   trm2typCtx : F.Fixpoint (AST.Trm2Typ F)
   -- trmRefs :  -- TODO: this may be required for transparent inline function
 
@@ -95,7 +95,7 @@ Contains runtime fixpoint bridges for value assignment to terms.
 
 registered Trm2Val must be relatable
 -/
-class RuntimeEnv where
+class RuntimeEnv extends (HasFixpoint F) where
   trm2valCtx : F.Fixpoint (AST.Trm2Val F)
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
