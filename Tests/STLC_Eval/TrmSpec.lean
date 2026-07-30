@@ -36,7 +36,7 @@ namespace Fixture
 
 @[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
   {
-    trm2valCtx := _unsafeFixpoint (AST.Trm2Val I)
+    mkFixpoint := _unsafeFixpoint
   }
 
 @[instance, implemented_by _runtimeEnv]
