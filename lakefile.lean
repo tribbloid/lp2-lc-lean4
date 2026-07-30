@@ -17,7 +17,7 @@ lean_lib «Docs» where
 lean_lib «Spike» where
 
 require aesop from git
-  "https://github.com/leanprover-community/aesop" @ "v4.32.1"
+  "https://github.com/leanprover-community/aesop" @ "v4.32.2"
 
 require iris from git
   "https://github.com/leanprover-community/iris-lean.git" @ "master" / "Iris"
