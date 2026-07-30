@@ -107,13 +107,6 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
       .yield ((proven (.ref i) typ).map
         (λ condition => ⟨typ, condition⟩))
 
--- theorem termInferMonotone [env : @ProvingEnv F]
---     (trm : AST.Trm F) :
---      (infer trm).Monotone := sorry
-
-
--- def eval_prove [env: @ProvingEnv F] (trm: AST.Trm F): RecOptionn ()
-
 end
 
 end Umbral
@@ -130,6 +123,32 @@ structure ProvenCondition (trm : AST.Trm F) : Type where
     result fuel = .yield (some typ) → Safety trm typ
 
 end
+
+/-
+Hitting the new wall: new UID + proof-evidence can't be saved into AST, and won't be available during induction
+
+How to save proof-evidence into AST? either using the same UID + extrinsic store, or PHO-AST migrated to a new carrier?
+
+can the "leftover case" in AST definition help?
+
+## What we have:
+
+- (x : Trm ⟨ I, ⟩).eval
+- (x : Trm ⟨ I, ⟩).infer
+
+## What we want:
+
+- (x : Trm.ref (Ev I)), which carries an evidence of safety
+
+## Possible solution:
+
+- explicitly define generic constructors of Fixpoint & Aux, all instances have to use them
+- after getting a `Ev I`, instead of creating `.ref <I, >`, create `.ref <Ev I, >` instead
+
+The annoying part is that AST.Trm <I> is invariant to I (`I` appear in both +/- positions), it has to be broken
+
+-/
+
 end UmbralV3
 
 end
