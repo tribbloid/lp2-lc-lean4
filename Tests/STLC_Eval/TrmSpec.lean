@@ -37,6 +37,12 @@ namespace Fixture
 @[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
   {
     mkFixpoint := _unsafeFixpoint
+    mkAux := λ outer M => {
+      Evidence := λ _ => Unit
+      lookup := λ _ => none
+      getEv := λ bundle => ()
+      invEv := λ ev => unsafeCast True.intro
+    }
   }
 
 @[instance, implemented_by _runtimeEnv]

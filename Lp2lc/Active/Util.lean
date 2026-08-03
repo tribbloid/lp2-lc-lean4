@@ -84,20 +84,6 @@ structure UIDEquiv (UID : TIndex) (V : Type) : Type where
 
 namespace UIDEquiv
 
-end UIDEquiv
-
-namespace Free
-
-abbrev Fixpoint (F : Free) (V : Type) :=
-  UIDEquiv F.Index V
-
-class HasFixpoint (F: Free) : Type 1 where
-  mkFixpoint (V: Type) : Free.Fixpoint F V
-
-end Free
-
-namespace UIDEquiv
-
 /--
 extension of [UIDEquiv] that can attach metadata `M : Type/Prop` to existing UID-value pairs:
 
@@ -132,7 +118,19 @@ theorem leftInvValue (self : Aux group D) (bundle : PSigma D) :
 
 end
 end Aux
+
 end UIDEquiv
+
+namespace Free
+
+abbrev Fixpoint (F : Free) (V : Type) :=
+  UIDEquiv F.Index V
+
+class HasFixpoint (F: Free) : Type 1 where
+  mkFixpoint (V: Type) : Free.Fixpoint F V
+  mkAux {UID : TIndex} {V : Type} (outer : UIDEquiv UID V) (M : V -> Type) : UIDEquiv.Aux outer M
+
+end Free
 
 attribute [simp] UIDEquiv.leftInv UIDEquiv.rightInv
 
