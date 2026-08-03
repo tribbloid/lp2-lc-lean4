@@ -28,14 +28,7 @@ class ProvingEnv where
   base: @ProvingBase F
 
 namespace ProvingEnv
-
-/-- Canonical proof metadata transport derived without an additional environment operation. -/
-@[reducible]
-def proofCtx (env : @ProvingEnv F) :
-    UIDEquiv.Aux0 env.base.trm2typCtx
-      (λ trm2typ => @ProvenCondition F env.base trm2typ) :=
-  {}
-
+-- TODO: add proofCtx here, a new Aux0 should be created. No abstract function is allowed
 end ProvingEnv
 
 instance [env: @ProvingEnv F] : @ProvingBase F := env.base
@@ -56,13 +49,9 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
   λ
   | 0 => .outOfFuel
   | fuel + 1 =>
-    let proven (term : AST.Trm F) (typ : AST.Typ F)
-        (condition : @ProvenCondition F env.base ⟨term, typ⟩) :
-        @ProvenCondition F env.base ⟨term, typ⟩ := by
-      simpa using env.proofCtx.invEv ⟨⟨term, typ⟩, condition⟩
     match trm with
     | .val (.lit repr) =>
-      .yield (some ⟨.primitive, proven (.val (.lit repr)) .primitive
+      .yield (some ⟨.primitive,
         { sameInfer := by
             refine ⟨1, ?_⟩
             simp [AST.infer]
@@ -81,7 +70,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
       let index := env.base.trm2typCtx.getUID ⟨.val (.lam body tIn), tIn⟩
       ((infer_prove (body index)) fuel).map (λ out =>
         out.bind (λ result =>
-          some ⟨.fn tIn result.fst, proven (.val (.lam body tIn)) (.fn tIn result.fst)
+          some ⟨.fn tIn result.fst,
             { sameInfer := by
                 rcases result.snd.sameInfer with ⟨bodyFuel, hBodyInfer⟩
                 refine ⟨bodyFuel + 1, ?_⟩
@@ -126,8 +115,6 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
 --     (trm : AST.Trm F) :
 --      (infer trm).Monotone := sorry
 
-
--- def eval_prove [env: @ProvingEnv F] (trm: AST.Trm F): RecOptionn ()
 
 end
 
