@@ -88,7 +88,7 @@ theorem valueInferMonotone [env : @CompilerEnv F]
   termInferMonotone (AST.Trm.val value)
 
 
-def CanInhabit (trm : Trm F) (typ : AST.Typ F) [@CompilerEnv F] :=
+def CanInhabit (trm : Trm F) (typ : AST.Typ F) [@CompilerEnv F] : Prop :=
   trm.infer.isDecidable (λ t2 => t2 <= typ)
 
 end AST.Trm

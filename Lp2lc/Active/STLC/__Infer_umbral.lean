@@ -128,8 +128,32 @@ section variable [@ProvingBase F]
 structure ProvenCondition (trm : AST.Trm F) : Type where
   result : RecOption (AST.Typ F)
   sameResult : result = trm.infer
-  safety : ∀ fuel typ,
-    result fuel = .yield (some typ) → Safety trm typ
+  safety : result.isSemiDecidable (λ typ => Safety trm typ)
+
+class ProvingEnv where
+  [base: @ProvingBase F]
+
+namespace ProvingEnv
+
+/-- Canonical proof store derived from `base`, fixed for every `ProvingEnv` instance. -/
+@[reducible]
+def proofCtx (env : @ProvingEnv F) :
+    env.base.trm2typCtx.Aux (λ t => @ProvenCondition F env.base t.trm) :=
+  env.base.mkAux env.base.trm2typCtx (λ t => @ProvenCondition F env.base t.trm)
+
+end ProvingEnv
+
+namespace Proven
+section variable [env : @ProvingEnv F]
+
+def FProven : Free :=
+  {
+    Index := PSigma env.proofCtx.Evidence
+    Data := F.Data
+  }
+
+end
+end Proven
 
 end
 
