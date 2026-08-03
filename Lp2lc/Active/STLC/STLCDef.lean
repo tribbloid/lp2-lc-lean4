@@ -39,8 +39,7 @@ They are not intrinsic typing indices on terms.
 inductive Trm : Type where
 | val (v : Val) -- AKA literal
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
-| ref (s: F.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
-
+| ref (s: {x : F.Index // F.Ev x}) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
 
 /--
 Value syntax, containing neither references nor applications.
@@ -196,22 +195,14 @@ def AST.Typ.ToCondition (typ: Typ F): Condition F := λ value =>
 --     Rec (term.CanInhabit type → (term.SemiCanSatisfy (type.ToCondition)))
 
 
+-- TODO: this is actually not used ( preferring umbral compiler), need to decide which definition to use
 /-- States that syntactic typing entails semantic typing by the interpreted type. -/
 def Fundamental : Prop :=
   ∀ (term : Trm F) (type : Typ F),
   ∀ (compilerFuel: Nat),
     term.recCanInhabit type compilerFuel = .yield (some ()) → term.CanSatisfy_semi (type.ToCondition)
 
--- /-- States that syntactic typing entails semantic typing by the interpreted type. -/
--- def Fundamental : Prop :=
---   ∀ (term : Trm I) (type : Typ I),
---     term.CanInhabit type → term.SemiCanSatisfy (type.ToCondition)
-
--- def fundamentalProof : @Fundamental F := by
---   sorry
-
 end
-
 
 end
 end STLC

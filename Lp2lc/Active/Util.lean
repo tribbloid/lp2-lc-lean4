@@ -6,12 +6,6 @@ namespace Lp2lc.Active.Util
 abbrev TIndex := Type
 abbrev TData := Type
 
--- DO NOT INTRODUCE BEYOND NECESSITY
-
-inductive Phase
-  | compilation
-  | runtime
-
 /--
 collection of free type variables used in HOAS bindings
 
@@ -22,39 +16,19 @@ They are deliberately left free to ward off unlawful construction:
 -/
 class Free : Type 1 where
   Index : TIndex
+  Ev : Index -> Prop := λ _ => True
   Data : TData
 
 namespace Free
-section variable [free : Free]
 
-structure UID (kind : Phase) where
-  index : free.Index
+@[reducible] def mkDefault (Index : TIndex) (Data : TData) : Free :=
+  { Index := Index, Data := Data }
 
-@[reducible] def AsIn (kind : Phase) : Free where
-  Index := UID kind
-  Data := free.Data
+instance defaultEvidenceCoe (Index : TIndex) (Data : TData) :
+    Coe Index {index : Index // (mkDefault Index Data).Ev index} :=
+  ⟨λ index => ⟨index, True.intro⟩⟩
 
-end
 end Free
-
-/--
-single-use permission to get the UID of v from a `UIDEquiv`. The permission is for v only and won't work for other value
-
-in runtime, permission to eval is granted for all values
-
-in compiletime, no permission will be granted, you can only get the UID of a Typ from a `UIDEquiv`.
-
-in the future we may:
-- let transparent inline function carrying their own permission, so they can eval in compiletime and interact with typing
-- add permission to reconstruct a value from a `UIDEquiv`
--/
-def Permission (T : Type) := (v: T) -> Prop -- no instance will be provided ever, they are requiremennts to apply AST rules.
-
-namespace Permission
-
-def WideOpen {T} : Permission T := λ _ => true
-
-end Permission
 
 /--
 thin wrapper of `T` representing outcome of a valid compilation, implying safety of associated code snippet.

@@ -10,8 +10,6 @@ open Lp2lc.Active.DTLC.Symbolic
 
 namespace Fixture
 
-@[reducible] def RuntimeCanEval : Permission Val := fun _value => True
-
 /--
 Build a stateful testing approximation of [Free.Fixpoint] over an
 `IO.Ref (Array T)`. [UIDEquiv.leftInv] is discharged via

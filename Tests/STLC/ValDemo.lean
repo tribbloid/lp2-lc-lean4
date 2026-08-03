@@ -13,9 +13,7 @@ inductive Symbol where
 
 namespace Symbolic
 
-@[reducible] def I : Free where
-  Index := Symbol
-  Data := String
+abbrev I := Free.mkDefault Symbol String
 
 abbrev Typ := AST.Typ I
 abbrev Val := AST.Val I
