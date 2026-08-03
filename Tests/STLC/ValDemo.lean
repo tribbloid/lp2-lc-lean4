@@ -5,9 +5,9 @@ open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
 
 /--
-it is deliberately unconstructable: FBound can hypothetically make it but this is not deliberately provided anywhere
+it is deliberately unconstructable: a fixpoint can hypothetically make it but this is not deliberately provided anywhere
 
-test cases are expected to use the roundtrip to demonstrate syntax rules
+test cases are expected to use the left inverse to demonstrate syntax rules
 -/
 inductive Symbol where
 

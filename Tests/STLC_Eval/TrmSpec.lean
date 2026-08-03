@@ -10,30 +10,33 @@ open Tests.STLC_Eval.Sanity.Symbolic
 
 namespace Fixture
 
-@[reducible] unsafe def _unsafeFBound (T : Type) :
-    FBound I.Index T :=
+@[reducible] unsafe def _unsafeFixpoint (T : Type) :
+    I.Fixpoint T :=
   let saved : IO.Ref (Array T) := unsafeBaseIO (IO.mkRef #[])
-  let save : T → I.Index := fun value =>
+  let getUID : T → I.Index := fun value =>
     unsafeBaseIO do
       let values ← saved.get
       saved.set (values.push value)
       pure (unsafeCast values.size)
-  let load : I.Index → T := fun ref =>
+  let inv : I.Index → T := fun ref =>
     let index : Nat := unsafeCast ref
     match (unsafeBaseIO saved.get)[index]? with
     | some t => t
     | none => unsafeCast ()
   {
-    save := fun value => save value
-    load := fun ref => load ref
-    roundtrip := by
+    getUID := fun value => getUID value
+    inv := fun ref => inv ref
+    leftInv := by
       intro value
       exact unsafeCast True.intro
+    rightInv := by
+      intro id
+      cases id
   }
 
 @[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
   {
-    trm2valCtx := _unsafeFBound (AST.Trm2Val I)
+    trm2valCtx := _unsafeFixpoint (AST.Trm2Val I)
   }
 
 @[instance, implemented_by _runtimeEnv]
@@ -53,7 +56,7 @@ example : (vFalse : Trm).eval.shouldYields Val.vFalse := by
   · rfl
 
 example :
-    let ref := env.trm2valCtx.save ⟨vFalse, Val.vFalse⟩
+    let ref := env.trm2valCtx.getUID ⟨vFalse, Val.vFalse⟩
     (AST.Trm.ref ref).eval 1 = .yield (some Val.vFalse) := by
   simp [AST.Trm.eval]
 

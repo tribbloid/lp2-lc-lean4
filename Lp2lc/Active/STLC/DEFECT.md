@@ -4,7 +4,7 @@
 
 `Safety.proof` in `STLCInfer.lean` is now discharged by recursion, but it is
 relative to two `ProvingEnv` obligations that are not derivable from the
-current `FBound` store interface alone:
+current `Free.Fixpoint` interface alone:
 
 - [x] `refSafety`: a runtime value loaded from `valueRefs` must infer to a type
   bounded by the type loaded from `typRefs` at the same index.

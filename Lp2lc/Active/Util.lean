@@ -17,7 +17,7 @@ collection of free type variables used in HOAS bindings
 
 They are deliberately left free to ward off unlawful construction:
 
-- the only way to construct an `Index` is to save `Value` through the F-Bound bridge
+- the only way to construct an `Index` is to get the UID of a `Value` through the fixpoint bridge
 - the only way to construct a `Data` is to parse a primitive literal in AST
 -/
 class Free : Type 1 where
@@ -38,15 +38,15 @@ end
 end Free
 
 /--
-single-use permission to save v into FBound. The permission is for v only and won't work for other value
+single-use permission to get the UID of v from a `UIDEquiv`. The permission is for v only and won't work for other value
 
 in runtime, permission to eval is granted for all values
 
-in compiletime, no permission will be granted, you can only save Typ into FBound.
+in compiletime, no permission will be granted, you can only get the UID of a Typ from a `UIDEquiv`.
 
 in the future we may:
 - let transparent inline function carrying their own permission, so they can eval in compiletime and interact with typing
-- add permission to load value From FBound
+- add permission to reconstruct a value from a `UIDEquiv`
 -/
 def Permission (T : Type) := (v: T) -> Prop -- no instance will be provided ever, they are requiremennts to apply AST rules.
 
@@ -61,7 +61,7 @@ thin wrapper of `T` representing outcome of a valid compilation, implying safety
 
 all compilation API should ideally return this.
 
-if saved in an FBound, the result UID should work in any `Env` to get a compatible term or value.
+if registered in a `UIDEquiv`, the result UID should work in any `Env` to get a compatible term or value.
 -/
 structure Valid T : Type where
   self: T
@@ -69,55 +69,65 @@ structure Valid T : Type where
 /--
 Hypothetical bridge between values & UIDs as HOAS carrier
 
-There is no way to generate a UID except saving a `V`, as a result, loading ALWAYS succeed.
+[UIDEquiv.getUID] is the only way to obtain a UID: it requires a `V`.
+Consequently, [UIDEquiv.inv] is total without introducing free variables.
 As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
--/
-structure FBound (UID : TIndex) (V : Type) : Type where
-  save : (value : V) → UID -- this is the only way to get an UID (required by HOAS binder): by submitting a `V`. As a result, "load" can be total without introducing free variable
-  load : (id : UID) → V
-  roundtrip : ∀ (value : V), load (save value) = value
 
-namespace FBound
+[UIDEquiv.getUID] and [UIDEquiv.inv] are inverse: [UIDEquiv.leftInv] starts
+from a value, while [UIDEquiv.rightInv] starts from a UID.
+-/
+structure UIDEquiv (UID : TIndex) (V : Type) : Type where
+  getUID : (value : V) → UID
+  inv : (id : UID) → V
+  leftInv : ∀ (value : V), inv (getUID value) = value
+  rightInv : ∀ (id : UID), getUID (inv id) = id
+
+namespace Free
+
+abbrev Fixpoint (self : Free) (V : Type) :=
+  UIDEquiv self.Index V
+
+end Free
+
+namespace UIDEquiv
 
 /--
-this is an upgraded bridge which depends on FBound:
+extension of [UIDEquiv] that can attach metadata `M : Type/Prop` to existing UID-value pairs:
 
-- designed to save/load a value with a `metadata : Type/Prop` that depends on it
-- `save` computes UID only from value, metadata is required but not used
-- all FBound instances from the same group share the same isomorphism of UID <-> group.V
-- the metadata can be set to Unit type to achieve the original bridge behaviour
+- [UIDEquiv.Aux.saveMeta] requires both value and its metadata, but UID is only computed from value
+- [UIDEquiv.Aux.loadMeta] requires both UID and the evidence that its metadata has been saved before
+- all [UIDEquiv.Aux] instances derived from the same [UIDEquiv] share its [UIDEquiv.getUID] and [UIDEquiv.inv]
 
-The shared bridge is a left inverse rather than a full isomorphism. Metadata is
-total over the group's values and is reconstructed by each instance on load.
-Membership evidence restricts that reconstruction to identifiers registered by
-the auxiliary instance.
+`M` is a dependent family over `V` and is reconstructed by each [UIDEquiv.Aux]
+instance through [UIDEquiv.Aux.loadMeta]. [UIDEquiv.Aux.Evidence] restricts that
+reconstruction to identifiers carrying evidence for the auxiliary instance.
 
-Saves a bundle using only its value through the shared group bridge.
-Loads a value through the group and reconstructs this instance's metadata.
+[UIDEquiv.Aux.saveMeta] saves a bundle using only its value through the shared group bridge.
+[UIDEquiv.Aux.loadMeta] reconstructs a value through the group and then this instance's metadata.
 -/
 class Aux {UID : TIndex} {V : Type}
-    (outer : FBound UID V) (D : V → Sort u) where
-  Member : UID → Type
-  lookup : (id : UID) → Option (Member id) -- TODO: this shouldn't be useful
-  saveMember : (bundle : PSigma D) → Member (outer.save bundle.fst)
-  loadMetadata : (id2: PSigma Member) → D (outer.load id2.fst)
+    (outer : UIDEquiv UID V) (M : V → Sort u) where
+  Evidence : UID → Type
+  lookup : (id : UID) → Option (Evidence id) -- TODO: this shouldn't be useful
+  saveMeta : (bundle : PSigma M) → Evidence (outer.getUID bundle.fst)
+  loadMeta : (ev: PSigma Evidence) → M (outer.inv ev.fst)
 
 namespace Aux
-section variable {UID : TIndex} {V : Type} {group : FBound UID V} {D : V → Sort u}
+section variable {UID : TIndex} {V : Type} {group : UIDEquiv UID V} {D : V → Sort u}
 
 /-- Saving membership and reconstructing metadata preserves the original value. -/
 @[simp]
-theorem roundtripValue (self : Aux group D) (bundle : PSigma D) :
-    (⟨group.load (group.save bundle.fst),
-      self.loadMetadata
-        ⟨group.save bundle.fst, self.saveMember bundle⟩⟩ : PSigma D).fst = bundle.fst :=
-  group.roundtrip bundle.fst
+theorem leftInvValue (self : Aux group D) (bundle : PSigma D) :
+    (⟨group.inv (group.getUID bundle.fst),
+      self.loadMeta
+        ⟨group.getUID bundle.fst, self.saveMeta bundle⟩⟩ : PSigma D).fst = bundle.fst :=
+  group.leftInv bundle.fst
 
 end
 end Aux
-end FBound
+end UIDEquiv
 
-attribute [simp] FBound.roundtrip
+attribute [simp] UIDEquiv.leftInv UIDEquiv.rightInv
 
 section variable {T : Sort u}
 

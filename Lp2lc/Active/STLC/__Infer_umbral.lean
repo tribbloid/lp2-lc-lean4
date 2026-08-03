@@ -20,7 +20,7 @@ structure ProvenCondition (trm2typ: AST.Trm2Typ F) : Type where
 end
 
 /--
-contains a FBound store to save/load intermediate safety proof for both `AST.Trm` and `AST.Val`
+contains a [UIDEquiv.Aux] store for intermediate safety proofs over both `AST.Trm` and `AST.Val`
 
 `infer_prove` & any theorem that relies on safety can use it, this is the only correspondence between compiletime and runtime variables.
 -/
@@ -48,15 +48,15 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
   | fuel + 1 =>
     let proven (term : AST.Trm F) (typ : AST.Typ F) :
         Option (@ProvenCondition F env.base ⟨term, typ⟩) :=
-      let id := env.base.trm2typCtx.save ⟨term, typ⟩
+      let id := env.base.trm2typCtx.getUID ⟨term, typ⟩
       (env.proofCtx.lookup id).map (λ member => by
-        simpa [id] using env.proofCtx.loadMetadata id member)
+        simpa [id] using env.proofCtx.loadMeta ⟨id, member⟩)
     match trm with
     | .val (.primitive repr) =>
       .yield ((proven (.val (.primitive repr)) .primitive).map
         (λ condition => ⟨.primitive, condition⟩))
     | .val (.fn body tIn) =>
-      let index := env.base.trm2typCtx.save ⟨trm, tIn⟩
+      let index := env.base.trm2typCtx.getUID ⟨trm, tIn⟩
       ((infer_prove (body index)) fuel).map (λ out =>
         out.bind (λ result =>
           (proven (.val (.fn body tIn)) (.fn tIn result.fst)).map
@@ -72,7 +72,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
     | @AST.Trm.ref _ i =>
-      let typ := (env.base.trm2typCtx.load i).typ
+      let typ := (env.base.trm2typCtx.inv i).typ
       .yield ((proven (.ref i) typ).map
         (λ condition => ⟨typ, condition⟩))
 
