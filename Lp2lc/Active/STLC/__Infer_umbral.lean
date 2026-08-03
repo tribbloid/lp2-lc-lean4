@@ -26,7 +26,10 @@ contains a FBound store to save/load intermediate safety proof for both `AST.Trm
 -/
 class ProvingEnv where
   base: @ProvingBase F
-  proofCtx : base.trm2typCtx.Aux (λ t => ProvenCondition t)
+
+namespace ProvingEnv
+-- TODO: add proofCtx here
+end ProvingEnv
 
 instance [env: @ProvingEnv F] : @ProvingBase F := env.base
 

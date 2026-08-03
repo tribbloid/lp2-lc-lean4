@@ -16,7 +16,7 @@ They are deliberately left free to ward off unlawful construction:
 -/
 class Free : Type 1 where
   Index : TIndex
-  Ev : Index -> Prop := λ _ => True
+  -- Ev : Index -> Prop := λ _ => True -- TODO: this should be moved out from Free
   Data : TData
 
 namespace Free
