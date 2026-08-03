@@ -7,6 +7,7 @@ namespace Lp2lc.Active
 
 namespace STLC
 open Lp2lc.Active.Util
+open Lp2lc.Active.Util.Rec
 
 /-
 this file proof an alternative theorem for STLC soundness:

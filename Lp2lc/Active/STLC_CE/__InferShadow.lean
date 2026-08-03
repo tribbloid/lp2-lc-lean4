@@ -6,6 +6,7 @@ namespace Lp2lc.Active
 namespace STLC_CE
 
 open Lp2lc.Active.Util
+open Lp2lc.Active.Util.Rec
 
 namespace AST.Trm
 

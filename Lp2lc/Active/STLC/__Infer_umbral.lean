@@ -86,35 +86,73 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
   λ
   | 0 => .outOfFuel
   | fuel + 1 =>
-    let proven (term : AST.Trm F) (typ : AST.Typ F) :
-        Option (@ProvenCondition F env.base ⟨term, typ⟩) :=
+    let proven (term : AST.Trm F) (typ : AST.Typ F)
+        (condition : @ProvenCondition F env.base ⟨term, typ⟩) :
+        @ProvenCondition F env.base ⟨term, typ⟩ := by
       let id := env.base.trm2typCtx.getUID ⟨term, typ⟩
-      (env.proofCtx.lookup id).map (λ member => by
-        simpa [id] using env.proofCtx.invEv ⟨id, member.down⟩)
+      simpa [id] using env.proofCtx.invEv ⟨id, env.proofCtx.getEv ⟨⟨term, typ⟩, condition⟩⟩
     match trm with
     | .val (.primitive repr) =>
-      .yield ((proven (.val (.primitive repr)) .primitive).map
-        (λ condition => ⟨.primitive, condition⟩))
+      .yield (some ⟨.primitive, proven (.val (.primitive repr)) .primitive
+        { sameInfer := by
+            refine ⟨1, ?_⟩
+            simp [AST.Trm.infer]
+            rfl
+          safety := by
+            unfold Safety
+            intro runtimeFuel
+            cases runtimeFuel with
+            | zero => simp [AST.Trm.eval]
+            | succ runtimeFuel =>
+              simp [AST.Trm.eval, AST.Trm.CanInhabit]
+              exact ⟨1, by
+                simp [AST.Trm.infer]
+                rfl⟩ }⟩)
     | .val (.fn body tIn) =>
-      let index := env.base.trm2typCtx.getUID ⟨trm, tIn⟩
+      let index := env.base.trm2typCtx.getUID ⟨.val (.fn body tIn), tIn⟩
       ((infer_prove (body index)) fuel).map (λ out =>
         out.bind (λ result =>
-          (proven (.val (.fn body tIn)) (.fn tIn result.fst)).map
-            (λ condition => ⟨.fn tIn result.fst, condition⟩)))
+          some ⟨.fn tIn result.fst, proven (.val (.fn body tIn)) (.fn tIn result.fst)
+            { sameInfer := by
+                rcases result.snd.sameInfer with ⟨bodyFuel, hBodyInfer⟩
+                refine ⟨bodyFuel + 1, ?_⟩
+                cases hBody : (body index).infer bodyFuel with
+                | outOfFuel => simp [hBody] at hBodyInfer
+                | yield out =>
+                    cases out with
+                    | none => simp [hBody] at hBodyInfer
+                    | some tOut' =>
+                      simp [hBody] at hBodyInfer
+                      have htOutEq : result.fst = tOut' := hBodyInfer
+                      simp [AST.Trm.infer, index, hBody, htOutEq]
+                      rfl
+              safety := by
+                unfold Safety
+                intro runtimeFuel
+                cases runtimeFuel with
+                | zero => simp [AST.Trm.eval]
+                | succ runtimeFuel =>
+                  simp [AST.Trm.eval, AST.Trm.CanInhabit]
+                  rcases result.snd.sameInfer with ⟨bodyFuel, hBodyInfer⟩
+                  refine ⟨bodyFuel + 1, ?_⟩
+                  cases hBody : (body index).infer bodyFuel with
+                  | outOfFuel => simp [hBody] at hBodyInfer
+                  | yield out =>
+                      cases out with
+                      | none => simp [hBody] at hBodyInfer
+                      | some tOut' =>
+                        simp [hBody] at hBodyInfer
+                        have htOutEq : result.fst = tOut' := hBodyInfer
+                        simp [AST.Trm.infer, index, hBody, htOutEq]
+                        rfl
+            }⟩))
     | .apply fn arg =>
       match (infer_prove fn) fuel, (infer_prove arg) fuel with
-      | .yield (some ⟨.fn tIn tOut, _⟩), .yield (some ⟨argTyp, _⟩) =>
-        if argTyp ≤ tIn then
-          .yield ((proven (.apply fn arg) tOut).map
-            (λ condition => ⟨tOut, condition⟩))
-        else .yield none
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
     | @AST.Trm.ref _ i =>
-      let typ := (env.base.trm2typCtx.inv i).typ
-      .yield ((proven (.ref i) typ).map
-        (λ condition => ⟨typ, condition⟩))
+      .yield none
 
 end
 
@@ -164,14 +202,14 @@ How to save proof-evidence into AST? either using the same UID + extrinsic store
 
 can the "leftover case" in AST definition help?
 
-## What we have:
+## What we have:'
 
 - (x : Trm ⟨ I, ⟩).eval
 - (x : Trm ⟨ I, ⟩).infer
 
 ## What we want:
 
-- (x : Trm.ref (Ev I)), which carries an evidence of safety
+- (x : Trm.ref ⟨ proofEnv.AuxUID, ⟩), which carries an evidence of safety
 
 ## Possible solution:
 

@@ -84,37 +84,40 @@ structure UIDEquiv (UID : TIndex) (V : Type) : Type where
 
 namespace UIDEquiv
 
+
 /--
 extension of [UIDEquiv] that can attach metadata `M : Type/Prop` to existing UID-value pairs:
 
-- [UIDEquiv.Aux.saveMeta] requires both value and its metadata, but UID is only computed from value
-- [UIDEquiv.Aux.loadMeta] requires both UID and the evidence that its metadata has been saved before
+- [UIDEquiv.Aux.getEv] requires both value and its metadata, but UID is only computed from value
+- [UIDEquiv.Aux.invEv] requires both UID and the evidence that its metadata has been saved before
 - all [UIDEquiv.Aux] instances derived from the same [UIDEquiv] share its [UIDEquiv.getUID] and [UIDEquiv.inv]
 
 `M` is a dependent family over `V` and is reconstructed by each [UIDEquiv.Aux]
-instance through [UIDEquiv.Aux.loadMeta]. [UIDEquiv.Aux.Ev] restricts that
+instance through [UIDEquiv.Aux.invEv]. [UIDEquiv.Aux.Ev] restricts that
 reconstruction to identifiers carrying evidence for the auxiliary instance.
 
-[UIDEquiv.Aux.saveMeta] saves a bundle using only its value through the shared group bridge.
-[UIDEquiv.Aux.loadMeta] reconstructs a value through the group and then this instance's metadata.
+[UIDEquiv.Aux.getEv] saves a bundle using only its value through the shared group bridge.
+[UIDEquiv.Aux.invEv] reconstructs a value through the group and then this instance's metadata.
 -/
 class Aux {UID : TIndex} {V : Type}
     (outer : UIDEquiv UID V) (M : V → Sort u) where
   Ev : UID → Prop
-  lookup : (id : UID) → Option (PLift (Ev id)) -- TODO: this shouldn't be useful
   getEv : (bundle : PSigma M) → Ev (outer.getUID bundle.fst)
   invEv : (ev: PSigma Ev) → M (outer.inv ev.fst)
 
 namespace Aux
-section variable {UID : TIndex} {V : Type} {group : UIDEquiv UID V} {D : V → Sort u}
+
+section variable {UID : TIndex} {V : Type} {outer : UIDEquiv UID V} {M : V → Sort u} (self : Aux outer M)
+
+abbrev AuxUID := PSigma self.Ev
 
 /-- Saving membership and reconstructing metadata preserves the original value. -/
 @[simp]
-theorem leftInvValue (self : Aux group D) (bundle : PSigma D) :
-    (⟨group.inv (group.getUID bundle.fst),
+theorem leftInvValue (bundle : PSigma M) :
+    (⟨outer.inv (outer.getUID bundle.fst),
       self.invEv
-        ⟨group.getUID bundle.fst, self.getEv bundle⟩⟩ : PSigma D).fst = bundle.fst :=
-  group.leftInv bundle.fst
+        ⟨outer.getUID bundle.fst, self.getEv bundle⟩⟩ : PSigma M).fst = bundle.fst :=
+  outer.leftInv bundle.fst
 
 end
 end Aux
@@ -136,10 +139,12 @@ attribute [simp] UIDEquiv.leftInv UIDEquiv.rightInv
 
 section variable {T : Sort u}
 
+namespace Rec
+
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
-inductive Outcome (T : Sort u) -- TODO: move into namespace of Rec
-| yield (v: T)
-| outOfFuel
+inductive Outcome (T : Sort u)
+  | yield (v : T)
+  | outOfFuel
 
 namespace Outcome
 variable (self : Outcome T)
@@ -172,10 +177,12 @@ def isResultOrOutOfFuel (self : @Outcome (Option T)) : Prop := match self with
 end
 end Outcome
 
--- universe u v
-def Rec (T : Sort u) := (fuel : Nat) -> @Outcome T
+end Rec
 
--- TODO: all algorithm with this signature should have a proof of monotonicity
+-- universe u v
+def Rec (T : Sort u) := (fuel : Nat) -> @Rec.Outcome T
+
+-- LATER: all algorithm with this signature should have a proof of monotonicity
 
 namespace Rec
 section variable (self : Lp2lc.Active.Util.Rec T)

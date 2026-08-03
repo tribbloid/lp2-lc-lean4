@@ -6,6 +6,7 @@ namespace Tests.STLC.Sanity
 namespace Trm
 
 open Lp2lc.Active.Util
+open Lp2lc.Active.Util.Rec
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
