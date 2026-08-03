@@ -28,10 +28,6 @@ namespace Free
 @[reducible] def weaken (self : Free) : Free :=
   mkWeakest self.Index self.Data
 
-instance weakenCoe (Index : TIndex) (Data : TData) :
-    Coe Index {index : Index // (mkWeakest Index Data).Ev index} :=
-  ⟨λ index => ⟨index, True.intro⟩⟩
-
 end Free
 
 /--

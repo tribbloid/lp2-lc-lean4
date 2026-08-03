@@ -28,7 +28,14 @@ class ProvingEnv where
   base: @ProvingBase F
 
 namespace ProvingEnv
--- TODO: add proofCtx here, a new Aux0 should be created. No abstract function is allowed
+
+/-- Canonical proof metadata transport derived without an additional environment operation. -/
+@[reducible]
+def proofCtx (env : @ProvingEnv F) :
+    UIDEquiv.Aux0 env.base.trm2typCtx
+      (λ trm2typ => @ProvenCondition F env.base trm2typ) :=
+  {}
+
 end ProvingEnv
 
 instance [env: @ProvingEnv F] : @ProvingBase F := env.base
@@ -49,31 +56,71 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
   λ
   | 0 => .outOfFuel
   | fuel + 1 =>
-    let proven (term : AST.Trm F) (typ : AST.Typ F) :
+    let proven (term : AST.Trm F) (typ : AST.Typ F)
+        (condition : @ProvenCondition F env.base ⟨term, typ⟩) :
         @ProvenCondition F env.base ⟨term, typ⟩ := by
-      simpa using
-        env.proofCtx.loadMetadata (env.base.trm2typCtx.save ⟨term, typ⟩)
+      simpa using env.proofCtx.invEv ⟨⟨term, typ⟩, condition⟩
     match trm with
-    | .val (.primitive repr) =>
-      .yield (some ⟨.primitive, proven (.val (.primitive repr)) .primitive⟩)
-    | .val (.fn body tIn) =>
-      let index := env.base.trm2typCtx.save ⟨trm, tIn⟩
+    | .val (.lit repr) =>
+      .yield (some ⟨.primitive, proven (.val (.lit repr)) .primitive
+        { sameInfer := by
+            refine ⟨1, ?_⟩
+            simp [AST.infer]
+            rfl
+          safety := by
+            unfold Safety
+            intro runtimeFuel
+            cases runtimeFuel with
+            | zero => simp [AST.eval]
+            | succ runtimeFuel =>
+              simp [AST.eval, AST.CanInhabit]
+              exact ⟨1, by
+                simp [AST.infer]
+                rfl⟩ }⟩)
+    | .val (.lam body tIn) =>
+      let index := env.base.trm2typCtx.getUID ⟨.val (.lam body tIn), tIn⟩
       ((infer_prove (body index)) fuel).map (λ out =>
-        out.map (λ result =>
-          ⟨.fn tIn result.fst,
-            proven (.val (.fn body tIn)) (.fn tIn result.fst)⟩))
+        out.bind (λ result =>
+          some ⟨.fn tIn result.fst, proven (.val (.lam body tIn)) (.fn tIn result.fst)
+            { sameInfer := by
+                rcases result.snd.sameInfer with ⟨bodyFuel, hBodyInfer⟩
+                refine ⟨bodyFuel + 1, ?_⟩
+                cases hBody : (body index).infer bodyFuel with
+                | outOfFuel => simp [hBody] at hBodyInfer
+                | yield out =>
+                  cases out with
+                  | none => simp [hBody] at hBodyInfer
+                  | some tOut' =>
+                    simp [hBody] at hBodyInfer
+                    have htOutEq : result.fst = tOut' := hBodyInfer
+                    simp [AST.infer, index, hBody, htOutEq]
+                    rfl
+              safety := by
+                unfold Safety
+                intro runtimeFuel
+                cases runtimeFuel with
+                | zero => simp [AST.eval]
+                | succ runtimeFuel =>
+                  simp [AST.eval, AST.CanInhabit]
+                  rcases result.snd.sameInfer with ⟨bodyFuel, hBodyInfer⟩
+                  refine ⟨bodyFuel + 1, ?_⟩
+                  cases hBody : (body index).infer bodyFuel with
+                  | outOfFuel => simp [hBody] at hBodyInfer
+                  | yield out =>
+                    cases out with
+                    | none => simp [hBody] at hBodyInfer
+                    | some tOut' =>
+                      simp [hBody] at hBodyInfer
+                      have htOutEq : result.fst = tOut' := hBodyInfer
+                      simp [AST.infer, index, hBody, htOutEq]
+                      rfl
+            }⟩))
     | .apply fn arg =>
       match (infer_prove fn) fuel, (infer_prove arg) fuel with
-      | .yield (some ⟨.fn tIn tOut, _⟩), .yield (some ⟨argTyp, _⟩) =>
-        if argTyp ≤ tIn then
-          .yield (some ⟨tOut, proven (.apply fn arg) tOut⟩)
-        else .yield none
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | @AST.Trm.ref _ i =>
-      let typ := (env.base.trm2typCtx.load i).typ
-      .yield (some ⟨typ, proven (.ref i) typ⟩)
+    | @AST.ref _ _ => .yield none
 
 -- theorem termInferMonotone [env : @ProvingEnv F]
 --     (trm : AST.Trm F) :
