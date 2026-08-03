@@ -56,8 +56,17 @@ contains a [UIDEquiv.Aux] store for intermediate safety proofs over both `AST.Tr
 `infer_prove` & any theorem that relies on safety can use it, this is the only correspondence between compiletime and runtime variables.
 -/
 class ProvingEnv where
-  base: @ProvingBase F
-  proofCtx : base.trm2typCtx.Aux (λ t => ProvenCondition t)
+  [base: @ProvingBase F]
+
+namespace ProvingEnv
+
+/-- Canonical proof store derived from `base`, fixed for every `ProvingEnv` instance. -/
+@[reducible]
+def proofCtx (env : @ProvingEnv F) :
+    env.base.trm2typCtx.Aux (λ t => @ProvenCondition F env.base t) :=
+  env.base.mkAux env.base.trm2typCtx (λ t => @ProvenCondition F env.base t)
+
+end ProvingEnv
 
 instance [env: @ProvingEnv F] : @ProvingBase F := env.base
 
@@ -146,7 +155,7 @@ can the "leftover case" in AST definition help?
 - after getting a `Ev I`, instead of creating `.ref <I, >`, create `.ref <Ev I, >` instead
 - enable conversion from Trm (Ev I) (representing safe term) to Trm I (representing unsafe term)
 
-The annoying part is that AST.Trm <I> is invariant to I (`I` appear in both +/- positions), it has to be broken
+The annoying part is that AST.Trm <I> is invariant to I (`I` appear in both + / - positions), it has to be broken
 
 -/
 
