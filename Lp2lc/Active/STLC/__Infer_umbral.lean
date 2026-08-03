@@ -28,7 +28,7 @@ class ProvingEnv where
   base: @ProvingBase F
 
 namespace ProvingEnv
--- TODO: add proofCtx here
+-- TODO: add proofCtx here, a new Aux0 should be created. No abstract function is allowed
 end ProvingEnv
 
 instance [env: @ProvingEnv F] : @ProvingBase F := env.base
