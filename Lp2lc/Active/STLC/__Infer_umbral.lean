@@ -186,7 +186,7 @@ section variable [env : @ProvingEnv F]
 
 def FProven : Free :=
   {
-    Index := PSigma env.proofCtx.Ev
+    Index := env.proofCtx.AuxUID
     Data := F.Data
   }
 
