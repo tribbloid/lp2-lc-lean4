@@ -20,7 +20,7 @@ Obviously inferring type is not alway available in more complex type system, but
 
 section variable {F : Free}
 
-namespace AST.Trm
+namespace AST
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termEvalMonotone [env : @RuntimeEnv F]
@@ -31,7 +31,7 @@ theorem termEvalMonotone [env : @RuntimeEnv F]
   | ind fromFuel ih =>
     cases fromFuel with
     | zero =>
-      cases trm <;> simp [AST.Trm.eval] at hEval
+      cases trm <;> simp [AST.eval] at hEval
     | succ fuel =>
       cases more with
       | zero => cases hFuel
@@ -39,42 +39,42 @@ theorem termEvalMonotone [env : @RuntimeEnv F]
         have hFuelTail : fuel <= toFuel := Nat.le_of_succ_le_succ hFuel
         cases trm with
         | val value =>
-          simpa [AST.Trm.eval] using hEval
+          simpa [AST.eval] using hEval
         | apply fnTerm arg =>
           cases hFn : fnTerm.eval fuel with
-          | outOfFuel => simp [AST.Trm.eval, hFn] at hEval
+          | outOfFuel => simp [AST.eval, hFn] at hEval
           | yield fnResult =>
             have hFnTop := ih fuel (Nat.lt_succ_self fuel) fnTerm toFuel fnResult hFuelTail hFn
             cases hArg : arg.eval fuel with
-            | outOfFuel => simp [AST.Trm.eval, hFn, hArg] at hEval
+            | outOfFuel => simp [AST.eval, hFn, hArg] at hEval
             | yield argResult =>
               have hArgTop := ih fuel (Nat.lt_succ_self fuel) arg toFuel argResult hFuelTail hArg
               cases fnResult with
               | none =>
-                simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop] using hEval
+                simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
               | some fnValue =>
                 cases fnValue with
-                | primitive repr =>
-                  simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop] using hEval
-                | fn body tIn =>
+                | lit repr =>
+                  simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
+                | lam body tIn =>
                   cases argResult with
                   | none =>
-                    simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop] using hEval
+                    simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                   | some input =>
                     cases hBody :
                         (body (env.trm2valCtx.getUID ⟨arg, input⟩)).eval fuel with
                     | outOfFuel =>
-                      simp [AST.Trm.eval, hFn, hArg, hBody] at hEval
+                      simp [AST.eval, hFn, hArg, hBody] at hEval
                     | yield bodyResult =>
                       have hBodyTop :=
                         ih fuel (Nat.lt_succ_self fuel)
                           (body (env.trm2valCtx.getUID ⟨arg, input⟩))
                           toFuel bodyResult hFuelTail hBody
-                      simpa [AST.Trm.eval, hFn, hArg, hFnTop, hArgTop, hBody, hBodyTop] using hEval
+                      simpa [AST.eval, hFn, hArg, hFnTop, hArgTop, hBody, hBodyTop] using hEval
         | ref id =>
-          simpa [AST.Trm.eval] using hEval
+          simpa [AST.eval] using hEval
 
-end AST.Trm
+end AST
 
 
 /-- States that semantic typing of a closed term entails operational safety. -/
@@ -91,11 +91,11 @@ def proof : @Adequacy F := by
   | yield value =>
     cases value with
     | none =>
-      simp [AST.Trm.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult] at weakest
+      simp [AST.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult] at weakest
     | some value =>
-      simp [AST.Trm.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult]
+      simp [AST.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult]
   | outOfFuel =>
-    simp [AST.Trm.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult]
+    simp [AST.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult]
 
 end Adequacy
 end

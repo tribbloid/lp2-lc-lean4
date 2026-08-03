@@ -21,15 +21,15 @@ def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
 
 def primitiveTrueFn : Trm :=
-  .val (.fn (fun _ref => vTrue) .primitive)
+  .val (.lam (λ _ref => vTrue) .primitive)
 
 def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn vFalse
 
 def get1st : Trm :=
   .val
-    (.fn (fun firstRef =>
-      .val (.fn (fun _secondRef => .ref firstRef) .primitive))
+    (.lam (λ firstRef =>
+      .val (.lam (λ _secondRef => .ref firstRef) .primitive))
       .primitive)
 
 def get1stOnTuple : Trm :=
@@ -41,7 +41,7 @@ def primitiveApply : Trm :=
   .apply vFalse vTrue
 
 def bodyFails : Trm :=
-  .val (.fn (fun _ref => primitiveApply) .primitive)
+  .val (.lam (λ _ref => primitiveApply) .primitive)
 
 def bodyFailsOnFalse : Trm :=
   .apply bodyFails vFalse

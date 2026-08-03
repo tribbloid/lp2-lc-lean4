@@ -62,14 +62,14 @@ example : (vFalse : Trm).eval.shouldYields Val.vFalse := by
 
 example :
     let ref := env.trm2valCtx.getUID ⟨vFalse, Val.vFalse⟩
-    (AST.Trm.ref ref).eval 1 = .yield (some Val.vFalse) := by
-  simp [AST.Trm.eval]
+    (AST.ref ref).eval 1 = .yield (some Val.vFalse) := by
+  simp [AST.eval]
 
 example : (primitiveIdFnOnFalse : Trm).eval 1 = .outOfFuel := rfl
 
 example : (primitiveIdFnOnFalse : Trm).eval.shouldYields Val.vFalse := by
   constructor
-  · exact ⟨2, by simp [AST.Trm.eval, primitiveIdFnOnFalse, primitiveIdFn, vFalse, Val.idFn]⟩
+  · exact ⟨2, by simp [AST.eval, primitiveIdFnOnFalse, primitiveIdFn, vFalse, Val.idFn]⟩
   · rfl
 
 example : (primitiveTrueFnOnFalse : Trm).eval.shouldYields Val.vTrue := by
@@ -79,7 +79,7 @@ example : (primitiveTrueFnOnFalse : Trm).eval.shouldYields Val.vTrue := by
 
 example : (get1stOnTuple : Trm).eval.shouldYields Val.vFalse := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.eval, get1stOnTuple, get1st, vFalse, vTrue]⟩
+  · exact ⟨3, by simp [AST.eval, get1stOnTuple, get1st, vFalse, vTrue]⟩
   · rfl
 
 example : (.apply primitiveIdFnOnFalse vTrue : Trm).eval 2 = .outOfFuel := rfl

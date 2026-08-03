@@ -11,20 +11,18 @@ open Lp2lc.Active.Util
 
 section variable {F : Free}
 
-namespace AST
-section variable (F : Free)
-
-mutual
-
+inductive Label
+| Typ
+| Trm
+| Val
 /--
 Source type syntax.
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
 -/
-inductive Typ : Type where
-| primitive -- `AnyVal` in Scala, accepts only primitive values
-| fn (tIn : Typ) (tOut : Typ) -- function
-
+inductive AST (F : Free) : Label → Type where
+| primitive : AST F .Typ -- `AnyVal` in Scala, accepts only primitive values
+| fn (tIn : AST F .Typ) (tOut : AST F .Typ) : AST F .Typ -- function
 /--
 Source term syntax.
 
@@ -35,12 +33,9 @@ In HOAS there is no syntax-level context binding terms to types, so function
 input annotations are the extrinsic typing evidence available to the compiler.
 They are not intrinsic typing indices on terms.
 -/
-
-inductive Trm : Type where
-| val (v : Val) -- AKA literal
-| apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
-| ref (s: {x : F.Index // F.Ev x}) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
-
+| val (v : AST F .Val) : AST F .Trm -- AKA literal
+| apply (fn : AST F .Trm) (arg : AST F .Trm) : AST F .Trm -- fn must be a function that can be applied on arg
+| ref (s: {x : F.Index // F.Ev x}) : AST F .Trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
 /--
 Value syntax, containing neither references nor applications.
 
@@ -49,11 +44,17 @@ used by function application after both sides have been evaluated.
 
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
-inductive Val : Type where
-| primitive (repr : F.Data) -- most specific type is always `primitive`
-| fn (body : (arg : F.Index) → Trm) (tIn : Typ) -- most specific type is always `.fn tIn _`
+| lit (repr : F.Data) : AST F .Val -- most specific type is always `primitive`
+| lam (body : (arg : F.Index) → AST F .Trm) (tIn : AST F .Typ) : AST F .Val -- most specific type is always `.fn tIn _`
 
-end
+
+namespace AST
+
+abbrev Typ (F : Free) := AST F .Typ
+abbrev Trm (F : Free) := AST F .Trm
+abbrev Val (F : Free) := AST F .Val
+
+section variable (F : Free)
 
 structure Trm2Typ where
   trm : Trm F
@@ -65,6 +66,7 @@ structure Trm2Val where
 
 end
 end AST
+open AST
 
 /-- Current STLC subtyping coincides with structural type equality. -/
 instance typLE : LE (AST.Typ F) := ⟨Eq⟩
@@ -77,8 +79,8 @@ instance typDecidableLE : DecidableLE (AST.Typ F)
   | .fn leftIn leftOut, .fn rightIn rightOut =>
     match typDecidableLE leftIn rightIn, typDecidableLE leftOut rightOut with
     | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
-    | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).1)
-    | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.Typ.fn.inj equality).2)
+    | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
+    | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
 /--
 Contains compiletime fixpoint bridges for semantic obligations of terms.
@@ -107,7 +109,7 @@ end RuntimeEnv
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
-namespace AST.Trm
+namespace AST
 section variable [env: @RuntimeEnv F]
 
 /--
@@ -120,17 +122,17 @@ def eval (self : AST.Trm F) : RecOption (AST.Val F)
   | fuel + 1 =>
     match self with
     | .val value => .yield (some value)
-    | .apply fn arg =>
-      let anf := (fn.eval fuel, arg.eval fuel) -- ANF, atomic normal form
+    | .apply fnTerm arg =>
+      let anf := (fnTerm.eval fuel, arg.eval fuel) -- ANF, atomic normal form
       match anf with
-      | (.yield (some (.fn body _tIn)), .yield (some input)) =>
+      | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         -- let permission := env.canSaveAny input
         let index := env.trm2valCtx.getUID ⟨arg, input⟩
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
-    | @AST.Trm.ref _ i =>
+    | @AST.ref _ i =>
       .yield (some (env.trm2valCtx.inv i).val)
 
 end
@@ -156,12 +158,9 @@ def IsSafe : Prop :=
   self.CanSatisfy_semi (λ _ => true)
 
 end
-end AST.Trm
 
 section variable [env: @CompilerEnv F]
-open AST
 
-namespace AST.Trm
 section variable (self : Trm F)
 
 /--
@@ -182,11 +181,12 @@ def CanInhabit_total (self : Trm F) (typ : Typ F) : Prop :=
   RecOption.isDecidable (self.recCanInhabit typ)
 
 end
-end AST.Trm
+end
+end AST
 
 /-- Interprets source types as semantic conditions over values. -/
-def AST.Typ.ToCondition (typ: Typ F): Condition F := λ value =>
-  let trm := Trm.val value
+def AST.ToCondition (typ: Typ F): Condition F := λ value =>
+  let trm := AST.val value
   (trm.CanInhabit_total typ)
 
 -- /-- States that syntactic typing entails semantic typing by the interpreted type. -/
@@ -204,7 +204,6 @@ def Fundamental : Prop :=
 
 end
 
-end
 end STLC
 
 end Lp2lc.Active

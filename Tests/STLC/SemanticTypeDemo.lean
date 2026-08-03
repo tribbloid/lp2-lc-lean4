@@ -8,11 +8,11 @@ open Tests.STLC.Sanity.Symbolic
 namespace SemanticType
 
 def primitiveWhen (proposition : Prop) : Condition I
-| .primitive _ => proposition
-| .fn _ _ => False
+| .lit _ => proposition
+| .lam _ _ => False
 
-def also_primitiveWhen (proposition : Prop) : Condition I := fun v =>
-  (∃ e, v = .primitive e) ∧ proposition
+def also_primitiveWhen (proposition : Prop) : Condition I := λ v =>
+  (∃ e, v = .lit e) ∧ proposition
 
 example : primitiveWhen = also_primitiveWhen := by
   funext proposition value
@@ -23,14 +23,14 @@ section
 variable (proposition : Prop)
 variable (evidence : proposition)
 
-example : primitiveWhen proposition (.primitive "payload") :=
+example : primitiveWhen proposition (.lit "payload") :=
   evidence
 
 example : ∃ value : Val, primitiveWhen proposition value :=
-  ⟨.primitive "payload", evidence⟩
+  ⟨.lit "payload", evidence⟩
 
 example : { value : Val // primitiveWhen proposition value } :=
-  ⟨.primitive "payload", evidence⟩
+  ⟨.lit "payload", evidence⟩
 
 example : ¬primitiveWhen proposition Val.idFn := by
   simp [primitiveWhen, Val.idFn]
@@ -47,7 +47,7 @@ def AdequateTerm (term : Trm) (postcondition : Condition I) : Prop :=
 
 example :
     Hoare proposition
-      (.val (.primitive "payload"))
+      (.val (.lit "payload"))
       (primitiveWhen proposition) := by
   intro preconditionEvidence fuel env
   cases fuel with
@@ -55,7 +55,7 @@ example :
   | succ fuel => exact preconditionEvidence
 
 example : AdequateValue (primitiveWhen proposition) :=
-  ⟨.primitive "payload", evidence⟩
+  ⟨.lit "payload", evidence⟩
 
 -- TODO: where is the evidence
 structure TerminatingAdequateTerm (postcondition : Condition I) where
@@ -66,10 +66,10 @@ structure TerminatingAdequateTerm (postcondition : Condition I) where
 
 
 example : TerminatingAdequateTerm (primitiveWhen proposition) where
-  term := .val (.primitive "payload")
+  term := .val (.lit "payload")
   evaluates := by
     intro
-    exact ⟨1, ⟨.primitive "payload", evidence⟩, rfl⟩
+    exact ⟨1, ⟨.lit "payload", evidence⟩, rfl⟩
 
 end
 

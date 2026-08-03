@@ -13,50 +13,50 @@ variable [env : @RuntimeEnv Symbolic.I]
 
 example :
     ((Trm.vFalse : Trm).eval).shouldYields
-      ((.primitive "false") : Val) := by
+      ((.lit "false") : Val) := by
   constructor
   · exact ⟨1, rfl⟩
   · rfl
 
 example :
     ((Trm.primitiveIdFnOnFalse : Trm).eval).shouldYields
-      ((.primitive "false") : Val) := by
+      ((.lit "false") : Val) := by
   constructor
-  · exact ⟨2, by simp [AST.Trm.eval, primitiveIdFnOnFalse, primitiveIdFn, vFalse]⟩
+  · exact ⟨2, by simp [AST.eval, primitiveIdFnOnFalse, primitiveIdFn, vFalse]⟩
   · rfl
 
 example :
     ((Trm.get1stOnTuple : Trm).eval).shouldYields
-      ((.primitive "false") : Val) := by
+      ((.lit "false") : Val) := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.eval, get1stOnTuple, get1st, vFalse, vTrue]⟩
+  · exact ⟨3, by simp [AST.eval, get1stOnTuple, get1st, vFalse, vTrue]⟩
   · rfl
 
 example :
     ((Trm.get2ndOnTuple : Trm).eval).shouldYields
-      ((.primitive "true") : Val) := by
+      ((.lit "true") : Val) := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.eval, get2ndOnTuple, get2nd, vFalse, vTrue]⟩
+  · exact ⟨3, by simp [AST.eval, get2ndOnTuple, get2nd, vFalse, vTrue]⟩
   · rfl
 
 example :
     (Malformed.applyIdFnOnItself.eval).shouldYields
       (Val.idFn : Val) := by
   constructor
-  · exact ⟨2, by simp [AST.Trm.eval, Malformed.applyIdFnOnItself, primitiveIdFn, Val.idFn]⟩
+  · exact ⟨2, by simp [AST.eval, Malformed.applyIdFnOnItself, primitiveIdFn, Val.idFn]⟩
   · rfl
 
 example :
     ((Trm.Malformed.idFnOnFalse2 : Trm).eval).shouldYields
-      ((.primitive "false") : Val) := by
+      ((.lit "false") : Val) := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.eval, Malformed.idFnOnFalse2, Malformed.applyIdFnOnItself, primitiveIdFn, vFalse]⟩
+  · exact ⟨3, by simp [AST.eval, Malformed.idFnOnFalse2, Malformed.applyIdFnOnItself, primitiveIdFn, vFalse]⟩
   · rfl
 
 example :
     ((Trm.Malformed.apply1 : Trm).eval).shouldFail := by
   constructor
-  · exact ⟨4, by simp [AST.Trm.eval, Malformed.apply1, primitiveIdFn, vFalse, vTrue]⟩
+  · exact ⟨4, by simp [AST.eval, Malformed.apply1, primitiveIdFn, vFalse, vTrue]⟩
   · rfl
 
 example :
@@ -67,7 +67,7 @@ example :
 
 example :
     ((Trm.primitiveTrueFnOnFalse : Trm).eval).shouldYields
-      ((.primitive "true") : Val) := by
+      ((.lit "true") : Val) := by
   constructor
   · exact ⟨2, rfl⟩
   · rfl

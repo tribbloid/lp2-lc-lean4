@@ -92,27 +92,27 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
       let id := env.base.trm2typCtx.getUID ⟨term, typ⟩
       simpa [id] using env.proofCtx.invEv ⟨id, env.proofCtx.getEv ⟨⟨term, typ⟩, condition⟩⟩
     match trm with
-    | .val (.primitive repr) =>
-      .yield (some ⟨.primitive, proven (.val (.primitive repr)) .primitive
+    | .val (.lit repr) =>
+      .yield (some ⟨.primitive, proven (.val (.lit repr)) .primitive
         { sameInfer := by
             refine ⟨1, ?_⟩
-            simp [AST.Trm.infer]
+            simp [AST.infer]
             rfl
           safety := by
             unfold Safety
             intro runtimeFuel
             cases runtimeFuel with
-            | zero => simp [AST.Trm.eval]
+            | zero => simp [AST.eval]
             | succ runtimeFuel =>
-              simp [AST.Trm.eval, AST.Trm.CanInhabit]
+              simp [AST.eval, AST.CanInhabit]
               exact ⟨1, by
-                simp [AST.Trm.infer]
+                simp [AST.infer]
                 rfl⟩ }⟩)
-    | .val (.fn body tIn) =>
-      let index := env.base.trm2typCtx.getUID ⟨.val (.fn body tIn), tIn⟩
+    | .val (.lam body tIn) =>
+      let index := env.base.trm2typCtx.getUID ⟨.val (.lam body tIn), tIn⟩
       ((infer_prove (body index)) fuel).map (λ out =>
         out.bind (λ result =>
-          some ⟨.fn tIn result.fst, proven (.val (.fn body tIn)) (.fn tIn result.fst)
+          some ⟨.fn tIn result.fst, proven (.val (.lam body tIn)) (.fn tIn result.fst)
             { sameInfer := by
                 rcases result.snd.sameInfer with ⟨bodyFuel, hBodyInfer⟩
                 refine ⟨bodyFuel + 1, ?_⟩
@@ -124,15 +124,15 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
                     | some tOut' =>
                       simp [hBody] at hBodyInfer
                       have htOutEq : result.fst = tOut' := hBodyInfer
-                      simp [AST.Trm.infer, index, hBody, htOutEq]
+                      simp [AST.infer, index, hBody, htOutEq]
                       rfl
               safety := by
                 unfold Safety
                 intro runtimeFuel
                 cases runtimeFuel with
-                | zero => simp [AST.Trm.eval]
+                | zero => simp [AST.eval]
                 | succ runtimeFuel =>
-                  simp [AST.Trm.eval, AST.Trm.CanInhabit]
+                  simp [AST.eval, AST.CanInhabit]
                   rcases result.snd.sameInfer with ⟨bodyFuel, hBodyInfer⟩
                   refine ⟨bodyFuel + 1, ?_⟩
                   cases hBody : (body index).infer bodyFuel with
@@ -143,7 +143,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
                       | some tOut' =>
                         simp [hBody] at hBodyInfer
                         have htOutEq : result.fst = tOut' := hBodyInfer
-                        simp [AST.Trm.infer, index, hBody, htOutEq]
+                        simp [AST.infer, index, hBody, htOutEq]
                         rfl
             }⟩))
     | .apply fn arg =>
@@ -151,7 +151,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | @AST.Trm.ref _ i =>
+    | @AST.ref _ i =>
       .yield none
 
 end

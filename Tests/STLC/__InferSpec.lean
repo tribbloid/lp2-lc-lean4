@@ -22,50 +22,50 @@ example :
 example :
     (primitiveIdFn.infer).shouldYields (.fn .primitive .primitive) := by
   constructor
-  · exact ⟨2, by simp [AST.Trm.infer, Outcome.map, primitiveIdFn]⟩
+  · exact ⟨2, by simp [AST.infer, Outcome.map, primitiveIdFn]⟩
   · rfl
 
 example :
     (primitiveIdFnOnFalse.infer).shouldYields .primitive := by
   constructor
   · refine ⟨3, ?_⟩
-    have hPrimitive : (AST.Typ.primitive : Typ) ≤ .primitive := by
+    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.Trm.infer, Outcome.map, primitiveIdFnOnFalse, primitiveIdFn, vFalse, hPrimitive]
+    simp [AST.infer, Outcome.map, primitiveIdFnOnFalse, primitiveIdFn, vFalse, hPrimitive]
   · rfl
 
 example :
     (get1st.infer).shouldYields (.fn .primitive (.fn .primitive .primitive)) := by
   constructor
-  · exact ⟨3, by simp [AST.Trm.infer, Outcome.map, get1st]⟩
+  · exact ⟨3, by simp [AST.infer, Outcome.map, get1st]⟩
   · rfl
 
 example :
     (get1stOnTuple.infer).shouldYields .primitive := by
   constructor
   · refine ⟨5, ?_⟩
-    have hPrimitive : (AST.Typ.primitive : Typ) ≤ .primitive := by
+    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.Trm.infer, Outcome.map, get1stOnTuple, get1st, vFalse, vTrue, hPrimitive]
+    simp [AST.infer, Outcome.map, get1stOnTuple, get1st, vFalse, vTrue, hPrimitive]
   · rfl
 
 example :
     (primitiveTrueFnOnFalse.infer).shouldYields .primitive := by
   constructor
   · refine ⟨3, ?_⟩
-    have hPrimitive : (AST.Typ.primitive : Typ) ≤ .primitive := by
+    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.Trm.infer, Outcome.map, primitiveTrueFnOnFalse, primitiveTrueFn, vFalse, hPrimitive]
+    simp [AST.infer, Outcome.map, primitiveTrueFnOnFalse, primitiveTrueFn, vFalse, hPrimitive]
   · rfl
 
 example :
     (Malformed.applyIdFnOnItself.infer).shouldFail := by
   constructor
   · refine ⟨3, ?_⟩
-    have hFnNotPrimitive : ¬ ((AST.Typ.fn .primitive .primitive : Typ) ≤ .primitive) := by
+    have hFnNotPrimitive : ¬ ((AST.fn .primitive .primitive : Typ) ≤ .primitive) := by
       intro h
       cases h
-    simp [AST.Trm.infer, Outcome.map, Malformed.applyIdFnOnItself, primitiveIdFn, hFnNotPrimitive]
+    simp [AST.infer, Outcome.map, Malformed.applyIdFnOnItself, primitiveIdFn, hFnNotPrimitive]
   · rfl
 
 example :

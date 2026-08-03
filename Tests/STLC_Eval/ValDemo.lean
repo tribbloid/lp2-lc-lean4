@@ -22,13 +22,13 @@ open Symbolic
 namespace Val
 
 def vFalse : Val :=
-  .primitive "false"
+  .lit "false"
 
 def vTrue : Val :=
-  .primitive "true"
+  .lit "true"
 
 def idFn : Val :=
-  .fn (fun ref => .ref ref) .primitive
+  .lam (λ ref => .ref ref) .primitive
 
 end Val
 
