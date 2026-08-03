@@ -109,8 +109,8 @@ class Aux {UID : TIndex} {V : Type}
     (outer : UIDEquiv UID V) (M : V → Sort u) where
   Evidence : UID → Type
   lookup : (id : UID) → Option (Evidence id) -- TODO: this shouldn't be useful
-  saveMeta : (bundle : PSigma M) → Evidence (outer.getUID bundle.fst)
-  loadMeta : (ev: PSigma Evidence) → M (outer.inv ev.fst)
+  getEv : (bundle : PSigma M) → Evidence (outer.getUID bundle.fst)
+  invEv : (ev: PSigma Evidence) → M (outer.inv ev.fst)
 
 namespace Aux
 section variable {UID : TIndex} {V : Type} {group : UIDEquiv UID V} {D : V → Sort u}
@@ -119,8 +119,8 @@ section variable {UID : TIndex} {V : Type} {group : UIDEquiv UID V} {D : V → S
 @[simp]
 theorem leftInvValue (self : Aux group D) (bundle : PSigma D) :
     (⟨group.inv (group.getUID bundle.fst),
-      self.loadMeta
-        ⟨group.getUID bundle.fst, self.saveMeta bundle⟩⟩ : PSigma D).fst = bundle.fst :=
+      self.invEv
+        ⟨group.getUID bundle.fst, self.getEv bundle⟩⟩ : PSigma D).fst = bundle.fst :=
   group.leftInv bundle.fst
 
 end
@@ -132,7 +132,7 @@ attribute [simp] UIDEquiv.leftInv UIDEquiv.rightInv
 section variable {T : Sort u}
 
 /-- Fuel-guarded semantic result used by executable interpreters and compilers. -/
-inductive Outcome (T : Sort u)
+inductive Outcome (T : Sort u) -- TODO: move into namespace of Rec
 | yield (v: T)
 | outOfFuel
 

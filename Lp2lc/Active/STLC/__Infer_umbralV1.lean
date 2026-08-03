@@ -9,37 +9,6 @@ open Lp2lc.Active.Util
 
 section variable {F : Free}
 
-namespace UmbralV2
-section variable [@ProvingBase F]
-
-structure ProvenCondition (trm: AST.Trm F) : Type where
-  typ : AST.Typ F
-  safety: Safety trm typ
-
-class ProvingEnv where
-  base: @ProvingBase F
-  safetyCtx : base.trm2typCtx.Aux (λ trm2typ =>
-    Safety trm2typ.trm trm2typ.typ)
-
-/--
-the objective of infer_proveV2 contains 2 parts:
-- recursive algorithm that may produce one of the 3 consequences:
-  - successful result
-  - error
-  - out-of-fuel
-- in **all 3** consequences, the algorithm must yield the same result as trm.infer
--/
-structure ProvingObjective (trm: AST.Trm F) where
-  proving : RecOption (ProvenCondition trm)
-  sameResult: ∀ (fuel : Nat),
-    (proving fuel).map (λ result => result.map (λ condition => condition.typ)) =
-      trm.infer fuel
-
-def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) : ProvingObjective trm := sorry
-
-end
-end UmbralV2
-
 namespace Umbral
 
 section variable [@ProvingBase F]
@@ -117,21 +86,6 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
 end
 
 end Umbral
-
-namespace UmbralV3
-
-section variable [@ProvingBase F]
-
-/-- A proof-producing inference computation with the same complete outcome as `Trm.infer`. -/
-structure ProvenCondition (trm : AST.Trm F) : Type where
-  result : RecOption (AST.Typ F)
-  sameResult : result = trm.infer
-  safety : ∀ fuel typ,
-    result fuel = .yield (some typ) → Safety trm typ
-
-end
-end UmbralV3
-
 end
 
 end STLC

@@ -20,26 +20,26 @@ def group : UIDEquiv Nat Nat where
 @[reducible] def boolBound : Aux group (λ _value => Bool) where
   Evidence := λ _id => Bool
   lookup := λ _id => none
-  saveMeta := λ bundle => bundle.snd
-  loadMeta := λ id2 => id2.snd
+  getEv := λ bundle => bundle.snd
+  invEv := λ id2 => id2.snd
 
 /-- Second [UIDEquiv.Aux] instance: metadata is `Unit` per value. -/
 @[reducible] def unitBound : Aux group (λ _value => Unit) where
   Evidence := λ _id => Unit
   lookup := λ _id => none
-  saveMeta := λ bundle => bundle.snd
-  loadMeta := λ id2 => id2.snd
+  getEv := λ bundle => bundle.snd
+  invEv := λ id2 => id2.snd
 
 section leftInv
 
 example :
-    boolBound.loadMeta
-      ⟨group.getUID 42, boolBound.saveMeta ⟨42, true⟩⟩ = true := by
+    boolBound.invEv
+      ⟨group.getUID 42, boolBound.getEv ⟨42, true⟩⟩ = true := by
   rfl
 
 example :
-    unitBound.loadMeta
-      ⟨group.getUID 7, unitBound.saveMeta ⟨7, ()⟩⟩ = () := by
+    unitBound.invEv
+      ⟨group.getUID 7, unitBound.getEv ⟨7, ()⟩⟩ = () := by
   rfl
 
 end leftInv
@@ -49,8 +49,8 @@ section sharedGroup
 example :
     boolBound.Evidence (group.getUID 1) ×
       unitBound.Evidence (group.getUID 1) :=
-  ⟨boolBound.saveMeta ⟨1, false⟩,
-    unitBound.saveMeta ⟨1, ()⟩⟩
+  ⟨boolBound.getEv ⟨1, false⟩,
+    unitBound.getEv ⟨1, ()⟩⟩
 
 end sharedGroup
 

@@ -18,34 +18,34 @@ def group : UIDEquiv Nat Nat where
 @[reducible] def boolMetadata : Aux group (λ _value => Bool) where
   Evidence := λ _id => Bool
   lookup := λ _id => none
-  saveMeta := λ bundle => bundle.snd
-  loadMeta := λ id2 => id2.snd
+  getEv := λ bundle => bundle.snd
+  invEv := λ id2 => id2.snd
 
 @[reducible] def unitMetadata : Aux group (λ _value => Unit) where
   Evidence := λ _id => Unit
   lookup := λ _id => none
-  saveMeta := λ bundle => bundle.snd
-  loadMeta := λ id2 => id2.snd
+  getEv := λ bundle => bundle.snd
+  invEv := λ id2 => id2.snd
 
 section getUID
 
 example :
     boolMetadata.Evidence (group.getUID 1) :=
-  boolMetadata.saveMeta ⟨1, true⟩
+  boolMetadata.getEv ⟨1, true⟩
 
 example :
     boolMetadata.Evidence (group.getUID 1) ×
       unitMetadata.Evidence (group.getUID 1) :=
-  ⟨boolMetadata.saveMeta ⟨1, true⟩,
-    unitMetadata.saveMeta ⟨1, ()⟩⟩
+  ⟨boolMetadata.getEv ⟨1, true⟩,
+    unitMetadata.getEv ⟨1, ()⟩⟩
 
 example :
     group.inv (group.getUID 1) = 1 := by
   exact boolMetadata.leftInvValue ⟨1, true⟩
 
 example :
-    boolMetadata.loadMeta
-      ⟨group.getUID 1, boolMetadata.saveMeta ⟨1, true⟩⟩ = true := by
+    boolMetadata.invEv
+      ⟨group.getUID 1, boolMetadata.getEv ⟨1, true⟩⟩ = true := by
   rfl
 
 example :
