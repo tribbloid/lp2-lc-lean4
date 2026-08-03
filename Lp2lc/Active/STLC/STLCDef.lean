@@ -65,6 +65,7 @@ structure Trm2Val where
   val : AST.Val F
 
 end
+
 end AST
 open AST
 

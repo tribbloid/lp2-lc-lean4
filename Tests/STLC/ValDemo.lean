@@ -13,7 +13,7 @@ inductive Symbol where
 
 namespace Symbolic
 
-abbrev I := Free.mkDefault Symbol String
+abbrev I := Free.mkWeakest Symbol String
 
 abbrev Typ := AST.Typ I
 abbrev Val := AST.Val I

@@ -21,11 +21,11 @@ class Free : Type 1 where
 
 namespace Free
 
-@[reducible] def mkDefault (Index : TIndex) (Data : TData) : Free :=
+@[reducible] def mkWeakest (Index : TIndex) (Data : TData) : Free :=
   { Index := Index, Data := Data }
 
-instance defaultEvidenceCoe (Index : TIndex) (Data : TData) :
-    Coe Index {index : Index // (mkDefault Index Data).Ev index} :=
+instance weakenCoe (Index : TIndex) (Data : TData) :
+    Coe Index {index : Index // (mkWeakest Index Data).Ev index} :=
   ⟨λ index => ⟨index, True.intro⟩⟩
 
 end Free
