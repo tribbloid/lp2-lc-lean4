@@ -54,6 +54,20 @@ abbrev Typ (F : Free) := AST F .Typ
 abbrev Trm (F : Free) := AST F .Trm
 abbrev Val (F : Free) := AST F .Val
 
+/-- Rebuilds syntax over the peer `Free` family whose evidence predicate is `True`. -/
+def weaken : (self : AST F label) → AST F.weaken label
+  | .primitive => .primitive
+  | .fn tIn tOut => .fn tIn.weaken tOut.weaken
+  | .val value => .val value.weaken
+  | .apply fnTerm arg => .apply fnTerm.weaken arg.weaken
+  | .ref index => .ref index.1
+  | .lit repr => .lit repr
+  | .lam body tIn => .lam (λ arg => (body arg).weaken) tIn.weaken
+
+instance weakenCoe {label : Label} :
+    Coe (AST F label) (AST F.weaken label) :=
+  ⟨weaken⟩
+
 section variable (F : Free)
 
 structure Trm2Typ where
