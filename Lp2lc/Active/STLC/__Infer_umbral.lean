@@ -144,6 +144,7 @@ can the "leftover case" in AST definition help?
 
 - explicitly define generic constructors of Fixpoint & Aux, all instances have to use them
 - after getting a `Ev I`, instead of creating `.ref <I, >`, create `.ref <Ev I, >` instead
+- enable conversion from Trm (Ev I) (representing safe term) to Trm I (representing unsafe term)
 
 The annoying part is that AST.Trm <I> is invariant to I (`I` appear in both +/- positions), it has to be broken
 
