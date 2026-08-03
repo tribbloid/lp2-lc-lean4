@@ -90,7 +90,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
         Option (@ProvenCondition F env.base ⟨term, typ⟩) :=
       let id := env.base.trm2typCtx.getUID ⟨term, typ⟩
       (env.proofCtx.lookup id).map (λ member => by
-        simpa [id] using env.proofCtx.invEv ⟨id, member⟩)
+        simpa [id] using env.proofCtx.invEv ⟨id, member.down⟩)
     match trm with
     | .val (.primitive repr) =>
       .yield ((proven (.val (.primitive repr)) .primitive).map
@@ -148,7 +148,7 @@ section variable [env : @ProvingEnv F]
 
 def FProven : Free :=
   {
-    Index := PSigma env.proofCtx.Evidence
+    Index := PSigma env.proofCtx.Ev
     Data := F.Data
   }
 

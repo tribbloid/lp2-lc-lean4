@@ -92,7 +92,7 @@ extension of [UIDEquiv] that can attach metadata `M : Type/Prop` to existing UID
 - all [UIDEquiv.Aux] instances derived from the same [UIDEquiv] share its [UIDEquiv.getUID] and [UIDEquiv.inv]
 
 `M` is a dependent family over `V` and is reconstructed by each [UIDEquiv.Aux]
-instance through [UIDEquiv.Aux.loadMeta]. [UIDEquiv.Aux.Evidence] restricts that
+instance through [UIDEquiv.Aux.loadMeta]. [UIDEquiv.Aux.Ev] restricts that
 reconstruction to identifiers carrying evidence for the auxiliary instance.
 
 [UIDEquiv.Aux.saveMeta] saves a bundle using only its value through the shared group bridge.
@@ -100,10 +100,10 @@ reconstruction to identifiers carrying evidence for the auxiliary instance.
 -/
 class Aux {UID : TIndex} {V : Type}
     (outer : UIDEquiv UID V) (M : V → Sort u) where
-  Evidence : UID → Type
-  lookup : (id : UID) → Option (Evidence id) -- TODO: this shouldn't be useful
-  getEv : (bundle : PSigma M) → Evidence (outer.getUID bundle.fst)
-  invEv : (ev: PSigma Evidence) → M (outer.inv ev.fst)
+  Ev : UID → Prop
+  lookup : (id : UID) → Option (PLift (Ev id)) -- TODO: this shouldn't be useful
+  getEv : (bundle : PSigma M) → Ev (outer.getUID bundle.fst)
+  invEv : (ev: PSigma Ev) → M (outer.inv ev.fst)
 
 namespace Aux
 section variable {UID : TIndex} {V : Type} {group : UIDEquiv UID V} {D : V → Sort u}

@@ -38,10 +38,10 @@ namespace Fixture
   {
     mkFixpoint := _unsafeFixpoint
     mkAux := λ outer M => {
-      Evidence := λ _ => Unit
+      Ev := λ _ => True
       lookup := λ _ => none
-      getEv := λ bundle => ()
-      invEv := λ ev => unsafeCast True.intro
+      getEv := λ _bundle => True.intro
+      invEv := λ _ev => unsafeCast True.intro
     }
   }
 

@@ -16,25 +16,29 @@ def group : UIDEquiv Nat Nat where
     intro id
     rfl
 
-/-- First [UIDEquiv.Aux] instance: metadata is a `Bool` per value. -/
-@[reducible] def boolBound : Aux group (λ _value => Bool) where
-  Evidence := λ _id => Bool
+/-- First [UIDEquiv.Aux] instance: metadata is `value = 42`, evidence certifies the UID. -/
+@[reducible] def eqBound : Aux group (λ value => value = 42) where
+  Ev := λ id => group.inv id = 42
   lookup := λ _id => none
   getEv := λ bundle => bundle.snd
   invEv := λ id2 => id2.snd
 
 /-- Second [UIDEquiv.Aux] instance: metadata is `Unit` per value. -/
 @[reducible] def unitBound : Aux group (λ _value => Unit) where
-  Evidence := λ _id => Unit
+  Ev := λ _id => True
   lookup := λ _id => none
-  getEv := λ bundle => bundle.snd
-  invEv := λ id2 => id2.snd
+  getEv := λ _bundle => True.intro
+  invEv := λ _id2 => ()
 
 section leftInv
 
 example :
-    boolBound.invEv
-      ⟨group.getUID 42, boolBound.getEv ⟨42, true⟩⟩ = true := by
+    eqBound.Ev (group.getUID 42) :=
+  eqBound.getEv ⟨42, rfl⟩
+
+example :
+    eqBound.invEv
+      ⟨group.getUID 42, eqBound.getEv ⟨42, rfl⟩⟩ = rfl := by
   rfl
 
 example :
@@ -47,10 +51,10 @@ end leftInv
 section sharedGroup
 
 example :
-    boolBound.Evidence (group.getUID 1) ×
-      unitBound.Evidence (group.getUID 1) :=
-  ⟨boolBound.getEv ⟨1, false⟩,
-    unitBound.getEv ⟨1, ()⟩⟩
+    eqBound.Ev (group.getUID 42) ∧
+      unitBound.Ev (group.getUID 7) :=
+  ⟨eqBound.getEv ⟨42, rfl⟩,
+    unitBound.getEv ⟨7, ()⟩⟩
 
 end sharedGroup
 
