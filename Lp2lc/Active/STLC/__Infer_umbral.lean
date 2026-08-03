@@ -47,30 +47,34 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
   | 0 => .outOfFuel
   | fuel + 1 =>
     let proven (term : AST.Trm F) (typ : AST.Typ F) :
-        @ProvenCondition F env.base ⟨term, typ⟩ := by
-      simpa using
-        env.proofCtx.loadMetadata (env.base.trm2typCtx.save ⟨term, typ⟩)
+        Option (@ProvenCondition F env.base ⟨term, typ⟩) :=
+      let id := env.base.trm2typCtx.save ⟨term, typ⟩
+      (env.proofCtx.lookup id).map (λ member => by
+        simpa [id] using env.proofCtx.loadMetadata id member)
     match trm with
     | .val (.primitive repr) =>
-      .yield (some ⟨.primitive, proven (.val (.primitive repr)) .primitive⟩)
+      .yield ((proven (.val (.primitive repr)) .primitive).map
+        (λ condition => ⟨.primitive, condition⟩))
     | .val (.fn body tIn) =>
       let index := env.base.trm2typCtx.save ⟨trm, tIn⟩
       ((infer_prove (body index)) fuel).map (λ out =>
-        out.map (λ result =>
-          ⟨.fn tIn result.fst,
-            proven (.val (.fn body tIn)) (.fn tIn result.fst)⟩))
+        out.bind (λ result =>
+          (proven (.val (.fn body tIn)) (.fn tIn result.fst)).map
+            (λ condition => ⟨.fn tIn result.fst, condition⟩)))
     | .apply fn arg =>
       match (infer_prove fn) fuel, (infer_prove arg) fuel with
       | .yield (some ⟨.fn tIn tOut, _⟩), .yield (some ⟨argTyp, _⟩) =>
         if argTyp ≤ tIn then
-          .yield (some ⟨tOut, proven (.apply fn arg) tOut⟩)
+          .yield ((proven (.apply fn arg) tOut).map
+            (λ condition => ⟨tOut, condition⟩))
         else .yield none
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
     | @AST.Trm.ref _ i =>
       let typ := (env.base.trm2typCtx.load i).typ
-      .yield (some ⟨typ, proven (.ref i) typ⟩)
+      .yield ((proven (.ref i) typ).map
+        (λ condition => ⟨typ, condition⟩))
 
 -- theorem termInferMonotone [env : @ProvingEnv F]
 --     (trm : AST.Trm F) :
