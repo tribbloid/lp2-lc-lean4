@@ -13,9 +13,8 @@ namespace Umbral
 
 section variable [@ProvingBase F]
 
-structure ProvenCondition (trm2typ: AST.Trm2Typ F) : Type where
-  sameInfer: trm2typ.trm.infer.isDecidable (λ t2 => trm2typ.typ <= t2)
-  safety: Safety trm2typ.trm trm2typ.typ -- TODO: should this objective be delayed?
+abbrev ProvenCondition (trm2typ: AST.Trm2Typ F) : Prop :=
+  Safety trm2typ.trm trm2typ.typ -- TODO: should this objective be delayed?
 
 abbrev ProvingResult (trm : AST.Trm F) :=
   RecOption (PSigma (λ typ : AST.Typ F => ProvenCondition ⟨trm, typ⟩))
@@ -87,59 +86,36 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) : ProvingResult trm :=
   | fuel + 1 =>
     match trm with
     | .val (.lit repr) =>
-      .yield (some ⟨.primitive,
-        { sameInfer := by
-            refine ⟨1, ?_⟩
+      .yield (some ⟨.primitive, by
+        unfold ProvenCondition Safety
+        intro runtimeFuel
+        cases runtimeFuel with
+        | zero => simp [AST.eval]
+        | succ runtimeFuel =>
+          simp [AST.eval, AST.CanInhabit]
+          exact ⟨1, by
             simp [AST.infer]
-            rfl
-          safety := by
-            unfold Safety
+            rfl⟩⟩)
+    | .val (.lam body tIn) =>
+      let index := env.base.trm2typCtx.getUID ⟨.val (.lam body tIn), tIn⟩
+      match (infer_prove (body index)) fuel with
+      | .outOfFuel => .outOfFuel
+      | .yield none => .yield none
+      | .yield (some _) =>
+        match hInfer : (body index).infer fuel with
+        | .outOfFuel => .outOfFuel
+        | .yield none => .yield none
+        | .yield (some tOut) =>
+          .yield (some ⟨.fn tIn tOut, by
+            unfold ProvenCondition Safety
             intro runtimeFuel
             cases runtimeFuel with
             | zero => simp [AST.eval]
             | succ runtimeFuel =>
               simp [AST.eval, AST.CanInhabit]
-              exact ⟨1, by
-                simp [AST.infer]
-                rfl⟩ }⟩)
-    | .val (.lam body tIn) =>
-      let index := env.base.trm2typCtx.getUID ⟨.val (.lam body tIn), tIn⟩
-      ((infer_prove (body index)) fuel).map (λ out =>
-        out.bind (λ result =>
-          some ⟨.fn tIn result.fst,
-            { sameInfer := by
-                rcases result.snd.sameInfer with ⟨bodyFuel, hBodyInfer⟩
-                refine ⟨bodyFuel + 1, ?_⟩
-                cases hBody : (body index).infer bodyFuel with
-                | outOfFuel => simp [hBody] at hBodyInfer
-                | yield out =>
-                  cases out with
-                  | none => simp [hBody] at hBodyInfer
-                  | some tOut' =>
-                    simp [hBody] at hBodyInfer
-                    have htOutEq : result.fst = tOut' := hBodyInfer
-                    simp [AST.infer, index, hBody, htOutEq]
-                    rfl
-              safety := by
-                unfold Safety
-                intro runtimeFuel
-                cases runtimeFuel with
-                | zero => simp [AST.eval]
-                | succ runtimeFuel =>
-                  simp [AST.eval, AST.CanInhabit]
-                  rcases result.snd.sameInfer with ⟨bodyFuel, hBodyInfer⟩
-                  refine ⟨bodyFuel + 1, ?_⟩
-                  cases hBody : (body index).infer bodyFuel with
-                  | outOfFuel => simp [hBody] at hBodyInfer
-                  | yield out =>
-                    cases out with
-                    | none => simp [hBody] at hBodyInfer
-                    | some tOut' =>
-                      simp [hBody] at hBodyInfer
-                      have htOutEq : result.fst = tOut' := hBodyInfer
-                      simp [AST.infer, index, hBody, htOutEq]
-                      rfl
-            }⟩))
+              refine ⟨fuel + 1, ?_⟩
+              simp [AST.infer, index, hInfer, Rec.Outcome.map]
+              rfl⟩)
     | .apply fn arg =>
       match (infer_prove fn) fuel, (infer_prove arg) fuel with
       | .outOfFuel, _ => .outOfFuel
