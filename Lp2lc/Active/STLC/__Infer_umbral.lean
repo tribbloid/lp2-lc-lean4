@@ -17,7 +17,37 @@ structure ProvenCondition (trm2typ: AST.Trm2Typ F) : Type where
   sameInfer: trm2typ.trm.infer.isDecidable (λ t2 => trm2typ.typ <= t2)
   safety: Safety trm2typ.trm trm2typ.typ -- TODO: should this objective be delayed?
 
+abbrev Objective (trm : AST.Trm F)  :=
+    RecOption (PSigma (λ typ : AST.Typ F => ProvenCondition ⟨trm, typ⟩))
+
 end
+
+-- namespace V2
+
+-- structure ProvenCondition (trm: AST.Trm F) : Type where
+--   typ : AST.Typ F
+--   safety: Safety trm typ
+
+-- class ProvingEnv where
+--   base: @ProvingBase F
+--   safetyCtx : base.trm2typCtx.Aux (λ trm2typ =>
+--     Safety trm2typ.trm trm2typ.typ)
+
+-- /--
+-- the objective of infer_proveV2 contains 2 parts:
+-- - recursive algorithm that may produce one of the 3 consequences:
+--   - successful result
+--   - error
+--   - out-of-fuel
+-- - in **all 3** consequences, the algorithm must yield the same result as trm.infer
+-- -/
+-- structure ProvingObjective (trm: AST.Trm F) where
+--   proving : RecOption (ProvenCondition trm)
+--   sameResult: ∀ (fuel : Nat),
+--     (proving fuel).map (λ result => result.map (λ condition => condition.typ)) =
+--       trm.infer fuel
+
+-- end V2
 
 /--
 contains a FBound store to save/load intermediate safety proof for both `AST.Trm` and `AST.Val`
@@ -35,6 +65,7 @@ instance [env: @ProvingEnv F] : @ProvingBase F := env.base
 
 section variable [@ProvingEnv F]
 
+
 /--
 like `Trm.infer` it inductively infer `Typ` of a given `Trm`, using the structure of `Trm.infer` as a blueprint.
 
@@ -44,8 +75,7 @@ unlike `Trm.infer` it is obliged to produce a `ProvenCondition` bundle of:
 - proof that it has the same result to `Trm.infer`
 - proof that the `Trm : Typ` pair is safe to evaluate
 -/
-def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) :
-    RecOption (PSigma (λ typ : AST.Typ F => @ProvenCondition F env.base ⟨trm, typ⟩)) :=
+def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) : Objective trm :=
   λ
   | 0 => .outOfFuel
   | fuel + 1 =>

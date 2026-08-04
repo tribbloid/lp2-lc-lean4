@@ -1,23 +1,17 @@
-# STLC TODO
+# High Priority
 
-## Main Problem
+## Vacuous proof in __Infer_umbral.lean
 
-The same AST definition is used in 3 different Ctx: Compiling/Eval/Proving.
+- [ ] the goal of `infer_prove` is too weak
+    - it is only able to prove the consistency of `Trm.infer` and `infer_prove` if both results are Successful (`Outcome.yield .some _`)
+    - but `infer_prove` should be a shadow of `infer`: it should also be consistent if the results are `Outcome.outOfFuel` or `Outcome.yield .none`
+    - a new `Objective` should be used, in which `sameInfer` is defined independently.
 
-- if they use the same UID, then one UID can be from Ctx and be used in another, which makes the proof vacuous
-- if they use different UID, their AST will be different, and requires conversion before being used to define Adequacy conjecture
-
-### Fix 1
-
-- improve AST: Trm.ref to Ctx requires both the UID and evidence/receipt
-- this only affects Trm.ref, not Val.fn (evidence are erased by proof irrelevance and can't affect AST). So the entire AST is covariant to UID type, which is an advantage.
-- such covariance allow the same Adequacy conjecture to be used, the AST of UID-with-evidence can be only an intermediate artefact for proving
-
-### Fix 2
-
-- same AST, but compilation_proof takes Trm of UID and produce AST of UID-with-evidence
-
-
-
-## How to fix the vacuous proof
-
+- [ ] There is a risk of mixing UIDs from different context to cheat the proof
+    - in soundness proof, intermediate term with safety proof can be saved into a context of type `trm2typCtx.Aux0`
+    - but Aux0 use the same UID as trm2typCtx, which is also in the environment.
+    - as a result, UID can be constructed by trm2typCtx using unproven term, and be submitted to `trm2typCtx.Aux0` to get a vacuous safety proof
+    - this should be fixed by:
+        - using Aux for safety proof instead of Aux0
+        - making AST.ref carrying a subtype of UID that include a dependent Prop to prevent mingling
+        - rewriting the safety proof `infer_prove` with new definitions
