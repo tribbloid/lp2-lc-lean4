@@ -37,4 +37,32 @@ example [env : @Umbral.ProvingEnv I] :
 
 end objectiveResultMismatch
 
+section aux0SafetyContextCollapse
+
+variable {F : Free} [env : @ProvingBase F]
+variable [safetyCtx : UIDEquiv.Aux0 env.trm2typCtx
+  (λ trm2typ => Safety trm2typ.trm trm2typ.typ)]
+
+example (trm2typ : AST.Trm2Typ F) :
+    Safety trm2typ.trm trm2typ.typ := by
+  have result := safetyCtx.invEv (env.trm2typCtx.getUID trm2typ)
+  simpa using result
+
+example (repr : F.Data) : False := by
+  have notSafe :
+      ¬ Safety
+        (.apply (.val (.lit repr)) (.val (.lit repr)))
+        .primitive := by
+    intro safety
+    unfold Safety at safety
+    specialize safety 2
+    simp [AST.eval] at safety
+  apply notSafe
+  have result := safetyCtx.invEv
+    (env.trm2typCtx.getUID
+      ⟨.apply (.val (.lit repr)) (.val (.lit repr)), .primitive⟩)
+  simpa using result
+
+end aux0SafetyContextCollapse
+
 end Tests.STLC.InferUmbralSpec
