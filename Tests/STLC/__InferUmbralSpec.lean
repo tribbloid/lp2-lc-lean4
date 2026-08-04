@@ -9,19 +9,6 @@ open Lp2lc.Active.STLC
 
 section objectiveResultMismatch
 
-example {F : Free} [env : @Umbral.ProvingEnv F] (repr : F.Data) :
-    let trm : AST.Trm F := .val (.lit repr)
-    ∃ proving : Umbral.Objective trm,
-      ((proving 0).map
-          (λ result => result.map (λ condition => condition.fst)) ≠ trm.infer 0) ∧
-      ((proving 1).map
-          (λ result => result.map (λ condition => condition.fst)) ≠ trm.infer 1) := by
-  dsimp
-  refine ⟨λ
-    | 0 => .yield none
-    | _ + 1 => .outOfFuel, ?_⟩
-  constructor <;> simp [AST.infer, Outcome.map]
-
 open Tests.STLC.Sanity.Symbolic
 open Tests.STLC.Sanity.Trm
 

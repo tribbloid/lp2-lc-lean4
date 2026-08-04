@@ -17,8 +17,14 @@ structure ProvenCondition (trm2typ: AST.Trm2Typ F) : Type where
   sameInfer: trm2typ.trm.infer.isDecidable (λ t2 => trm2typ.typ <= t2)
   safety: Safety trm2typ.trm trm2typ.typ -- TODO: should this objective be delayed?
 
-abbrev Objective (trm : AST.Trm F)  :=
-    RecOption (PSigma (λ typ : AST.Typ F => ProvenCondition ⟨trm, typ⟩))
+abbrev ProvingResult (trm : AST.Trm F) :=
+  RecOption (PSigma (λ typ : AST.Typ F => ProvenCondition ⟨trm, typ⟩))
+
+/-- Requires the proving computation to shadow every outcome of term inference. -/
+structure Objective (trm : AST.Trm F) : Type where
+  proving : ProvingResult trm
+  sameInfer : ∀ (fuel : Nat),
+    (proving fuel).map (Option.map PSigma.fst) = trm.infer fuel
 
 end
 
@@ -75,7 +81,7 @@ unlike `Trm.infer` it is obliged to produce a `ProvenCondition` bundle of:
 - proof that it has the same result to `Trm.infer`
 - proof that the `Trm : Typ` pair is safe to evaluate
 -/
-def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) : Objective trm :=
+def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) : ProvingResult trm :=
   λ
   | 0 => .outOfFuel
   | fuel + 1 =>
