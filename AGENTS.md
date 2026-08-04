@@ -70,10 +70,18 @@ When working on a issue that contains multiple subtasks:
 - Each subtask should have its own independent git commit. When you complete one, commit immediately.
 - Each subtask should be classified into one of the following Categories:
   - **Refactoring/Cleanup** is for enforcing code format & compliance without introduce meaningful change. DO NOT introduce or update type signature, definition, or proof (even if it is missing or `sorry`). Existing code structure should be preserved at all cost.
-  - **Conjecture Revision** is for defining or revising proposition/type definitions (including those required to state the proposition). DO NOT write any proof.
-  - **Proving/Discharge** is for proving existing proposition, DO NOT write new `sorry`, introducing new lemma is permitted if & only if they help proving the main theorem, but they have to be proven immediately. If a lemma or theorem is believed to be false, a counterexample should be added into Tests directory.
-  - **Example/Demo/Test/Benchmark** is for writing example & test case for existing definition in the Tests directory. DO NOT write or update production code except for explicitly educational tutorial/demo modules allowed by the Guardrails above. Theorem or lemma requires no example or test case.
-
+  - **Conjecture Revision** is for defining or revising proposition/type definitions (including those required to state the proposition).
+    - DO NOT write any proof.
+    - You MUST use a subagent to review compliance to the above rule(s).
+  - **Proving/Discharge** is for proving existing proposition.
+    - DO NOT remove or modify any type/proposition.
+    - introducing new lemma is permitted if & only if they help proving the main theorem, but they have to be proven.
+    - If a lemma or theorem is believed to be false, a counterexample should be added into Tests directory.
+    - In the end, no new `sorry` should be introduced.
+    - You MUST use a subagent to review compliance to the above rule(s).
+  - **Example/Demo/Test/Benchmark** is for writing example & test case for existing definition in the Tests directory.
+    - DO NOT write or update production code (unless it is a demo allowed by the Guardrails above).
+    - Theorem//lemma are self-contained and erased at runtime, they require no example or test case.
 
 #### Source Code Style
 
