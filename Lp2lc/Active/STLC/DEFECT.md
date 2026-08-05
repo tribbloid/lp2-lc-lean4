@@ -1,57 +1,51 @@
 # Confirmed defects
 
-## Raw `trm2typCtx` UIDs can bypass proposed Umbral safety evidence
+No active defects.
 
-- Status: confirmed design defect; latent in the current implementation
-- Priority: high
-- Fix category: Conjecture Revision
-- Executable specification: [__InferUmbralSpec.lean](../../../Tests/STLC/__InferUmbralSpec.lean), section `aux0SafetyContextCollapse`
-- Reproduction: `lake build Tests.STLC.__InferUmbralSpec`
+## Standing requirements: Umbral `proofCtx` evidence boundary
 
-### Scope
+The following requirements constrain the future `proofCtx` store in
+`Umbral.ProvingEnv` (see the TODO in `__Infer_umbral.lean`). They exist
+because the previous design was confirmed unsound and removed in commit
+4d50cc0.
 
-The current `ProvingEnv` contains only `base`, and the current `infer_prove`
-returns `Outcome.yield none` for references. There is therefore no live
-`Aux0`-based proof context to exploit. The defect is in the proposed addition
-of such a context: implementing that plan would make the soundness environment
-inconsistent.
+### Background
 
-### Problem
+The removed `UIDEquiv.Aux0` recovered metadata from any raw UID:
+`invEv : (uid : UID) → M (outer.inv uid)`. Because `UIDEquiv` is a
+bijection (`leftInv`/`rightInv`), such total recovery is equivalent to
+`∀ v, M v`. Specialized to `M := λ trm2typ => Safety trm2typ.trm trm2typ.typ`,
+it proves every `Trm2Typ` safe, which is refutable: a primitive value
+applied as a function evaluates to `.yield none` at fuel 2. The executable
+demonstration was removed together with the class; see the git history of
+`Tests/STLC/__InferUmbralSpec.lean`.
 
-`UIDEquiv.Aux0.invEv` accepts any raw UID. For any value `v`, calling
-`invEv (outer.getUID v)` produces metadata for `outer.inv (outer.getUID v)`,
-which `UIDEquiv.leftInv` reduces to metadata for `v`. No call to `Aux0.getEv`
-and no proof that the value was saved are required.
+This is an evidence-provenance requirement, not a UID-collision concern:
+raw UIDs from the base `trm2typCtx` must not cross into its auxiliary
+store without a store-specific membership witness.
 
-Consequently, specializing the metadata to
-`Safety trm2typ.trm trm2typ.typ` proves every `Trm2Typ` safe. The executable
-specification constructs a raw UID for a primitive value applied as a function,
-recovers a safety proof through the proposed `Aux0`, and contradicts the
-term's `Outcome.yield none` evaluation at fuel 2.
+### Requirements
 
-This is a loss of evidence provenance, not a collision between distinct UID
-values. The raw UID crosses from the base `trm2typCtx` into its auxiliary store
-without a store-specific membership witness.
+- The safety store must be a `UIDEquiv.Aux` over the base `trm2typCtx`;
+  total evidence recovery from raw UIDs is unsound and must not be
+  reintroduced in any form.
+- Safety evidence is recovered only through `Aux.invEv`, which requires
+  the store's membership witness `Aux.AuxUID` (`PSigma Ev`).
+- `Ev` must be defined from the save path so that it is only inhabited
+  for UIDs saved through `Aux.getEv`; a constant-true or otherwise
+  unrelated predicate voids the boundary.
+- References in the proving path must carry that witness, or an
+  equivalent dependent capability tied to the exact store.
 
-### Required revision
+### Acceptance criteria for the `proofCtx` task
 
-- Use `UIDEquiv.Aux`, never `Aux0`, for the Umbral safety store.
-- Require the exact auxiliary-store membership witness, such as
-  `proofCtx.AuxUID`, when recovering safety evidence.
-- Make references in the proving path carry that witness, or an equivalent
-  dependent capability tied to the exact store. A subtype with an unrelated
-  predicate is insufficient.
-- Rewrite the lambda and reference paths of `infer_prove` after the evidence
-  boundary is established.
-
-### Acceptance criteria
-
-- The Umbral proof context contains no `Aux0`.
-- A raw `trm2typCtx.getUID trm2typ` cannot recover safety evidence or construct
-  a reference accepted by the soundness path.
 - `Aux.getEv ⟨trm2typ, safety⟩` produces the witness required by
-  `Aux.invEv`, and this authorized round trip compiles.
-- Add a guarded negative elaboration check for the rejected raw-UID path and a
-  positive authorized-reference check.
-- `lake build` passes without new `sorry`, axioms, `unsafe`, `noncomputable`, or
-  `partial` declarations.
+  `Aux.invEv`; the authorized round trip compiles (cf.
+  `Aux.leftInvValue`).
+- A raw `trm2typCtx.getUID trm2typ` cannot recover safety evidence or
+  construct a reference accepted by the soundness path; add a guarded
+  negative elaboration check for the rejected raw-UID path and a
+  positive authorized-reference check in
+  `Tests/STLC/__InferUmbralSpec.lean`.
+- `lake build` passes without new `sorry`, axioms, `unsafe`,
+  `noncomputable`, or `partial` declarations.

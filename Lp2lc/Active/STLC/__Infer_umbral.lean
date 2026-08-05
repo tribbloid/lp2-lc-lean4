@@ -29,30 +29,36 @@ end
 
 
 /--
-contains a FBound store to save/load intermediate safety proof for both `AST.Trm` and `AST.Val`
+Environment required by the soundness/safety theorems of [AST].
 
-`infer_prove` & any theorem that relies on safety can use it, this is the only correspondence between compiletime and runtime variables.
+Already a subclass of [RuntimeEnv] and [CompilerEnv] through [ProvingBase], thus can reuse their contexts immediately as well as creating its own.
+
+CAUTION: the same [AST] in the above 2 contexts is always mapped to different UIDs:
+- in compiletime, UIDs are from type information through [CompilerEnv.trm2typCtx]
+- in runtime, UIDs are from runtime values through [RuntimeEnv.trm2valCtx]
+New contexts will be required to associate them
 -/
-class ProvingEnv where
-  base: @ProvingBase F
+class ProvingEnv extends @ProvingBase F
 
 namespace ProvingEnv
--- TODO: add proofCtx here, a new Aux0 should be created. No abstract function is allowed
+
+-- TODO: add proofCtx here, a new UIDEquiv.Aux should be created (requirements in DEFECT.md). No abstract function is allowed
 end ProvingEnv
 
-instance [env: @ProvingEnv F] : @ProvingBase F := env.base
+instance [env: @ProvingEnv F] : @ProvingEnv F := env
 
 section variable [@ProvingEnv F]
 
 
 /--
-like `Trm.infer` it inductively infer `Typ` of a given `Trm`, using the structure of `Trm.infer` as a blueprint.
+like [AST.infer] it inductively infers the [AST.Typ] of a given [AST.Trm], using the structure of [AST.infer] as a blueprint.
 
-unlike `Trm.infer` it is obliged to produce a `ProvenCondition` bundle of:
+unlike [AST.infer] it is obliged to produce a bundle of:
 
-- original `Typ`
-- proof that it has the same result to `Trm.infer`
-- proof that the `Trm : Typ` pair is safe to evaluate
+- original [AST.Typ]
+- proof that the [AST.Trm2Typ] pair is safe to evaluate ([ProvenCondition], i.e. [Safety])
+
+Agreement with [AST.infer] is not part of the bundle; it is required separately by [Objective.sameInfer].
 -/
 def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) : ProvingResult trm :=
   λ
@@ -71,7 +77,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) : ProvingResult trm :=
             simp [AST.infer]
             rfl⟩⟩)
     | .val (.lam body tIn) =>
-      let index := env.base.trm2typCtx.getUID ⟨.val (.lam body tIn), tIn⟩
+      let index := env.trm2typCtx.getUID ⟨.val (.lam body tIn), tIn⟩
       match (infer_prove (body index)) fuel with
       | .outOfFuel => .outOfFuel
       | .yield none => .yield none
