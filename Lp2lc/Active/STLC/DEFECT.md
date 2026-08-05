@@ -1,46 +1,5 @@
 # Confirmed defects
 
-## `Umbral.Objective` does not certify exact inference outcomes
-
-- Status: objective revised; proof pending
-- Priority: high
-- Fix category: Conjecture Revision
-- Executable specification: [__InferUmbralSpec.lean](../../../Tests/STLC/__InferUmbralSpec.lean), section `objectiveResultMismatch`
-- Reproduction: `lake build Tests.STLC.__InferUmbralSpec`
-
-### Problem
-
-The former `Objective trm` was only an alias for a recursive optional result. Its
-`sameInfer` obligation is inside `ProvenCondition`, so it exists only when the
-proving computation returns `Outcome.yield (some _)`. It also states that
-`trm.infer` succeeds at some fuel, rather than relating both computations at
-the same fuel.
-
-Consequently, that objective accepted a computation that returns
-`Outcome.yield none` when `infer` returns `Outcome.outOfFuel`, and
-`Outcome.outOfFuel` when `infer` succeeds. The current implementation also
-exhibits a concrete mismatch: at fuel 3, `infer_prove` rejects the closed term
-`primitiveTrueFnOnFalse` while `infer` returns `primitive`. The strengthened
-`Objective` now records exact outcome equality, while `infer_prove` temporarily
-returns its raw `ProvingResult` until the proof is discharged.
-
-### Required revision
-
-The alias has been replaced with a structure containing the proving computation
-and an independent equality for every fuel. The remaining work is to make
-`infer_prove` construct that objective and prove the equality while completing
-the branches that currently disagree with `trm.infer`.
-
-### Acceptance criteria
-
-- The objective equates both computations at every fuel, including
-  `Outcome.outOfFuel`, `Outcome.yield none`, and `Outcome.yield (some _)`.
-- `infer_prove` constructs the strengthened objective without new `sorry`,
-  axioms, `unsafe`, `noncomputable`, or `partial` declarations.
-- At fuel 3, both computations return `Outcome.yield (some .primitive)` for
-  `primitiveTrueFnOnFalse`.
-- `lake build` passes.
-
 ## Raw `trm2typCtx` UIDs can bypass proposed Umbral safety evidence
 
 - Status: confirmed design defect; latent in the current implementation
