@@ -27,32 +27,6 @@ structure Objective (trm : AST.Trm F) : Type where
 
 end
 
--- namespace V2
-
--- structure ProvenCondition (trm: AST.Trm F) : Type where
---   typ : AST.Typ F
---   safety: Safety trm typ
-
--- class ProvingEnv where
---   base: @ProvingBase F
---   safetyCtx : base.trm2typCtx.Aux (λ trm2typ =>
---     Safety trm2typ.trm trm2typ.typ)
-
--- /--
--- the objective of infer_proveV2 contains 2 parts:
--- - recursive algorithm that may produce one of the 3 consequences:
---   - successful result
---   - error
---   - out-of-fuel
--- - in **all 3** consequences, the algorithm must yield the same result as trm.infer
--- -/
--- structure ProvingObjective (trm: AST.Trm F) where
---   proving : RecOption (ProvenCondition trm)
---   sameResult: ∀ (fuel : Nat),
---     (proving fuel).map (λ result => result.map (λ condition => condition.typ)) =
---       trm.infer fuel
-
--- end V2
 
 /--
 contains a FBound store to save/load intermediate safety proof for both `AST.Trm` and `AST.Val`
