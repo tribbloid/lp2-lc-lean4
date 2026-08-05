@@ -16,9 +16,9 @@ The removed `UIDEquiv.Aux0` recovered metadata from any raw UID:
 bijection (`leftInv`/`rightInv`), such total recovery is equivalent to
 `∀ v, M v`. Specialized to `M := λ trm2typ => Safety trm2typ.trm trm2typ.typ`,
 it proves every `Trm2Typ` safe, which is refutable: a primitive value
-applied as a function evaluates to `.yield none` at fuel 2. The executable
-demonstration was removed together with the class; see the git history of
-`Tests/STLC/__InferUmbralSpec.lean`.
+applied as a function evaluates to `.yield none` at fuel 2. The
+computational refutation was removed together with the class; see the
+git history of `Tests/STLC/__InferUmbralSpec.lean`.
 
 This is an evidence-provenance requirement, not a UID-collision concern:
 raw UIDs from the base `trm2typCtx` must not cross into its auxiliary
