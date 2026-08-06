@@ -58,6 +58,9 @@ structure UIDEquiv (UID : TIndex) (V : Type) : Type where
 
 namespace UIDEquiv
 
+/--
+TODO: this is a temporary leaky axiom that makes conjecture definition & proof easier. But eventually it will be deleted
+-/
 class Aux0 {UID : TIndex} {V : Type}
     (outer : UIDEquiv UID V) (M : V → Sort u) where
   getEv : (bundle : PSigma M) → UID := λ bundle => outer.getUID bundle.fst
