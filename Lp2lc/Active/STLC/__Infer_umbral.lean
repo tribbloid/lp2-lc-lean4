@@ -13,20 +13,20 @@ namespace Umbral
 
 section variable [@ProvingBase F]
 
-abbrev ProvenCondition (trm2typ: AST.Trm2Typ F) : Prop :=
-  Safety trm2typ.trm trm2typ.typ -- TODO: should this objective be delayed?
+structure SafetyOf (trm : AST.Trm F) where
+  typ : AST.Typ F
+  -- safety : Safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
 
-abbrev ProvingResult (trm : AST.Trm F) :=
-  RecOption (PSigma (λ typ : AST.Typ F => ProvenCondition ⟨trm, typ⟩))
+abbrev Compilation (trm : AST.Trm F) :=
+  RecOption (SafetyOf trm) -- namely, the semi-decidability of executing term
 
 /-- Requires the proving computation to shadow every outcome of term inference. -/
 structure Objective (trm : AST.Trm F) : Type where
-  proving : ProvingResult trm
+  compilation : Compilation trm
   sameInfer : ∀ (fuel : Nat),
-    (proving fuel).map (Option.map PSigma.fst) = trm.infer fuel
+    (compilation fuel).map (Option.map SafetyOf.typ) = trm.infer fuel
 
 end
-
 
 /--
 contains a FBound store to save/load intermediate safety proof for both `AST.Trm` and `AST.Val`
@@ -37,7 +37,7 @@ class ProvingEnv extends @ProvingBase F where
 
 
 namespace ProvingEnv
--- TODO: add proofCtx here, a new Aux0/Aux should be created. No abstract function is allowed
+-- TODO: add proofCtx here, a new Aux0 should be created. No abstract function is allowed
 
 -- all declarations of Fixpoint and it's dependently typed instance should be in this namespace
 end ProvingEnv
