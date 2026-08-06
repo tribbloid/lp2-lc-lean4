@@ -37,7 +37,9 @@ class ProvingEnv extends @ProvingBase F where
 
 
 namespace ProvingEnv
--- TODO: add proofCtx here, a new Aux0 should be created. No abstract function is allowed
+-- TODO: add proofCtx here, a new Aux0/Aux should be created. No abstract function is allowed
+
+-- all declarations of Fixpoint and it's dependently typed instance should be in this namespace
 end ProvingEnv
 
 section variable [@ProvingEnv F]
