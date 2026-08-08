@@ -21,10 +21,9 @@ abbrev Compilation (trm : AST.Trm F) :=
   RecOption (SafetyOf trm) -- namely, the semi-decidability of executing term
 
 /-- Requires the proving computation to shadow every outcome of term inference. -/
-structure Objective (trm : AST.Trm F) : Type where
-  compilation : Compilation trm
-  sameInfer : ∀ (fuel : Nat),
-    (compilation fuel).map (Option.map SafetyOf.typ) = trm.infer fuel
+structure Objective (trm : AST.Trm F) (fuel : Nat) : Type where
+  compilation : Compilation trm fuel
+  sameInfer : (compilation fuel).map (Option.map SafetyOf.typ) = trm.infer fuel
 
 end
 
@@ -39,10 +38,43 @@ class ProvingEnv extends @ProvingBase F where
 namespace ProvingEnv
 -- TODO: add proofCtx here, a new Aux0 should be created. No abstract function is allowed
 
+/-- Temporary typed-reference store for the weakened objective. -/
+abbrev proofCtx (env : @ProvingEnv F) :
+    UIDEquiv.Aux0 env.trm2typCtx (λ _ => AST.Typ F) where
+  invEv uid := (env.trm2typCtx.inv uid).typ
+
 -- all declarations of Fixpoint and it's dependently typed instance should be in this namespace
 end ProvingEnv
 
-section variable [@ProvingEnv F]
+section
+
+/-- Mirrors term inference while routing typed binders through the temporary proof context. -/
+private def inferTyp [env : @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) :
+    { result : Rec.Outcome (Option (AST.Typ F)) // result = trm.infer fuel } :=
+  match fuel with
+  | 0 => ⟨.outOfFuel, rfl⟩
+  | fuel + 1 =>
+    match trm with
+    | .val (.lit _) => ⟨.yield (some .primitive), rfl⟩
+    | .val (.lam body tIn) =>
+      let index := env.proofCtx.getEv ⟨⟨.val (.lam body tIn), tIn⟩, tIn⟩
+      let result := inferTyp (body index) fuel
+      ⟨result.val.map (Option.map (AST.fn tIn)), by
+        rw [result.property] <;> rfl⟩
+    | .apply fnTerm arg =>
+      let fnResult := inferTyp fnTerm fuel
+      let argResult := inferTyp arg fuel
+      ⟨match fnResult.val, argResult.val with
+        | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
+          if argTyp ≤ tIn then .yield (some tOut) else .yield none
+        | .outOfFuel, _ => .outOfFuel
+        | _, .outOfFuel => .outOfFuel
+        | _, _ => .yield none,
+        by
+          simp only [AST.infer]
+          rw [fnResult.property, argResult.property]
+          cases fnTerm.infer fuel <;> cases arg.infer fuel <;> rfl⟩
+    | @AST.ref _ uid => ⟨.yield (some (env.proofCtx.invEv uid)), rfl⟩
 
 /--
 like [AST.infer] it inductively infer [AST.Typ] of a given [AST.Trm], using the structure of [AST.infer] as a blueprint.
@@ -58,8 +90,13 @@ Recommendation:
 - write an algorithm identical with Trm.infer, but save into [UIDEquiv.Aux0] instead to get an UID
 
 -/
-def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) : Objective trm :=
-  sorry
+def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective trm fuel :=
+  {
+    compilation := λ fuel => (inferTyp trm fuel).val.map (Option.map (λ typ => ⟨typ⟩))
+    sameInfer := λ fuel => by
+      rw [(inferTyp trm fuel).property]
+      cases trm.infer fuel <;> simp [Rec.Outcome.map, Function.comp_def]
+  }
 
 end
 
