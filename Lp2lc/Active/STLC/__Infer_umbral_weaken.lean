@@ -41,10 +41,9 @@ class ProvingEnv extends @ProvingBase F where
 namespace ProvingEnv
 -- TODO: add proofCtx here, a new Aux0 should be created. No abstract function is allowed
 
-/-- Temporary typed-reference store for the weakened objective. -/
-abbrev proofCtx (env : @ProvingEnv F) :
-    UIDEquiv.Aux0 env.trm2typCtx (λ _ => AST.Typ F) where
-  invEv uid := (env.trm2typCtx.inv uid).typ
+/-- Temporary proof context preserving each stored term-type pair at its reference. -/
+abbrev proofCtx (env : @ProvingEnv F) :=
+  env.trm2typCtx.mkAux0 (λ t => SafetyOf (.ref (env.trm2typCtx.getUID t))) (λ t => ⟨t.typ⟩)
 
 -- all declarations of Fixpoint and it's dependently typed instance should be in this namespace
 end ProvingEnv
@@ -73,7 +72,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective 
     match trm with
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
-      let index := env.proofCtx.getEv ⟨⟨.val (.lam body tIn), tIn⟩, tIn⟩
+      let index := env.proofCtx.getEv ⟨⟨.val (.lam body tIn), tIn⟩, ⟨tIn⟩⟩
       let result := infer_prove (body index) fuel
       ⟨result.compilation.map (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
         calc
@@ -97,7 +96,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective 
           rw [fnResult.sameInfer, argResult.sameInfer] <;> rfl
         rw [hResult]
         cases (AST.apply fnTerm arg).infer (fuel + 1) <;> simp [Rec.Outcome.map, Function.comp_def]⟩
-    | @AST.ref _ uid => ⟨.yield (some ⟨env.proofCtx.invEv uid⟩), rfl⟩
+    | @AST.ref _ uid => ⟨.yield (some ⟨(env.proofCtx.invEv uid).typ⟩), rfl⟩
 
 end
 
