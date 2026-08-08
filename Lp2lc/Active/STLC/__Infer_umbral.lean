@@ -5,6 +5,9 @@ import «Lp2lc».Active.STLC.__Infer
 namespace Lp2lc.Active
 
 namespace STLC
+
+/- this file doesn't need any test -/
+
 open Lp2lc.Active.Util
 
 section variable {F : Free}

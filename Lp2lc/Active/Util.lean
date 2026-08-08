@@ -179,6 +179,7 @@ end
 end Rec
 
 abbrev RecOption (T : Type u) := Rec (Option T)
+abbrev RecOptionResult (T : Type u) := Rec.Outcome (Option T)
 
 namespace RecOption
 section variable {T : Type u} (self : Lp2lc.Active.Util.RecOption T)
