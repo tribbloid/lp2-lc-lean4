@@ -29,9 +29,9 @@ structure Objective (trm : AST.Trm F) : Type where
 end
 
 /--
-contains a FBound store to save/load intermediate safety proof for both `AST.Trm` and `AST.Val`
+contains a FBound store to save/load intermediate safety proof for both [AST.Trm] and [AST.Val]
 
-`infer_prove` & any theorem that relies on safety can use it, this is the only correspondence between compiletime and runtime variables.
+[infer_prove] & any theorem that relies on safety can use it, this is the only correspondence between compiletime and runtime variables.
 -/
 class ProvingEnv extends @ProvingBase F where
 
@@ -45,13 +45,13 @@ end ProvingEnv
 section variable [@ProvingEnv F]
 
 /--
-like `Trm.infer` it inductively infer `Typ` of a given `Trm`, using the structure of `Trm.infer` as a blueprint.
+like [AST.infer] it inductively infer [AST.Typ] of a given [AST.Trm], using the structure of [AST.infer] as a blueprint.
 
-unlike `Trm.infer` it is obliged to produce a [Objective] bundle of:
+unlike [AST.infer] it is obliged to produce a [Objective] bundle of:
 
-- original `Typ`
-- proof that it has the same result to `Trm.infer`
-- proof that the `Trm : Typ` pair is safe to evaluate
+- original [AST.Typ]
+- proof that it has the same result to [AST.infer]
+- proof that the [AST.Trm] : [AST.Typ] pair is safe to evaluate
 -/
 def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) : Objective trm :=
   sorry

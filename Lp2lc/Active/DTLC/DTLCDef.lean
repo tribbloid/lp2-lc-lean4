@@ -225,14 +225,14 @@ open AST
 namespace AST.Trm
 
 /--
-Fuel-guarded compiler API for recursively type-checking `Trm` syntax and return the same
-`Trm` with it's safety proof, it does not evaluate the program.
+Fuel-guarded compiler API for recursively type-checking [Trm] syntax and return the same
+[Trm] with it's safety proof, it does not evaluate the program.
 
-It's very similar to `Trm.eval` above in structure, but instead of evaluating
+It's very similar to [Trm.eval] above in structure, but instead of evaluating
 for the final result, it recursively decompose the safety proof obligation into
 obligations of smaller components that are fulfiled independently and incrementally. The compile-time
-`CompilerEnv.forSemantic` fixpoint bridge can be used to register/reconstruct proven goals; this
-is separate from runtime value binding and never calls `eval`.
+[CompilerEnv.typeCtx] fixpoint bridge can be used to register/reconstruct proven goals; this
+is separate from runtime value binding and never calls [eval].
 
 Malformed or incompatible component will immediate cause the compilation to
 fail. In particular, applications must compile both sides successfully, the function side

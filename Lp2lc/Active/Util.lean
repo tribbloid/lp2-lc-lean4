@@ -35,7 +35,7 @@ thin wrapper of `T` representing outcome of a valid compilation, implying safety
 
 all compilation API should ideally return this.
 
-if registered in a `UIDEquiv`, the result UID should work in any `Env` to get a compatible term or value.
+if registered in a [UIDEquiv], the result UID should work in any `Env` to get a compatible term or value.
 -/
 structure Valid T : Type where
   self: T
