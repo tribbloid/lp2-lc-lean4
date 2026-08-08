@@ -51,7 +51,12 @@ unlike [AST.infer] it is obliged to produce a [Objective] bundle of:
 
 - original [AST.Typ]
 - proof that it has the same result to [AST.infer]
-- proof that the [AST.Trm] : [AST.Typ] pair is safe to evaluate
+
+Recommendation:
+
+- create a [UIDEquiv.Aux0] from trm2TypCtx (Aux0 contains an abuse that allows other UID to be used to get any value, it is temporarily tolerated)
+- write an algorithm identical with Trm.infer, but save into [UIDEquiv.Aux0] instead to get an UID
+
 -/
 def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) : Objective trm :=
   sorry
