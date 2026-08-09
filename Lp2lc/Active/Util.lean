@@ -66,12 +66,6 @@ class Aux0 {UID : TIndex} {V : Type}
   getEv : (bundle : PSigma M) → UID := λ bundle => outer.getUID bundle.fst
   invEv : (uid : UID) → M (outer.inv uid)
 
-/-- Builds an auxiliary context when metadata is constructible for every stored value. -/
-@[reducible]
-def mkAux0 {UID : TIndex} {V : Type} (outer : UIDEquiv UID V)
-    (M : V → Sort u) (construct : (value : V) → M value) : Aux0 outer M where
-  invEv uid := construct (outer.inv uid)
-
 /--
 extension of [UIDEquiv] that can attach metadata `M : Type/Prop` to existing UID-value pairs:
 
@@ -119,6 +113,7 @@ abbrev Fixpoint (F : Free) (V : Type) :=
 class HasFixpoint (F: Free) : Type 1 where
   mkFixpoint (V: Type) : Free.Fixpoint F V
   mkAux {UID : TIndex} {V : Type} (outer : UIDEquiv UID V) (M : V -> Type) : UIDEquiv.Aux outer M
+  mkAux0 {UID : TIndex} {V : Type} (outer : UIDEquiv UID V) (M : V → Type) : UIDEquiv.Aux0 outer M
 
 end Free
 
