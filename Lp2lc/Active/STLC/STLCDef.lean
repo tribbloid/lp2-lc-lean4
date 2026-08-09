@@ -193,7 +193,7 @@ def recCanInhabit (self : Trm F) (typ : Typ F) : RecOpt Unit :=
 determine if a term can can inhabit a type bound.
 -/
 def CanInhabit_total (self : Trm F) (typ : Typ F) : Prop :=
-  RecOption.isDecidable (self.recCanInhabit typ)
+  RecOpt.isDecidable (self.recCanInhabit typ)
 
 end
 end

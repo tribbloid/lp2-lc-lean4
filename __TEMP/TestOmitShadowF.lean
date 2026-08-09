@@ -30,7 +30,7 @@ section
 variable [@ShadowProvingEnv F]
 
 def inferRigorously [env : @CompilerEnv F]
-    (self : AST.Trm F) : RecOption (InferenceWProof F) :=
+    (self : AST.Trm F) : RecOpt (InferenceWProof F) :=
   sorry
 
 end

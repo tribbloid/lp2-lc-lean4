@@ -189,7 +189,7 @@ end Rec
 
 abbrev RecOpt (T : Type u) := Rec (Option T)
 
-namespace RecOption
+namespace RecOpt
 section variable {T : Type u} (self : RecOpt T)
 
 def isDecidable (condition: T -> Prop := λ _ => True) : Prop :=
@@ -204,7 +204,7 @@ def isSemiDecidable (condition: T -> Prop := λ _ => True) : Prop :=
   | .yield (some v) => condition v
 
 def shouldYields (expectedV : T) : Prop :=
-  let hasFuel := RecOption.isDecidable self (λ v => v = expectedV)
+  let hasFuel := RecOpt.isDecidable self (λ v => v = expectedV)
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
@@ -216,7 +216,7 @@ def shouldFail : Prop :=
   hasFuel /\ noFuel
 
 end
-end RecOption
+end RecOpt
 
 end
 

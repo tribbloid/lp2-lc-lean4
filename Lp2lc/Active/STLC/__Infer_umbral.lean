@@ -21,7 +21,7 @@ structure SafetyOf (trm : AST.Trm F) where
   RecOptSafety trm typ
 
 abbrev Compilation (trm : AST.Trm F) :=
-  RecOption (SafetyOf trm) -- namely, the semi-decidability of executing term
+  RecOpt (SafetyOf trm) -- namely, the semi-decidability of executing term
 
 /-- Requires the proving computation to shadow every outcome of term inference. -/
 structure Objective (trm : AST.Trm F) : Type where
