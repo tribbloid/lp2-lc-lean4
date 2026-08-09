@@ -132,7 +132,7 @@ Evaluates a term by spending 1 fuel at each semantic
 descent. Runtime evaluation uses [Free.Fixpoint] for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm F) : RecOption (AST.Val F)
+def eval (self : AST.Trm F) : RecOpt (AST.Val F)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -186,7 +186,7 @@ used in Fundamental theorem (thus the `_total` suffix)
 
 Structurally it should be similar to infer, but return `.some Unit` or `.none` instead of a precise type bound
 -/
-def recCanInhabit (self : Trm F) (typ : Typ F) : RecOption Unit :=
+def recCanInhabit (self : Trm F) (typ : Typ F) : RecOpt Unit :=
   sorry
 
 /--

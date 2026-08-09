@@ -133,7 +133,7 @@ Evaluates a source or compiled program by spending 1 fuel at each semantic
 descent. Runtime evaluation uses [Free.Fixpoint] for references and deliberately
 does not inspect compile-time typing evidence.
 -/
-def eval (self : AST.Trm I) : RecOption (AST.Val I)
+def eval (self : AST.Trm I) : RecOpt (AST.Val I)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -246,7 +246,7 @@ applications remain applications of recursively compiled subterms.
 Fuel `0` returns `.outOfFuel`; every recursive descent consumes fuel.
 -/
 def compile (trm : Trm I) (desired: Condition I)
-: RecOption (Program desired)
+: RecOpt (Program desired)
   | 0 => .outOfFuel
   | _fuel + 1 =>
     match trm with
@@ -258,7 +258,7 @@ def compile (trm : Trm I) (desired: Condition I)
 
 def compileToTrm (trm : Trm I)
   (condition: Condition I := λ _ => true)-- by default, accept any condition
-: RecOption (Trm I) := λ (fuel : Nat) =>
+: RecOpt (Trm I) := λ (fuel : Nat) =>
   (trm.compile condition fuel).map (λ out => out.map (λ v => v.trm))
 
 end AST.Trm

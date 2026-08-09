@@ -18,7 +18,7 @@ section variable [@ProvingBase F]
 
 structure SafetyOf (trm : AST.Trm F) where
   typ : AST.Typ F
-  safety : Safety trm typ
+  RecOptSafety trm typ
 
 abbrev Compilation (trm : AST.Trm F) :=
   RecOption (SafetyOf trm) -- namely, the semi-decidability of executing term

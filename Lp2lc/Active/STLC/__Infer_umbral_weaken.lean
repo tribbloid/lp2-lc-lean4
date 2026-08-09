@@ -21,7 +21,7 @@ structure SafetyOf (trm : AST.Trm F) where
   -- safety : Safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
 
 abbrev Compilation (trm : AST.Trm F) :=
-  RecOptionResult (SafetyOf trm) -- one observation of the semi-decidability of executing term
+  Rec.OutcomeOpt (SafetyOf trm) -- one observation of the semi-decidability of executing term
 
 /-- Requires the proving computation to shadow term inference at the selected fuel. -/
 structure Objective (trm : AST.Trm F) (fuel : Nat) : Type where

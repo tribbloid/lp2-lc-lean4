@@ -181,14 +181,16 @@ def Monotone : Prop :=
   self less = .yield value ->
   self more = .yield value
 
+
 end
+
+abbrev OutcomeOpt (T : Type u) := Rec.Outcome (Option T)
 end Rec
 
-abbrev RecOption (T : Type u) := Rec (Option T)
-abbrev RecOptionResult (T : Type u) := Rec.Outcome (Option T)
+abbrev RecOpt (T : Type u) := Rec (Option T)
 
 namespace RecOption
-section variable {T : Type u} (self : Lp2lc.Active.Util.RecOption T)
+section variable {T : Type u} (self : RecOpt T)
 
 def isDecidable (condition: T -> Prop := λ _ => True) : Prop :=
   ∃ (fuel : Nat), match (self fuel) with

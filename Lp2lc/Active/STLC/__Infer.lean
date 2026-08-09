@@ -24,7 +24,7 @@ namespace AST
 /--
 get the strongest post type bound (post-condition) of a term, or throw an error
 -/
-def infer [env: @CompilerEnv F] (self : Trm F) : RecOption (Typ F)
+def infer [env: @CompilerEnv F] (self : Trm F) : RecOpt (Typ F)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
