@@ -8,8 +8,8 @@ import «Lp2lc».Active.STLC.STLCDef
 import «Lp2lc».Active.STLC.__WithRecursion
 import «Lp2lc».Active.STLC.Proof
 import «Lp2lc».Active.STLC.__Infer
--- import «Lp2lc».Active.STLC.__Infer_umbral
-import «Lp2lc».Active.STLC.__Infer_umbral_weaken
+import «Lp2lc».Active.STLC.__Infer_umbral
+-- import «Lp2lc».Active.STLC.__Infer_umbral_weaken
 import «Lp2lc».Active.DTLC.Impl
 
 import «Lp2lc».Active.DOT.DOTDef
