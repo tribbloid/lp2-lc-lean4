@@ -110,10 +110,13 @@ namespace Free
 abbrev Fixpoint (F : Free) (V : Type) :=
   UIDEquiv F.Index V
 
-class HasFixpoint (F: Free) : Type 1 where
-  mkFixpoint (V: Type) : Free.Fixpoint F V
-  mkAux {UID : TIndex} {V : Type} (outer : UIDEquiv UID V) (M : V -> Type) : UIDEquiv.Aux outer M
-  mkAux0 {UID : TIndex} {V : Type} (outer : UIDEquiv UID V) (M : V → Type) : UIDEquiv.Aux0 outer M
+universe u
+
+/-- Constructs fixpoint bridges and universe-polymorphic metadata bridges for a free family. -/
+class HasFixpoint (F : Free) : Type (max 1 u) where
+  mkFixpoint (V : Type) : Free.Fixpoint F V
+  mkAux {UID : TIndex} {V : Type} (outer : UIDEquiv UID V) (M : V → Sort u) : UIDEquiv.Aux outer M
+  mkAux0 {UID : TIndex} {V : Type} (outer : UIDEquiv UID V) (M : V → Sort u) : UIDEquiv.Aux0 outer M
 
 end Free
 
