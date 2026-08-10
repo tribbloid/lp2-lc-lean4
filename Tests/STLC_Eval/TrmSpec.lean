@@ -42,6 +42,7 @@ namespace Fixture
       getEv := λ _bundle => True.intro
       invEv := λ _ev => unsafeCast True.intro
     }
+    mkAux0 := λ _ _ => unsafeCast True.intro
   }
 
 @[instance, implemented_by _runtimeEnv]

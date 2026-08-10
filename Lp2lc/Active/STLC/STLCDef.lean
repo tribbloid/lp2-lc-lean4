@@ -102,7 +102,7 @@ Contains compiletime fixpoint bridges for semantic obligations of terms.
 
 registered Trm2Typ must be relatable
 -/
-class CompilerEnv extends F.HasFixpoint
+class CompilerEnv extends F.HasFixpoint.{1}
   -- trmRefs :  -- TODO: this may be required for transparent inline function
 
 namespace CompilerEnv
@@ -115,7 +115,7 @@ Contains runtime fixpoint bridges for value assignment to terms.
 
 registered Trm2Val must be relatable
 -/
-class RuntimeEnv extends F.HasFixpoint
+class RuntimeEnv extends F.HasFixpoint.{1}
 
 namespace RuntimeEnv
 def trm2valCtx (env : @RuntimeEnv F) : F.Fixpoint (AST.Trm2Val F) :=

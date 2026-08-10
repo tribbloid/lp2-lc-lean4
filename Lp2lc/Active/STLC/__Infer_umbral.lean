@@ -43,7 +43,7 @@ namespace ProvingEnv
 
 /-- Temporary proof context preserving each stored term-type pair at its reference. -/
 abbrev proofCtx (env : @ProvingEnv F) :=
-  env.trm2typCtx.mkAux0 (λ t => SafetyOf (.ref (env.trm2typCtx.getUID t))) (λ t => ⟨t.typ⟩)
+  env.mkAux0 env.trm2typCtx (λ t => SafetyOf (.ref (env.trm2typCtx.getUID t)))
 
 -- all declarations of Fixpoint and it's dependently typed instance should be in this namespace
 end ProvingEnv
@@ -72,8 +72,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective 
     match trm with
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
-      let index := env.proofCtx.getEv ⟨⟨.val (.lam body tIn), tIn⟩, ⟨tIn⟩⟩
-      let result := infer_prove (body index) fuel
+      let index := env.trm2typCtx.getUID ⟨.val (.lam body tIn), tIn⟩; let result := infer_prove (body index) fuel
       ⟨result.compilation.map (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
         calc
           _ = (result.compilation.map (Option.map SafetyOf.typ)).map (Option.map (AST.fn tIn)) := by
@@ -96,7 +95,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective 
           rw [fnResult.sameInfer, argResult.sameInfer] <;> rfl
         rw [hResult]
         cases (AST.apply fnTerm arg).infer (fuel + 1) <;> simp [Rec.Outcome.map, Function.comp_def]⟩
-    | @AST.ref _ uid => ⟨.yield (some ⟨(env.proofCtx.invEv uid).typ⟩), rfl⟩
+    | @AST.ref _ uid => ⟨.yield (some ⟨(env.trm2typCtx.inv uid).typ⟩), rfl⟩
 
 end
 
