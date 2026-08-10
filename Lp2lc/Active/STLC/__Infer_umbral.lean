@@ -42,7 +42,7 @@ namespace ProvingEnv
 -- TODO: add proofCtx here, a new Aux0 should be created. No abstract function is allowed
 
 /-- Temporary proof context preserving each stored term-type pair at its reference. -/
-abbrev proofCtx (env : @ProvingEnv F) :=
+def proofCtx (env : @ProvingEnv F) :=
   env.mkAux0 env.trm2typCtx (λ t => SafetyOf (.ref (env.trm2typCtx.getUID t)))
 
 -- all declarations of Fixpoint and it's dependently typed instance should be in this namespace
