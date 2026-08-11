@@ -59,14 +59,6 @@ structure UIDEquiv (UID : TIndex) (V : Type) : Type where
 namespace UIDEquiv
 
 /--
-TODO: this is a temporary leaky axiom that makes conjecture definition & proof easier. But eventually it will be deleted
--/
-class Aux0 {UID : TIndex} {V : Type}
-    (outer : UIDEquiv UID V) (M : V → Sort u) where
-  getEv : (bundle : PSigma M) → UID := λ bundle => outer.getUID bundle.fst
-  invEv : (uid : UID) → M (outer.inv uid)
-
-/--
 extension of [UIDEquiv] that can attach metadata `M : Type/Prop` to existing UID-value pairs:
 
 - [UIDEquiv.Aux.getEv] requires both value and its metadata, but UID is only computed from value
@@ -116,7 +108,6 @@ universe u
 class HasFixpoint (F : Free) : Type (max 1 u) where
   mkFixpoint (V : Type) : Free.Fixpoint F V
   mkAux {UID : TIndex} {V : Type} (outer : UIDEquiv UID V) (M : V → Sort u) : UIDEquiv.Aux outer M
-  mkAux0 {UID : TIndex} {V : Type} (outer : UIDEquiv UID V) (M : V → Sort u) : UIDEquiv.Aux0 outer M
 
 end Free
 

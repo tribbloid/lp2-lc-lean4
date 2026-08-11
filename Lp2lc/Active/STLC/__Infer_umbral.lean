@@ -34,18 +34,20 @@ end
 contains a FBound store to save/load intermediate safety proof for both [AST.Trm] and [AST.Val]
 
 [infer_prove] & any theorem that relies on safety can use it, this is the only correspondence between compiletime and runtime variables.
+
+no abstract function is allowed here
 -/
 class ProvingEnv extends @ProvingBase F where
 
 
 namespace ProvingEnv
--- TODO: add proofCtx here, a new Aux0 should be created. No abstract function is allowed
+/-
+all declarations of UIDEquiv and it's dependently typed instance should be in this namespace
 
-/-- Temporary proof context preserving each stored term-type pair at its reference. -/
-def proofCtx (env : @ProvingEnv F) :=
-  env.mkAux0 env.trm2typCtx (λ t => SafetyOf (.ref (env.trm2typCtx.getUID t)))
+unused definition is strictly prohibited
+-/
 
--- all declarations of Fixpoint and it's dependently typed instance should be in this namespace
+-- TODO: add a concrete proofCtx
 end ProvingEnv
 
 section
