@@ -52,6 +52,16 @@ end ProvingEnv
 
 section
 
+/-
+TODO: **This prove can be shorter!** With the following technique:
+
+- create a new Context [safetyCtx] under [ProvingEnv] that extends existing [trm2typCtx], which is capable of memorizing Term safety or Objective directly
+- temporarily move the AST into a difference PHOAS carrier ([F.Index]) to enable reference to [safetyCtx.Receipt]
+- once the main objective is proven, move back to the original PHOAS carrier
+
+With the new context, it can be made significantly shorter
+-/
+
 /-- Mirrors term inference while routing typed binders through the temporary proof context.
 
 like [AST.infer] it inductively infer [AST.Typ] of a given [AST.Trm], using the structure of [AST.infer] as a blueprint.
