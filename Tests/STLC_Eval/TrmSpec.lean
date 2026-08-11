@@ -38,7 +38,7 @@ namespace Fixture
   {
     mkFixpoint := _unsafeFixpoint
     mkAux := λ _outer _M => {
-      Ev := λ _ => True
+      Receipt := λ _ => True
       getEv := λ _bundle => True.intro
       invEv := λ _ev => unsafeCast True.intro
     }

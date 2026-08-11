@@ -159,7 +159,12 @@ theorem cpsTerm_correct_of_equiv :
       PTerm.denote (cpsTerm (var := PType.denote) (.app f2 x2)) k
           = PTerm.denote (cpsTerm (var := PType.denote) f2)
               (λ f => PTerm.denote (cpsTerm (var := PType.denote) x2) (λ x => f (x, λ r => k r))) := by
-                simp [cpsTerm, splice_correct]
+                simp only [cpsTerm]
+                rw [splice_correct]
+                apply congrArg (PTerm.denote (cpsTerm (var := PType.denote) f2))
+                funext f
+                rw [splice_correct]
+                rfl
       _ = PTerm.denote (cpsTerm (var := PType.denote) x2) (λ x => rf (x, λ r => k r)) := by
             simpa [kf] using hrf
       _ = rf (rx, λ r => k r) := by
@@ -170,7 +175,11 @@ theorem cpsTerm_correct_of_equiv :
     let rf : PType.denote (cpsType (t1 ==> t2)) :=
       λ p => PTerm.denote (cpsTerm (var := PType.denote) (f2 p.1)) (λ r => p.2 r)
     refine ⟨rf, ?_, ?_⟩
-    · simp [cpsTerm, splice_correct, rf]
+    · apply congrArg k
+      funext p
+      simp only [PPrimop.denote, PTerm.denote]
+      rw [splice_correct]
+      rfl
     · intro x1 x2 hLRx k2
       have hRel' :
           ∀ {t : Ty} {v1 : Ty.denote t} {v2 : CVar t},

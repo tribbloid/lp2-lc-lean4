@@ -293,7 +293,7 @@ theorem mapFuncs_correct {result : PType} {α β : Type}
   | main v =>
       rfl
   | abs e fs ih =>
-      simp [mapFuncs, CFuncs.denote, ih]
+      exact ih (λ env arg => CTerm.denote (e env arg) k)
 
 theorem splicePrim_correct {t t' : PType}
     (ps : CPrimops CType.denote t)
@@ -304,7 +304,7 @@ theorem splicePrim_correct {t t' : PType}
   | ret v =>
       rfl
   | let_ p k ih =>
-      simp [splicePrim, CPrimops.denote, ih]
+      exact ih (CPrimop.denote p)
 
 theorem spliceTerm_correct {result t : PType}
     (ps : CPrimops CType.denote t)
@@ -316,7 +316,7 @@ theorem spliceTerm_correct {result t : PType}
   | ret v =>
       rfl
   | let_ p k' ih =>
-      simp [spliceTerm, CTerm.denote, CPrimops.denote, ih]
+      exact ih (CPrimop.denote p)
 
 theorem spliceFuncs'_correct {result : PType} {α β : Type}
     (fs : CFuncs CType.denote result α)
@@ -327,7 +327,7 @@ theorem spliceFuncs'_correct {result : PType} {α β : Type}
   | main v =>
       rfl
   | abs e fs ih =>
-      simp [spliceFuncs', CFuncs.denote, ih]
+      exact ih (λ env arg => CTerm.denote (e env arg) k)
 
 theorem spliceFuncs_correct {result : PType} {α β γ : Type}
     (fs1 : CFuncs CType.denote result α)
@@ -340,7 +340,7 @@ theorem spliceFuncs_correct {result : PType} {α β γ : Type}
   | main v =>
       simpa [spliceFuncs] using spliceFuncs'_correct fs2 (f v) k
   | abs e fs ih =>
-      simp [spliceFuncs, CFuncs.denote, ih]
+      exact ih (λ env arg => CTerm.denote (e env arg) k)
 
 theorem inside_correct {result : PType} {α β : Type}
     (fs1 : CFuncs CType.denote result α)
@@ -352,7 +352,7 @@ theorem inside_correct {result : PType} {α β : Type}
   | main v =>
       rfl
   | abs e fs ih =>
-      simp [inside, CFuncs.denote, ih]
+      exact ih (λ env arg => CTerm.denote (e env arg) k)
 
 @[simp] def envPackVal : (envT : List PType) → envOf CType.denote envT → PType.denote (envType envT)
   | [], _ => PUnit.unit
@@ -392,7 +392,10 @@ theorem packTerm_correct (envT : List PType) (env : envOf CType.denote envT) :
   | cons t envT ih =>
       cases env with
       | mk x rest =>
-          simp [packTerm, envPackVal, splicePrim_correct, ih]
+          simp only [packTerm]
+          rw [splicePrim_correct]
+          rw [ih]
+          rfl
 
 theorem unpackVar_correct {result : PType}
     (envT : List PType)
@@ -407,7 +410,7 @@ theorem unpackVar_correct {result : PType}
   | cons t envT ih =>
       cases envx with
       | mk x rest =>
-          simp [unpackVar, envUnpackVal, ih, CTerm.denote]
+          exact ih rest (λ env => e (x, env))
 
 theorem unpackTerm_correct {result : PType}
     (envT : List PType)
@@ -516,7 +519,7 @@ theorem ctxVal_extend {envT : List PType} {G : Ctxt NatVar PType.denote}
     have hLookup :
         lookup (t :: envT) v1.idx (x, env) (t := t') hWeak =
           lookup envT v1.idx env (t := t') hOk := by
-      simp [lookup, hn, hProofEq]
+      simpa [lookup, hn] using hProofEq
     exact hLookup.trans hVal
 
 def CtxRel (envT : List PType) (env : envOf CType.denote envT)
@@ -566,7 +569,7 @@ theorem ctxRel_extend {envT : List PType} {G : Ctxt PType.denote NatVar}
     have hLookup :
         lookup (t :: envT) v2.idx (x, env) (t := t') hWeak =
           lookup envT v2.idx env (t := t') hOk := by
-      simp [lookup, hn, hProofEq]
+      simpa [lookup, hn] using hProofEq
     exact hLookup.trans hVal
 
 theorem ctxRel_lookup {envT : List PType} {env : envOf CType.denote envT}
@@ -577,11 +580,7 @@ theorem ctxRel_lookup {envT : List PType} {env : envOf CType.denote envT}
     (hOk : Ok envT v2.idx t) :
     lookup envT v2.idx env (t := t) hOk = v1 := by
   rcases hCtx hMem with ⟨hOk', hVal⟩
-  calc
-    lookup envT v2.idx env (t := t) hOk
-        = lookup envT v2.idx env (t := t) hOk' := by
-            exact lookup_proof_irrel (env := env) (h1 := hOk) (h2 := hOk')
-    _ = v1 := hVal
+  exact (lookup_proof_irrel (env := env) (h1 := hOk) (h2 := hOk')).trans hVal
 
 theorem ctxOk_nil : CtxOk [] ([] : Ctxt NatVar UnitVar) := by
   intro t v1 v2 hIn
@@ -750,7 +749,8 @@ theorem ccTerm_correct_of_equiv :
           _ = CTerm.denote
                 (CFuncs.denote (ccTerm CType.denote result (.bind p2 e2) envT hWf) k env)
                 k := by
-                  simp [ccTerm, spliceFuncs_correct, spliceTerm_correct, hPrim.symm])
+                  simp only [ccTerm]
+                  rw [spliceFuncs_correct, spliceTerm_correct, hPrim.symm])
       (var := by
         intro G t v1 v2 hMem envT env k hWf hCtx
         have hLookup :
@@ -830,7 +830,12 @@ theorem ccTerm_correct_of_equiv :
                           k
                           (x, env')))
                     k := by
-                      simp [ccPrimop, inside_correct, splicePrim_correct, packTerm_correct]
+                      simp only [ccPrimop]
+                      rw [inside_correct]
+                      simp only [CFuncs.denote]
+                      rw [splicePrim_correct]
+                      simp only [CPrimops.denote, CPrimop.denote]
+                      rw [packTerm_correct]
             _ = CTerm.denote
                   (CFuncs.denote
                     (ccTerm CType.denote result (f2 ⟨envT.length⟩) (t :: envT) (wfPrimop_abs_inv hWf))
@@ -923,7 +928,8 @@ theorem CcTerm_correct [PTermParametricity] :
             ((CFuncs.denote (ccTerm CType.denote result (E NatVar) [] (ptermWf E)) k)
               (PUnit.unit : envOf CType.denote []))
             k := by
-                simp [CcTerm, CProgClosed.denote, CProg.denote, mapFuncs_correct]
+                simp only [CcTerm, CProgClosed.denote, CProg.denote]
+                rw [mapFuncs_correct]
     _ = PTerm.denote (E PType.denote) k := by
           simpa using hMain.symm
     _ = PTermClosed.denote E k := by
