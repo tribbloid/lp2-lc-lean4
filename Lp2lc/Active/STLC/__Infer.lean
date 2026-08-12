@@ -96,6 +96,24 @@ end AST
 
 class ProvingBase extends (@RuntimeEnv F), (@CompilerEnv F)
 
+/-
+TODO: there is no need to use this complex definition, which is optimised for [CanInhabit] and requires both trm & typ to be provided
+
+The simple conjecture is merely `∀ t : AST.Trm F, t.eval.infer <= t.infer`
+
+There are few intricacies:
+
+- `t` may already contain references to free variable in the context
+  - `t.infer` should work even in this case
+- the subtyping symbol `<=` is only applicable for AST with identical carrier, so `infer` is allowed to shift carrier, but `eval` is not
+
+To avoid UID being abused to fake construction from any Fixpoint, the simple conjecture should be:
+
+[]
+
+The final objective is to produce a **conformal proof**, a proof that is structurally isomorphic to `Trm.infer` algorithm
+-/
+
 def Safety [@ProvingBase F] (trm : AST.Trm F) (typ : AST.Typ F) : Prop :=
   trm.eval.isSemiDecidable (λ v => (AST.val v).CanInhabit typ)
 
