@@ -34,7 +34,7 @@ namespace Fixture
       cases id
   }
 
-@[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
+@[reducible] unsafe def _runtimeEnv : @ExeEnv I :=
   {
     mkFixpoint := _unsafeFixpoint
     mkAux := λ _outer _M => {
@@ -45,13 +45,13 @@ namespace Fixture
   }
 
 @[instance, implemented_by _runtimeEnv]
-axiom runtimeEnv : @RuntimeEnv I
+axiom runtimeEnv : @ExeEnv I
 
 end Fixture
 
 section eval
 
-variable [env : @RuntimeEnv Symbolic.I]
+variable [env : @ExeEnv Symbolic.I]
 
 example : (vFalse : Trm).eval 0 = .outOfFuel := rfl
 

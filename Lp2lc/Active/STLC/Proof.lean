@@ -23,7 +23,7 @@ section variable {F : Free}
 namespace AST
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
-theorem termEvalMonotone [env : @RuntimeEnv F]
+theorem termEvalMonotone [env : @ExeEnv F]
     (trm : Trm F) :
     trm.eval.Monotone := by
   intro less more result hFuel hEval

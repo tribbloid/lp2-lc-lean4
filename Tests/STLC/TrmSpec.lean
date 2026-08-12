@@ -9,7 +9,7 @@ open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
 section eval
-variable [env : @RuntimeEnv Symbolic.I]
+variable [env : @ExeEnv Symbolic.I]
 
 example :
     ((Trm.vFalse : Trm).eval).shouldYields
@@ -75,7 +75,7 @@ example :
 end eval
 
 section compile
-variable [env : @CompilerEnv Symbolic.I]
+variable [env : @BuildEnv Symbolic.I]
 
 example :
     (vFalse.recCanInhabit .primitive).shouldYields () := by

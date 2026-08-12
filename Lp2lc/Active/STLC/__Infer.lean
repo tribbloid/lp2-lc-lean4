@@ -24,7 +24,7 @@ namespace AST
 /--
 get the strongest post type bound (post-condition) of a term, or throw an error
 -/
-def infer [env: @CompilerEnv F] (self : Trm F) : RecOpt (Typ F)
+def infer [env: @BuildEnv F] (self : Trm F) : RecOpt (Typ F)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -42,7 +42,7 @@ def infer [env: @CompilerEnv F] (self : Trm F) : RecOpt (Typ F)
     | @AST.ref _ i => .yield (some (env.trm2typCtx.inv i).typ)
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
-theorem termInferMonotone [env : @CompilerEnv F]
+theorem termInferMonotone [env : @BuildEnv F]
     (trm : Trm F) :
     trm.infer.Monotone := by
   intro less more result hFuel hInfer
@@ -83,18 +83,18 @@ theorem termInferMonotone [env : @CompilerEnv F]
           simpa [AST.infer] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
-theorem valueInferMonotone [env : @CompilerEnv F]
+theorem valueInferMonotone [env : @BuildEnv F]
     (value : AST.Val F) :
     (AST.val value).infer.Monotone :=
   termInferMonotone (AST.val value)
 
 
-def CanInhabit (trm : Trm F) (typ : AST.Typ F) [@CompilerEnv F] : Prop :=
+def CanInhabit (trm : Trm F) (typ : AST.Typ F) [@BuildEnv F] : Prop :=
   trm.infer.isDecidable (λ t2 => t2 <= typ)
 
 end AST
 
-class ProvingBase extends (@RuntimeEnv F), (@CompilerEnv F)
+class ProvingBase extends (@ExeEnv F), (@BuildEnv F)
 
 /-
 TODO: there is no need to use this complex definition, which is optimised for [CanInhabit] and requires both trm & typ to be provided

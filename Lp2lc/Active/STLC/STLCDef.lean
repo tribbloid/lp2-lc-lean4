@@ -102,30 +102,35 @@ Contains compiletime fixpoint bridges for semantic obligations of terms.
 
 registered Trm2Typ must be relatable
 -/
-class CompilerEnv extends F.HasFixpoint.{1}
+class BuildEnv extends F.HasFixpoint.{1}
   -- trmRefs :  -- TODO: this may be required for transparent inline function
 
-namespace CompilerEnv
-def trm2typCtx (env : @CompilerEnv F) : F.Fixpoint (AST.Trm2Typ F) :=
+namespace BuildEnv
+
+def trm2typCtx (env : @BuildEnv F) : F.Fixpoint (AST.Trm2Typ F) :=
   env.mkFixpoint (AST.Trm2Typ F)
-end CompilerEnv
+
+end BuildEnv
 
 /--
 Contains runtime fixpoint bridges for value assignment to terms.
 
 registered Trm2Val must be relatable
 -/
-class RuntimeEnv extends F.HasFixpoint.{1}
 
-namespace RuntimeEnv
-def trm2valCtx (env : @RuntimeEnv F) : F.Fixpoint (AST.Trm2Val F) :=
+class ExeEnv extends F.HasFixpoint.{1}
+
+namespace ExeEnv
+
+def trm2valCtx (env : @ExeEnv F) : F.Fixpoint (AST.Trm2Val F) :=
   env.mkFixpoint (AST.Trm2Val F)
-end RuntimeEnv
+
+end ExeEnv
 
 abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
 
 namespace AST
-section variable [env: @RuntimeEnv F]
+section variable [env: @ExeEnv F]
 
 /--
 Evaluates a term by spending 1 fuel at each semantic
@@ -154,7 +159,7 @@ end
 
 section variable (self : AST.Trm F)
 
-def recCanSatisfy (condition : Condition F) : ∀ [@RuntimeEnv F], Rec Prop := λ fuel =>
+def recCanSatisfy (condition : Condition F) : ∀ [@ExeEnv F], Rec Prop := λ fuel =>
   (self.eval fuel).map (λ
     | some v => condition v
     | none => False)
@@ -164,7 +169,7 @@ An safe term may run out of runtime fuel, but it must not reach runtime
 `error`. When a runtime value is produced, it must satisfy the condition.
 -/
 def CanSatisfy_semi (condition : Condition F) : Prop :=
-  ∀ fuel, ∀ [@RuntimeEnv F], (self.recCanSatisfy condition fuel).getOrElse True
+  ∀ fuel, ∀ [@ExeEnv F], (self.recCanSatisfy condition fuel).getOrElse True
 
 /-- Converts semantic outcomes into obligations over all fuel and runtime environments. -/
 abbrev WeakestPre := @CanSatisfy_semi F -- weakest precondition in Iris framework
@@ -174,7 +179,7 @@ def IsSafe : Prop :=
 
 end
 
-section variable [env: @CompilerEnv F]
+section variable [env: @BuildEnv F]
 
 section variable (self : Trm F)
 
