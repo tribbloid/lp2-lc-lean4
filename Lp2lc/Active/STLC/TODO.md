@@ -5,10 +5,10 @@
 # Medium Priority
 
 - for the moment, both contexts save/load a tuple: either trm2typ or trm2val.
-  - this is deliberate: casting `val ~> trm` is easy. During the soundness proof, the binding of both trm and val can share a UIDEquiv.
+  - this is deliberate: casting `val ~> trm` is easy. During the soundness proof, the binding of both trm and val can share a UIdEquiv.
   - reverting it is easy but doesn't offer any benefit.
   - the proof objective contains 2 parts: sameInfer (the easy part) & compilation (the bulk)
     - proving sameInfer only requires trm2typCtx.Aux0
     - proving compilation:
-      - the 2 cases that doesn't use UID are easy
+      - the 2 cases that doesn't use UId are easy
       - other 2 require save/load terms with proven safety

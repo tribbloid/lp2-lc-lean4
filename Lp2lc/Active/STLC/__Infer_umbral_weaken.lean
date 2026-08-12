@@ -43,7 +43,7 @@ namespace ProvingEnv
 
 /-- Temporary proof context preserving each stored term-type pair at its reference. -/
 def proofCtx (env : @ProvingEnv F) :=
-  env.mkAux0 env.trm2typCtx (λ t => SafetyOf (.ref (env.trm2typCtx.getUID t)))
+  env.mkAux0 env.trm2typCtx (λ t => SafetyOf (.ref (env.trm2typCtx.getUId t)))
 
 -- all declarations of Fixpoint and it's dependently typed instance should be in this namespace
 end ProvingEnv
@@ -61,8 +61,8 @@ unlike [AST.infer] it is obliged to produce a [Objective] bundle of:
 
 Recommendation:
 
-- create a [UIDEquiv.Aux0] from trm2TypCtx (Aux0 contains an abuse that allows other UID to be used to get any value, it is temporarily tolerated)
-- write an algorithm identical with Trm.infer, but save into [UIDEquiv.Aux0] instead to get an UID
+- create a [UIdEquiv.Aux0] from trm2TypCtx (Aux0 contains an abuse that allows other UId to be used to get any value, it is temporarily tolerated)
+- write an algorithm identical with Trm.infer, but save into [UIdEquiv.Aux0] instead to get an UId
 
 -/
 def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective trm fuel :=
@@ -72,7 +72,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective 
     match trm with
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
-      let index := env.trm2typCtx.getUID ⟨.val (.lam body tIn), tIn⟩; let result := infer_prove (body index) fuel
+      let index := env.trm2typCtx.getUId ⟨.val (.lam body tIn), tIn⟩; let result := infer_prove (body index) fuel
       ⟨result.compilation.map (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
         calc
           _ = (result.compilation.map (Option.map SafetyOf.typ)).map (Option.map (AST.fn tIn)) := by

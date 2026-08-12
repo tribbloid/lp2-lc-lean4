@@ -35,7 +35,7 @@ They are not intrinsic typing indices on terms.
 -/
 | val (v : AST F .Val) : AST F .Trm -- AKA literal
 | apply (fn : AST F .Trm) (arg : AST F .Trm) : AST F .Trm -- fn must be a function that can be applied on arg
-| ref (s: F.Index) : AST F .Trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
+| ref (s: F.Carrier) : AST F .Trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
 /--
 Value syntax, containing neither references nor applications.
 
@@ -45,7 +45,7 @@ used by function application after both sides have been evaluated.
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
 | lit (repr : F.Data) : AST F .Val -- most specific type is always `primitive`
-| lam (body : (arg : F.Index) → AST F .Trm) (tIn : AST F .Typ) : AST F .Val -- most specific type is always `.fn tIn _`
+| lam (body : (arg : F.Carrier) → AST F .Trm) (tIn : AST F .Typ) : AST F .Val -- most specific type is always `.fn tIn _`
 
 
 namespace AST
@@ -147,7 +147,7 @@ def eval (self : AST.Trm F) : RecOpt (AST.Val F)
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         -- let permission := env.canSaveAny input
-        let index := env.trm2valCtx.getUID ⟨arg, input⟩
+        let index := env.trm2valCtx.getUId ⟨arg, input⟩
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel

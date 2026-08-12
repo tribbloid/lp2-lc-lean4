@@ -13,18 +13,18 @@ namespace Fixture
 @[reducible] unsafe def _unsafeFixpoint (T : Type) :
     I.Fixpoint T :=
   let saved : IO.Ref (Array T) := unsafeBaseIO (IO.mkRef #[])
-  let getUID : T → I.Index := fun value =>
+  let getUId : T → I.Carrier := fun value =>
     unsafeBaseIO do
       let values ← saved.get
       saved.set (values.push value)
       pure (unsafeCast values.size)
-  let inv : I.Index → T := fun ref =>
+  let inv : I.Carrier → T := fun ref =>
     let index : Nat := unsafeCast ref
     match (unsafeBaseIO saved.get)[index]? with
     | some t => t
     | none => unsafeCast ()
   {
-    getUID := fun value => getUID value
+    getUId := fun value => getUId value
     inv := fun ref => inv ref
     leftInv := by
       intro value
@@ -61,7 +61,7 @@ example : (vFalse : Trm).eval.shouldYields Val.vFalse := by
   · rfl
 
 example :
-    let ref := env.trm2valCtx.getUID ⟨vFalse, Val.vFalse⟩
+    let ref := env.trm2valCtx.getUId ⟨vFalse, Val.vFalse⟩
     (AST.ref ref).eval 1 = .yield (some Val.vFalse) := by
   simp [AST.eval]
 

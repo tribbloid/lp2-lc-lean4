@@ -1,12 +1,12 @@
 import «Lp2lc».Active.Util
 
-namespace Tests.UIDEquivSpec
+namespace Tests.UIdEquivSpec
 
 open Lp2lc.Active.Util
-open UIDEquiv
+open UIdEquiv
 
-def group : UIDEquiv Nat Nat where
-  getUID := id
+def group : UIdEquiv Nat Nat where
+  getUId := id
   inv := id
   leftInv := by
     intro value
@@ -25,32 +25,32 @@ def group : UIDEquiv Nat Nat where
   getEv := λ _bundle => True.intro
   invEv := λ _id2 => ()
 
-section getUID
+section getUId
 
 example :
-    eqOneMetadata.Receipt (group.getUID 1) :=
+    eqOneMetadata.Receipt (group.getUId 1) :=
   eqOneMetadata.getEv ⟨1, rfl⟩
 
 example :
-    eqOneMetadata.Receipt (group.getUID 1) ∧
-      unitMetadata.Receipt (group.getUID 1) :=
+    eqOneMetadata.Receipt (group.getUId 1) ∧
+      unitMetadata.Receipt (group.getUId 1) :=
   ⟨eqOneMetadata.getEv ⟨1, rfl⟩,
     unitMetadata.getEv ⟨1, ()⟩⟩
 
 example :
-    group.inv (group.getUID 1) = 1 := by
+    group.inv (group.getUId 1) = 1 := by
   exact eqOneMetadata.leftInvValue ⟨1, rfl⟩
 
 example :
     eqOneMetadata.invEv
-      ⟨group.getUID 1, eqOneMetadata.getEv ⟨1, rfl⟩⟩ = rfl := by
+      ⟨group.getUId 1, eqOneMetadata.getEv ⟨1, rfl⟩⟩ = rfl := by
   rfl
 
 example :
     unitMetadata.invEv
-      ⟨group.getUID 1, unitMetadata.getEv ⟨1, ()⟩⟩ = () := by
+      ⟨group.getUId 1, unitMetadata.getEv ⟨1, ()⟩⟩ = () := by
   rfl
 
-end getUID
+end getUId
 
-end Tests.UIDEquivSpec
+end Tests.UIdEquivSpec

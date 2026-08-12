@@ -10,7 +10,7 @@ dependently typed lambda calculus (similar to STLC but function output type can 
 -/
 
 open Lp2lc.Active.Util
-open UIDEquiv
+open UIdEquiv
 
 section variable {I : Free}
 
@@ -28,7 +28,7 @@ wildcard annotation accepted by any value.
 -/
 inductive Typ : Type where
 | primitive -- `AnyVal` in Scala, accepts only primitive values
-| depFn (tIn : Typ) (tOut : (arg : I.Index) → Typ) -- dependent function
+| depFn (tIn : Typ) (tOut : (arg : I.Carrier) → Typ) -- dependent function
 | top -- anything/wildcard type, can accept any value.
 
 /--
@@ -49,7 +49,7 @@ inductive Trm : Type where
 | typeHinted (self : Trm) (hint : Typ) -- AKA type annotation, each term can have 0, 1, or many hints (e.g. `((1: Tuple): Product): AnyRef`), required for fundamental/composability theorem
 | val (v : Val) -- AKA literal
 | apply (fn : Trm) (arg : Trm) -- fn must be a function that can be applied on arg
-| ref (s: I.Index) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
+| ref (s: I.Carrier) -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
 /--
 Value syntax, containing neither references nor applications.
@@ -60,7 +60,7 @@ used by function application after both sides have been evaluated.
 inductive Val : Type where
 | primitive (repr : I.Data) -- most specific type is always `primitive`
 | primitiveFn (body: (arg: I.Data) -> Trm ) -- most specific type is always `.depFn .primitive _`
-| fn (body : (arg : I.Index) → Trm) -- most specific type is always `.depFn _ _`
+| fn (body : (arg : I.Carrier) → Trm) -- most specific type is always `.depFn _ _`
 
 end
 
@@ -146,7 +146,7 @@ def eval (self : AST.Trm I) : RecOpt (AST.Val I)
       | (.yield (some (.primitiveFn body)), .yield (some (.primitive repr))) =>
         eval (body repr) fuel
       | (.yield (some (.fn body)), .yield (some value)) =>
-        eval (body (env.valueCtx.getUID value)) fuel
+        eval (body (env.valueCtx.getUId value)) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
@@ -184,13 +184,13 @@ def CanBind (type : AST.Typ I) (value : AST.Val I) : Prop :=
     ∀ repr,
       let arg := AST.Val.primitive repr
       arg.CanBind tIn →
-        let ref := RuntimeEnv.valueCtx.getUID arg
+        let ref := RuntimeEnv.valueCtx.getUId arg
         (body repr).IsSafeBy
           (λ value => value.CanBind (tOut ref))
   | .depFn tIn tOut, .fn body =>
     ∀ arg,
       arg.CanBind tIn →
-        let ref := RuntimeEnv.valueCtx.getUID arg
+        let ref := RuntimeEnv.valueCtx.getUId arg
         (body ref).IsSafeBy
           (λ value => value.CanBind (tOut ref))
 
@@ -303,7 +303,7 @@ end
 --   match fnResult, argResult with
 --   | .result compiledFn, .result compiledArg =>
 --     let fixpoint := CompilerEnv.forTyps (I := I)
---     let argRef := fixpoint.getUID tIn True.intro
+--     let argRef := fixpoint.getUId tIn True.intro
 --     let pineapplePen := Trm.typeHinted (Trm.apply compiledFn compiledArg) (tOut argRef)
 --     ∃ moreFuel,
 --       (AST.Trm.compile pineapplePen moreFuel).isResult

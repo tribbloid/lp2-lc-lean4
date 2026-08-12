@@ -12,24 +12,24 @@ namespace Fixture
 
 /--
 Build a stateful testing approximation of [Free.Fixpoint] over an
-`IO.Ref (Array T)`. [UIDEquiv.leftInv] is discharged via
+`IO.Ref (Array T)`. [UIdEquiv.leftInv] is discharged via
 `unsafeCast True.intro`; the pure structure remains hypothetical.
 -/
 @[reducible] unsafe def _unsafeFixpoint (T : Type) :
-    I.Fixpoint T :=
+    F.Fixpoint T :=
   let saved : IO.Ref (Array T) := unsafeBaseIO (IO.mkRef #[])
-  let getUID : T → I.Index := fun value =>
+  let getUId : T → F.Carrier := fun value =>
     unsafeBaseIO do
       let values ← saved.get
       saved.set (values.push value)
       pure (unsafeCast values.size)
-  let inv : I.Index → T := fun ref =>
+  let inv : F.Carrier → T := fun ref =>
     let index : Nat := unsafeCast ref
     match (unsafeBaseIO saved.get)[index]? with
     | some t => t
     | none => unsafeCast ()
   {
-    getUID := fun value => getUID value
+    getUId := fun value => getUId value
     inv := fun ref => inv ref
     leftInv := by
       intro value
@@ -39,23 +39,23 @@ Build a stateful testing approximation of [Free.Fixpoint] over an
       cases id
   }
 
-@[reducible] unsafe def _runtimeEnv : @RuntimeEnv I :=
+@[reducible] unsafe def _runtimeEnv : @RuntimeEnv F :=
   {
     valueCtx := _unsafeFixpoint Val
   }
 
 
 @[instance, implemented_by _runtimeEnv]
-axiom runtimeEnv : @RuntimeEnv I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
+axiom runtimeEnv : @RuntimeEnv F -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
 
 
-@[reducible] unsafe def _compilerEnv : @CompilerEnv I :=
+@[reducible] unsafe def _compilerEnv : @CompilerEnv F :=
   {
-    typeCtx := _unsafeFixpoint (AST.Typ I)
+    typeCtx := _unsafeFixpoint (AST.Typ F)
   }
 
 @[instance, implemented_by _compilerEnv]
-axiom compilerEnv : @CompilerEnv I -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
+axiom compilerEnv : @CompilerEnv F -- this instance of Runtime.Env is intend to contain the unsafe part and not making it contaminating examples
 
 end Fixture
 

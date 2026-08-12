@@ -11,22 +11,21 @@ collection of free type variables used in HOAS bindings
 
 They are deliberately left free to ward off unlawful construction:
 
-- the only way to construct an `Index` is to get the UID of a `Value` through the fixpoint bridge
+- the only way to construct an `Index` is to get the UId of a `Value` through the fixpoint bridge
 - the only way to construct a `Data` is to parse a primitive literal in AST
 -/
 class Free : Type 1 where
-  Index : TIndex
-  -- Ev : Index -> Prop := λ _ => True -- TODO: this should be moved out from Free
+  Carrier : TIndex -- AKA variable binding
   Data : TData
 
 namespace Free
 
 @[reducible] def mkWeakest (Index : TIndex) (Data : TData) : Free :=
-  { Index := Index, Data := Data }
+  { Carrier := Index, Data := Data }
 
 /-- Replaces a free family with its peer whose evidence predicate is `True`. -/
 @[reducible] def weaken (self : Free) : Free :=
-  mkWeakest self.Index self.Data
+  mkWeakest self.Carrier self.Data
 
 end Free
 
@@ -35,83 +34,83 @@ thin wrapper of `T` representing outcome of a valid compilation, implying safety
 
 all compilation API should ideally return this.
 
-if registered in a [UIDEquiv], the result UID should work in any `Env` to get a compatible term or value.
+if registered in a [UIdEquiv], the result UId should work in any `Env` to get a compatible term or value.
 -/
 structure Valid T : Type where
   self: T
 
 /--
-Hypothetical bridge between values & UIDs as HOAS carrier
+Hypothetical bridge between values & UIds as HOAS carrier
 
-[UIDEquiv.getUID] is the only way to obtain a UID: it requires a `V`.
-Consequently, [UIDEquiv.inv] is total without introducing free variables.
+[UIdEquiv.getUId] is the only way to obtain a UId: it requires a `V`.
+Consequently, [UIdEquiv.inv] is total without introducing free variables.
 As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
 
-[UIDEquiv.getUID] and [UIDEquiv.inv] are inverse: [UIDEquiv.leftInv] starts
-from a value, while [UIDEquiv.rightInv] starts from a UID.
+[UIdEquiv.getUId] and [UIdEquiv.inv] are inverse: [UIdEquiv.leftInv] starts
+from a value, while [UIdEquiv.rightInv] starts from a UId.
 -/
-structure UIDEquiv (UID : TIndex) (V : Type) : Type where
-  getUID : (value : V) → UID
-  inv : (id : UID) → V
-  leftInv : ∀ (value : V), inv (getUID value) = value
-  rightInv : ∀ (id : UID), getUID (inv id) = id
+structure UIdEquiv (UId : TIndex) (V : Type) : Type where
+  getUId : (value : V) → UId
+  inv : (id : UId) → V
+  leftInv : ∀ (value : V), inv (getUId value) = value
+  rightInv : ∀ (id : UId), getUId (inv id) = id
 
-namespace UIDEquiv
+namespace UIdEquiv
 
 /--
-extension of [UIDEquiv] that can attach metadata `M : Type/Prop` to existing UID-value pairs:
+extension of [UIdEquiv] that can attach metadata `M : Type/Prop` to existing UId-value pairs:
 
-- [UIDEquiv.Aux.getEv] requires both value and its metadata, but UID is only computed from value
-- [UIDEquiv.Aux.invEv] requires both UID and the evidence that its metadata has been saved before
-- all [UIDEquiv.Aux] instances derived from the same [UIDEquiv] share its [UIDEquiv.getUID] and [UIDEquiv.inv]
+- [UIdEquiv.Aux.getEv] requires both value and its metadata, but UId is only computed from value
+- [UIdEquiv.Aux.invEv] requires both UId and the evidence that its metadata has been saved before
+- all [UIdEquiv.Aux] instances derived from the same [UIdEquiv] share its [UIdEquiv.getUId] and [UIdEquiv.inv]
 
-`M` is a dependent family over `V` and is reconstructed by each [UIDEquiv.Aux]
-instance through [UIDEquiv.Aux.invEv]. [UIDEquiv.Aux.Ev] restricts that
+`M` is a dependent family over `V` and is reconstructed by each [UIdEquiv.Aux]
+instance through [UIdEquiv.Aux.invEv]. [UIdEquiv.Aux.Receipt] restricts that
 reconstruction to identifiers carrying evidence for the auxiliary instance.
 
-[UIDEquiv.Aux.getEv] saves a bundle using only its value through the shared group bridge.
-[UIDEquiv.Aux.invEv] reconstructs a value through the group and then this instance's metadata.
+[UIdEquiv.Aux.getEv] saves a bundle using only its value through the shared group bridge.
+[UIdEquiv.Aux.invEv] reconstructs a value through the group and then this instance's metadata.
 -/
-class Aux {UID : TIndex} {V : Type}
-    (outer : UIDEquiv UID V) (M : V → Sort u) where
-  Receipt : UID → Prop
-  getEv : (bundle : PSigma M) → Receipt (outer.getUID bundle.fst)
+class Aux {UId : TIndex} {V : Type}
+    (outer : UIdEquiv UId V) (M : V → Sort u) where
+  Receipt : UId → Prop
+  getEv : (bundle : PSigma M) → Receipt (outer.getUId bundle.fst)
   invEv : (ev: PSigma Receipt) → M (outer.inv ev.fst)
 
 namespace Aux
 
-section variable {UID : TIndex} {V : Type} {outer : UIDEquiv UID V} {M : V → Sort u} (self : Aux outer M)
+section variable {UId : TIndex} {V : Type} {outer : UIdEquiv UId V} {M : V → Sort u} (self : Aux outer M)
 
-abbrev AuxUID := PSigma self.Receipt
+abbrev AuxUId := PSigma self.Receipt
 
 /-- Saving membership and reconstructing metadata preserves the original value. -/
 @[simp]
 theorem leftInvValue (bundle : PSigma M) :
-    (⟨outer.inv (outer.getUID bundle.fst),
+    (⟨outer.inv (outer.getUId bundle.fst),
       self.invEv
-        ⟨outer.getUID bundle.fst, self.getEv bundle⟩⟩ : PSigma M).fst = bundle.fst :=
+        ⟨outer.getUId bundle.fst, self.getEv bundle⟩⟩ : PSigma M).fst = bundle.fst :=
   outer.leftInv bundle.fst
 
 end
 end Aux
 
-end UIDEquiv
+end UIdEquiv
 
 namespace Free
 
 abbrev Fixpoint (F : Free) (V : Type) :=
-  UIDEquiv F.Index V
+  UIdEquiv F.Carrier V
 
 universe u
 
 /-- Constructs fixpoint bridges and universe-polymorphic metadata bridges for a free family. -/
 class HasFixpoint (F : Free) : Type (max 1 u) where
   mkFixpoint (V : Type) : Free.Fixpoint F V
-  mkAux {UID : TIndex} {V : Type} (outer : UIDEquiv UID V) (M : V → Sort u) : UIDEquiv.Aux outer M
+  mkAux {UId : TIndex} {V : Type} (outer : UIdEquiv UId V) (M : V → Sort u) : UIdEquiv.Aux outer M
 
 end Free
 
-attribute [simp] UIDEquiv.leftInv UIDEquiv.rightInv
+attribute [simp] UIdEquiv.leftInv UIdEquiv.rightInv
 
 section variable {T : Sort u}
 

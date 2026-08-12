@@ -42,7 +42,7 @@ class ProvingEnv extends @ProvingBase F where
 
 namespace ProvingEnv
 /-
-all declarations of UIDEquiv and it's dependently typed instance should be in this namespace
+all declarations of UIdEquiv and it's dependently typed instance should be in this namespace
 
 unused definition is strictly prohibited
 -/
@@ -75,8 +75,8 @@ unlike [AST.infer] it is obliged to produce a [Objective] bundle of:
 
 Recommendation:
 
-- create a [UIDEquiv.Aux0] from trm2TypCtx (Aux0 contains an abuse that allows other UID to be used to get any value, it is temporarily tolerated)
-- write an algorithm identical with Trm.infer, but save into [UIDEquiv.Aux0] instead to get an UID
+- create a [UIdEquiv.Aux0] from trm2TypCtx (Aux0 contains an abuse that allows other UId to be used to get any value, it is temporarily tolerated)
+- write an algorithm identical with Trm.infer, but save into [UIdEquiv.Aux0] instead to get an UId
 
 -/
 def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective trm fuel :=
@@ -86,7 +86,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective 
     match trm with
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
-      let index := env.trm2typCtx.getUID ⟨.val (.lam body tIn), tIn⟩; let result := infer_prove (body index) fuel
+      let index := env.trm2typCtx.getUId ⟨.val (.lam body tIn), tIn⟩; let result := infer_prove (body index) fuel
       ⟨result.compilation.map (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
         change _ = ((body index).infer fuel).map (Option.map (AST.fn tIn))
         rw [← result.sameInfer]

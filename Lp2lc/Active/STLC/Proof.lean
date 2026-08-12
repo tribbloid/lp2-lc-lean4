@@ -62,13 +62,13 @@ theorem termEvalMonotone [env : @ExeEnv F]
                     simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                   | some input =>
                     cases hBody :
-                        (body (env.trm2valCtx.getUID ⟨arg, input⟩)).eval fuel with
+                        (body (env.trm2valCtx.getUId ⟨arg, input⟩)).eval fuel with
                     | outOfFuel =>
                       simp [AST.eval, hFn, hArg, hBody] at hEval
                     | yield bodyResult =>
                       have hBodyTop :=
                         ih fuel (Nat.lt_succ_self fuel)
-                          (body (env.trm2valCtx.getUID ⟨arg, input⟩))
+                          (body (env.trm2valCtx.getUId ⟨arg, input⟩))
                           toFuel bodyResult hFuelTail hBody
                       simpa [AST.eval, hFn, hArg, hFnTop, hArgTop, hBody, hBodyTop] using hEval
         | ref id =>

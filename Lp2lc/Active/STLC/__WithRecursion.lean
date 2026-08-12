@@ -22,7 +22,7 @@ by applying a referenced recursive function to an argument.
 inductive Trm : Type where
 | val (value : Val)
 | apply (fn : Trm) (arg : Trm)
-| ref (ref : F.Index)
+| ref (ref : F.Carrier)
 
 /--
 Value syntax for STLC extended with recursive functions.
@@ -33,8 +33,8 @@ to later typing rules.
 -/
 inductive Val : Type where
 | primitive (repr : F.Data)
-| fn (body : (arg : F.Index) -> Trm) (tIn : Typ F)
-| recFn (body : (self : F.Index) -> (arg : F.Index) -> Trm) (tIn : Typ F) (tOut : Typ F)
+| fn (body : (arg : F.Carrier) -> Trm) (tIn : Typ F)
+| recFn (body : (self : F.Carrier) -> (arg : F.Carrier) -> Trm) (tIn : Typ F) (tOut : Typ F)
 
 end
 
