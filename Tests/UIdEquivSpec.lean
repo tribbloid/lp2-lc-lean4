@@ -16,24 +16,24 @@ def group : UIdEquiv Nat Nat where
     rfl
 
 @[reducible] def eqOneMetadata : Aux group (λ value => value = 1) where
-  Receipt := λ id => group.inv id = 1
+  Ev := λ id => group.inv id = 1
   getEv := λ bundle => bundle.snd
   invEv := λ id2 => id2.snd
 
 @[reducible] def unitMetadata : Aux group (λ _value => Unit) where
-  Receipt := λ _id => True
+  Ev := λ _id => True
   getEv := λ _bundle => True.intro
   invEv := λ _id2 => ()
 
 section getUId
 
 example :
-    eqOneMetadata.Receipt (group.getUId 1) :=
+    eqOneMetadata.Ev (group.getUId 1) :=
   eqOneMetadata.getEv ⟨1, rfl⟩
 
 example :
-    eqOneMetadata.Receipt (group.getUId 1) ∧
-      unitMetadata.Receipt (group.getUId 1) :=
+    eqOneMetadata.Ev (group.getUId 1) ∧
+      unitMetadata.Ev (group.getUId 1) :=
   ⟨eqOneMetadata.getEv ⟨1, rfl⟩,
     unitMetadata.getEv ⟨1, ()⟩⟩
 
