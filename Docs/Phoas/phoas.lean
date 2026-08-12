@@ -278,7 +278,7 @@ def normalize {ty : Ty} (e : Term ty) : Term ty :=
    let evaled := eval (e (rep := Value rep))
    reify evaled
 
-def eval_three {rep : Ty → Type} : normalize three_the_hard_way (rep := rep) = Term'.const 3 := rfl
+theorem eval_three {rep : Ty → Type} : normalize three_the_hard_way (rep := rep) = Term'.const 3 := rfl
 
 end NbE
 

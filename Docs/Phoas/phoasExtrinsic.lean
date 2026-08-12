@@ -297,7 +297,7 @@ def normalize (term : Term) : Term :=
   λ {rep} =>
     squash (eval 16 (term (rep := Value rep)))
 
-def eval_three {rep : Type} :
+theorem eval_three {rep : Type} :
     normalize three_the_hard_way (rep := rep) = Term'.const 3 :=
   rfl
 

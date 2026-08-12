@@ -87,6 +87,7 @@ open AST
 instance typLE : LE (AST.Typ F) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
+@[instance_reducible]
 instance typDecidableLE : DecidableLE (AST.Typ F)
   | .primitive, .primitive => isTrue rfl
   | .primitive, .fn _ _

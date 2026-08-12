@@ -84,7 +84,7 @@ def Adequacy : Prop :=
 
 namespace Adequacy
 
-def proof : @Adequacy F := by
+theorem proof : @Adequacy F := by
   intro term postcondition weakest fuel runtimeEnv
   specialize weakest fuel
   cases evalResult : term.eval fuel with
