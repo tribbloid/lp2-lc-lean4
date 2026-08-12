@@ -96,7 +96,15 @@ end Aux
 
 end UIdEquiv
 
+
 namespace Free
+
+/-
+TODO: Specification of improved UIdEquiv:
+
+- UId type must be associated with values
+- it should be impossible to mix UId for different values or Equiv
+-/
 
 abbrev Fixpoint (F : Free) (V : Type) :=
   UIdEquiv F.Carrier V
