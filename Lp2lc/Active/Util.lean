@@ -108,12 +108,13 @@ class HasFixpoint (F : Free) : Type (max 1 u) where
   mkFixpoint (V : Type) : Free.Fixpoint F V
   mkAux {UId : TIndex} {V : Type} (outer : UIdEquiv UId V) (M : V → Sort u) : UIdEquiv.Aux outer M
 
+abbrev HF2.Fixpoint (UId V : Type) :=
+  UIdEquiv UId V
 
 class HF2 (VV : Type) : Type (max 1 u) extends Free where
   UId : Type
-  Fixpoint : Type = UIdEquiv UId VV -- TODO: fix this, declare as a final abbrev
-  Carrier : Type = UId × Fixpoint VV -- TODO: fix this, declare as final overriding def (overriding Carrier in Free)
-  mkFixpoint (V : Type) : UIdEquiv UId V -- TODO: use Fixpoint abbrev
+  Carrier := UId × HF2.Fixpoint UId VV
+  mkFixpoint (V : Type) : HF2.Fixpoint UId V
   mkAux {UId : TIndex} {V : Type} (outer : UIdEquiv UId V) (M : V → Sort u) : UIdEquiv.Aux outer M
 
 
