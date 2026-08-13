@@ -4,6 +4,9 @@ namespace Lp2lc.Next.Util
 
 open Lp2lc.Active.Util
 
+class HasEv (UId : TIndex) where
+  Ev : UId → Prop
+
 /--
 Receipt-indexed bridge between values and identifiers.
 
@@ -11,10 +14,10 @@ The value family is indexed by this bridge's evidence so recursive PHOAS
 carriers can retain the receipt required by `get`.
 -/
 class UIdEquiv (UId : TIndex) (V : HasEv UId → Type) extends HasEv UId where
-  inv : (value : V toHasEv) → toHasEv.Receipt
-  get : (receipt : toHasEv.Receipt) → V toHasEv
+  inv : (value : V toHasEv) → PSigma toHasEv.Ev
+  get : (receipt : PSigma toHasEv.Ev) → V toHasEv
   rightInv : ∀ (value : V toHasEv), get (inv value) = value
-  leftInv : ∀ (receipt : toHasEv.Receipt), inv (get receipt) = receipt
+  leftInv : ∀ (receipt : PSigma toHasEv.Ev), inv (get receipt) = receipt
 
 /-
 TODO: Avoid fake construction through UIdEquiv
@@ -53,23 +56,23 @@ receipts, and the value family retains the evidence used by its PHOAS carrier.
 
 namespace UIdEquiv
 
-abbrev Receipt {UId : TIndex} {V : HasEv UId → Type}
-    (self : UIdEquiv UId V) :=
-  self.toHasEv.Receipt
-
 /-- Attaches independently witnessed metadata to receipts from one outer bridge. -/
 class Aux {UId : TIndex} {V : HasEv UId → Type}
     (outer : UIdEquiv UId V) (M : V outer.toHasEv → Sort u)
-    extends HasEv outer.Receipt where
+    extends HasEv (PSigma outer.toHasEv.Ev) where
   inv : (bundle : PSigma M) → Ev (outer.inv bundle.fst)
-  get : (receipt : toHasEv.Receipt) → M (outer.get receipt.fst)
+  get : (receipt : PSigma toHasEv.Ev) → M (outer.get receipt.fst)
 end UIdEquiv
 
 namespace Free
 
+abbrev WithEv (self : Free) (augmentation : HasEv self.Carrier) : Free where
+  Carrier := PSigma augmentation.Ev
+  Data := self.Data
+
 abbrev Fixpoint (self : Free) (V : Free → Type) :=
   UIdEquiv self.Carrier
-    (λ evidence => V ({} : self.WithEv evidence).toFree)
+    (λ evidence => V (WithEv self evidence))
 
 end Free
 
