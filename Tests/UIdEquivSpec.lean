@@ -1,31 +1,53 @@
-import «Lp2lc».Active.Util
+import «Lp2lc».Next.Util
 
 namespace Tests.UIdEquivSpec
 
-open Lp2lc.Active.Util
+open Lp2lc.Next.Util
 open UIdEquiv
 
-def group : UIdEquiv Nat Nat where
-  inv := id
-  get := id
+@[reducible] def group : UIdEquiv Nat (λ _evidence => Nat) where
+  Ev := λ _id => True
+  inv := λ value => ⟨value, True.intro⟩
+  get := λ receipt => receipt.fst
   rightInv := by
     intro value
     rfl
   leftInv := by
-    intro id
+    intro receipt
+    cases receipt
+    rfl
+
+@[reducible] def equalityGroup : UIdEquiv Nat (λ _evidence => Nat) where
+  Ev := λ _id => 0 = 0
+  inv := λ value => ⟨value, rfl⟩
+  get := λ receipt => receipt.fst
+  rightInv := by
+    intro value
+    rfl
+  leftInv := by
+    intro receipt
+    cases receipt
     rfl
 
 @[reducible] def eqOneMetadata : Aux group (λ value => value = 1) where
-  Ev := λ id => group.inv id = 1
+  Ev := λ receipt => receipt.fst = 1
   inv := λ bundle => bundle.snd
-  get := λ id2 => id2.snd
+  get := λ receipt => receipt.snd
 
 @[reducible] def unitMetadata : Aux group (λ _value => Unit) where
-  Ev := λ _id => True
+  Ev := λ _receipt => True
   inv := λ _bundle => True.intro
-  get := λ _id2 => ()
+  get := λ _receipt => ()
 
-section inv
+section receipt
+
+example :
+    group.get (group.inv 1) = 1 := by
+  exact group.rightInv 1
+
+example :
+    group.inv (group.get (group.inv 1)) = group.inv 1 := by
+  exact group.leftInv (group.inv 1)
 
 example :
     eqOneMetadata.Ev (group.inv 1) :=
@@ -38,10 +60,6 @@ example :
     unitMetadata.inv ⟨1, ()⟩⟩
 
 example :
-    group.get (group.inv 1) = 1 := by
-  exact eqOneMetadata.rightInvValue ⟨1, rfl⟩
-
-example :
     eqOneMetadata.get
       ⟨group.inv 1, eqOneMetadata.inv ⟨1, rfl⟩⟩ = rfl := by
   rfl
@@ -51,6 +69,20 @@ example :
       ⟨group.inv 1, unitMetadata.inv ⟨1, ()⟩⟩ = () := by
   rfl
 
-end inv
+end receipt
+
+section rejection
+
+example : True := by
+  fail_if_success
+    have _value : Nat := group.get 1
+  trivial
+
+example : True := by
+  fail_if_success
+    have _value : Nat := equalityGroup.get (group.inv 1)
+  trivial
+
+end rejection
 
 end Tests.UIdEquivSpec
