@@ -84,6 +84,7 @@ class Free : Type 1 where
   Data : TData
 
 namespace Free
+section variable (this : Free)
 
 /-
 TODO: Specification of improved UIdEquiv:
@@ -92,16 +93,26 @@ TODO: Specification of improved UIdEquiv:
 - it should be impossible to mix UId for different values or Equiv
 -/
 
-abbrev Fixpoint (F : Free) (V : Type) :=
-  UIdEquiv F.Carrier V
+abbrev Fixpoint (V : Type) :=
+  UIdEquiv this.Carrier V
 
 universe u
 
 /-- Constructs fixpoint bridges and universe-polymorphic metadata bridges for a free family. -/
-class FixpointCtor (F : Free) : Type (max 1 u) where
-  mkFixpoint (V : Type) : Free.Fixpoint F V
-  attachAux {UId : TIndex} {V : Type} (outer : UIdEquiv UId V) (M : V → Sort u) : UIdEquiv.Aux outer M
+class FixpointCtor : Type (max 1 u) where
+  mkFixpoint (V : Type) : this.Fixpoint V
+  attachAux {UId : TIndex} {V : Type} (outer : this.Fixpoint V) (M : V → Sort u) : UIdEquiv.Aux outer M
 
+/--
+Extending the Carrier of a Free instance by [HasEv.Ev]
+
+This class is frequently used to define PHOAS AST with new, conpartmentalised carrier type
+-/
+class WithEv (augmentation: HasEv this.Carrier) extends Free where
+  Carrier := augmentation.Receipt
+  Data := this.Data
+
+end
 end Free
 
 attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv

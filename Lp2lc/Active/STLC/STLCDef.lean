@@ -90,7 +90,7 @@ Contains compiletime fixpoint bridges for semantic obligations of terms.
 registered Trm2Typ must be relatable
 -/
 class BuildEnv extends F.FixpointCtor.{1}
-  -- trmRefs :  -- TODO: this may be required for transparent inline function
+  -- trmRefs :  -- DEFER: this may be required for transparent inline function
 
 namespace BuildEnv
 
