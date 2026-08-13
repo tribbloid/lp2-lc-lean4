@@ -103,7 +103,7 @@ Contains compiletime fixpoint bridges for semantic obligations of terms.
 
 registered Trm2Typ must be relatable
 -/
-class BuildEnv extends F.HasFixpoint.{1}
+class BuildEnv extends F.FixpointCtor.{1}
   -- trmRefs :  -- TODO: this may be required for transparent inline function
 
 namespace BuildEnv
@@ -119,7 +119,7 @@ Contains runtime fixpoint bridges for value assignment to terms.
 registered Trm2Val must be relatable
 -/
 
-class ExeEnv extends F.HasFixpoint.{1}
+class ExeEnv extends F.FixpointCtor.{1}
 
 namespace ExeEnv
 

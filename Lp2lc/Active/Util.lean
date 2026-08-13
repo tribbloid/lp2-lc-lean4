@@ -113,19 +113,9 @@ abbrev Fixpoint (F : Free) (V : Type) :=
 universe u
 
 /-- Constructs fixpoint bridges and universe-polymorphic metadata bridges for a free family. -/
-class HasFixpoint (F : Free) : Type (max 1 u) where
+class FixpointCtor (F : Free) : Type (max 1 u) where
   mkFixpoint (V : Type) : Free.Fixpoint F V
-  mkAux {UId : TIndex} {V : Type} (outer : UIdEquiv UId V) (M : V → Sort u) : UIdEquiv.Aux outer M
-
-abbrev HF2.Fixpoint (UId V : Type) :=
-  UIdEquiv UId V
-
-class HF2 (VV : Type) : Type (max 1 u) extends Free where
-  UId : Type
-  Carrier := UId × HF2.Fixpoint UId VV
-  mkFixpoint (V : Type) : HF2.Fixpoint UId V
-  mkAux {UId : TIndex} {V : Type} (outer : UIdEquiv UId V) (M : V → Sort u) : UIdEquiv.Aux outer M
-
+  attachAux {UId : TIndex} {V : Type} (outer : UIdEquiv UId V) (M : V → Sort u) : UIdEquiv.Aux outer M
 
 end Free
 
