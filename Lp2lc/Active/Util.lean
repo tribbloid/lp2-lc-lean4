@@ -21,11 +21,44 @@ As a result, explicit variable substitution (common in de Bruijn serial & named 
 [UIdEquiv.inv] and [UIdEquiv.get] are inverse: [UIdEquiv.rightInv] starts
 from a value, while [UIdEquiv.leftInv] starts from a UId.
 -/
-structure UIdEquiv (UId : TIndex) (V : Type) : Type where
+class UIdEquiv (UId : TIndex) (V : Type) : Type where
   inv : (value : V) → UId
   get : (id : UId) → V
   rightInv : ∀ (value : V), get (inv value) = value
   leftInv : ∀ (id : UId), inv (get id) = id
+
+
+/-
+TODO:
+the above code allow the same type of UId to be generated from different instances, this has caused serious problem in the constructive proof as it allow fake V to be created.
+
+I'd like to plug this loophole:
+
+- UIdEquiv should be a subclass of `HasEv` (similar to Aux)
+- `inv` should return `Ev UId`, get should consume it
+- other functions should adapt
+- AST in type system definitions are mostly intact
+  - but when being used in BuildEnv and ExeEnv, their original Carrier will no longer be able to carry the receipts of `trm2valCtx`/`trm2TypCtx`
+  - therefore, new carriers defined by `F.WithEv` have to be used instead:
+    - `CVar` := Carrier for trm2valCtx
+    - `CTyp` := Carrier for trm2typCtx
+    - `Trm.eval` accepts `Trm CVar` and produce `Trm CVar`
+    - `Trm.infer` accepts `Trm CVar` and produce `Typ CTyp`, since some `Trm CVar` may contain `.ref` to free variables assigned `trm2valCtx`, the new `BuildEnv` will need access to both `trm2valCtx` and `trm2TypCtx` to work properly
+
+This is a large-scale migration, you should gradually migrate existing code to a new directory/package `Lp2lc/Next`, in multiple steps & git commits.
+
+- For a component, definition and implementation/discharge should be migrated in 2 different commits
+- After each commit, you must ask for permission before proceeding to the next step
+
+The following code are strictly prohibited, every commit should be followed by a subagent that warn against such violations:
+
+- duplicated definition (e.g. duplicated inductive cases in multiple definitions)
+- leaky abstraction & unnecessary copy & paste
+- moving/weakening goalpost (e.g. adding axiom, modifying theorem signature)
+- bloated code after migration
+- introducing new/exotic concept that doesn't exist in original code
+
+-/
 
 namespace UIdEquiv
 
@@ -85,13 +118,6 @@ class Free : Type 1 where
 
 namespace Free
 section variable (this : Free)
-
-/-
-TODO: Specification of improved UIdEquiv:
-
-- UId type must be associated with values
-- it should be impossible to mix UId for different values or Equiv
--/
 
 abbrev Fixpoint (V : Type) :=
   UIdEquiv this.Carrier V
