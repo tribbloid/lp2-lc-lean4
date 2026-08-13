@@ -6,39 +6,6 @@ namespace Lp2lc.Active.Util
 abbrev TIndex := Type
 abbrev TData := Type
 
-/--
-collection of free type variables used in HOAS bindings
-
-They are deliberately left free to ward off unlawful construction:
-
-- the only way to construct an `Index` is to get the UId of a `Value` through the fixpoint bridge
-- the only way to construct a `Data` is to parse a primitive literal in AST
--/
-class Free : Type 1 where
-  Carrier : TIndex -- AKA variable binding
-  Data : TData
-
-namespace Free
-
-@[reducible] def mkWeakest (Index : TIndex) (Data : TData) : Free :=
-  { Carrier := Index, Data := Data }
-
-/-- Replaces a free family with its peer whose evidence predicate is `True`. -/
-@[reducible] def weaken (self : Free) : Free :=
-  mkWeakest self.Carrier self.Data
-
-end Free
-
-/--
-thin wrapper of `T` representing outcome of a valid compilation, implying safety of associated code snippet.
-
-all compilation API should ideally return this.
-
-if registered in a [UIdEquiv], the result UId should work in any `Env` to get a compatible term or value.
--/
-structure Valid T : Type where
-  self: T
-
 class HasEv (UId : TIndex) where
   Ev : UId → Prop
 
@@ -103,6 +70,18 @@ end
 end Aux
 
 end UIdEquiv
+
+/--
+collection of free type variables used in HOAS bindings
+
+They are deliberately left free to ward off unlawful construction:
+
+- the only way to construct an `Index` is to get the UId of a `Value` through the fixpoint bridge
+- the only way to construct a `Data` is to parse a primitive literal in AST
+-/
+class Free : Type 1 where
+  Carrier : TIndex -- AKA variable binding
+  Data : TData
 
 namespace Free
 
