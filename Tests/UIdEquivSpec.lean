@@ -6,51 +6,51 @@ open Lp2lc.Active.Util
 open UIdEquiv
 
 def group : UIdEquiv Nat Nat where
-  getUId := id
   inv := id
-  leftInv := by
+  get := id
+  rightInv := by
     intro value
     rfl
-  rightInv := by
+  leftInv := by
     intro id
     rfl
 
 @[reducible] def eqOneMetadata : Aux group (λ value => value = 1) where
   Ev := λ id => group.inv id = 1
-  getEv := λ bundle => bundle.snd
-  invEv := λ id2 => id2.snd
+  inv := λ bundle => bundle.snd
+  get := λ id2 => id2.snd
 
 @[reducible] def unitMetadata : Aux group (λ _value => Unit) where
   Ev := λ _id => True
-  getEv := λ _bundle => True.intro
-  invEv := λ _id2 => ()
+  inv := λ _bundle => True.intro
+  get := λ _id2 => ()
 
-section getUId
-
-example :
-    eqOneMetadata.Ev (group.getUId 1) :=
-  eqOneMetadata.getEv ⟨1, rfl⟩
+section inv
 
 example :
-    eqOneMetadata.Ev (group.getUId 1) ∧
-      unitMetadata.Ev (group.getUId 1) :=
-  ⟨eqOneMetadata.getEv ⟨1, rfl⟩,
-    unitMetadata.getEv ⟨1, ()⟩⟩
+    eqOneMetadata.Ev (group.inv 1) :=
+  eqOneMetadata.inv ⟨1, rfl⟩
 
 example :
-    group.inv (group.getUId 1) = 1 := by
-  exact eqOneMetadata.leftInvValue ⟨1, rfl⟩
+    eqOneMetadata.Ev (group.inv 1) ∧
+      unitMetadata.Ev (group.inv 1) :=
+  ⟨eqOneMetadata.inv ⟨1, rfl⟩,
+    unitMetadata.inv ⟨1, ()⟩⟩
 
 example :
-    eqOneMetadata.invEv
-      ⟨group.getUId 1, eqOneMetadata.getEv ⟨1, rfl⟩⟩ = rfl := by
+    group.get (group.inv 1) = 1 := by
+  exact eqOneMetadata.rightInvValue ⟨1, rfl⟩
+
+example :
+    eqOneMetadata.get
+      ⟨group.inv 1, eqOneMetadata.inv ⟨1, rfl⟩⟩ = rfl := by
   rfl
 
 example :
-    unitMetadata.invEv
-      ⟨group.getUId 1, unitMetadata.getEv ⟨1, ()⟩⟩ = () := by
+    unitMetadata.get
+      ⟨group.inv 1, unitMetadata.inv ⟨1, ()⟩⟩ = () := by
   rfl
 
-end getUId
+end inv
 
 end Tests.UIdEquivSpec

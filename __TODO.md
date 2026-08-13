@@ -40,8 +40,8 @@ ideally fnAST is a generator: compiletimeFunction <- fnAST -> runtimeFunction:
 there are 3 ways to enforce this discipline (no eval at compiletime):
 
 - [x] permission to use function body `body: StagePermission -> I -> Trm` (most promising, what's the caveat?)
-- [ ] permission to get a Value's UId from a fixpoint `getUId: StagePermission -> Val -> I` (or just withhold `Free.Fixpoint` instances)
-- [ ] permission to reconstruct a Value from a fixpoint `inv: StagePermission -> I -> Val`
+- [ ] permission to get a Value's UId from a fixpoint `inv: StagePermission -> Val -> I` (or just withhold `Free.Fixpoint` instances)
+- [ ] permission to reconstruct a Value from a fixpoint `get: StagePermission -> I -> Val`
 
 # Weakening of Goalpost
 

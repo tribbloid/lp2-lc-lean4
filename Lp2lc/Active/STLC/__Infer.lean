@@ -30,7 +30,7 @@ def infer [env: @BuildEnv F] (self : Trm F) : RecOpt (Typ F)
     match self with
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
-      let index := env.trm2typCtx.getUId ⟨self, tIn⟩
+      let index := env.trm2typCtx.inv ⟨self, tIn⟩
       ((body index).infer fuel).map (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
       match fnTerm.infer fuel, arg.infer fuel with
@@ -39,7 +39,7 @@ def infer [env: @BuildEnv F] (self : Trm F) : RecOpt (Typ F)
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | @AST.ref _ i => .yield (some (env.trm2typCtx.inv i).typ)
+    | @AST.ref _ i => .yield (some (env.trm2typCtx.get i).typ)
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone [env : @BuildEnv F]
@@ -62,11 +62,11 @@ theorem termInferMonotone [env : @BuildEnv F]
           | lit repr => simpa [AST.infer] using hInfer
           | lam body tIn =>
             cases hBody :
-                (body (env.trm2typCtx.getUId ⟨.val (.lam body tIn), tIn⟩)).infer fuel with
+                (body (env.trm2typCtx.inv ⟨.val (.lam body tIn), tIn⟩)).infer fuel with
             | outOfFuel => simp [AST.infer, hBody, Outcome.map] at hInfer
             | yield bodyResult =>
               have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
-                (body (env.trm2typCtx.getUId ⟨.val (.lam body tIn), tIn⟩))
+                (body (env.trm2typCtx.inv ⟨.val (.lam body tIn), tIn⟩))
                 toFuel bodyResult hFuelTail hBody
               simpa [AST.infer, Outcome.map, hBody, hBodyTop] using hInfer
         | apply fnTerm arg =>

@@ -47,39 +47,45 @@ abbrev HasEv.Receipt (self : HasEv UId) := PSigma self.Ev
 /--
 Hypothetical bridge between values & UIds as HOAS carrier
 
-[UIdEquiv.getUId] is the only way to obtain a UId: it requires a `V`.
-Consequently, [UIdEquiv.inv] is total without introducing free variables.
+[UIdEquiv.inv] is the only way to obtain a UId: it requires a `V`.
+Consequently, [UIdEquiv.get] is total without introducing free variables.
 As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
 
-[UIdEquiv.getUId] and [UIdEquiv.inv] are inverse: [UIdEquiv.leftInv] starts
-from a value, while [UIdEquiv.rightInv] starts from a UId.
+[UIdEquiv.inv] and [UIdEquiv.get] are inverse: [UIdEquiv.rightInv] starts
+from a value, while [UIdEquiv.leftInv] starts from a UId.
 -/
 structure UIdEquiv (UId : TIndex) (V : Type) : Type where
-  getUId : (value : V) → UId
-  inv : (id : UId) → V
-  leftInv : ∀ (value : V), inv (getUId value) = value
-  rightInv : ∀ (id : UId), getUId (inv id) = id
+  inv : (value : V) → UId
+  get : (id : UId) → V
+  rightInv : ∀ (value : V), get (inv value) = value
+  leftInv : ∀ (id : UId), inv (get id) = id
 
 namespace UIdEquiv
+
+/-- Value bundled with its metadata over `M`. -/
+abbrev Bundle {V : Type} (M : V → Sort u) := PSigma M
+
+/-- UId bundled with its evidence from `Ev`. -/
+abbrev Receipt {UId : TIndex} (Ev : UId → Prop) := PSigma Ev
 
 /--
 extension of [UIdEquiv] that can attach metadata `M : Type/Prop` to existing UId-value pairs:
 
-- [UIdEquiv.Aux.getEv] requires both value and its metadata, but UId is only computed from value
-- [UIdEquiv.Aux.invEv] requires both UId and the evidence that its metadata has been saved before
-- all [UIdEquiv.Aux] instances derived from the same [UIdEquiv] share its [UIdEquiv.getUId] and [UIdEquiv.inv]
+- [UIdEquiv.Aux.inv] requires both value and its metadata, but UId is only computed from value
+- [UIdEquiv.Aux.get] requires both UId and the evidence that its metadata has been saved before
+- all [UIdEquiv.Aux] instances derived from the same [UIdEquiv] share its [UIdEquiv.inv] and [UIdEquiv.get]
 
 `M` is a dependent family over `V` and is reconstructed by each [UIdEquiv.Aux]
-instance through [UIdEquiv.Aux.invEv]. [UIdEquiv.Aux.Receipt] restricts that
+instance through [UIdEquiv.Aux.get]. [UIdEquiv.Receipt] restricts that
 reconstruction to identifiers carrying evidence for the auxiliary instance.
 
-[UIdEquiv.Aux.getEv] saves a bundle using only its value through the shared group bridge.
-[UIdEquiv.Aux.invEv] reconstructs a value through the group and then this instance's metadata.
+[UIdEquiv.Aux.inv] saves a bundle using only its value through the shared group bridge.
+[UIdEquiv.Aux.get] reconstructs a value through the group and then this instance's metadata.
 -/
 class Aux {UId : TIndex} {V : Type}
     (outer : UIdEquiv UId V) (M : V → Sort u) extends HasEv UId where
-  getEv : (bundle : PSigma M) → Ev (outer.getUId bundle.fst)
-  invEv : (rc : PSigma Ev) → M (outer.inv rc.fst)
+  inv : (bundle : Bundle M) → Ev (outer.inv bundle.fst)
+  get : (rc : Receipt Ev) → M (outer.get rc.fst)
 
 namespace Aux
 
@@ -87,11 +93,11 @@ section variable {UId : TIndex} {V : Type} {outer : UIdEquiv UId V} {M : V → S
 
 /-- Saving membership and reconstructing metadata preserves the original value. -/
 @[simp]
-theorem leftInvValue (bundle : PSigma M) :
-    (⟨outer.inv (outer.getUId bundle.fst),
-      self.invEv
-        ⟨outer.getUId bundle.fst, self.getEv bundle⟩⟩ : PSigma M).fst = bundle.fst :=
-  outer.leftInv bundle.fst
+theorem rightInvValue (bundle : Bundle M) :
+    (⟨outer.get (outer.inv bundle.fst),
+      self.get
+        ⟨outer.inv bundle.fst, self.inv bundle⟩⟩ : Bundle M).fst = bundle.fst :=
+  outer.rightInv bundle.fst
 
 end
 end Aux
@@ -119,7 +125,7 @@ class FixpointCtor (F : Free) : Type (max 1 u) where
 
 end Free
 
-attribute [simp] UIdEquiv.leftInv UIdEquiv.rightInv
+attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
 
 section variable {T : Sort u}
 

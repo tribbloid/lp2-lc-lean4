@@ -146,13 +146,13 @@ def eval (self : AST.Trm F) : RecOpt (AST.Val F)
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         -- let permission := env.canSaveAny input
-        let index := env.trm2valCtx.getUId ⟨arg, input⟩
+        let index := env.trm2valCtx.inv ⟨arg, input⟩
         (body index).eval fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | @AST.ref _ i =>
-      .yield (some (env.trm2valCtx.inv i).val)
+      .yield (some (env.trm2valCtx.get i).val)
 
 end
 

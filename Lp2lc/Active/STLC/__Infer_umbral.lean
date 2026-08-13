@@ -86,7 +86,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective 
     match trm with
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
-      let index := env.trm2typCtx.getUId ⟨.val (.lam body tIn), tIn⟩; let result := infer_prove (body index) fuel
+      let index := env.trm2typCtx.inv ⟨.val (.lam body tIn), tIn⟩; let result := infer_prove (body index) fuel
       ⟨result.compilation.map (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
         change _ = ((body index).infer fuel).map (Option.map (AST.fn tIn))
         rw [← result.sameInfer]
@@ -107,7 +107,7 @@ def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective 
           rw [fnResult.sameInfer, argResult.sameInfer] <;> rfl
         rw [hResult]
         cases (AST.apply fnTerm arg).infer (fuel + 1) <;> simp [Rec.Outcome.map, Function.comp_def]⟩
-    | @AST.ref _ uid => ⟨.yield (some ⟨(env.trm2typCtx.inv uid).typ⟩), rfl⟩
+    | @AST.ref _ uid => ⟨.yield (some ⟨(env.trm2typCtx.get uid).typ⟩), rfl⟩
 
 end
 
