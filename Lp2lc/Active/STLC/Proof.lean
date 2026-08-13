@@ -76,26 +76,4 @@ theorem termEvalMonotone [env : @ExeEnv F]
 
 end AST
 
-
-/-- States that semantic typing of a closed term entails operational safety. -/
-def Adequacy : Prop :=
-  ∀ (term : AST.Trm F) (postcondition : Condition F),
-    term.WeakestPre postcondition → term.IsSafe
-
-namespace Adequacy
-
-theorem proof : @Adequacy F := by
-  intro term postcondition weakest fuel runtimeEnv
-  specialize weakest fuel
-  cases evalResult : term.eval fuel with
-  | yield value =>
-    cases value with
-    | none =>
-      simp [AST.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult] at weakest
-    | some value =>
-      simp [AST.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult]
-  | outOfFuel =>
-    simp [AST.recCanSatisfy, Outcome.map, Outcome.getOrElse, evalResult]
-
-end Adequacy
 end

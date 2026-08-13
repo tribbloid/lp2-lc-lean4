@@ -128,8 +128,6 @@ def trm2valCtx (env : @ExeEnv F) : F.Fixpoint (AST.Trm2Val F) :=
 
 end ExeEnv
 
-abbrev Condition (I : Free) := (value : AST.Val I) -> Prop -- AKA semantic type. TODO: this should be made irrelevant to I being chosen.
-
 namespace AST
 section variable [env: @ExeEnv F]
 
@@ -158,70 +156,8 @@ def eval (self : AST.Trm F) : RecOpt (AST.Val F)
 
 end
 
-section variable (self : AST.Trm F)
-
-def recCanSatisfy (condition : Condition F) : ∀ [@ExeEnv F], Rec Prop := λ fuel =>
-  (self.eval fuel).map (λ
-    | some v => condition v
-    | none => False)
-
-/--
-An safe term may run out of runtime fuel, but it must not reach runtime
-`error`. When a runtime value is produced, it must satisfy the condition.
--/
-def CanSatisfy_semi (condition : Condition F) : Prop :=
-  ∀ fuel, ∀ [@ExeEnv F], (self.recCanSatisfy condition fuel).getOrElse True
-
-/-- Converts semantic outcomes into obligations over all fuel and runtime environments. -/
-abbrev WeakestPre := @CanSatisfy_semi F -- weakest precondition in Iris framework
-
-def IsSafe : Prop :=
-  self.CanSatisfy_semi (λ _ => true)
-
-end
-
-section variable [env: @BuildEnv F]
-
-section variable (self : Trm F)
-
-/--
-AKA compile, recursively produce a proof target.
-
-it is NOT guaranteed to terminate, but termination is the prior condition to be
-used in Fundamental theorem (thus the `_total` suffix)
-
-Structurally it should be similar to infer, but return `.some Unit` or `.none` instead of a precise type bound
--/
-def recCanInhabit (self : Trm F) (typ : Typ F) : RecOpt Unit :=
-  sorry
-
-/--
-determine if a term can can inhabit a type bound.
--/
-def CanInhabit_total (self : Trm F) (typ : Typ F) : Prop :=
-  RecOpt.isDecidable (self.recCanInhabit typ)
-
-end
-end
 end AST
 
-/-- Interprets source types as semantic conditions over values. -/
-def AST.ToCondition (typ: Typ F): Condition F := λ value =>
-  let trm := AST.val value
-  (trm.CanInhabit_total typ)
-
--- /-- States that syntactic typing entails semantic typing by the interpreted type. -/
--- def RecFundamental :=
---   ∀ (term : Trm I) (type : Typ I),
---     Rec (term.CanInhabit type → (term.SemiCanSatisfy (type.ToCondition)))
-
-
--- TODO: this is actually not used ( preferring umbral compiler), need to decide which definition to use
-/-- States that syntactic typing entails semantic typing by the interpreted type. -/
-def Fundamental : Prop :=
-  ∀ (term : Trm F) (type : Typ F),
-  ∀ (compilerFuel: Nat),
-    term.recCanInhabit type compilerFuel = .yield (some ()) → term.CanSatisfy_semi (type.ToCondition)
 
 end
 
