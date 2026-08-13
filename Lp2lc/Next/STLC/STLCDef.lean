@@ -34,27 +34,32 @@ namespace Lp2lc.Next.STLC
 
 open Lp2lc.Active.Util (Free)
 open Lp2lc.Active.STLC
-open Lp2lc.Next.Util.Free (Fixpoint WithEv)
+open Lp2lc.Next.Util.Free (Fixpoint FixpointCtor WithEv)
 
-/-- Owns the concrete receipt bridge used by runtime term references. -/
+/-- Owns the bridge constructor shared by concrete STLC contexts. -/
 class ExeEnv (F : Free) where
-  trm2valCtx : Fixpoint F AST.Trm2Val
+  ctor : FixpointCtor F
 
 namespace ExeEnv
+
+def trm2valCtx {F : Free} (env : ExeEnv F) : Fixpoint F AST.Trm2Val :=
+  @FixpointCtor.mkFixpoint F env.ctor AST.Trm2Val
 
 abbrev CVar {F : Free} (env : ExeEnv F) : Free :=
   WithEv F env.trm2valCtx.toHasEv
 
 end ExeEnv
 
-/-- Owns the concrete receipt bridge used by compile-time term typing. -/
-class BuildEnv (F : Free) where
-  trm2TypCtx : Fixpoint F AST.Trm2Typ
+/-- Adds the compile-time typing context to an execution environment. -/
+class BuildEnv (F : Free) extends ExeEnv F
 
 namespace BuildEnv
 
+def trm2typCtx {F : Free} (env : BuildEnv F) : Fixpoint F AST.Trm2Typ :=
+  @FixpointCtor.mkFixpoint F env.ctor AST.Trm2Typ
+
 abbrev CTyp {F : Free} (env : BuildEnv F) : Free :=
-  WithEv F env.trm2TypCtx.toHasEv
+  WithEv F env.trm2typCtx.toHasEv
 
 end BuildEnv
 

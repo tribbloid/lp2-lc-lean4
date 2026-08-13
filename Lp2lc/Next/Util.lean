@@ -74,6 +74,10 @@ abbrev Fixpoint (self : Free) (V : Free → Type) :=
   UIdEquiv self.Carrier
     (λ evidence => V (WithEv self evidence))
 
+/-- Constructs receipt-indexed fixpoint bridges for one free family. -/
+class FixpointCtor (self : Free) where
+  mkFixpoint (V : Free → Type) : Fixpoint self V
+
 end Free
 
 end Lp2lc.Next.Util
