@@ -34,7 +34,6 @@ namespace Lp2lc.Next.STLC
 
 open Lp2lc.Active.Util (Free)
 open Lp2lc.Active.STLC
-open Lp2lc.Next.Util (UIdEquiv)
 open Lp2lc.Next.Util.Free (Fixpoint WithEv)
 
 /-- Owns the concrete receipt bridge used by runtime term references. -/
@@ -48,17 +47,14 @@ abbrev CVar {F : Free} (env : ExeEnv F) : Free :=
 
 end ExeEnv
 
-/-- Owns the typing bridge for runtime receipts and covers every accepted reference. -/
-class BuildEnv (F : Free) extends ExeEnv F where
-  trm2typCtx :
-    UIdEquiv (ExeEnv.CVar toExeEnv).Carrier
-      (λ _evidence => AST.Trm2Typ (ExeEnv.CVar toExeEnv))
-  coverage : ∀ cvar, trm2typCtx.Ev cvar
+/-- Owns the concrete receipt bridge used by compile-time term typing. -/
+class BuildEnv (F : Free) where
+  trm2TypCtx : Fixpoint F AST.Trm2Typ
 
 namespace BuildEnv
 
 abbrev CTyp {F : Free} (env : BuildEnv F) : Free :=
-  WithEv (ExeEnv.CVar env.toExeEnv) env.trm2typCtx.toHasEv
+  WithEv F env.trm2TypCtx.toHasEv
 
 end BuildEnv
 
