@@ -39,6 +39,11 @@ if registered in a [UIdEquiv], the result UId should work in any `Env` to get a 
 structure Valid T : Type where
   self: T
 
+class HasEv (UId : TIndex) where
+  Ev : UId → Prop
+
+abbrev HasEv.Receipt (self : HasEv UId) := PSigma self.Ev
+
 /--
 Hypothetical bridge between values & UIds as HOAS carrier
 
@@ -72,16 +77,13 @@ reconstruction to identifiers carrying evidence for the auxiliary instance.
 [UIdEquiv.Aux.invEv] reconstructs a value through the group and then this instance's metadata.
 -/
 class Aux {UId : TIndex} {V : Type}
-    (outer : UIdEquiv UId V) (M : V → Sort u) where
-  Ev : UId → Prop
+    (outer : UIdEquiv UId V) (M : V → Sort u) extends HasEv UId where
   getEv : (bundle : PSigma M) → Ev (outer.getUId bundle.fst)
   invEv : (rc : PSigma Ev) → M (outer.inv rc.fst)
 
 namespace Aux
 
 section variable {UId : TIndex} {V : Type} {outer : UIdEquiv UId V} {M : V → Sort u} (self : Aux outer M)
-
-abbrev Receipt := PSigma self.Ev
 
 /-- Saving membership and reconstructing metadata preserves the original value. -/
 @[simp]
@@ -95,7 +97,6 @@ end
 end Aux
 
 end UIdEquiv
-
 
 namespace Free
 
