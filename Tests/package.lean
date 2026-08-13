@@ -5,4 +5,3 @@ import «Tests».PrimeRefinementProvider
 import «Tests».PrimeRefinementDemo
 import «Tests».DOT.Sanity
 import «Tests».STLC.package
-import «Tests».STLC_Eval.package

@@ -74,15 +74,14 @@ reconstruction to identifiers carrying evidence for the auxiliary instance.
 class Aux {UId : TIndex} {V : Type}
     (outer : UIdEquiv UId V) (M : V → Sort u) where
   Ev : UId → Prop
-  Receipt := PSigma Ev -- TODO: make this a final method
   getEv : (bundle : PSigma M) → Ev (outer.getUId bundle.fst)
-  invEv : (ev: Receipt) → M (outer.inv ev.fst)
+  invEv : (rc : PSigma Ev) → M (outer.inv rc.fst)
 
 namespace Aux
 
 section variable {UId : TIndex} {V : Type} {outer : UIdEquiv UId V} {M : V → Sort u} (self : Aux outer M)
 
-abbrev AuxUId := PSigma self.Ev
+abbrev Receipt := PSigma self.Ev
 
 /-- Saving membership and reconstructing metadata preserves the original value. -/
 @[simp]

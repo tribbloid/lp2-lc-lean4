@@ -18,20 +18,20 @@ def group : UIdEquiv Nat Nat where
 
 /-- First [UIdEquiv.Aux] instance: metadata is `value = 42`, evidence certifies the UId. -/
 @[reducible] def eqBound : Aux group (λ value => value = 42) where
-  Receipt := λ id => group.inv id = 42
+  Ev := λ id => group.inv id = 42
   getEv := λ bundle => bundle.snd
   invEv := λ id2 => id2.snd
 
 /-- Second [UIdEquiv.Aux] instance: metadata is `Unit` per value. -/
 @[reducible] def unitBound : Aux group (λ _value => Unit) where
-  Receipt := λ _id => True
+  Ev := λ _id => True
   getEv := λ _bundle => True.intro
   invEv := λ _id2 => ()
 
 section leftInv
 
 example :
-    eqBound.Receipt (group.getUId 42) :=
+    eqBound.Ev (group.getUId 42) :=
   eqBound.getEv ⟨42, rfl⟩
 
 example :
@@ -49,8 +49,8 @@ end leftInv
 section sharedGroup
 
 example :
-    eqBound.Receipt (group.getUId 42) ∧
-      unitBound.Receipt (group.getUId 7) :=
+    eqBound.Ev (group.getUId 42) ∧
+      unitBound.Ev (group.getUId 7) :=
   ⟨eqBound.getEv ⟨42, rfl⟩,
     unitBound.getEv ⟨7, ()⟩⟩
 
