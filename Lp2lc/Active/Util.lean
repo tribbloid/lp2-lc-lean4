@@ -29,7 +29,8 @@ class UIdEquiv (UId : TIndex) (V : Type) : Type where
 
 
 /-
-TODO:
+TODO: Avoid fake construction through UIdEquiv
+
 the above code allow the same type of UId to be generated from different instances, this has caused serious problem in the constructive proof as it allow fake V to be created.
 
 I'd like to plug this loophole:
