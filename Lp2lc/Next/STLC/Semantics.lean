@@ -49,9 +49,6 @@ def infer {F : Free} [env : BuildEnv F]
       let original := env.trm2valCtx.get receipt
       original.asTrm.infer fuel
 
-      -- let typingReceipt : env.CTyp.Carrier := ⟨receipt.fst, by sorry⟩
-      -- .yield (some (env.trm2typCtx.get typingReceipt))
-
 end AST
 
 end Lp2lc.Next.STLC
