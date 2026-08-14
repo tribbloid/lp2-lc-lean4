@@ -3,8 +3,6 @@ import «Lp2lc».Next.STLC.STLCDef
 namespace Lp2lc.Next.STLC
 
 open Lp2lc.Active.Util
-open Lp2lc.Active.STLC
-open Lp2lc.Active.STLC.AST
 
 namespace AST
 
@@ -29,15 +27,19 @@ def eval {F : Free} [env : ExeEnv F]
 
 /-- Infers types for terms whose references carry receipts from the typing context. -/
 def infer {F : Free} [env : BuildEnv F]
-    (self : Trm env.CTyp) : RecOpt (Typ env.CTyp)
+    (self : Trm env.CVar) : RecOpt (Typ env.CTyp)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
-      let receipt := env.trm2typCtx.inv ⟨self, tIn⟩
-      (infer (body receipt) fuel).map
-        (λ out => out.map (λ tOut => .fn tIn tOut))
+      let typingTerm : Trm env.CTyp := by
+        sorry
+      let receipt := env.trm2typCtx.inv
+        ⟨typingTerm, Typ.recarrier tIn⟩
+      let index : env.CVar.Carrier := ⟨receipt.fst, by sorry⟩
+      (infer (body index) fuel).map
+        (λ out => out.map (λ tOut => .fn (Typ.recarrier tIn) tOut))
     | .apply fnTerm arg =>
       match infer fnTerm fuel, infer arg fuel with
       | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
@@ -46,7 +48,8 @@ def infer {F : Free} [env : BuildEnv F]
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
     | .ref receipt =>
-      .yield (some (env.trm2typCtx.get receipt).typ)
+      let typingReceipt : env.CTyp.Carrier := ⟨receipt.fst, by sorry⟩
+      .yield (some (env.trm2typCtx.get typingReceipt).typ)
 
 end AST
 
