@@ -3,14 +3,10 @@ import «Lp2lc».Next.Util
 
 namespace Lp2lc.Next.STLC
 
+open Lp2lc.Next.Util
 open Lp2lc.Active.Util
 
 section variable {F : Free}
-
-inductive Label
-| Typ
-| Trm
-| Val
 
 /--
 Source type syntax.
@@ -52,13 +48,13 @@ abbrev Val (F : Free) := AST F .Val
 
 section variable (F : Free)
 
-structure Trm2Typ where
-  trm : Trm F
-  typ : Typ F
+-- structure Trm2Typ where -- TODO: cleanup, inferering with recarrier
+--   trm : Trm F
+--   typ : Typ F
 
-structure Trm2Val where
-  trm : Trm F
-  val : Val F
+-- structure Trm2Val where
+--   trm : Trm F
+--   val : Val F
 
 end
 
@@ -113,8 +109,8 @@ class ExeEnv (F : Free) where
 
 namespace ExeEnv
 
-def trm2valCtx {F : Free} (env : ExeEnv F) : Fixpoint F AST.Trm2Val :=
-  @FixpointCtor.mkFixpoint F env.ctor AST.Trm2Val
+def trm2valCtx {F : Free} (env : ExeEnv F) : Fixpoint F AST.Val :=
+  @FixpointCtor.mkFixpoint F env.ctor AST.Val
 
 abbrev CVar {F : Free} (env : ExeEnv F) : Free :=
   WithEv F env.trm2valCtx.toHasEv
@@ -126,8 +122,8 @@ class BuildEnv (F : Free) extends ExeEnv F
 
 namespace BuildEnv
 
-def trm2typCtx {F : Free} (env : BuildEnv F) : Fixpoint F AST.Trm2Typ :=
-  @FixpointCtor.mkFixpoint F env.ctor AST.Trm2Typ
+def trm2typCtx {F : Free} (env : BuildEnv F) : Fixpoint F AST.Typ :=
+  @FixpointCtor.mkFixpoint F env.ctor AST.Typ
 
 abbrev CTyp {F : Free} (env : BuildEnv F) : Free :=
   WithEv F env.trm2typCtx.toHasEv

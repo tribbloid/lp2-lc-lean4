@@ -4,6 +4,12 @@ namespace Lp2lc.Next.Util
 
 open Lp2lc.Active.Util
 
+
+inductive Label
+| Typ -- TODO: inductive case should be lower case
+| Trm
+| Val
+
 class HasEv (UId : TIndex) where
   Ev : UId → Prop
 
