@@ -111,7 +111,7 @@ To avoid UId being abused to fake construction from any Fixpoint, the simple con
 
 []
 
-The final objective is to produce a **conformal proof**, a proof that is structurally isomorphic to `Trm.infer` algorithm
+The final objective is to produce a **umbral proof**, a proof that is structurally isomorphic to `Trm.infer` algorithm
 -/
 
 def Safety [@ProvingBase F] (trm : AST.Trm F) (typ : AST.Typ F) : Prop :=
