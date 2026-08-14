@@ -49,6 +49,19 @@ def infer [env : BuildEnv]
       let original := env.trm2valCtx.get receipt
       original.asTrm.infer fuel
 
+/-
+TODO: GPT is right:
+
+- either the carrier have to be shared between type and value (value is a special singleton type)
+  - if this happens, BuildEnv context will be an extension of RuntimeEnv, for both type OR value
+  - an extra inductive will be defined for type OR value
+  - Trm.infer will work on any term! even with free variables
+  - It's always just a sanity test, the pie is the catamorphic proof
+  - a new, extendable UIdEquiv definition will be required, with same roundtrip theorem but can extends to supertype
+  - is it **THE LAST** extension?
+- or AST.ref have to carry the entire UIdEquiv for lookup
+-/
+
 end AST
 
 end Lp2lc.Next.STLC
