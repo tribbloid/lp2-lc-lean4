@@ -7,7 +7,7 @@ open Lp2lc.Active.Util
 namespace AST
 
 /-- Evaluates terms whose references carry receipts from the runtime context. -/
-def eval {F : Free} [env : ExeEnv F]
+def eval [env : ExeEnv]
     (self : Trm env.CVar) : RecOpt (Val env.CVar)
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -26,7 +26,7 @@ def eval {F : Free} [env : ExeEnv F]
       .yield (some (env.trm2valCtx.get receipt))
 
 /-- Infers `CTyp` types for terms whose references carry runtime `CVar` receipts. -/
-def infer {F : Free} [env : BuildEnv F]
+def infer [env : BuildEnv]
     (self : Trm env.CVar) : RecOpt (Typ env.CTyp)
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -34,9 +34,9 @@ def infer {F : Free} [env : BuildEnv F]
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
       let cIn : Typ env.CTyp := Typ.recarrier tIn
-      let receipt := env.trm2typCtx.inv cIn
+      let receipt := env.trm2typCtx.inv cIn -- save type
       let index : env.CVar.Carrier := ⟨receipt.fst, by sorry⟩
-      ((body index).infer fuel).map
+      ((body index).infer fuel).map -- body can only apply on value, this is wrong, it should be an AST representation
         (λ out => out.map (λ tOut => .fn cIn tOut))
     | .apply fnTerm arg =>
       match infer fnTerm fuel, infer arg fuel with

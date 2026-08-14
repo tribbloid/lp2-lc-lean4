@@ -110,29 +110,30 @@ instance typDecidableLE : DecidableLE (AST.Typ F)
 open Lp2lc.Next.Util.Free (Fixpoint FixpointCtor WithEv)
 
 /-- Owns the bridge constructor shared by concrete STLC contexts. -/
-class ExeEnv (F : Free) where
+class ExeEnv where
+  F : Free
   ctor : FixpointCtor F
 
 namespace ExeEnv
 
-def trm2valCtx {F : Free} (env : ExeEnv F) : Fixpoint F AST.Val :=
-  @FixpointCtor.mkFixpoint F env.ctor AST.Val
+def trm2valCtx (env : ExeEnv) : Fixpoint env.F AST.Val :=
+  @FixpointCtor.mkFixpoint env.F env.ctor AST.Val
 
-abbrev CVar {F : Free} (env : ExeEnv F) : Free :=
-  WithEv F env.trm2valCtx.toHasEv
+abbrev CVar (env : ExeEnv) : Free :=
+  WithEv env.F env.trm2valCtx.toHasEv
 
 end ExeEnv
 
 /-- Adds the compile-time typing context to an execution environment. -/
-class BuildEnv (F : Free) extends ExeEnv F
+class BuildEnv extends ExeEnv
 
 namespace BuildEnv
 
-def trm2typCtx {F : Free} (env : BuildEnv F) : Fixpoint F AST.Typ :=
-  @FixpointCtor.mkFixpoint F env.ctor AST.Typ
+def trm2typCtx (env : BuildEnv) : Fixpoint env.F AST.Typ :=
+  @FixpointCtor.mkFixpoint env.F env.ctor AST.Typ
 
-abbrev CTyp {F : Free} (env : BuildEnv F) : Free :=
-  WithEv F env.trm2typCtx.toHasEv
+abbrev CTyp (env : BuildEnv) : Free :=
+  WithEv env.F env.trm2typCtx.toHasEv
 
 end BuildEnv
 
