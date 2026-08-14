@@ -25,7 +25,7 @@ def eval {F : Free} [env : ExeEnv F]
     | .ref receipt =>
       .yield (some (env.trm2valCtx.get receipt).val)
 
-/-- Infers types for terms whose references carry receipts from the typing context. -/
+/-- Infers `CTyp` types for terms whose references carry runtime `CVar` receipts. -/
 def infer {F : Free} [env : BuildEnv F]
     (self : Trm env.CVar) : RecOpt (Typ env.CTyp)
   | 0 => .outOfFuel
