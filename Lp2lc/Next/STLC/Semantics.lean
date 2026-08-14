@@ -17,13 +17,13 @@ def eval {F : Free} [env : ExeEnv F]
       let anf := (eval fnTerm fuel, eval arg fuel)
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
-        let receipt := env.trm2valCtx.inv ⟨arg, input⟩
+        let receipt := env.trm2valCtx.inv input
         eval (body receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref receipt =>
-      .yield (some (env.trm2valCtx.get receipt).val)
+      .yield (some (env.trm2valCtx.get receipt))
 
 /-- Infers `CTyp` types for terms whose references carry runtime `CVar` receipts. -/
 def infer {F : Free} [env : BuildEnv F]
@@ -33,13 +33,11 @@ def infer {F : Free} [env : BuildEnv F]
     match self with
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
-      let typingTerm : Trm env.CTyp := by
-        sorry
-      let receipt := env.trm2typCtx.inv
-        ⟨typingTerm, Typ.recarrier tIn⟩
+      let cIn : Typ env.CTyp := Typ.recarrier tIn
+      let receipt := env.trm2typCtx.inv cIn
       let index : env.CVar.Carrier := ⟨receipt.fst, by sorry⟩
       (infer (body index) fuel).map
-        (λ out => out.map (λ tOut => .fn (Typ.recarrier tIn) tOut))
+        (λ out => out.map (λ tOut => .fn cIn tOut))
     | .apply fnTerm arg =>
       match infer fnTerm fuel, infer arg fuel with
       | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
@@ -49,7 +47,7 @@ def infer {F : Free} [env : BuildEnv F]
       | _, _ => .yield none
     | .ref receipt =>
       let typingReceipt : env.CTyp.Carrier := ⟨receipt.fst, by sorry⟩
-      .yield (some (env.trm2typCtx.get typingReceipt).typ)
+      .yield (some (env.trm2typCtx.get typingReceipt))
 
 end AST
 
