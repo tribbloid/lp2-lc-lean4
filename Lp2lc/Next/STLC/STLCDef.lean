@@ -14,8 +14,8 @@ Source type syntax.
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
 -/
 inductive AST (F : Free) : Label → Type where
-| primitive : AST F .Typ -- `AnyVal` in Scala, accepts only primitive values
-| fn (tIn : AST F .Typ) (tOut : AST F .Typ) : AST F .Typ -- function
+| primitive : AST F .typ -- `AnyVal` in Scala, accepts only primitive values
+| fn (tIn : AST F .typ) (tOut : AST F .typ) : AST F .typ -- function
 /--
 Source term syntax.
 
@@ -26,9 +26,9 @@ In HOAS there is no syntax-level context binding terms to types, so function
 input annotations are the extrinsic typing evidence available to the compiler.
 They are not intrinsic typing indices on terms.
 -/
-| val (v : AST F .Val) : AST F .Trm -- AKA literal
-| apply (fn : AST F .Trm) (arg : AST F .Trm) : AST F .Trm -- fn must be a function that can be applied on arg
-| ref (s : F.Carrier) : AST F .Trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
+| val (v : AST F .val) : AST F .trm -- AKA literal
+| apply (fn : AST F .trm) (arg : AST F .trm) : AST F .trm -- fn must be a function that can be applied on arg
+| ref (s : F.Carrier) : AST F .trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
 /--
 Value syntax, containing neither references nor applications.
 
@@ -37,14 +37,14 @@ used by function application after both sides have been evaluated.
 
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
-| lit (repr : F.Data) : AST F .Val -- most specific type is always `primitive`
-| lam (body : (arg : F.Carrier) → AST F .Trm) (tIn : AST F .Typ) : AST F .Val -- most specific type is always `.fn tIn _`
+| lit (repr : F.Data) : AST F .val -- most specific type is always `primitive`
+| lam (body : (arg : F.Carrier) → AST F .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
 
 namespace AST
 
-abbrev Typ (F : Free) := AST F .Typ
-abbrev Trm (F : Free) := AST F .Trm
-abbrev Val (F : Free) := AST F .Val
+abbrev Typ (F : Free) := AST F .typ
+abbrev Trm (F : Free) := AST F .trm
+abbrev Val (F : Free) := AST F .val
 
 section variable (F : Free)
 
