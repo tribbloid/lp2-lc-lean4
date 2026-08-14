@@ -82,6 +82,12 @@ def recarrier {Source Target : Free} (self : AST.Typ Source) : AST.Typ Target :=
 
 end Typ
 
+namespace Val
+
+def asTrm (self : AST.Val F) : AST.Trm F := .val self
+
+end Val
+
 end AST
 
 open AST

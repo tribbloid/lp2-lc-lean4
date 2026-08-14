@@ -36,7 +36,7 @@ def infer {F : Free} [env : BuildEnv F]
       let cIn : Typ env.CTyp := Typ.recarrier tIn
       let receipt := env.trm2typCtx.inv cIn
       let index : env.CVar.Carrier := ⟨receipt.fst, by sorry⟩
-      (infer (body index) fuel).map
+      ((body index).infer fuel).map
         (λ out => out.map (λ tOut => .fn cIn tOut))
     | .apply fnTerm arg =>
       match infer fnTerm fuel, infer arg fuel with
@@ -46,8 +46,11 @@ def infer {F : Free} [env : BuildEnv F]
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
     | .ref receipt =>
-      let typingReceipt : env.CTyp.Carrier := ⟨receipt.fst, by sorry⟩
-      .yield (some (env.trm2typCtx.get typingReceipt))
+      let original := env.trm2valCtx.get receipt
+      original.asTrm.infer fuel
+
+      -- let typingReceipt : env.CTyp.Carrier := ⟨receipt.fst, by sorry⟩
+      -- .yield (some (env.trm2typCtx.get typingReceipt))
 
 end AST
 
