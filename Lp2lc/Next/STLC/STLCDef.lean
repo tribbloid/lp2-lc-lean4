@@ -114,31 +114,36 @@ namespace ExeEnv
 end ExeEnv
 
 /-- Owns the bridge constructor shared by concrete STLC contexts. -/
-class ExeEnv where
-  F : Free
-  ctor : FixpointCtor F
+class ExeEnv extends FixpointCtor where
+  D : DataU
 
 namespace ExeEnv
+section variable (env : ExeEnv)
 
-def trm2valCtx (env : ExeEnv) : Fixpoint env.F AST.Val :=
-  @FixpointCtor.mkFixpoint env.F env.ctor AST.Val
+def trm2valCtx :=
+  env.mkFixpoint (λ T => AST.Val { Carrier := T, Data := env.D })
 
-abbrev CVar (env : ExeEnv) : Free :=
-  { env.F with Carrier := env.trm2valCtx.UId }
+abbrev CVar : Free :=
+  { Carrier := env.trm2valCtx.UId, Data := env.D }
 
+end
 end ExeEnv
 
 /-- Adds the compile-time typing context to an execution environment. -/
 class BuildEnv extends ExeEnv
 
 namespace BuildEnv
+section variable (env : BuildEnv)
 
-def trm2typCtx (env : BuildEnv) : Fixpoint env.F AST.Typ :=
-  @FixpointCtor.mkFixpoint env.F env.ctor AST.Typ
+def trm2typCtx :=
+  env.mkFixpoint (λ T =>
+    let TC := env.trm2valCtx.UId ⋃ T
+    AST.Val { Carrier := TC, Data := env.D })
 
-abbrev CTyp (env : BuildEnv) : Free :=
-  { env.F with Carrier := env.trm2typCtx.UId }
+abbrev CTyp : Free :=
+  { Carrier := env.trm2valCtx.UId, Data := env.D }
 
+end
 end BuildEnv
 
 end

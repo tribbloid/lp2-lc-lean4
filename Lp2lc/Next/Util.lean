@@ -47,12 +47,12 @@ end UIdEquiv
 namespace Free
 
 /-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
-abbrev Fixpoint (self : Free) (V : Free → Type) :=
-  UIdEquiv (λ uid => V { self with Carrier := uid })
+abbrev Fixpoint (VK : UIdU → Type) :=
+  UIdEquiv VK
 
-/-- Constructs receipt-indexed fixpoint bridges for one free family. -/
-class FixpointCtor (self : Free) where
-  mkFixpoint (V : Free → Type) : Fixpoint self V
+/-- Constructs receipt-indexed fixpoint bridges. -/
+class FixpointCtor where
+  mkFixpoint (VK : UIdU → Type) : Fixpoint VK
 
 end Free
 
