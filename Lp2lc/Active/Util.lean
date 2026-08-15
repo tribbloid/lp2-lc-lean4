@@ -3,10 +3,10 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Util
 
-abbrev TIndex := Type
-abbrev TData := Type
+abbrev UIdU := Type -- the `U` suffix signifies this symbol as denoting a universe level
+abbrev DataU := Type
 
-class HasEv (UId : TIndex) where
+class HasEv (UId : UIdU) where
   Ev : UId → Prop
 
 abbrev HasEv.Receipt (self : HasEv UId) := PSigma self.Ev
@@ -21,7 +21,7 @@ As a result, explicit variable substitution (common in de Bruijn serial & named 
 [UIdEquiv.inv] and [UIdEquiv.get] are inverse: [UIdEquiv.rightInv] starts
 from a value, while [UIdEquiv.leftInv] starts from a UId.
 -/
-class UIdEquiv (UId : TIndex) (V : Type) : Type where
+class UIdEquiv (UId : UIdU) (V : Type) : Type where
   inv : (value : V) → UId
   get : (id : UId) → V
   rightInv : ∀ (value : V), get (inv value) = value
@@ -67,7 +67,7 @@ namespace UIdEquiv
 abbrev Bundle {V : Type} (M : V → Sort u) := PSigma M
 
 /-- UId bundled with its evidence from `Ev`. -/
-abbrev Receipt {UId : TIndex} (Ev : UId → Prop) := PSigma Ev
+abbrev Receipt {UId : UIdU} (Ev : UId → Prop) := PSigma Ev
 
 /--
 extension of [UIdEquiv] that can attach metadata `M : Type/Prop` to existing UId-value pairs:
@@ -83,14 +83,14 @@ reconstruction to identifiers carrying evidence for the auxiliary instance.
 [UIdEquiv.Aux.inv] saves a bundle using only its value through the shared group bridge.
 [UIdEquiv.Aux.get] reconstructs a value through the group and then this instance's metadata.
 -/
-class Aux {UId : TIndex} {V : Type}
+class Aux {UId : UIdU} {V : Type}
     (outer : UIdEquiv UId V) (M : V → Sort u) extends HasEv UId where
   inv : (bundle : Bundle M) → Ev (outer.inv bundle.fst)
   get : (rc : Receipt Ev) → M (outer.get rc.fst)
 
 namespace Aux
 
-section variable {UId : TIndex} {V : Type} {outer : UIdEquiv UId V} {M : V → Sort u} (self : Aux outer M)
+section variable {UId : UIdU} {V : Type} {outer : UIdEquiv UId V} {M : V → Sort u} (self : Aux outer M)
 
 /-- Saving membership and reconstructing metadata preserves the original value. -/
 @[simp]
@@ -114,8 +114,8 @@ They are deliberately left free to ward off unlawful construction:
 - the only way to construct a `Data` is to parse a primitive literal in AST
 -/
 class Free : Type 1 where
-  Carrier : TIndex -- AKA variable binding
-  Data : TData
+  Carrier : UIdU -- AKA variable binding
+  Data : DataU
 
 namespace Free
 section variable (this : Free)
@@ -128,7 +128,7 @@ universe u
 /-- Constructs fixpoint bridges and universe-polymorphic metadata bridges for a free family. -/
 class FixpointCtor : Type (max 1 u) where
   mkFixpoint (V : Type) : this.Fixpoint V
-  attachAux {UId : TIndex} {V : Type} (outer : this.Fixpoint V) (M : V → Sort u) : UIdEquiv.Aux outer M
+  attachAux {UId : UIdU} {V : Type} (outer : this.Fixpoint V) (M : V → Sort u) : UIdEquiv.Aux outer M
 
 /--
 Extending the Carrier of a Free instance by [HasEv.Ev]

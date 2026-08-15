@@ -4,14 +4,10 @@ namespace Lp2lc.Next.Util
 
 open Lp2lc.Active.Util
 
-
 inductive Label
 | typ
 | trm
 | val
-
-class HasEv (UId : TIndex) where
-  Ev : UId → Prop -- used to represent subtype of UId, implying extra condition
 
 /-
 TODO: I don't think subtyping is general enough
@@ -24,20 +20,25 @@ Receipt-indexed bridge between values and identifiers.
 
 The value family is indexed by this bridge's evidence so recursive PHOAS
 carriers can retain the receipt required by `get`.
+
+type V is deliberately a type constructor of V, without it V may be impossible to define due to cyclic references
 -/
-class UIdEquiv (UId : TIndex) (V : HasEv UId → Type) extends HasEv UId where
-  get : (receipt : PSigma toHasEv.Ev) → V toHasEv
-  inv : (value : V toHasEv) → PSigma toHasEv.Ev
-  rightInv : ∀ (value : V toHasEv), get (inv value) = value
-  leftInv : ∀ (receipt : PSigma toHasEv.Ev), inv (get receipt) = receipt
+class UIdEquiv (VK : UIdU → Type) where
+  UId : UIdU
+  get : (uid : UId) → VK UId
+  inv : (value : VK UId) → UId
+  rightInv : ∀ (value : VK UId), get (inv value) = value
+  leftInv : ∀ (receipt : UId), inv (get receipt) = receipt
 
 namespace UIdEquiv
 
+class HasEv (UId : UIdU) where
+  Ev : UId → Prop -- used to represent subtype of UId, implying extra condition
 
-/-- Attaches independently witnessed metadata to receipts from one outer bridge. -/
-class Aux {UId : TIndex} {V : HasEv UId → Type}
-    (outer : UIdEquiv UId V) (M : V outer.toHasEv → Sort u)
-    extends HasEv (PSigma outer.toHasEv.Ev) where
+/-- Attaches independently witnessed metadata `M` to receipts from one outer bridge. -/
+class Aux {VK : UIdU → Type}
+    (outer : UIdEquiv VK) (M : VK outer.UId → Sort u)
+    extends HasEv outer.UId where
   get : (receipt : PSigma toHasEv.Ev) → M (outer.get receipt.fst)
   inv : (bundle : PSigma M) → Ev (outer.inv bundle.fst)
 end UIdEquiv
