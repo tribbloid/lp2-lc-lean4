@@ -123,7 +123,7 @@ section variable (env : ExeEnv)
 def trm2valCtx :=
   env.mkFixpoint (λ T => AST.Val { Carrier := T, Data := env.D })
 
-abbrev CVar : Free :=
+abbrev ExeF : Free :=
   { Carrier := env.trm2valCtx.UId, Data := env.D }
 
 end
@@ -140,7 +140,7 @@ def trm2typCtx :=
     let TC := env.trm2valCtx.UId ⊕ T
     AST.Val { Carrier := TC, Data := env.D })
 
-abbrev CTyp : Free :=
+abbrev BuildF : Free :=
   { Carrier := env.trm2valCtx.UId, Data := env.D }
 
 end

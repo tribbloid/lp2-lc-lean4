@@ -8,7 +8,7 @@ namespace AST
 
 /-- Evaluates terms whose references carry receipts from the runtime context. -/
 def eval [env : ExeEnv]
-    (self : Trm env.CVar) : RecOpt (Val env.CVar)
+    (self : Trm env.ExeF) : RecOpt (Val env.ExeF)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -27,15 +27,15 @@ def eval [env : ExeEnv]
 
 /-- Infers `CTyp` types for terms whose references carry runtime `CVar` receipts. -/
 def infer [env : BuildEnv]
-    (self : Trm env.CVar) : RecOpt (Typ env.CTyp)
+    (self : Trm env.ExeF) : RecOpt (Typ env.BuildF)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
-      let cIn : Typ env.CTyp := Typ.recarrier tIn
+      let cIn : Typ env.BuildF := Typ.recarrier tIn
       let receipt := env.trm2typCtx.inv cIn -- save type
-      let index : env.CVar.Carrier := by sorry
+      let index : env.ExeF.Carrier := by sorry
       ((body index).infer fuel).map -- body can only apply on value, this is wrong, it should be an AST representation
         (λ out => out.map (λ tOut => .fn cIn tOut))
     | .apply fnTerm arg =>
