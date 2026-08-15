@@ -61,14 +61,14 @@ end
 
 namespace Source
 
-abbrev Typ (Data : TData) :=
-  ∀ Carrier : TIndex, AST.Typ (Free.mk Carrier Data)
+abbrev Typ (Data : DataU) :=
+  ∀ Carrier : UIdU, AST.Typ (Free.mk Carrier Data)
 
-abbrev Trm (Data : TData) :=
-  ∀ Carrier : TIndex, AST.Trm (Free.mk Carrier Data)
+abbrev Trm (Data : DataU) :=
+  ∀ Carrier : UIdU, AST.Trm (Free.mk Carrier Data)
 
-abbrev Val (Data : TData) :=
-  ∀ Carrier : TIndex, AST.Val (Free.mk Carrier Data)
+abbrev Val (Data : DataU) :=
+  ∀ Carrier : UIdU, AST.Val (Free.mk Carrier Data)
 
 end Source
 
@@ -107,7 +107,11 @@ instance typDecidableLE : DecidableLE (AST.Typ F)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
-open Lp2lc.Next.Util.Free (Fixpoint FixpointCtor WithEv)
+open Lp2lc.Next.Util.Free (Fixpoint FixpointCtor)
+
+namespace ExeEnv
+
+end ExeEnv
 
 /-- Owns the bridge constructor shared by concrete STLC contexts. -/
 class ExeEnv where
@@ -120,7 +124,7 @@ def trm2valCtx (env : ExeEnv) : Fixpoint env.F AST.Val :=
   @FixpointCtor.mkFixpoint env.F env.ctor AST.Val
 
 abbrev CVar (env : ExeEnv) : Free :=
-  WithEv env.F env.trm2valCtx.toHasEv
+  { env.F with Carrier := env.trm2valCtx.UId }
 
 end ExeEnv
 
@@ -133,7 +137,7 @@ def trm2typCtx (env : BuildEnv) : Fixpoint env.F AST.Typ :=
   @FixpointCtor.mkFixpoint env.F env.ctor AST.Typ
 
 abbrev CTyp (env : BuildEnv) : Free :=
-  WithEv env.F env.trm2typCtx.toHasEv
+  { env.F with Carrier := env.trm2typCtx.UId }
 
 end BuildEnv
 

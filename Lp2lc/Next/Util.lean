@@ -41,17 +41,14 @@ class Aux {VK : UIdU → Type}
     extends HasEv outer.UId where
   get : (receipt : PSigma toHasEv.Ev) → M (outer.get receipt.fst)
   inv : (bundle : PSigma M) → Ev (outer.inv bundle.fst)
+
 end UIdEquiv
 
 namespace Free
 
-abbrev WithEv (self : Free) (augmentation : HasEv self.Carrier) : Free where
-  Carrier := PSigma augmentation.Ev
-  Data := self.Data
-
+/-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
 abbrev Fixpoint (self : Free) (V : Free → Type) :=
-  UIdEquiv self.Carrier
-    (λ evidence => V (WithEv self evidence))
+  UIdEquiv (λ uid => V { self with Carrier := uid })
 
 /-- Constructs receipt-indexed fixpoint bridges for one free family. -/
 class FixpointCtor (self : Free) where

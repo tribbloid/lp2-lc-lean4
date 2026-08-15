@@ -35,7 +35,7 @@ def infer [env : BuildEnv]
     | .val (.lam body tIn) =>
       let cIn : Typ env.CTyp := Typ.recarrier tIn
       let receipt := env.trm2typCtx.inv cIn -- save type
-      let index : env.CVar.Carrier := ⟨receipt.fst, by sorry⟩
+      let index : env.CVar.Carrier := by sorry
       ((body index).infer fuel).map -- body can only apply on value, this is wrong, it should be an AST representation
         (λ out => out.map (λ tOut => .fn cIn tOut))
     | .apply fnTerm arg =>

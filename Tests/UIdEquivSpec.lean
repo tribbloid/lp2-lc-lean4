@@ -5,8 +5,8 @@ namespace Tests.UIdEquivSpec
 open Lp2lc.Next.Util
 open UIdEquiv
 
-@[reducible] def group : UIdEquiv Nat (λ _evidence => Nat) where
-  Ev := λ _id => True
+@[reducible] def group : UIdEquiv (λ _evidence => Nat) where
+  UId := PSigma (λ _id : Nat => True)
   inv := λ value => ⟨value, True.intro⟩
   get := λ receipt => receipt.fst
   rightInv := by
@@ -14,11 +14,13 @@ open UIdEquiv
     rfl
   leftInv := by
     intro receipt
-    cases receipt
-    rfl
+    cases receipt with
+    | mk _id evidence =>
+      cases evidence
+      rfl
 
-@[reducible] def equalityGroup : UIdEquiv Nat (λ _evidence => Nat) where
-  Ev := λ _id => 0 = 0
+@[reducible] def equalityGroup : UIdEquiv (λ _evidence => Nat) where
+  UId := PSigma (λ _id : Nat => 0 = 0)
   inv := λ value => ⟨value, rfl⟩
   get := λ receipt => receipt.fst
   rightInv := by
@@ -26,8 +28,10 @@ open UIdEquiv
     rfl
   leftInv := by
     intro receipt
-    cases receipt
-    rfl
+    cases receipt with
+    | mk _id evidence =>
+      cases evidence
+      rfl
 
 @[reducible] def eqOneMetadata : Aux group (λ value => value = 1) where
   Ev := λ receipt => receipt.fst = 1
