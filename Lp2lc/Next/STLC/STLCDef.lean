@@ -137,7 +137,7 @@ section variable (env : BuildEnv)
 
 def trm2typCtx :=
   env.mkFixpoint (λ T =>
-    let TC := env.trm2valCtx.UId ⋃ T
+    let TC := env.trm2valCtx.UId ⊕ T
     AST.Val { Carrier := TC, Data := env.D })
 
 abbrev CTyp : Free :=
