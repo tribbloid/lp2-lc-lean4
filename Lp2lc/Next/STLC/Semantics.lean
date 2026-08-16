@@ -61,6 +61,54 @@ TODO: GPT is right:
 - or AST.ref have to carry the entire UIdEquiv for lookup
 -/
 
+def CanInhabit [env : BuildEnv]
+    (self : Trm env.ExeF) (typ : Typ env.BuildF) : Prop :=
+  self.infer.isDecidable (λ inferred => inferred ≤ typ)
+
 end AST
+
+class ProvingBase extends BuildEnv
+
+/-
+TODO: there is no need to use this complex definition, which is optimised for [CanInhabit] and requires both trm & typ to be provided
+
+The simple conjecture is merely `∀ t : AST.Trm F, t.eval.infer <= t.infer`
+
+There are few intricacies:
+
+- `t` may already contain references to free variable in the context
+  - `t.infer` should work even in this case
+- the subtyping symbol `<=` is only applicable for AST with identical carrier, so `infer` is allowed to shift carrier, but `eval` is not
+
+To avoid UId being abused to fake construction from any Fixpoint, the simple conjecture should be:
+
+[]
+
+The final objective is to produce a **umbral proof**, a proof that is structurally isomorphic to `Trm.infer` algorithm
+-/
+
+def Safety [env : ProvingBase]
+    (trm : AST.Trm env.ExeF) (typ : AST.Typ env.BuildF) : Prop :=
+  trm.eval.isSemiDecidable (λ value => value.asTrm.CanInhabit typ)
+
+namespace Umbral
+
+section variable [env : ProvingBase]
+
+structure SafetyOf (trm : AST.Trm env.ExeF) where
+  typ : AST.Typ env.BuildF
+  -- safety : Safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
+
+abbrev Compilation (trm : AST.Trm env.ExeF) :=
+  Rec.OutcomeOpt (SafetyOf trm) -- one observation of the semi-decidability of executing term
+
+/-- Requires the proving computation to shadow term inference at the selected fuel. -/
+structure Objective (trm : AST.Trm env.ExeF) (fuel : Nat) : Type where
+  compilation : Compilation trm
+  sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.infer fuel
+
+end
+
+end Umbral
 
 end Lp2lc.Next.STLC
