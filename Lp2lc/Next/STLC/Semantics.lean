@@ -33,10 +33,9 @@ def infer [env : BuildEnv]
     match self with
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
-      let cIn : Typ env.BuildF := Typ.recarrier tIn
       let index : env.ExeF.Carrier := by sorry
       (infer (body index) fuel).map
-        (λ out => out.map (λ tOut => .fn cIn tOut))
+        (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
       match infer fnTerm fuel, infer arg fuel with
       | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>

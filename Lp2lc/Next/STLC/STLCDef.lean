@@ -141,7 +141,7 @@ def trm2typCtx :=
     AST.Val { Carrier := TC, Data := env.D })
 
 abbrev BuildF : Free :=
-  { Carrier := env.trm2valCtx.UId, Data := env.D }
+  { Carrier := env.trm2typCtx.UId, Data := env.D }
 
 end
 end BuildEnv
