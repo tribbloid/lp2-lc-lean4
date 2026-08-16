@@ -25,12 +25,28 @@ def eval [env : ExeEnv]
     | .ref receipt =>
       .yield (some (env.trm2valCtx.get receipt))
 
-/-- Infers `CTyp` types for terms whose references carry runtime `CVar` receipts. -/
+/-- Infers build types for executable terms, recursively resolving runtime references. -/
 def infer [env : BuildEnv]
     (self : Trm env.ExeF) : RecOpt (Typ env.BuildF)
   | 0 => .outOfFuel
   | fuel + 1 =>
-    sorry
+    match self with
+    | .val (.lit _) => .yield (some .primitive)
+    | .val (.lam body tIn) =>
+      let cIn : Typ env.BuildF := Typ.recarrier tIn
+      let index : env.ExeF.Carrier := by sorry
+      (infer (body index) fuel).map
+        (λ out => out.map (λ tOut => .fn cIn tOut))
+    | .apply fnTerm arg =>
+      match infer fnTerm fuel, infer arg fuel with
+      | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
+        if argTyp ≤ tIn then .yield (some tOut) else .yield none
+      | .outOfFuel, _ => .outOfFuel
+      | _, .outOfFuel => .outOfFuel
+      | _, _ => .yield none
+    | .ref receipt =>
+      let original := env.trm2valCtx.get receipt
+      original.asTrm.infer fuel
 
 /-
 TODO: GPT is right:
