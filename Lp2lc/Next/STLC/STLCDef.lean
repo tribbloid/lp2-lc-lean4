@@ -69,17 +69,17 @@ def map (F G : Parameters) (mC : F.C → G.C) (mD : F.D → G.D)
     {l : Label} (self : AST F l) : AST G l :=
   match self with
   | .primitive => .primitive
-  | .fn tIn tOut => .fn (map F G mC mD tIn) (map F G mC mD tOut)
-  | .val v => .val (map F G mC mD v)
-  | .apply fnTerm arg => .apply (map F G mC mD fnTerm) (map F G mC mD arg)
+  | .fn tIn tOut => .fn (tIn.map F G mC mD) (tOut.map F G mC mD)
+  | .val v => .val (v.map F G mC mD)
+  | .apply fnTerm arg => .apply (fnTerm.map F G mC mD) (arg.map F G mC mD)
   | .ref s => .ref (mC s)
   | .lit repr => .lit (mD repr)
   | .lam body tIn =>
       let body' : {C : UIdU} → C → AST { C := C, D := G.D } .trm :=
         λ {C} (arg : C) =>
-          map { C := C, D := F.D } { C := C, D := G.D }
-            (λ c => c) mD (body arg)
-      .lam body' (map F G mC mD tIn)
+          (body arg).map { C := C, D := F.D } { C := C, D := G.D }
+            (λ c => c) mD
+      .lam body' (tIn.map F G mC mD)
 
 namespace Val
 

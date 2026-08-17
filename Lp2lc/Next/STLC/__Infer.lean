@@ -15,7 +15,7 @@ def infer [env : BuildEnv]
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
       let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv (.lam body tIn))
-      (infer (body index) fuel).map
+      ((body index).infer fuel).map
         (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
       match infer fnTerm fuel, infer arg fuel with
@@ -26,7 +26,7 @@ def infer [env : BuildEnv]
       | _, _ => .yield none
     | .ref (.inl receipt) =>
       let original : Val env.BuildParameters :=
-        map env.ExeParameters env.BuildParameters (Sum.inl) id (env.trm2valCtx.get receipt)
+        (env.trm2valCtx.get receipt).map env.ExeParameters env.BuildParameters (Sum.inl) id
       original.asTrm.infer fuel
     | .ref (.inr receipt) =>
       match env.trm2typCtx.get receipt with
@@ -57,6 +57,6 @@ class ProvingBase extends BuildEnv
 def Safety [env : ProvingBase]
     (trm : AST.Trm env.ExeParameters) (typ : AST.Typ env.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ value => (AST.map env.ExeParameters env.BuildParameters (Sum.inl) id value.asTrm).CanInhabit typ)
+    (λ value => (value.asTrm.map env.ExeParameters env.BuildParameters (Sum.inl) id).CanInhabit typ)
 
 end Lp2lc.Next.STLC
