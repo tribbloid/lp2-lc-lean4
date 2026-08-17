@@ -65,7 +65,7 @@ Rebuilds syntax over another carrier along a carrier map.
 References are transported along the map while binders pass through
 unchanged, making `AST` covariant in its carrier.
 -/
-def map (F G : Parameters) (mC : F.C → G.C) (mD : F.D → G.D)
+def map (F G : Parameters) (mC : F.C → G.C) (mD : F.D → G.D) -- TODO: `F G` should be implicit
     {l : Label} (self : AST F l) : AST G l :=
   match self with
   | .primitive => .primitive
