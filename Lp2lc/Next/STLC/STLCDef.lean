@@ -39,7 +39,7 @@ Function values carry their input type so the compiler can type-check HOAS bodie
 /-- Binds over a carrier-parametric argument so `AST` remains covariant in its carrier. -/
 | lam (body : {C : UIdU} → (arg : C) → AST { C := C, D := F.D } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
 
-section variable {F : Parameters}
+section variable {P : Parameters}
 
 namespace AST
 
@@ -65,25 +65,25 @@ Rebuilds syntax over another carrier along a carrier map.
 References are transported along the map while binders pass through
 unchanged, making `AST` covariant in its carrier.
 -/
-def mapCarrier (F G : Parameters) (m : F.C → G.C) (mD : F.D → G.D)
+def map (F G : Parameters) (mC : F.C → G.C) (mD : F.D → G.D)
     {l : Label} (self : AST F l) : AST G l :=
   match self with
   | .primitive => .primitive
-  | .fn tIn tOut => .fn (mapCarrier F G m mD tIn) (mapCarrier F G m mD tOut)
-  | .val v => .val (mapCarrier F G m mD v)
-  | .apply fnTerm arg => .apply (mapCarrier F G m mD fnTerm) (mapCarrier F G m mD arg)
-  | .ref s => .ref (m s)
+  | .fn tIn tOut => .fn (map F G mC mD tIn) (map F G mC mD tOut)
+  | .val v => .val (map F G mC mD v)
+  | .apply fnTerm arg => .apply (map F G mC mD fnTerm) (map F G mC mD arg)
+  | .ref s => .ref (mC s)
   | .lit repr => .lit (mD repr)
   | .lam body tIn =>
       let body' : {C : UIdU} → C → AST { C := C, D := G.D } .trm :=
         λ {C} (arg : C) =>
-          mapCarrier { C := C, D := F.D } { C := C, D := G.D }
+          map { C := C, D := F.D } { C := C, D := G.D }
             (λ c => c) mD (body arg)
-      .lam body' (mapCarrier F G m mD tIn)
+      .lam body' (map F G mC mD tIn)
 
 namespace Val
 
-def asTrm (self : AST.Val F) : AST.Trm F := .val self
+def asTrm (self : AST.Val P) : AST.Trm P := .val self
 
 end Val
 
@@ -92,11 +92,11 @@ end AST
 open AST
 
 /-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE : LE (AST.Typ F) := ⟨Eq⟩
+instance typLE : LE (AST.Typ P) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
-instance typDecidableLE : DecidableLE (AST.Typ F)
+instance typDecidableLE : DecidableLE (AST.Typ P)
   | .primitive, .primitive => isTrue rfl
   | .primitive, .fn _ _
   | .fn _ _, .primitive => isFalse (λ equality => nomatch equality)
@@ -122,7 +122,7 @@ section variable (env : ExeEnv)
 def trm2valCtx :=
   env.mkFixpoint (λ T => AST.Val { C := T, D := env.D })
 
-abbrev ExeF : Parameters :=
+abbrev ExeParameters : Parameters :=
   { C := env.trm2valCtx.UId, D := env.D }
 
 end
@@ -132,7 +132,7 @@ namespace AST
 
 /-- Evaluates terms whose references carry receipts from the runtime context. -/
 def eval [env : ExeEnv]
-    (self : Trm env.ExeF) : RecOpt (Val env.ExeF)
+    (self : Trm env.ExeParameters) : RecOpt (Val env.ExeParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -162,7 +162,7 @@ def trm2typCtx :=
     let TC := env.trm2valCtx.UId ⊕ T
     AST.Val { C := TC, D := env.D })
 
-abbrev BuildF : Parameters :=
+abbrev BuildParameters : Parameters :=
   { C := env.trm2valCtx.UId ⊕ env.trm2typCtx.UId, D := env.D }
 
 end

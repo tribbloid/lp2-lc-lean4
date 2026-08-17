@@ -11,12 +11,6 @@ inductive Label
 | trm
 | val
 
-/-
-TODO: I don't think subtyping is general enough
-
-Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
--/
-
 /--
 Receipt-indexed bridge between values and identifiers.
 
@@ -37,8 +31,14 @@ namespace UIdEquiv
 class HasEv (UId : UIdU) where
   Ev : UId → Prop -- used to represent subtype of UId, implying extra condition
 
-/-- Attaches independently witnessed metadata `M` to receipts from one outer bridge. -/
-class Aux {VK : UIdU → Type u}
+/-
+TODO: I don't think subtyping/`Lesser` is general enough, we need supertyping/`Greater`
+
+Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
+-/
+
+/-- an auxiliary equivalence for a subtype of [outer.VK T], Can attach independently witnessed metadata `M` to receipts from outer bridge. -/
+class Lesser {VK : UIdU → Type u}
     (outer : UIdEquiv VK) (M : VK outer.UId → Sort v)
     extends HasEv outer.UId where
   get : (receipt : PSigma toHasEv.Ev) → M (outer.get receipt.fst)
@@ -47,16 +47,16 @@ class Aux {VK : UIdU → Type u}
 end UIdEquiv
 
 /--
-collection of free type variables used in HOAS bindings
+the meaning of P in PHOAS, the collection of free type variables used in PHOAS bindings
 
 They are deliberately left free to ward off unlawful construction:
 
-- the only way to construct an `Index` is to get the UId of a `Value` through the fixpoint bridge
-- the only way to construct a `Data` is to parse a primitive literal in AST
+- the only way to construct `C` is to get the UId of something already existing through [UIdEquiv]
+- the only way to construct `D` is to parse a primitive literal in AST
 -/
 class Parameters where
-  C : UIdU -- AKA variable binding
-  D : DataU
+  C : UIdU -- Carrier type, AKA variable binding
+  D : DataU -- Binary Data type
 
 namespace Free
 

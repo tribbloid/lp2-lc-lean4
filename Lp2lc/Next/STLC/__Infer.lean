@@ -8,13 +8,13 @@ namespace AST
 
 /-- Infers build types for executable terms, recursively resolving runtime references. -/
 def infer [env : BuildEnv]
-    (self : Trm env.BuildF) : RecOpt (Typ env.BuildF)
+    (self : Trm env.BuildParameters) : RecOpt (Typ env.BuildParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
-      let index : env.BuildF.C := .inr (env.trm2typCtx.inv (.lam body tIn))
+      let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv (.lam body tIn))
       (infer (body index) fuel).map
         (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
@@ -25,8 +25,8 @@ def infer [env : BuildEnv]
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
     | .ref (.inl receipt) =>
-      let original : Val env.BuildF :=
-        mapCarrier env.ExeF env.BuildF (Sum.inl) id (env.trm2valCtx.get receipt)
+      let original : Val env.BuildParameters :=
+        map env.ExeParameters env.BuildParameters (Sum.inl) id (env.trm2valCtx.get receipt)
       original.asTrm.infer fuel
     | .ref (.inr receipt) =>
       match env.trm2typCtx.get receipt with
@@ -47,7 +47,7 @@ DEFER: GPT is right:
 -/
 
 def CanInhabit [env : BuildEnv]
-    (self : Trm env.BuildF) (typ : Typ env.BuildF) : Prop :=
+    (self : Trm env.BuildParameters) (typ : Typ env.BuildParameters) : Prop :=
   self.infer.isDecidable (λ inferred => inferred ≤ typ)
 
 end AST
@@ -55,8 +55,8 @@ end AST
 class ProvingBase extends BuildEnv
 
 def Safety [env : ProvingBase]
-    (trm : AST.Trm env.ExeF) (typ : AST.Typ env.BuildF) : Prop :=
+    (trm : AST.Trm env.ExeParameters) (typ : AST.Typ env.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ value => (AST.mapCarrier env.ExeF env.BuildF (Sum.inl) id value.asTrm).CanInhabit typ)
+    (λ value => (map env.ExeF env.BuildF (Sum.inl) id value.asTrm).CanInhabit typ)
 
 end Lp2lc.Next.STLC

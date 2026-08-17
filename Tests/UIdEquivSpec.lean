@@ -33,12 +33,12 @@ open UIdEquiv
       cases evidence
       rfl
 
-@[reducible] def eqOneMetadata : Aux group (λ value => value = 1) where
+@[reducible] def eqOneMetadata : Lesser group (λ value => value = 1) where
   Ev := λ receipt => receipt.fst = 1
   inv := λ bundle => bundle.snd
   get := λ receipt => receipt.snd
 
-@[reducible] def unitMetadata : Aux group (λ _value => Unit) where
+@[reducible] def unitMetadata : Lesser group (λ _value => Unit) where
   Ev := λ _receipt => True
   inv := λ _bundle => True.intro
   get := λ _receipt => ()
