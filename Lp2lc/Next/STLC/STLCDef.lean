@@ -129,6 +129,29 @@ abbrev ExeF : Free :=
 end
 end ExeEnv
 
+namespace AST
+
+/-- Evaluates terms whose references carry receipts from the runtime context. -/
+def eval [env : ExeEnv]
+    (self : Trm env.ExeF) : RecOpt (Val env.ExeF)
+  | 0 => .outOfFuel
+  | fuel + 1 =>
+    match self with
+    | .val value => .yield (some value)
+    | .apply fnTerm arg =>
+      let anf := (eval fnTerm fuel, eval arg fuel)
+      match anf with
+      | (.yield (some (.lam body _tIn)), .yield (some input)) =>
+        let receipt := env.trm2valCtx.inv input
+        eval (body receipt) fuel
+      | (.outOfFuel, _) => .outOfFuel
+      | (_, .outOfFuel) => .outOfFuel
+      | _ => .yield none
+    | .ref receipt =>
+      .yield (some (env.trm2valCtx.get receipt))
+
+end AST
+
 /-- Adds the compile-time typing context to an execution environment. -/
 class BuildEnv extends ExeEnv
 

@@ -6,27 +6,6 @@ open Lp2lc.Active.Util
 
 namespace AST
 
-/-- Evaluates terms whose references carry receipts from the runtime context. -/
-def eval [env : ExeEnv] -- TODO: should move to STLCDef.lean
-    (self : Trm env.ExeF) : RecOpt (Val env.ExeF)
-  | 0 => .outOfFuel
-  | fuel + 1 =>
-    match self with
-    | .val value => .yield (some value)
-    | .apply fnTerm arg =>
-      let anf := (eval fnTerm fuel, eval arg fuel)
-      match anf with
-      | (.yield (some (.lam body _tIn)), .yield (some input)) =>
-        let receipt := env.trm2valCtx.inv input
-        eval (body receipt) fuel
-      | (.outOfFuel, _) => .outOfFuel
-      | (_, .outOfFuel) => .outOfFuel
-      | _ => .yield none
-    | .ref receipt =>
-      .yield (some (env.trm2valCtx.get receipt))
-
--- TODO: the following section should be in __Infer.lean
-
 /-- Infers build types for executable terms, recursively resolving runtime references. -/
 def infer [env : BuildEnv]
     (self : Trm env.ExeF) : RecOpt (Typ env.BuildF)
@@ -51,7 +30,7 @@ def infer [env : BuildEnv]
       original.asTrm.infer fuel
 
 /-
-TODO: GPT is right:
+DEFER: GPT is right:
 
 - either the carrier have to be shared between type and value (value is a special singleton type)
   - if this happens, BuildEnv context will be an extension of RuntimeEnv, for both type OR value
@@ -74,27 +53,5 @@ class ProvingBase extends BuildEnv
 def Safety [env : ProvingBase]
     (trm : AST.Trm env.ExeF) (typ : AST.Typ env.BuildF) : Prop :=
   trm.eval.isSemiDecidable (λ value => value.asTrm.CanInhabit typ)
-
--- TODO: Umbral namespace should be in __Infer_Umbral.lean
-
-namespace Umbral
-
-section variable [env : ProvingBase]
-
-structure SafetyOf (trm : AST.Trm env.ExeF) where
-  typ : AST.Typ env.BuildF
-  -- safety : Safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
-
-abbrev Compilation (trm : AST.Trm env.ExeF) :=
-  Rec.OutcomeOpt (SafetyOf trm) -- one observation of the semi-decidability of executing term
-
-/-- Requires the proving computation to shadow term inference at the selected fuel. -/
-structure Objective (trm : AST.Trm env.ExeF) (fuel : Nat) : Type where
-  compilation : Compilation trm
-  sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.infer fuel
-
-end
-
-end Umbral
 
 end Lp2lc.Next.STLC

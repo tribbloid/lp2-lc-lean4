@@ -1,4 +1,6 @@
-import «Lp2lc».Next.STLC.Semantics
+import «Lp2lc».Next.STLC.STLCDef
+import «Lp2lc».Next.STLC.__Infer
+import «Lp2lc».Next.STLC.__Infer_Umbral
 
 namespace Lp2lc.Next.STLC
 
