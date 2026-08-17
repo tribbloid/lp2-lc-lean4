@@ -14,9 +14,9 @@ They are deliberately left free to ward off unlawful construction:
 - the only way to construct an `Index` is to get the UId of a `Value` through the fixpoint bridge
 - the only way to construct a `Data` is to parse a primitive literal in AST
 -/
-structure Free where
-  Carrier : UIdU -- AKA variable binding
-  Data : DataU
+class Free where --TODO: move to Util.lean, renamed to `Parameters`
+  Carrier : UIdU -- AKA variable binding -- TODO: renamed to `C` (raw type argument should be 1 capital letter only)
+  Data : DataU -- TODO: reanemd to `D`
 
 /--
 Source type syntax.
@@ -70,30 +70,6 @@ section variable (F : Free)
 --   val : Val F
 
 end
-
-
-namespace Source
-
-abbrev Typ (Data : DataU) :=
-  ∀ Carrier : UIdU, AST.Typ (Free.mk Carrier Data)
-
-abbrev Trm (Data : DataU) :=
-  ∀ Carrier : UIdU, AST.Trm (Free.mk Carrier Data)
-
-abbrev Val (Data : DataU) :=
-  ∀ Carrier : UIdU, AST.Val (Free.mk Carrier Data)
-
-end Source
-
-namespace Typ
-
-/-- Rebuilds type syntax over another carrier without converting terms or binders. -/
-def recarrier {Source Target : Free} (self : AST.Typ Source) : AST.Typ Target :=
-  match self with
-  | .primitive => .primitive
-  | .fn tIn tOut => .fn (recarrier tIn) (recarrier tOut)
-
-end Typ
 
 /--
 Rebuilds syntax over another carrier along a carrier map.
