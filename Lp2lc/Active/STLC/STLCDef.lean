@@ -1,28 +1,19 @@
 import Std
-import «Lp2lc».Active.Shared
-import «Lp2lc».Active.Util
+import «Lp2lc».Next.Util
 
-namespace Lp2lc.Active
+namespace Lp2lc.Active.STLC
 
-namespace STLC
-
-/- Shared STLC syntax family, currently exposing function types over the common representation. -/
+open Lp2lc.Next.Util
 open Lp2lc.Active.Util
 
-section variable {F : Free}
-
-inductive Label
-| Typ
-| Trm
-| Val
 /--
 Source type syntax.
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
 -/
-inductive AST (F : Free) : Label → Type where
-| primitive : AST F .Typ -- `AnyVal` in Scala, accepts only primitive values
-| fn (tIn : AST F .Typ) (tOut : AST F .Typ) : AST F .Typ -- function
+inductive AST : Parameters → Label → Type 2 where
+| primitive : AST F .typ -- `AnyVal` in Scala, accepts only primitive values
+| fn (tIn : AST F .typ) (tOut : AST F .typ) : AST F .typ -- function
 /--
 Source term syntax.
 
@@ -33,9 +24,9 @@ In HOAS there is no syntax-level context binding terms to types, so function
 input annotations are the extrinsic typing evidence available to the compiler.
 They are not intrinsic typing indices on terms.
 -/
-| val (v : AST F .Val) : AST F .Trm -- AKA literal
-| apply (fn : AST F .Trm) (arg : AST F .Trm) : AST F .Trm -- fn must be a function that can be applied on arg
-| ref (s: F.Carrier) : AST F .Trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
+| val (v : AST F .val) : AST F .trm -- AKA literal
+| apply (fn : AST F .trm) (arg : AST F .trm) : AST F .trm -- fn must be a function that can be applied on arg
+| ref (s : F.C) : AST F .trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
 /--
 Value syntax, containing neither references nor applications.
 
@@ -44,37 +35,68 @@ used by function application after both sides have been evaluated.
 
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
-| lit (repr : F.Data) : AST F .Val -- most specific type is always `primitive`
-| lam (body : (arg : F.Carrier) → AST F .Trm) (tIn : AST F .Typ) : AST F .Val -- most specific type is always `.fn tIn _`
+| lit (repr : F.D) : AST F .val -- most specific type is always `primitive`
+/-- Binds over a carrier-parametric argument so `AST` remains covariant in its carrier. -/
+| lam (body : {C : UIdU} → (arg : C) → AST { C := C, D := F.D } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
 
+section variable {P : Parameters}
 
 namespace AST
 
-abbrev Typ (F : Free) := AST F .Typ
-abbrev Trm (F : Free) := AST F .Trm
-abbrev Val (F : Free) := AST F .Val
+abbrev Typ (F : Parameters) := AST F .typ
+abbrev Trm (F : Parameters) := AST F .trm
+abbrev Val (F : Parameters) := AST F .val
 
-section variable (F : Free)
+section variable (F : Parameters)
 
-structure Trm2Typ where
-  trm : Trm F
-  typ : Typ F
+-- structure Trm2Typ where -- TODO: cleanup, inferering with recarrier
+--   trm : Trm F
+--   typ : Typ F
 
-structure Trm2Val where
-  trm : AST.Trm F
-  val : AST.Val F
+-- structure Trm2Val where
+--   trm : Trm F
+--   val : Val F
 
 end
 
+/--
+Rebuilds syntax over a different group of parameters along a carrier map.
+
+References are transported along the map while binders pass through
+unchanged, making `AST` covariant w.r.t both [Parameters.C] and [Parameters.D]
+-/
+def map {F G : Parameters} (mC : F.C → G.C) (mD : F.D → G.D)
+    {l : Label} (self : AST F l) : AST G l :=
+  match self with
+  | .primitive => .primitive
+  | .fn tIn tOut => .fn (tIn.map mC mD) (tOut.map mC mD)
+  | .val v => .val (v.map mC mD)
+  | .apply fnTerm arg => .apply (fnTerm.map mC mD) (arg.map mC mD)
+  | .ref s => .ref (mC s)
+  | .lit repr => .lit (mD repr)
+  | .lam body tIn =>
+      let body' : {C : UIdU} → C → AST { C := C, D := G.D } .trm :=
+        λ {C} (arg : C) =>
+          (body arg).map (F := { C := C, D := F.D }) (G := { C := C, D := G.D })
+            (λ c => c) mD
+      .lam body' (tIn.map mC mD)
+
+namespace Val
+
+def asTrm (self : AST.Val P) : AST.Trm P := .val self
+
+end Val
+
 end AST
+
 open AST
 
 /-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE : LE (AST.Typ F) := ⟨Eq⟩
+instance typLE : LE (AST.Typ P) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
-instance typDecidableLE : DecidableLE (AST.Typ F)
+instance typDecidableLE : DecidableLE (AST.Typ P)
   | .primitive, .primitive => isTrue rfl
   | .primitive, .fn _ _
   | .fn _ _, .primitive => isFalse (λ equality => nomatch equality)
@@ -84,69 +106,68 @@ instance typDecidableLE : DecidableLE (AST.Typ F)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
-/--
-Contains compiletime fixpoint bridges for semantic obligations of terms.
-
-registered Trm2Typ must be relatable
--/
-class BuildEnv extends F.FixpointCtor.{1}
-  -- trmRefs :  -- DEFER: this may be required for transparent inline function
-
-namespace BuildEnv
-
-def trm2typCtx (env : @BuildEnv F) : F.Fixpoint (AST.Trm2Typ F) :=
-  env.mkFixpoint (AST.Trm2Typ F)
-
-end BuildEnv
-
-/--
-Contains runtime fixpoint bridges for value assignment to terms.
-
-registered Trm2Val must be relatable
--/
-
-class ExeEnv extends F.FixpointCtor.{1}
+open Lp2lc.Next.Util.Free (Fixpoint FixpointCtor)
 
 namespace ExeEnv
 
-def trm2valCtx (env : @ExeEnv F) : F.Fixpoint (AST.Trm2Val F) :=
-  env.mkFixpoint (AST.Trm2Val F)
+end ExeEnv
 
+/-- Owns the bridge constructor shared by concrete STLC contexts. -/
+class ExeEnv extends FixpointCtor where
+  D : DataU
+
+namespace ExeEnv
+section variable (env : ExeEnv)
+
+def trm2valCtx :=
+  env.mkFixpoint (λ T => AST.Val { C := T, D := env.D })
+
+abbrev ExeParameters : Parameters :=
+  { C := env.trm2valCtx.UId, D := env.D }
+
+end
 end ExeEnv
 
 namespace AST
-section variable [env: @ExeEnv F]
 
-/--
-Evaluates a term by spending 1 fuel at each semantic
-descent. Runtime evaluation uses [Free.Fixpoint] for references and deliberately
-does not inspect compile-time typing evidence.
--/
-def eval (self : AST.Trm F) : RecOpt (AST.Val F)
+/-- Evaluates terms whose references carry receipts from the runtime context. -/
+def eval [env : ExeEnv]
+    (self : Trm env.ExeParameters) : RecOpt (Val env.ExeParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
     | .val value => .yield (some value)
     | .apply fnTerm arg =>
-      let anf := (fnTerm.eval fuel, arg.eval fuel) -- ANF, atomic normal form
+      let anf := (eval fnTerm fuel, eval arg fuel)
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
-        -- let permission := env.canSaveAny input
-        let index := env.trm2valCtx.inv ⟨arg, input⟩
-        (body index).eval fuel
+        let receipt := env.trm2valCtx.inv input
+        eval (body receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
-    | @AST.ref _ i =>
-      .yield (some (env.trm2valCtx.get i).val)
-
-end
+    | .ref receipt =>
+      .yield (some (env.trm2valCtx.get receipt))
 
 end AST
 
+/-- Adds the compile-time typing context to an execution environment. -/
+class BuildEnv extends ExeEnv
+
+namespace BuildEnv
+section variable (env : BuildEnv)
+
+def trm2typCtx :=
+  env.mkFixpoint (λ T =>
+    let TC := env.trm2valCtx.UId ⊕ T
+    AST.Val { C := TC, D := env.D })
+
+abbrev BuildParameters : Parameters :=
+  { C := env.trm2valCtx.UId ⊕ env.trm2typCtx.UId, D := env.D }
+
+end
+end BuildEnv
 
 end
 
-end STLC
-
-end Lp2lc.Active
+end Lp2lc.Active.STLC

@@ -1,30 +1,17 @@
-
-import Std
-import «Lp2lc».Active.Shared
-import «Lp2lc».Active.Util
 import «Lp2lc».Active.STLC.STLCDef
+import «Lp2lc».Active.STLC.__Infer
+import «Lp2lc».Active.STLC.__Infer_umbral
 
-namespace Lp2lc.Active
+namespace Lp2lc.Active.STLC
 
-namespace STLC
 open Lp2lc.Active.Util
 open Lp2lc.Active.Util.Rec
 
-/-
-this file proof an alternative theorem for STLC soundness:
-
-term can be inferred to type using some fuel, evaluating it must leads to either a variable that can be inferred to a lesser type with some (less?) fuel or loop.
-
-Obviously inferring type is not alway available in more complex type system, but it's a good demo for recursive proving
--/
-
-section variable {F : Free}
-
 namespace AST
 
-/-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
-theorem termEvalMonotone [env : @ExeEnv F]
-    (trm : Trm F) :
+/-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
+theorem termEvalMonotone [env : ExeEnv]
+    (trm : Trm env.ExeParameters) :
     trm.eval.Monotone := by
   intro less more result hFuel hEval
   induction less using Nat.strongRecOn generalizing trm more result with
@@ -36,7 +23,7 @@ theorem termEvalMonotone [env : @ExeEnv F]
       cases more with
       | zero => cases hFuel
       | succ toFuel =>
-        have hFuelTail : fuel <= toFuel := Nat.le_of_succ_le_succ hFuel
+        have hFuelTail : fuel ≤ toFuel := Nat.le_of_succ_le_succ hFuel
         cases trm with
         | val value =>
           simpa [AST.eval] using hEval
@@ -44,11 +31,13 @@ theorem termEvalMonotone [env : @ExeEnv F]
           cases hFn : fnTerm.eval fuel with
           | outOfFuel => simp [AST.eval, hFn] at hEval
           | yield fnResult =>
-            have hFnTop := ih fuel (Nat.lt_succ_self fuel) fnTerm toFuel fnResult hFuelTail hFn
+            have hFnTop := ih fuel (Nat.lt_succ_self fuel)
+              fnTerm toFuel fnResult hFuelTail hFn
             cases hArg : arg.eval fuel with
             | outOfFuel => simp [AST.eval, hFn, hArg] at hEval
             | yield argResult =>
-              have hArgTop := ih fuel (Nat.lt_succ_self fuel) arg toFuel argResult hFuelTail hArg
+              have hArgTop := ih fuel (Nat.lt_succ_self fuel)
+                arg toFuel argResult hFuelTail hArg
               cases fnResult with
               | none =>
                 simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
@@ -61,19 +50,159 @@ theorem termEvalMonotone [env : @ExeEnv F]
                   | none =>
                     simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                   | some input =>
-                    cases hBody :
-                        (body (env.trm2valCtx.inv ⟨arg, input⟩)).eval fuel with
+                    cases hBody : (body (env.trm2valCtx.inv input)).eval fuel with
                     | outOfFuel =>
                       simp [AST.eval, hFn, hArg, hBody] at hEval
                     | yield bodyResult =>
-                      have hBodyTop :=
-                        ih fuel (Nat.lt_succ_self fuel)
-                          (body (env.trm2valCtx.inv ⟨arg, input⟩))
-                          toFuel bodyResult hFuelTail hBody
-                      simpa [AST.eval, hFn, hArg, hFnTop, hArgTop, hBody, hBodyTop] using hEval
-        | ref id =>
+                      have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
+                        (body (env.trm2valCtx.inv input))
+                        toFuel bodyResult hFuelTail hBody
+                      simpa [AST.eval, hFn, hArg, hFnTop, hArgTop,
+                        hBody, hBodyTop] using hEval
+        | ref receipt =>
           simpa [AST.eval] using hEval
+
+/-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
+theorem termInferMonotone [env : BuildEnv]
+    (trm : Trm env.BuildParameters) : -- TODO: this is actually a theorem for `infer_core`
+    trm.infer_core.Monotone := by
+  intro less more result hFuel hInfer
+  induction less using Nat.strongRecOn generalizing trm more result with
+  | ind fromFuel ih =>
+    cases fromFuel with
+    | zero =>
+      cases trm <;> simp [infer_core] at hInfer
+    | succ fuel =>
+      cases more with
+      | zero => cases hFuel
+      | succ toFuel =>
+        have hFuelTail : fuel ≤ toFuel := Nat.le_of_succ_le_succ hFuel
+        cases trm with
+        | val value =>
+          cases value with
+          | lit repr => simpa [infer_core] using hInfer
+          | lam body tIn =>
+            simp only [infer_core, Outcome.map] at hInfer ⊢
+            split at hInfer
+            next _ bodyResult hBody =>
+              have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
+                _ toFuel bodyResult hFuelTail hBody
+              simpa [hBodyTop] using hInfer
+            next _ hBody =>
+              cases hInfer
+        | apply fnTerm arg =>
+          cases hFn : fnTerm.infer_core fuel with
+          | outOfFuel => simp [infer_core, hFn] at hInfer
+          | yield fnResult =>
+            cases hArg : arg.infer_core fuel with
+            | outOfFuel => simp [infer_core, hFn, hArg] at hInfer
+            | yield argResult =>
+              have hFnTop := ih fuel (Nat.lt_succ_self fuel)
+                fnTerm toFuel fnResult hFuelTail hFn
+              have hArgTop := ih fuel (Nat.lt_succ_self fuel)
+                arg toFuel argResult hFuelTail hArg
+              simpa [infer_core, hFn, hArg, hFnTop, hArgTop] using hInfer
+        | ref receipt =>
+          cases receipt with
+          | inl rc =>
+            let original : Val env.BuildParameters :=
+              (env.trm2valCtx.get rc).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
+            have hOriginal : original.asTrm.infer_core fuel = .yield result := by
+              simpa [infer_core, original] using hInfer
+            have hOriginalTop := ih fuel (Nat.lt_succ_self fuel)
+              original.asTrm toFuel result hFuelTail hOriginal
+            simpa [infer_core, original] using hOriginalTop
+          | inr rc =>
+            cases env.trm2typCtx.get rc with
+            | lit repr => simpa [infer_core] using hInfer
+            | lam body tIn => simpa [infer_core] using hInfer
+
+/-- Value inference monotonicity follows from term inference monotonicity. -/
+theorem valueInferMonotone [env : BuildEnv]
+    (value : Val env.BuildParameters) :
+    value.asTrm.infer_core.Monotone :=
+  termInferMonotone value.asTrm
 
 end AST
 
+class ProvingEnv extends ProvingBase
+
+namespace Umbral
+
+section variable [env : ProvingEnv]
+
+/-- Mirrors term inference while preserving its selected-fuel correspondence. -/
+def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm fuel :=
+  match fuel with
+  | 0 => ⟨.outOfFuel, rfl⟩
+  | fuel + 1 =>
+    match trm with
+    | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
+    | .val (.lam body tIn) =>
+      let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv (.lam body tIn))
+      let result := infer_prove (body index) fuel
+      ⟨result.compilation.map
+          (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
+        change _ = ((body index).infer_core fuel).map (Option.map (AST.fn tIn))
+        rw [← result.sameInfer]
+        cases result.compilation <;>
+          simp [Rec.Outcome.map, Function.comp_def]⟩
+    | .apply fnTerm arg =>
+      let fnResult := infer_prove fnTerm fuel
+      let argResult := infer_prove arg fuel
+      let applyResult (fnType argType : Rec.Outcome (Option (AST.Typ env.BuildParameters))) :
+          Rec.Outcome (Option (AST.Typ env.BuildParameters)) :=
+        match fnType, argType with
+        | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
+          if argTyp ≤ tIn then .yield (some tOut) else .yield none
+        | .outOfFuel, _ => .outOfFuel
+        | _, .outOfFuel => .outOfFuel
+        | _, _ => .yield none
+      let result := applyResult
+        (fnResult.compilation.map (Option.map SafetyOf.typ))
+        (argResult.compilation.map (Option.map SafetyOf.typ))
+      ⟨result.map (Option.map (λ typ => ⟨typ⟩)), by
+        have hResult : result = (AST.apply fnTerm arg).infer_core (fuel + 1) := by
+          calc
+            result = applyResult
+                (fnResult.compilation.map (Option.map SafetyOf.typ))
+                (argResult.compilation.map (Option.map SafetyOf.typ)) := rfl
+            _ = applyResult
+                (fnTerm.infer_core fuel)
+                (arg.infer_core fuel) := by
+              congr 1
+              · exact fnResult.sameInfer
+              · exact argResult.sameInfer
+            _ = (AST.apply fnTerm arg).infer_core (fuel + 1) := by
+              conv =>
+                rhs
+                unfold AST.infer_core
+                simp only
+              dsimp only [applyResult]
+              split <;> simp_all
+        rw [hResult]
+        cases (AST.apply fnTerm arg).infer_core (fuel + 1) <;>
+          simp [Rec.Outcome.map, Function.comp_def]⟩
+    | .ref (.inl receipt) =>
+      let original : AST.Val env.BuildParameters :=
+        (env.trm2valCtx.get receipt).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
+      let result := infer_prove original.asTrm fuel
+      ⟨result.compilation.map (Option.map (λ safety => ⟨safety.typ⟩)), by
+        change _ = original.asTrm.infer_core fuel
+        rw [← result.sameInfer]
+        cases result.compilation <;>
+          simp [Rec.Outcome.map, Function.comp_def]⟩
+    | .ref (.inr receipt) => by
+      cases h : env.trm2typCtx.get receipt with
+      | lit repr =>
+        exact ⟨.yield (some ⟨.primitive⟩), by
+          simp [AST.infer_core, h, Rec.Outcome.map]⟩
+      | lam body tIn =>
+        exact ⟨.yield (some ⟨tIn⟩), by
+          simp [AST.infer_core, h, Rec.Outcome.map]⟩
+
 end
+
+end Umbral
+
+end Lp2lc.Active.STLC
