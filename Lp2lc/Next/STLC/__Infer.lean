@@ -57,6 +57,6 @@ class ProvingBase extends BuildEnv
 def Safety [env : ProvingBase]
     (trm : AST.Trm env.ExeParameters) (typ : AST.Typ env.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ value => (map env.ExeF env.BuildF (Sum.inl) id value.asTrm).CanInhabit typ)
+    (λ value => (AST.map env.ExeParameters env.BuildParameters (Sum.inl) id value.asTrm).CanInhabit typ)
 
 end Lp2lc.Next.STLC
