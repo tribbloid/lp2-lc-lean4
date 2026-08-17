@@ -113,9 +113,9 @@ They are deliberately left free to ward off unlawful construction:
 - the only way to construct an `Index` is to get the UId of a `Value` through the fixpoint bridge
 - the only way to construct a `Data` is to parse a primitive literal in AST
 -/
-class Free : Type 1 where
-  Carrier : UIdU -- AKA variable binding
-  Data : DataU
+class Free : Type 1 where -- TODO: renamed to "Parameters"
+  Carrier : UIdU -- AKA variable binding -- TODO: renamed to F (for free carrier)
+  Data : DataU -- TODO: renamed to D (for Data)
 
 namespace Free
 section variable (this : Free)
