@@ -7,23 +7,11 @@ open Lp2lc.Next.Util
 open Lp2lc.Active.Util
 
 /--
-collection of free type variables used in HOAS bindings
-
-They are deliberately left free to ward off unlawful construction:
-
-- the only way to construct an `Index` is to get the UId of a `Value` through the fixpoint bridge
-- the only way to construct a `Data` is to parse a primitive literal in AST
--/
-class Free where --TODO: move to Util.lean, renamed to `Parameters`
-  Carrier : UIdU -- AKA variable binding -- TODO: renamed to `C` (raw type argument should be 1 capital letter only)
-  Data : DataU -- TODO: reanemd to `D`
-
-/--
 Source type syntax.
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
 -/
-inductive AST : Free → Label → Type 2 where
+inductive AST : Parameters → Label → Type 2 where
 | primitive : AST F .typ -- `AnyVal` in Scala, accepts only primitive values
 | fn (tIn : AST F .typ) (tOut : AST F .typ) : AST F .typ -- function
 /--
@@ -38,7 +26,7 @@ They are not intrinsic typing indices on terms.
 -/
 | val (v : AST F .val) : AST F .trm -- AKA literal
 | apply (fn : AST F .trm) (arg : AST F .trm) : AST F .trm -- fn must be a function that can be applied on arg
-| ref (s : F.Carrier) : AST F .trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
+| ref (s : F.C) : AST F .trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
 /--
 Value syntax, containing neither references nor applications.
 
@@ -47,19 +35,19 @@ used by function application after both sides have been evaluated.
 
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
-| lit (repr : F.Data) : AST F .val -- most specific type is always `primitive`
+| lit (repr : F.D) : AST F .val -- most specific type is always `primitive`
 /-- Binds over a carrier-parametric argument so `AST` remains covariant in its carrier. -/
-| lam (body : {C : UIdU} → (arg : C) → AST { Carrier := C, Data := F.Data } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
+| lam (body : {C : UIdU} → (arg : C) → AST { C := C, D := F.D } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
 
-section variable {F : Free}
+section variable {F : Parameters}
 
 namespace AST
 
-abbrev Typ (F : Free) := AST F .typ
-abbrev Trm (F : Free) := AST F .trm
-abbrev Val (F : Free) := AST F .val
+abbrev Typ (F : Parameters) := AST F .typ
+abbrev Trm (F : Parameters) := AST F .trm
+abbrev Val (F : Parameters) := AST F .val
 
-section variable (F : Free)
+section variable (F : Parameters)
 
 -- structure Trm2Typ where -- TODO: cleanup, inferering with recarrier
 --   trm : Trm F
@@ -77,7 +65,7 @@ Rebuilds syntax over another carrier along a carrier map.
 References are transported along the map while binders pass through
 unchanged, making `AST` covariant in its carrier.
 -/
-def mapCarrier (F G : Free) (m : F.Carrier → G.Carrier) (mD : F.Data → G.Data)
+def mapCarrier (F G : Parameters) (m : F.C → G.C) (mD : F.D → G.D)
     {l : Label} (self : AST F l) : AST G l :=
   match self with
   | .primitive => .primitive
@@ -87,9 +75,9 @@ def mapCarrier (F G : Free) (m : F.Carrier → G.Carrier) (mD : F.Data → G.Dat
   | .ref s => .ref (m s)
   | .lit repr => .lit (mD repr)
   | .lam body tIn =>
-      let body' : {C : UIdU} → C → AST { Carrier := C, Data := G.Data } .trm :=
+      let body' : {C : UIdU} → C → AST { C := C, D := G.D } .trm :=
         λ {C} (arg : C) =>
-          mapCarrier { Carrier := C, Data := F.Data } { Carrier := C, Data := G.Data }
+          mapCarrier { C := C, D := F.D } { C := C, D := G.D }
             (λ c => c) mD (body arg)
       .lam body' (mapCarrier F G m mD tIn)
 
@@ -132,10 +120,10 @@ namespace ExeEnv
 section variable (env : ExeEnv)
 
 def trm2valCtx :=
-  env.mkFixpoint (λ T => AST.Val { Carrier := T, Data := env.D })
+  env.mkFixpoint (λ T => AST.Val { C := T, D := env.D })
 
-abbrev ExeF : Free :=
-  { Carrier := env.trm2valCtx.UId, Data := env.D }
+abbrev ExeF : Parameters :=
+  { C := env.trm2valCtx.UId, D := env.D }
 
 end
 end ExeEnv
@@ -172,10 +160,10 @@ section variable (env : BuildEnv)
 def trm2typCtx :=
   env.mkFixpoint (λ T =>
     let TC := env.trm2valCtx.UId ⊕ T
-    AST.Val { Carrier := TC, Data := env.D })
+    AST.Val { C := TC, D := env.D })
 
-abbrev BuildF : Free :=
-  { Carrier := env.trm2valCtx.UId ⊕ env.trm2typCtx.UId, Data := env.D }
+abbrev BuildF : Parameters :=
+  { C := env.trm2valCtx.UId ⊕ env.trm2typCtx.UId, D := env.D }
 
 end
 end BuildEnv

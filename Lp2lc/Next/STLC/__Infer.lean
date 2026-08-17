@@ -14,7 +14,7 @@ def infer [env : BuildEnv]
     match self with
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
-      let index : env.BuildF.Carrier := .inr (env.trm2typCtx.inv (.lam body tIn))
+      let index : env.BuildF.C := .inr (env.trm2typCtx.inv (.lam body tIn))
       (infer (body index) fuel).map
         (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>

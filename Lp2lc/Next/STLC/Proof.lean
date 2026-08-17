@@ -139,7 +139,7 @@ def infer_prove (trm : AST.Trm env.BuildF) (fuel : Nat) : Objective trm fuel :=
     match trm with
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
-      let index : env.BuildF.Carrier := .inr (env.trm2typCtx.inv (.lam body tIn))
+      let index : env.BuildF.C := .inr (env.trm2typCtx.inv (.lam body tIn))
       let result := infer_prove (body index) fuel
       ⟨result.compilation.map
           (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by

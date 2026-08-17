@@ -46,6 +46,18 @@ class Aux {VK : UIdU → Type u}
 
 end UIdEquiv
 
+/--
+collection of free type variables used in HOAS bindings
+
+They are deliberately left free to ward off unlawful construction:
+
+- the only way to construct an `Index` is to get the UId of a `Value` through the fixpoint bridge
+- the only way to construct a `Data` is to parse a primitive literal in AST
+-/
+class Parameters where
+  C : UIdU -- AKA variable binding
+  D : DataU
+
 namespace Free
 
 /-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
