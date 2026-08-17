@@ -61,8 +61,21 @@ end AST
 class ProvingBase extends BuildEnv
 
 def Safety [env : ProvingBase]
-    (trm : AST.Trm env.ExeParameters) (typ : AST.Typ env.BuildParameters) : Prop :=
+    (trm : AST.Trm env.ExeParameters) (t2 : AST.Typ env.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ value => value.asTrm.infer.isDecidable (λ inferred => inferred ≤ typ))
+    (λ v => v.asTrm.infer.isDecidable (λ t2 => t2 ≤ t2))
+
+
+/-
+safety condition given only a term
+
+comparing to the safety condition in [__Infer.lean], it is much shorter & has less arguments
+-/
+def Fundamental [env : ProvingBase]
+    (trm : AST.Trm env.ExeParameters) : Prop :=
+  trm.infer.isSemiDecidable (
+    λ t1 =>
+      Safety trm t1
+  )
 
 end Lp2lc.Next.STLC

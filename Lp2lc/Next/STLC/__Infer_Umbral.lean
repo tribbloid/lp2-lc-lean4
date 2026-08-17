@@ -8,16 +8,6 @@ namespace Umbral
 
 section variable [env : ProvingBase]
 
-/-
-safety condition given only a term
-
-comparing to the safety condition in [__Infer.lean], it is much shorter
--/
-def Safety [env : ProvingBase]
-    (trm : AST.Trm env.ExeParameters) (typ : AST.Typ env.BuildParameters) : Prop :=
-  trm.eval.isSemiDecidable
-    (λ value => value.asTrm.infer.isDecidable (λ inferred => inferred ≤ typ))
-
 structure SafetyOf (trm : AST.Trm env.BuildParameters) where
   typ : AST.Typ env.BuildParameters
   -- safety : Safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
