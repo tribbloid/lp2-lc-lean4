@@ -60,26 +60,26 @@ section variable (F : Parameters)
 end
 
 /--
-Rebuilds syntax over another carrier along a carrier map.
+Rebuilds syntax over a different group of parameters along a carrier map.
 
 References are transported along the map while binders pass through
-unchanged, making `AST` covariant in its carrier.
+unchanged, making `AST` covariant w.r.t both [Parameters.C] and [Parameters.D]
 -/
-def map (F G : Parameters) (mC : F.C → G.C) (mD : F.D → G.D) -- TODO: `F G` should be implicit
+def map {F G : Parameters} (mC : F.C → G.C) (mD : F.D → G.D)
     {l : Label} (self : AST F l) : AST G l :=
   match self with
   | .primitive => .primitive
-  | .fn tIn tOut => .fn (tIn.map F G mC mD) (tOut.map F G mC mD)
-  | .val v => .val (v.map F G mC mD)
-  | .apply fnTerm arg => .apply (fnTerm.map F G mC mD) (arg.map F G mC mD)
+  | .fn tIn tOut => .fn (tIn.map mC mD) (tOut.map mC mD)
+  | .val v => .val (v.map mC mD)
+  | .apply fnTerm arg => .apply (fnTerm.map mC mD) (arg.map mC mD)
   | .ref s => .ref (mC s)
   | .lit repr => .lit (mD repr)
   | .lam body tIn =>
       let body' : {C : UIdU} → C → AST { C := C, D := G.D } .trm :=
         λ {C} (arg : C) =>
-          (body arg).map { C := C, D := F.D } { C := C, D := G.D }
+          (body arg).map (F := { C := C, D := F.D }) (G := { C := C, D := G.D })
             (λ c => c) mD
-      .lam body' (tIn.map F G mC mD)
+      .lam body' (tIn.map mC mD)
 
 namespace Val
 

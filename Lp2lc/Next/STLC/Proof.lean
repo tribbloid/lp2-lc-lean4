@@ -106,7 +106,7 @@ theorem termInferMonotone [env : BuildEnv]
           cases receipt with
           | inl rc =>
             let original : Val env.BuildParameters :=
-              (env.trm2valCtx.get rc).map env.ExeParameters env.BuildParameters (Sum.inl) id
+              (env.trm2valCtx.get rc).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
             have hOriginal : original.asTrm.infer_core fuel = .yield result := by
               simpa [infer_core, original] using hInfer
             have hOriginalTop := ih fuel (Nat.lt_succ_self fuel)
@@ -185,7 +185,7 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
           simp [Rec.Outcome.map, Function.comp_def]⟩
     | .ref (.inl receipt) =>
       let original : AST.Val env.BuildParameters :=
-        (env.trm2valCtx.get receipt).map env.ExeParameters env.BuildParameters (Sum.inl) id
+        (env.trm2valCtx.get receipt).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
       let result := infer_prove original.asTrm fuel
       ⟨result.compilation.map (Option.map (λ safety => ⟨safety.typ⟩)), by
         change _ = original.asTrm.infer_core fuel

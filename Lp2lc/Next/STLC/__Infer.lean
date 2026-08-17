@@ -26,7 +26,7 @@ def infer_core [env : BuildEnv]
       | _, _ => .yield none
     | .ref (.inl receipt) =>
       let original : Val env.BuildParameters :=
-        (env.trm2valCtx.get receipt).map env.ExeParameters env.BuildParameters (Sum.inl) id
+        (env.trm2valCtx.get receipt).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
       original.asTrm.infer_core fuel
     | .ref (.inr receipt) =>
       match env.trm2typCtx.get receipt with
@@ -36,7 +36,7 @@ def infer_core [env : BuildEnv]
 /-- Infers build types for executable terms. -/
 def infer [env : BuildEnv]
     (self : Trm env.ExeParameters) : RecOpt (Typ env.BuildParameters) :=
-    let upcasted := self.map env.ExeParameters env.BuildParameters (Sum.inl) id
+    let upcasted := self.map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
     infer_core upcasted
 
 /-
