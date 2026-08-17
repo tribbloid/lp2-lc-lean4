@@ -122,11 +122,67 @@ namespace Umbral
 
 section variable [env : ProvingEnv]
 
-/-- Packages one inference observation with its exact correspondence witness. -/
+/-- Mirrors term inference while preserving its selected-fuel correspondence. -/
 def infer_prove (trm : AST.Trm env.ExeF) (fuel : Nat) : Objective trm fuel :=
-  ⟨(trm.infer fuel).map (Option.map (λ typ => ⟨typ⟩)), by
-    cases trm.infer fuel <;>
-      simp [Rec.Outcome.map, Function.comp_def]⟩
+  match fuel with
+  | 0 => ⟨.outOfFuel, rfl⟩
+  | fuel + 1 =>
+    match trm with
+    | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
+    | .val (.lam body tIn) =>
+      let cIn : AST.Typ env.BuildF := AST.Typ.recarrier tIn
+      let result := infer_prove (body _) fuel
+      ⟨result.compilation.map
+          (Option.map (λ safety => ⟨.fn cIn safety.typ⟩)), by
+        change _ = ((body _).infer fuel).map (Option.map (AST.fn cIn))
+        rw [← result.sameInfer]
+        cases result.compilation <;>
+          simp [Rec.Outcome.map, Function.comp_def]⟩
+    | .apply fnTerm arg =>
+      let fnResult := infer_prove fnTerm fuel
+      let argResult := infer_prove arg fuel
+      let applyResult (fnType argType : Rec.Outcome (Option (AST.Typ env.BuildF))) :
+          Rec.Outcome (Option (AST.Typ env.BuildF)) :=
+        match fnType, argType with
+        | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
+          if argTyp ≤ tIn then .yield (some tOut) else .yield none
+        | .outOfFuel, _ => .outOfFuel
+        | _, .outOfFuel => .outOfFuel
+        | _, _ => .yield none
+      let result := applyResult
+        (fnResult.compilation.map (Option.map SafetyOf.typ))
+        (argResult.compilation.map (Option.map SafetyOf.typ))
+      ⟨result.map (Option.map (λ typ => ⟨typ⟩)), by
+        have hResult : result = (AST.apply fnTerm arg).infer (fuel + 1) := by
+          calc
+            result = applyResult
+                (fnResult.compilation.map (Option.map SafetyOf.typ))
+                (argResult.compilation.map (Option.map SafetyOf.typ)) := rfl
+            _ = applyResult
+                (@AST.infer env.toProvingBase.toBuildEnv fnTerm fuel)
+                (@AST.infer env.toProvingBase.toBuildEnv arg fuel) := by
+              congr 1
+              · exact fnResult.sameInfer
+              · exact argResult.sameInfer
+            _ = @AST.infer env.toProvingBase.toBuildEnv
+                (AST.apply fnTerm arg) (fuel + 1) := by
+              conv =>
+                rhs
+                unfold AST.infer
+                simp only
+              dsimp only [applyResult]
+              split <;> simp_all
+        rw [hResult]
+        cases (AST.apply fnTerm arg).infer (fuel + 1) <;>
+          simp [Rec.Outcome.map, Function.comp_def]⟩
+    | .ref receipt =>
+      let original := env.trm2valCtx.get receipt
+      let result := infer_prove original.asTrm fuel
+      ⟨result.compilation.map (Option.map (λ safety => ⟨safety.typ⟩)), by
+        change _ = original.asTrm.infer fuel
+        rw [← result.sameInfer]
+        cases result.compilation <;>
+          simp [Rec.Outcome.map, Function.comp_def]⟩
 
 end
 

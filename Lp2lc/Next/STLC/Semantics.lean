@@ -7,7 +7,7 @@ open Lp2lc.Active.Util
 namespace AST
 
 /-- Evaluates terms whose references carry receipts from the runtime context. -/
-def eval [env : ExeEnv]
+def eval [env : ExeEnv] -- TODO: should move to STLCDef.lean
     (self : Trm env.ExeF) : RecOpt (Val env.ExeF)
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -24,6 +24,8 @@ def eval [env : ExeEnv]
       | _ => .yield none
     | .ref receipt =>
       .yield (some (env.trm2valCtx.get receipt))
+
+-- TODO: the following section should be in __Infer.lean
 
 /-- Infers build types for executable terms, recursively resolving runtime references. -/
 def infer [env : BuildEnv]
@@ -69,27 +71,11 @@ end AST
 
 class ProvingBase extends BuildEnv
 
-/-
-TODO: there is no need to use this complex definition, which is optimised for [CanInhabit] and requires both trm & typ to be provided
-
-The simple conjecture is merely `∀ t : AST.Trm F, t.eval.infer <= t.infer`
-
-There are few intricacies:
-
-- `t` may already contain references to free variable in the context
-  - `t.infer` should work even in this case
-- the subtyping symbol `<=` is only applicable for AST with identical carrier, so `infer` is allowed to shift carrier, but `eval` is not
-
-To avoid UId being abused to fake construction from any Fixpoint, the simple conjecture should be:
-
-[]
-
-The final objective is to produce a **umbral proof**, a proof that is structurally isomorphic to `Trm.infer` algorithm
--/
-
 def Safety [env : ProvingBase]
     (trm : AST.Trm env.ExeF) (typ : AST.Typ env.BuildF) : Prop :=
   trm.eval.isSemiDecidable (λ value => value.asTrm.CanInhabit typ)
+
+-- TODO: Umbral namespace should be in __Infer_Umbral.lean
 
 namespace Umbral
 
