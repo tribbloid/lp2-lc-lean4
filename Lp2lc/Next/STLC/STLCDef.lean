@@ -6,16 +6,26 @@ namespace Lp2lc.Next.STLC
 open Lp2lc.Next.Util
 open Lp2lc.Active.Util
 
-section variable {F : Free}
+/--
+collection of free type variables used in HOAS bindings
+
+They are deliberately left free to ward off unlawful construction:
+
+- the only way to construct an `Index` is to get the UId of a `Value` through the fixpoint bridge
+- the only way to construct a `Data` is to parse a primitive literal in AST
+-/
+structure Free where
+  Carrier : UIdU -- AKA variable binding
+  Data : DataU
 
 /--
 Source type syntax.
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
 -/
-inductive AST (D : DataU) : UIdU → Label → Type 2 where
-| primitive : AST D C .typ -- `AnyVal` in Scala, accepts only primitive values
-| fn (tIn : AST D C .typ) (tOut : AST D C .typ) : AST D C .typ -- function
+inductive AST : Free → Label → Type 2 where
+| primitive : AST F .typ -- `AnyVal` in Scala, accepts only primitive values
+| fn (tIn : AST F .typ) (tOut : AST F .typ) : AST F .typ -- function
 /--
 Source term syntax.
 
@@ -26,9 +36,9 @@ In HOAS there is no syntax-level context binding terms to types, so function
 input annotations are the extrinsic typing evidence available to the compiler.
 They are not intrinsic typing indices on terms.
 -/
-| val (v : AST D C .val) : AST D C .trm -- AKA literal
-| apply (fn : AST D C .trm) (arg : AST D C .trm) : AST D C .trm -- fn must be a function that can be applied on arg
-| ref (s : C) : AST D C .trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
+| val (v : AST F .val) : AST F .trm -- AKA literal
+| apply (fn : AST F .trm) (arg : AST F .trm) : AST F .trm -- fn must be a function that can be applied on arg
+| ref (s : F.Carrier) : AST F .trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
 /--
 Value syntax, containing neither references nor applications.
 
@@ -37,15 +47,17 @@ used by function application after both sides have been evaluated.
 
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
-| lit (repr : D) : AST D C .val -- most specific type is always `primitive`
+| lit (repr : F.Data) : AST F .val -- most specific type is always `primitive`
 /-- Binds over a carrier-parametric argument so `AST` remains covariant in its carrier. -/
-| lam (body : {C' : UIdU} → (arg : C') → AST D C' .trm) (tIn : AST D C .typ) : AST D C .val -- most specific type is always `.fn tIn _`
+| lam (body : {C : UIdU} → (arg : C) → AST { Carrier := C, Data := F.Data } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
+
+section variable {F : Free}
 
 namespace AST
 
-abbrev Typ (F : Free) := AST F.Data F.Carrier .typ
-abbrev Trm (F : Free) := AST F.Data F.Carrier .trm
-abbrev Val (F : Free) := AST F.Data F.Carrier .val
+abbrev Typ (F : Free) := AST F .typ
+abbrev Trm (F : Free) := AST F .trm
+abbrev Val (F : Free) := AST F .val
 
 section variable (F : Free)
 
@@ -76,7 +88,7 @@ end Source
 namespace Typ
 
 /-- Rebuilds type syntax over another carrier without converting terms or binders. -/
-def recarrier {D : DataU} {Source Target : UIdU} (self : AST D Source .typ) : AST D Target .typ :=
+def recarrier {Source Target : Free} (self : AST.Typ Source) : AST.Typ Target :=
   match self with
   | .primitive => .primitive
   | .fn tIn tOut => .fn (recarrier tIn) (recarrier tOut)
@@ -89,17 +101,21 @@ Rebuilds syntax over another carrier along a carrier map.
 References are transported along the map while binders pass through
 unchanged, making `AST` covariant in its carrier.
 -/
-def mapCarrier {D : DataU} {SourceC TargetC : UIdU}
-    (m : SourceC → TargetC)
-    {l : Label} (self : AST D SourceC l) : AST D TargetC l :=
+def mapCarrier (F G : Free) (m : F.Carrier → G.Carrier) (mD : F.Data → G.Data)
+    {l : Label} (self : AST F l) : AST G l :=
   match self with
   | .primitive => .primitive
-  | .fn tIn tOut => .fn (mapCarrier m tIn) (mapCarrier m tOut)
-  | .val v => .val (mapCarrier m v)
-  | .apply fnTerm arg => .apply (mapCarrier m fnTerm) (mapCarrier m arg)
+  | .fn tIn tOut => .fn (mapCarrier F G m mD tIn) (mapCarrier F G m mD tOut)
+  | .val v => .val (mapCarrier F G m mD v)
+  | .apply fnTerm arg => .apply (mapCarrier F G m mD fnTerm) (mapCarrier F G m mD arg)
   | .ref s => .ref (m s)
-  | .lit repr => .lit repr
-  | .lam body tIn => .lam body (mapCarrier m tIn)
+  | .lit repr => .lit (mD repr)
+  | .lam body tIn =>
+      let body' : {C : UIdU} → C → AST { Carrier := C, Data := G.Data } .trm :=
+        λ {C} (arg : C) =>
+          mapCarrier { Carrier := C, Data := F.Data } { Carrier := C, Data := G.Data }
+            (λ c => c) mD (body arg)
+      .lam body' (mapCarrier F G m mD tIn)
 
 namespace Val
 
@@ -112,11 +128,11 @@ end AST
 open AST
 
 /-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE {D : DataU} {C : UIdU} : LE (AST D C .typ) := ⟨Eq⟩
+instance typLE : LE (AST.Typ F) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
-instance typDecidableLE {D : DataU} {C : UIdU} : DecidableLE (AST D C .typ)
+instance typDecidableLE : DecidableLE (AST.Typ F)
   | .primitive, .primitive => isTrue rfl
   | .primitive, .fn _ _
   | .fn _ _, .primitive => isFalse (λ equality => nomatch equality)

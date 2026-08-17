@@ -25,7 +25,8 @@ def infer [env : BuildEnv]
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
     | .ref (.inl receipt) =>
-      let original : Val env.BuildF := mapCarrier (Sum.inl) (env.trm2valCtx.get receipt)
+      let original : Val env.BuildF :=
+        mapCarrier env.ExeF env.BuildF (Sum.inl) id (env.trm2valCtx.get receipt)
       original.asTrm.infer fuel
     | .ref (.inr receipt) =>
       match env.trm2typCtx.get receipt with
@@ -56,6 +57,6 @@ class ProvingBase extends BuildEnv
 def Safety [env : ProvingBase]
     (trm : AST.Trm env.ExeF) (typ : AST.Typ env.BuildF) : Prop :=
   trm.eval.isSemiDecidable
-    (λ value => (AST.mapCarrier (Sum.inl) value.asTrm).CanInhabit typ)
+    (λ value => (AST.mapCarrier env.ExeF env.BuildF (Sum.inl) id value.asTrm).CanInhabit typ)
 
 end Lp2lc.Next.STLC
