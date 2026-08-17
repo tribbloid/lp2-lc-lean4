@@ -176,7 +176,7 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
             _ = (AST.apply fnTerm arg).infer_core (fuel + 1) := by
               conv =>
                 rhs
-                unfold infer_core
+                unfold AST.infer_core
                 simp only
               dsimp only [applyResult]
               split <;> simp_all
@@ -196,10 +196,10 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
       cases h : env.trm2typCtx.get receipt with
       | lit repr =>
         exact ⟨.yield (some ⟨.primitive⟩), by
-          simp [infer_core, h, Rec.Outcome.map]⟩
+          simp [AST.infer_core, h, Rec.Outcome.map]⟩
       | lam body tIn =>
         exact ⟨.yield (some ⟨tIn⟩), by
-          simp [infer_core, h, Rec.Outcome.map]⟩
+          simp [AST.infer_core, h, Rec.Outcome.map]⟩
 
 end
 

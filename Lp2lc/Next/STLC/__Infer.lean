@@ -33,9 +33,10 @@ def infer_core [env : BuildEnv]
       | .lit _ => .yield (some .primitive)
       | .lam _ tIn => .yield (some tIn)
 
+/-- Infers build types for executable terms. -/
 def infer [env : BuildEnv]
     (self : Trm env.ExeParameters) : RecOpt (Typ env.BuildParameters) :=
-    let upcasted := self.map env.ExeParameters env.BuildParameters (Sum.inl)
+    let upcasted := self.map env.ExeParameters env.BuildParameters (Sum.inl) id
     infer_core upcasted
 
 /-
@@ -62,6 +63,6 @@ class ProvingBase extends BuildEnv
 def Safety [env : ProvingBase]
     (trm : AST.Trm env.ExeParameters) (typ : AST.Typ env.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ value => (value.asTrm.map env.ExeParameters env.BuildParameters (Sum.inl) id).CanInhabit typ)
+    (λ value => value.asTrm.infer.isDecidable (λ inferred => inferred ≤ typ))
 
 end Lp2lc.Next.STLC

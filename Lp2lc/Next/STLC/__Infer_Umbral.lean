@@ -16,9 +16,8 @@ comparing to the safety condition in [__Infer.lean], it is much shorter
 def Safety [env : ProvingBase]
     (trm : AST.Trm env.ExeParameters) (typ : AST.Typ env.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ value => (value.asTrm.map env.ExeParameters env.BuildParameters (Sum.inl) id).CanInhabit typ)
+    (λ value => value.asTrm.infer.isDecidable (λ inferred => inferred ≤ typ))
 
-infer_core
 structure SafetyOf (trm : AST.Trm env.BuildParameters) where
   typ : AST.Typ env.BuildParameters
   -- safety : Safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
@@ -29,7 +28,7 @@ abbrev Compilation (trm : AST.Trm env.BuildParameters) :=
 /-- Requires the proving computation to shadow term inference at the selected fuel. -/
 structure Objective (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Type 2 where
   compilation : Compilation trm
-  sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.infer fuel
+  sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.infer_core fuel
 
 end
 
