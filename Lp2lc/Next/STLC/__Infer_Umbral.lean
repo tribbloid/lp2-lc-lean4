@@ -16,7 +16,7 @@ abbrev Compilation (trm : AST.Trm env.ExeF) :=
   Rec.OutcomeOpt (SafetyOf trm) -- one observation of the semi-decidability of executing term
 
 /-- Requires the proving computation to shadow term inference at the selected fuel. -/
-structure Objective (trm : AST.Trm env.ExeF) (fuel : Nat) : Type where
+structure Objective (trm : AST.Trm env.ExeF) (fuel : Nat) : Type 2 where
   compilation : Compilation trm
   sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.infer fuel
 
