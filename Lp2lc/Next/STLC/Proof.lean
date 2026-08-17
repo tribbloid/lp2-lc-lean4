@@ -64,7 +64,7 @@ theorem termEvalMonotone [env : ExeEnv]
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone [env : BuildEnv]
-    (trm : Trm env.ExeF) :
+    (trm : Trm env.BuildF) :
     trm.infer.Monotone := by
   intro less more result hFuel hInfer
   induction less using Nat.strongRecOn generalizing trm more result with
@@ -103,16 +103,23 @@ theorem termInferMonotone [env : BuildEnv]
                 arg toFuel argResult hFuelTail hArg
               simpa [AST.infer, hFn, hArg, hFnTop, hArgTop] using hInfer
         | ref receipt =>
-          let original := env.trm2valCtx.get receipt
-          have hOriginal : original.asTrm.infer fuel = .yield result := by
-            simpa [AST.infer, original] using hInfer
-          have hOriginalTop := ih fuel (Nat.lt_succ_self fuel)
-            original.asTrm toFuel result hFuelTail hOriginal
-          simpa [AST.infer, original] using hOriginalTop
+          cases receipt with
+          | inl rc =>
+            let original : Val env.BuildF :=
+              mapCarrier (Sum.inl) (env.trm2valCtx.get rc)
+            have hOriginal : original.asTrm.infer fuel = .yield result := by
+              simpa [AST.infer, original] using hInfer
+            have hOriginalTop := ih fuel (Nat.lt_succ_self fuel)
+              original.asTrm toFuel result hFuelTail hOriginal
+            simpa [AST.infer, original] using hOriginalTop
+          | inr rc =>
+            cases env.trm2typCtx.get rc with
+            | lit repr => simpa [AST.infer] using hInfer
+            | lam body tIn => simpa [AST.infer] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone [env : BuildEnv]
-    (value : Val env.ExeF) :
+    (value : Val env.BuildF) :
     value.asTrm.infer.Monotone :=
   termInferMonotone value.asTrm
 
@@ -125,18 +132,18 @@ namespace Umbral
 section variable [env : ProvingEnv]
 
 /-- Mirrors term inference while preserving its selected-fuel correspondence. -/
-def infer_prove (trm : AST.Trm env.ExeF) (fuel : Nat) : Objective trm fuel :=
+def infer_prove (trm : AST.Trm env.BuildF) (fuel : Nat) : Objective trm fuel :=
   match fuel with
   | 0 => ⟨.outOfFuel, rfl⟩
   | fuel + 1 =>
     match trm with
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
-      let cIn : AST.Typ env.BuildF := AST.Typ.recarrier tIn
-      let result := infer_prove (body _) fuel
+      let index : env.BuildF.Carrier := .inr (env.trm2typCtx.inv (.lam body tIn))
+      let result := infer_prove (body index) fuel
       ⟨result.compilation.map
-          (Option.map (λ safety => ⟨.fn cIn safety.typ⟩)), by
-        change _ = ((body _).infer fuel).map (Option.map (AST.fn cIn))
+          (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
+        change _ = ((body index).infer fuel).map (Option.map (AST.fn tIn))
         rw [← result.sameInfer]
         cases result.compilation <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
@@ -177,14 +184,23 @@ def infer_prove (trm : AST.Trm env.ExeF) (fuel : Nat) : Objective trm fuel :=
         rw [hResult]
         cases (AST.apply fnTerm arg).infer (fuel + 1) <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
-    | .ref receipt =>
-      let original := env.trm2valCtx.get receipt
+    | .ref (.inl receipt) =>
+      let original : AST.Val env.BuildF :=
+        AST.mapCarrier (Sum.inl) (env.trm2valCtx.get receipt)
       let result := infer_prove original.asTrm fuel
       ⟨result.compilation.map (Option.map (λ safety => ⟨safety.typ⟩)), by
         change _ = original.asTrm.infer fuel
         rw [← result.sameInfer]
         cases result.compilation <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
+    | .ref (.inr receipt) => by
+      cases h : env.trm2typCtx.get receipt with
+      | lit repr =>
+        exact ⟨.yield (some ⟨.primitive⟩), by
+          simp [AST.infer, h, Rec.Outcome.map]⟩
+      | lam body tIn =>
+        exact ⟨.yield (some ⟨tIn⟩), by
+          simp [AST.infer, h, Rec.Outcome.map]⟩
 
 end
 
