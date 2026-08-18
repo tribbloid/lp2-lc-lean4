@@ -11,6 +11,10 @@ Evidence that a binder carrier [C] extends the enclosing carrier [E]:
 
 the coercion embeds references to enclosing binders into [C], so lambda
 bodies can capture their environment while remaining covariant in [C].
+
+[E] is an `outParam` trailing [C] so the [Coe] bridge instance has a valid
+synthesis order: [C] is determined by the coercion target while [E] is
+recovered from the found [Greater] evidence.
 -/
 class Greater (C : UIdU) (E : outParam UIdU) where
   coe : E → C
