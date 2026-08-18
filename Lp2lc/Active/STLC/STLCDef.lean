@@ -36,8 +36,14 @@ used by function application after both sides have been evaluated.
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
 | lit (repr : F.D) : AST F .val -- most specific type is always `primitive`
-/-- Binds over a carrier-parametric argument so `AST` remains covariant in its carrier. -/
-| lam (body : {C : UIdU} → (arg : C) → AST { C := C, D := F.D } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
+/--
+Binds over a carrier-parametric argument so `AST` remains covariant in its carrier.
+
+The body result is carried over `C ⊕ F.C` so a body can reference its own
+binder (`.inl`) as well as enclosing binders (`.inr`); without the enclosing
+side every binder introduces a fresh carrier and closures cannot be expressed.
+-/
+| lam (body : {C : UIdU} → (arg : C) → AST { C := C ⊕ F.C, D := F.D } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
 
 section variable {P : Parameters}
 
@@ -75,11 +81,23 @@ def map {F G : Parameters} (mC : F.C → G.C) (mD : F.D → G.D)
   | .ref s => .ref (mC s)
   | .lit repr => .lit (mD repr)
   | .lam body tIn =>
-      let body' : {C : UIdU} → C → AST { C := C, D := G.D } .trm :=
+      let body' : {C : UIdU} → C → AST { C := C ⊕ G.C, D := G.D } .trm :=
         λ {C} (arg : C) =>
-          (body arg).map (F := { C := C, D := F.D }) (G := { C := C, D := G.D })
-            (λ c => c) mD
+          (body arg).map (F := { C := C ⊕ F.C, D := F.D }) (G := { C := C ⊕ G.C, D := G.D })
+            (λ s =>
+              match s with
+              | .inl r => .inl r
+              | .inr r => .inr (mC r)) mD
       .lam body' (tIn.map mC mD)
+
+/--
+Collapses the carrier of a lambda body instantiated at its enclosing carrier:
+both sides of `C ⊕ C` resolve to `C`.
+-/
+def flattenCarrier {C : UIdU} (s : C ⊕ C) : C :=
+  match s with
+  | .inl r => r
+  | .inr r => r
 
 namespace Val
 
@@ -142,7 +160,10 @@ def eval [env : ExeEnv]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         let receipt := env.trm2valCtx.inv input
-        eval (body receipt) fuel
+        eval ((body receipt).map
+          (F := { C := env.ExeParameters.C ⊕ env.ExeParameters.C, D := env.ExeParameters.D })
+          (G := env.ExeParameters)
+          flattenCarrier id) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
