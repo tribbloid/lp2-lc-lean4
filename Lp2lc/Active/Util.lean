@@ -69,8 +69,9 @@ abbrev Fixpoint (VK : UIdU → Type u) :=
   UIdEquiv VK
 
 /-- Constructs receipt-indexed fixpoint bridges. -/
-class FixpointCtor where
-  mkFixpoint (VK : UIdU → Type u) : Fixpoint VK
+class FixpointExtender where
+  mkLesser --- TODO: make a "Lesser" from an existing Fixpoint.
+  -- WARNING: do not add  any other dangling function
 
 end Free
 

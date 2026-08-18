@@ -121,20 +121,20 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
-open Lp2lc.Active.Util.Free (Fixpoint FixpointCtor)
+open Lp2lc.Active.Util.Free (Fixpoint FixpointExtender)
 
 namespace ExeEnv
 
 end ExeEnv
 
 /-- Owns the bridge constructor shared by concrete STLC contexts. -/
-class ExeEnv extends FixpointCtor where
+class ExeEnv extends FixpointExtender where
   D : DataU
 
 namespace ExeEnv
 section variable (env : ExeEnv)
 
-def trm2valCtx :=
+def trm2valCtx := -- TODO: move into class as an abstract function
   env.mkFixpoint (λ T => AST.Val { C := T, D := env.D })
 
 abbrev ExeParameters : Parameters :=
@@ -172,10 +172,11 @@ class BuildEnv extends ExeEnv
 namespace BuildEnv
 section variable (env : BuildEnv)
 
-def trm2typCtx :=
+@[instance_reducible]
+def trm2typCtx := -- TODO: move into class as an abstract function
   env.mkFixpoint (λ T =>
     let TC := env.trm2valCtx.UId ⊕ T
-    AST.Val { C := TC, D := env.D })
+    AST.Typ { C := TC, D := env.D })
 
 abbrev BuildParameters : Parameters :=
   { C := env.trm2valCtx.UId ⊕ env.trm2typCtx.UId, D := env.D }

@@ -4,23 +4,31 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-namespace Umbral
+/-- Adds the compile-time typing context to an execution environment. -/
+class UmbralEnv extends ExeEnv
 
-section variable [env : ProvingBase]
+namespace UmbralEnv
+section variable (env : UmbralEnv)
 
-structure SafetyOf (trm : AST.Trm env.BuildParameters) where
-  typ : AST.Typ env.BuildParameters
-  -- safety : Safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
+def trm2proofCtx :=
+  env.mkFixpoint (λ T =>
+    let TC := env.trm2valCtx.UId ⊕ T
+    AST.Val { C := TC, D := env.D })
 
-abbrev Compilation (trm : AST.Trm env.BuildParameters) :=
-  Rec.OutcomeOpt (SafetyOf trm) -- one observation of the semi-decidability of executing term
-
-/-- Requires the proving computation to shadow term inference at the selected fuel. -/
-structure Objective (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Type 2 where
-  compilation : Compilation trm
-  sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.infer_core fuel
+abbrev UmbralParameters : Parameters :=
+  { C := env.trm2valCtx.UId ⊕ env.trm2proofCtx.UId, D := env.D }
 
 end
+end UmbralEnv
+
+namespace Umbral
+
+
+
+-- /-- Infers build types for executable terms. -/
+-- def infer [env : UmbralEnv]
+--     (self : Trm env.ExeParameters) : RecOpt (Typ env.UmbralParameters) :=
+
 
 end Umbral
 

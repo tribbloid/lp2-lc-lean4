@@ -6,12 +6,12 @@ namespace Trm
 
 open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
-open Lp2lc.Active.Util.Free (FixpointCtor)
+open Lp2lc.Active.Util.Free (FixpointExtender)
 open Tests.STLC.Sanity.Symbolic
 
 section eval
 
-variable [fixCtor : FixpointCtor]
+variable [fixCtor : FixpointExtender]
 
 /-- test-only execution environment over String data, its fixpoint bridge is left abstract. -/
 instance env : ExeEnv := {

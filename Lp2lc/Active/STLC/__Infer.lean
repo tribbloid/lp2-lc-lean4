@@ -6,38 +6,10 @@ open Lp2lc.Active.Util
 
 namespace AST
 
-/-- Infers build types for executable terms, recursively resolving runtime references. -/
-def infer_core [env : BuildEnv]
-    (self : Trm env.BuildParameters) : RecOpt (Typ env.BuildParameters)
-  | 0 => .outOfFuel
-  | fuel + 1 =>
-    match self with
-    | .val (.lit _) => .yield (some .primitive)
-    | .val (.lam body tIn) =>
-      let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv (.lam body tIn))
-      ((body (s := ⟨id⟩) index).infer_core fuel).map
-        (λ out => out.map (λ tOut => .fn tIn tOut))
-    | .apply fnTerm arg =>
-      match infer_core fnTerm fuel, infer_core arg fuel with
-      | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
-        if argTyp ≤ tIn then .yield (some tOut) else .yield none
-      | .outOfFuel, _ => .outOfFuel
-      | _, .outOfFuel => .outOfFuel
-      | _, _ => .yield none
-    | .ref (.inl receipt) =>
-      let original : Val env.BuildParameters :=
-        (env.trm2valCtx.get receipt).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
-      original.asTrm.infer_core fuel
-    | .ref (.inr receipt) =>
-      match env.trm2typCtx.get receipt with
-      | .lit _ => .yield (some .primitive)
-      | .lam _ tIn => .yield (some tIn)
 
 /-- Infers build types for executable terms. -/
 def infer [env : BuildEnv]
-    (self : Trm env.ExeParameters) : RecOpt (Typ env.BuildParameters) :=
-    let upcasted := self.map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
-    infer_core upcasted
+    (self : Trm env.ExeParameters) : RecOpt (Typ env.BuildParameters) := sorry
 
 /-
 DEFER: GPT is right:
