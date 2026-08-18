@@ -7,6 +7,21 @@ open Lp2lc.Next.Util
 open Lp2lc.Active.Util
 
 /--
+Evidence that a binder carrier [C] extends the enclosing carrier [E]:
+
+the coercion embeds references to enclosing binders into [C], so lambda
+bodies can capture their environment while remaining covariant in [C].
+-/
+class Greater (C : UIdU) (E : outParam UIdU) where
+  coe : E → C
+
+/-- Bridges [Greater] evidence into the built-in coercion machinery. -/
+instance {E C : UIdU} [s : Greater C E] : Coe E C := ⟨s.coe⟩
+
+/-- The enclosing carrier trivially extends itself. -/
+instance (E : UIdU) : Greater E E := ⟨id⟩
+
+/--
 Source type syntax.
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
@@ -39,11 +54,11 @@ Function values carry their input type so the compiler can type-check HOAS bodie
 /--
 Binds over a carrier-parametric argument so `AST` remains covariant in its carrier.
 
-The body result is carried over `C ⊕ F.C` so a body can reference its own
-binder (`.inl`) as well as enclosing binders (`.inr`); without the enclosing
-side every binder introduces a fresh carrier and closures cannot be expressed.
+The body result is carried over [C] and [Greater C F.C] is required as evidence
+that enclosing binders can be embedded into [C]; without it every binder
+introduces a fresh carrier and closures cannot be expressed.
 -/
-| lam (body : {C : UIdU} → (arg : C) → AST { C := C ⊕ F.C, D := F.D } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
+| lam (body : {C : UIdU} → [s : Greater C F.C] → (arg : C) → AST { C := C, D := F.D } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
 
 section variable {P : Parameters}
 
@@ -81,23 +96,12 @@ def map {F G : Parameters} (mC : F.C → G.C) (mD : F.D → G.D)
   | .ref s => .ref (mC s)
   | .lit repr => .lit (mD repr)
   | .lam body tIn =>
-      let body' : {C : UIdU} → C → AST { C := C ⊕ G.C, D := G.D } .trm :=
-        λ {C} (arg : C) =>
-          (body arg).map (F := { C := C ⊕ F.C, D := F.D }) (G := { C := C ⊕ G.C, D := G.D })
-            (λ s =>
-              match s with
-              | .inl r => .inl r
-              | .inr r => .inr (mC r)) mD
+      let body' : {C : UIdU} → [s : Greater C G.C] → C → AST { C := C, D := G.D } .trm :=
+        λ {C} [sG : Greater C G.C] (arg : C) =>
+          (body (s := ⟨λ f => sG.coe (mC f)⟩) arg).map
+            (F := { C := C, D := F.D }) (G := { C := C, D := G.D })
+            (λ c => c) mD
       .lam body' (tIn.map mC mD)
-
-/--
-Collapses the carrier of a lambda body instantiated at its enclosing carrier:
-both sides of `C ⊕ C` resolve to `C`.
--/
-def flattenCarrier {C : UIdU} (s : C ⊕ C) : C :=
-  match s with
-  | .inl r => r
-  | .inr r => r
 
 namespace Val
 
@@ -160,10 +164,7 @@ def eval [env : ExeEnv]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         let receipt := env.trm2valCtx.inv input
-        eval ((body receipt).map
-          (F := { C := env.ExeParameters.C ⊕ env.ExeParameters.C, D := env.ExeParameters.D })
-          (G := env.ExeParameters)
-          flattenCarrier id) fuel
+        eval (body receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none

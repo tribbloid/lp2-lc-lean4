@@ -15,10 +15,7 @@ def infer_core [env : BuildEnv]
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
       let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv (.lam body tIn))
-      (((body index).map
-        (F := { C := env.BuildParameters.C ⊕ env.BuildParameters.C, D := env.BuildParameters.D })
-        (G := env.BuildParameters)
-        flattenCarrier id).infer_core fuel).map
+      ((body index).infer_core fuel).map
         (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
       match infer_core fnTerm fuel, infer_core arg fuel with
