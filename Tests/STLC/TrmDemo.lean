@@ -14,7 +14,7 @@ def vTrue : Trm :=
   .val (.lit "true")
 
 def primitiveIdFn : Trm :=
-  .val (.lam (λ x => .ref x) .primitive)
+  .val (.lam (λ x => .ref (.inl x)) .primitive)
 
 def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
@@ -23,14 +23,14 @@ def get1st : Trm :=
   .val
     (.lam (λ x =>
       .val
-        (.lam (λ _y => .ref x) .primitive))
+        (.lam (λ _y => .ref (.inr (.inl x))) .primitive))
       .primitive)
 
 def get2nd : Trm :=
   .val
     (.lam (λ _x =>
       .val
-        (.lam (λ y => .ref y) .primitive))
+        (.lam (λ y => .ref (.inl y)) .primitive))
       .primitive)
 
 def get1stOnTuple : Trm :=
@@ -58,7 +58,7 @@ def hintedFalse : Trm :=
   .val (.lit "false")
 
 def hintedIdFn : Trm :=
-  .val (.lam (λ x => .ref x) .primitive)
+  .val (.lam (λ x => .ref (.inl x)) .primitive)
 
 def hintedIdFnOnFalse : Trm :=
   .apply hintedIdFn hintedFalse

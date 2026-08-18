@@ -46,6 +46,8 @@ class Lesser {VK : UIdU → Type u}
 
 end UIdEquiv
 
+attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
+
 /--
 the meaning of P in PHOAS, the collection of free type variables used in PHOAS bindings
 

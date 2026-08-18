@@ -3,6 +3,7 @@ import «Lp2lc».Active.STLC.STLCDef
 namespace Tests.STLC.Sanity
 open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
+open Lp2lc.Next.Util
 
 /--
 it is deliberately unconstructable: a fixpoint can hypothetically make it but this is not deliberately provided anywhere
@@ -13,7 +14,7 @@ inductive Symbol where
 
 namespace Symbolic
 
-abbrev I : Free := { Carrier := Symbol, Data := String }
+abbrev I : Parameters := { C := Symbol, D := String }
 
 abbrev Typ := AST.Typ I
 abbrev Val := AST.Val I
@@ -26,7 +27,7 @@ open Tests.STLC.Sanity.Symbolic
 namespace Val
 
 def idFn : Val :=
-  .lam (λ x => .ref x) .primitive
+  .lam (λ x => .ref (.inl x)) .primitive
 
 end Val
 
