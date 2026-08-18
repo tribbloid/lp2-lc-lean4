@@ -1,117 +1,27 @@
-import Std
-import «Lp2lc».Active.Shared
 import «Lp2lc».Active.STLC.__Infer
 
-namespace Lp2lc.Active
-
-namespace STLC
-
-/- this file doesn't need any test -/
+namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-section variable {F : Free}
-
 namespace Umbral
 
-section variable [@ProvingBase F]
+section variable [env : ProvingBase]
 
-structure SafetyOf (trm : AST.Trm F) where
-  typ : AST.Typ F
+structure SafetyOf (trm : AST.Trm env.BuildParameters) where
+  typ : AST.Typ env.BuildParameters
   -- safety : Safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
 
-abbrev Compilation (trm : AST.Trm F) :=
+abbrev Compilation (trm : AST.Trm env.BuildParameters) :=
   Rec.OutcomeOpt (SafetyOf trm) -- one observation of the semi-decidability of executing term
 
 /-- Requires the proving computation to shadow term inference at the selected fuel. -/
-structure Objective (trm : AST.Trm F) (fuel : Nat) : Type where
+structure Objective (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Type 2 where
   compilation : Compilation trm
-  sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.infer fuel
-
-end
-
-/--
-contains a FBound store to save/load intermediate safety proof for both [AST.Trm] and [AST.Val]
-
-[infer_prove] & any theorem that relies on safety can use it, this is the only correspondence between compiletime and runtime variables.
-
-no abstract function is allowed here
--/
-class ProvingEnv extends @ProvingBase F where
-
-
-namespace ProvingEnv
-/-
-all declarations of UIdEquiv and it's dependently typed instance should be in this namespace
-
-unused definition is strictly prohibited
--/
-
--- TODO: add a concrete proofCtx
-end ProvingEnv
-
-section
-
-/-
-TODO:: now the primary objective [SafetyOf.safety] can be introduced without breaking existing prove structure.
-
-Recommendation:
-
-- create a new Context [safetyCtx] under [ProvingEnv] that extends existing [trm2typCtx], which is capable of memorizing Term safety or Objective directly
-- temporarily move the AST into a difference PHOAS carrier ([F.Index]) to enable reference to [safetyCtx.Receipt]
-- once the main objective is proven, move back to the original PHOAS carrier
-
-Partial proof is acceptable if this is too hard.
--/
-
-/-- Mirrors term inference while routing typed binders through the temporary proof context.
-
-like [AST.infer] it inductively infer [AST.Typ] of a given [AST.Trm], using the structure of [AST.infer] as a blueprint.
-
-unlike [AST.infer] it is obliged to produce a [Objective] bundle of:
-
-- original [AST.Typ]
-- proof that it has the same result to [AST.infer]
-
-Recommendation:
-
-- create a [UIdEquiv.Aux0] from trm2TypCtx (Aux0 contains an abuse that allows other UId to be used to get any value, it is temporarily tolerated)
-- write an algorithm identical with Trm.infer, but save into [UIdEquiv.Aux0] instead to get an UId
-
--/
-def infer_prove [env: @ProvingEnv F] (trm : AST.Trm F) (fuel : Nat) : Objective trm fuel :=
-  match fuel with
-  | 0 => ⟨.outOfFuel, rfl⟩
-  | fuel + 1 =>
-    match trm with
-    | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
-    | .val (.lam body tIn) =>
-      let index := env.trm2typCtx.inv ⟨.val (.lam body tIn), tIn⟩; let result := infer_prove (body index) fuel
-      ⟨result.compilation.map (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
-        change _ = ((body index).infer fuel).map (Option.map (AST.fn tIn))
-        rw [← result.sameInfer]
-        cases result.compilation <;> simp [Rec.Outcome.map, Function.comp_def]⟩
-    | .apply fnTerm arg =>
-      let fnResult := infer_prove fnTerm fuel
-      let argResult := infer_prove arg fuel
-      let result : Rec.Outcome (Option (AST.Typ F)) :=
-        match fnResult.compilation.map (Option.map SafetyOf.typ), argResult.compilation.map (Option.map SafetyOf.typ) with
-        | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
-          if argTyp ≤ tIn then .yield (some tOut) else .yield none
-        | .outOfFuel, _ => .outOfFuel
-        | _, .outOfFuel => .outOfFuel
-        | _, _ => .yield none
-      ⟨result.map (Option.map (λ typ => ⟨typ⟩)), by
-        have hResult : result = (AST.apply fnTerm arg).infer (fuel + 1) := by
-          simp only [result, AST.infer]
-          rw [fnResult.sameInfer, argResult.sameInfer] <;> rfl
-        rw [hResult]
-        cases (AST.apply fnTerm arg).infer (fuel + 1) <;> simp [Rec.Outcome.map, Function.comp_def]⟩
-    | @AST.ref _ uid => ⟨.yield (some ⟨(env.trm2typCtx.get uid).typ⟩), rfl⟩
+  sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.infer_core fuel
 
 end
 
 end Umbral
-end
 
-end STLC
+end Lp2lc.Active.STLC

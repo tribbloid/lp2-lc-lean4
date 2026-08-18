@@ -1,8 +1,8 @@
-import «Lp2lc».Next.Util
+import «Lp2lc».Active.Util
 
 namespace Tests.UIdEquivSpec
 
-open Lp2lc.Next.Util
+open Lp2lc.Active.Util
 open UIdEquiv
 
 @[reducible] def group : UIdEquiv.{0} (λ _evidence => Nat) where
