@@ -49,7 +49,7 @@ unsafe example :
       ((.lit "false") : AST.Val testEnv.ExeParameters) := by
   constructor
   · exact ⟨2, by
-      simp only [AST.eval, AST.map, AST.flattenCarrier, upcast,
+      simp only [AST.eval, AST.map, upcast,
         Trm.primitiveIdFnOnFalse, Trm.primitiveIdFn, Trm.vFalse]
       rw (config := { transparency := .default }) [testEnv.trm2valCtx.rightInv]
       rfl⟩
@@ -60,7 +60,7 @@ unsafe example :
       ((.lit "false") : AST.Val testEnv.ExeParameters) := by
   constructor
   · exact ⟨3, by
-      simp only [AST.eval, AST.map, AST.flattenCarrier, upcast,
+      simp only [AST.eval, AST.map, upcast,
         Trm.get1stOnTuple, Trm.get1st, Trm.vFalse, Trm.vTrue]
       rw (config := { transparency := .default }) [testEnv.trm2valCtx.rightInv]
       rfl⟩
@@ -71,7 +71,7 @@ unsafe example :
       ((.lit "true") : AST.Val testEnv.ExeParameters) := by
   constructor
   · exact ⟨3, by
-      simp only [AST.eval, AST.map, AST.flattenCarrier, upcast,
+      simp only [AST.eval, AST.map, upcast,
         Trm.get2ndOnTuple, Trm.get2nd, Trm.vFalse, Trm.vTrue]
       rw (config := { transparency := .default }) [testEnv.trm2valCtx.rightInv]
       rfl⟩
@@ -82,7 +82,7 @@ unsafe example :
       (upcast Val.idFn : AST.Val testEnv.ExeParameters) := by
   constructor
   · exact ⟨2, by
-      simp only [AST.eval, AST.map, AST.flattenCarrier, upcast,
+      simp only [AST.eval, AST.map, upcast,
         Trm.Malformed.applyIdFnOnItself, Trm.primitiveIdFn, Val.idFn]
       rw (config := { transparency := .default }) [testEnv.trm2valCtx.rightInv]⟩
   · rfl
@@ -92,11 +92,11 @@ unsafe example :
       ((.lit "false") : AST.Val testEnv.ExeParameters) := by
   constructor
   · exact ⟨3, by
-      simp only [AST.eval, AST.map, AST.flattenCarrier, upcast,
+      simp only [AST.eval, AST.map, upcast,
         Trm.Malformed.idFnOnFalse2, Trm.Malformed.applyIdFnOnItself,
         Trm.primitiveIdFn, Trm.vFalse]
       rw (config := { transparency := .default }) [testEnv.trm2valCtx.rightInv]
-      simp only [AST.eval, AST.map, AST.flattenCarrier, upcast,
+      simp only [AST.eval, AST.map, upcast,
         Trm.Malformed.idFnOnFalse2, Trm.Malformed.applyIdFnOnItself,
         Trm.primitiveIdFn, Trm.vFalse]
       rw (config := { transparency := .default }) [testEnv.trm2valCtx.rightInv]
@@ -107,10 +107,10 @@ unsafe example :
     (upcast Trm.Malformed.apply1).eval.shouldFail := by
   constructor
   · exact ⟨4, by
-      simp only [AST.eval, AST.map, AST.flattenCarrier, upcast,
+      simp only [AST.eval, AST.map, upcast,
         Trm.Malformed.apply1, Trm.primitiveIdFn, Trm.vFalse, Trm.vTrue]
       rw (config := { transparency := .default }) [testEnv.trm2valCtx.rightInv]
-      simp only [AST.eval, AST.map, AST.flattenCarrier, upcast,
+      simp only [AST.eval, AST.map, upcast,
         Trm.Malformed.apply1, Trm.primitiveIdFn, Trm.vFalse, Trm.vTrue]⟩
   · rfl
 

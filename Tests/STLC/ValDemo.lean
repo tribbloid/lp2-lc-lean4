@@ -27,7 +27,7 @@ open Tests.STLC.Sanity.Symbolic
 namespace Val
 
 def idFn : Val :=
-  .lam (λ x => .ref (.inl x)) .primitive
+  .lam (λ x => .ref x) .primitive
 
 end Val
 
