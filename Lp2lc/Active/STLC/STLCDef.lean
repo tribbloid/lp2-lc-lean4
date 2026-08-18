@@ -9,21 +9,11 @@ open Lp2lc.Active.Util
 /--
 Evidence that a binder carrier [C] extends the enclosing carrier [E]:
 
-the coercion embeds references to enclosing binders into [C], so lambda
-bodies can capture their environment while remaining covariant in [C].
-
-[E] is an `outParam` trailing [C] so the [Coe] bridge instance has a valid
-synthesis order: [C] is determined by the coercion target while [E] is
-recovered from the found [Greater] evidence.
+the evidence is the coercion embedding references to enclosing binders into
+[C], so lambda bodies can capture their environment while remaining
+covariant in [C].
 -/
-class Greater (C : UIdU) (E : outParam UIdU) where
-  coe : E → C
-
-/-- Bridges [Greater] evidence into the built-in coercion machinery. -/
-instance {E C : UIdU} [s : Greater C E] : Coe E C := ⟨s.coe⟩
-
-/-- The enclosing carrier trivially extends itself. -/
-instance (E : UIdU) : Greater E E := ⟨id⟩
+abbrev Greater (C E : UIdU) := Coe E C
 
 /--
 Source type syntax.
@@ -168,7 +158,7 @@ def eval [env : ExeEnv]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         let receipt := env.trm2valCtx.inv input
-        eval (body receipt) fuel
+        eval (body (s := ⟨id⟩) receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
