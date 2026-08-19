@@ -82,8 +82,13 @@ def CanInhabit [env : BuildEnv]
 
 end AST
 
+/-
+TODO: remove it: it enables cheating in compilation/proving
+
+instead, defining Safety should require converting trm2val into a trm2valCtx and build an ExeEnv from it
+-/
 /-- Combines the executable and build-time environments, equating their value bridges. -/
-class ProvingBase extends ExeEnv, BuildEnv where -- TODO: composition is better than subtyping
+class ProvingBase extends ExeEnv, BuildEnv where
   trm2valAgree : (toExeEnv.trm2valCtx).toUIdView = trm2val
 
 namespace ProvingBase
