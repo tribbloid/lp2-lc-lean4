@@ -57,7 +57,7 @@ def CanInhabit [env : BuildEnv]
 end AST
 
 /-- Combines the executable and build-time environments, equating their value bridges. -/
-class ProvingBase extends ExeEnv, BuildEnv where
+class ProvingBase extends ExeEnv, BuildEnv where -- TODO: composition is better than subtyping
   trm2valAgree : trm2valCtx.toUIdView = trm2val
 
 namespace ProvingBase
