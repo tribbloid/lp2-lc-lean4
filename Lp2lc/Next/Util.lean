@@ -19,9 +19,17 @@ carriers can retain the receipt required by `get`.
 
 type V is deliberately a type constructor of V, without it V may be impossible to define due to cyclic references
 -/
-class UIdEquiv (VK : UIdU → Type u) where
+class UIdView (VK : UIdU → Type u) where
   UId : UIdU
   get : (uid : UId) → VK UId
+
+/--
+Full receipt-indexed bridge, extending `UIdView` with the reverse direction.
+
+`inv` is the only way to obtain a UId: it requires a value, so a view alone
+cannot mint receipts from new values.
+-/
+class UIdEquiv (VK : UIdU → Type u) extends UIdView VK where
   inv : (value : VK UId) → UId
   rightInv : ∀ (value : VK UId), get (inv value) = value
   leftInv : ∀ (receipt : UId), inv (get receipt) = receipt

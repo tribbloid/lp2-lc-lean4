@@ -26,7 +26,7 @@ def infer_core [env : BuildEnv]
       | _, _ => .yield none
     | .ref (.inl receipt) =>
       let original : Val env.BuildParameters :=
-        (env.trm2valCtx.get receipt).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
+        (env.trm2val.get receipt).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
       original.asTrm.infer_core fuel
     | .ref (.inr receipt) =>
       .yield (some (env.trm2typCtx.get receipt))
@@ -56,12 +56,25 @@ def CanInhabit [env : BuildEnv]
 
 end AST
 
-class ProvingBase extends BuildEnv
+/-- Combines the executable and build-time environments, equating their value bridges. -/
+class ProvingBase extends ExeEnv, BuildEnv where
+  trm2valAgree : trm2valCtx.toUIdView = trm2val
+
+namespace ProvingBase
+
+theorem trm2valUIdAgree (env : ProvingBase) : env.trm2valCtx.UId = env.trm2val.UId := by
+  rw [env.trm2valAgree]
+
+end ProvingBase
 
 def Safety [env : ProvingBase]
-    (trm : AST.Trm env.ExeParameters) (t2 : AST.Typ env.BuildParameters) : Prop :=
+    (trm : AST.Trm env.toExeEnv.ExeParameters) (t2 : AST.Typ env.toBuildEnv.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
+    (λ v =>
+      let v' : AST.Val env.toBuildEnv.ExeParameters :=
+        v.map (F := env.toExeEnv.ExeParameters) (G := env.toBuildEnv.ExeParameters)
+          (λ c => cast (env.trm2valUIdAgree) c) id
+      v'.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
 
 
 /-
@@ -70,8 +83,11 @@ safety condition given only a term
 comparing to the safety condition in [__Infer.lean], it is much shorter & has less arguments
 -/
 def Fundamental [env : ProvingBase]
-    (trm : AST.Trm env.ExeParameters) : Prop :=
-  trm.infer.isSemiDecidable (
+    (trm : AST.Trm env.toExeEnv.ExeParameters) : Prop :=
+  let trm' : AST.Trm env.toBuildEnv.ExeParameters :=
+    trm.map (F := env.toExeEnv.ExeParameters) (G := env.toBuildEnv.ExeParameters)
+      (λ c => cast (env.trm2valUIdAgree) c) id
+  trm'.infer.isSemiDecidable (
     λ t1 =>
       Safety trm t1
   )

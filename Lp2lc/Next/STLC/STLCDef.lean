@@ -108,9 +108,12 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
 
 open Lp2lc.Next.Util.Free (Fixpoint FixpointExtender)
 
-/-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv extends FixpointExtender where
+/-- Owns the data representation shared by executable and build-time contexts. -/
+class DataOwner where
   D : DataU
+
+/-- Owns the runtime receipt bridge for executable STLC values. -/
+class ExeEnv extends DataOwner, FixpointExtender where
   trm2valCtx : Fixpoint (λ T => AST.Val { C := T, D := D })
 
 namespace ExeEnv
@@ -145,27 +148,24 @@ def eval [env : ExeEnv]
 
 end AST
 
-/-
-TODO: this will allow BuildEnv to cheat at compile-time (by getting UIDs from new value).
-A real compiler should only be allowed to get value from UIDs, not vice versa. It should be fixed.
-
-suggestion:
-
-- create `UIdView`, a superclass of UIdEquiv that only contains `get` function.
-- BuildEnv should no longer extends ExeEnv, but it contains `trm2val : UIdView`
-- ProvingEnv should extends both ExeEnv and BuildEnv, with an equivalence proof of both versions of trm2val
+/--
+Adds the compile-time typing context; its value view only permits lookups,
+so compile-time code cannot mint receipts from new values.
 -/
-/-- Adds the compile-time typing context to an execution environment. -/
-class BuildEnv extends ExeEnv where
+class BuildEnv extends DataOwner, FixpointExtender where
+  trm2val : UIdView (λ T => AST.Val { C := T, D := D })
   trm2typCtx : Fixpoint (λ T =>
-    let TC := trm2valCtx.UId ⊕ T
+    let TC := trm2val.UId ⊕ T
     AST.Typ { C := TC, D := D })
 
 namespace BuildEnv
 section variable (env : BuildEnv)
 
+abbrev ExeParameters : Parameters :=
+  { C := env.trm2val.UId, D := env.D }
+
 abbrev BuildParameters : Parameters :=
-  { C := env.trm2valCtx.UId ⊕ env.trm2typCtx.UId, D := env.D }
+  { C := env.trm2val.UId ⊕ env.trm2typCtx.UId, D := env.D }
 
 end
 end BuildEnv
