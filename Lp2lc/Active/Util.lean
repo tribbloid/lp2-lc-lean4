@@ -6,140 +6,86 @@ namespace Lp2lc.Active.Util
 abbrev UIdU := Type -- the `U` suffix signifies this symbol as denoting a universe level
 abbrev DataU := Type
 
-class HasEv (UId : UIdU) where
-  Ev : UId → Prop
+universe u v
 
-abbrev HasEv.Receipt (self : HasEv UId) := PSigma self.Ev
+inductive Label
+| typ
+| trm
+| val
 
 /--
-Hypothetical bridge between values & UIds as HOAS carrier
+Receipt-indexed bridge between values and identifiers.
 
-[UIdEquiv.inv] is the only way to obtain a UId: it requires a `V`.
-Consequently, [UIdEquiv.get] is total without introducing free variables.
-As a result, explicit variable substitution (common in de Bruijn serial & named variable stynax) and fuel tower (common in PHOAS) can both be avoided
+The value family is indexed by this bridge's evidence so recursive PHOAS
+carriers can retain the receipt required by `get`.
 
-[UIdEquiv.inv] and [UIdEquiv.get] are inverse: [UIdEquiv.rightInv] starts
-from a value, while [UIdEquiv.leftInv] starts from a UId.
+type V is deliberately a type constructor of V, without it V may be impossible to define due to cyclic references
 -/
-class UIdEquiv (UId : UIdU) (V : Type) : Type where
-  inv : (value : V) → UId
-  get : (id : UId) → V
-  rightInv : ∀ (value : V), get (inv value) = value
-  leftInv : ∀ (id : UId), inv (get id) = id
+class UIdView (VK : UIdU → Type u) where
+  UId : UIdU
+  get : (uid : UId) → VK UId
 
+/--
+Full receipt-indexed bridge, extending `UIdView` with the reverse direction.
 
-/-
-TODO: Avoid fake construction through UIdEquiv
-
-the above code allow the same type of UId to be generated from different instances, this has caused serious problem in the constructive proof as it allow fake V to be created.
-
-I'd like to plug this loophole:
-
-- UIdEquiv should be a subclass of `HasEv` (similar to Aux)
-- `inv` should return `Ev UId`, get should consume it
-- other functions should adapt
-- AST in type system definitions are mostly intact
-  - but when being used in BuildEnv and ExeEnv, their original Carrier will no longer be able to carry the receipts of `trm2valCtx`/`trm2TypCtx`
-  - therefore, new carriers defined by `F.WithEv` have to be used instead:
-    - `CVar` := Carrier for trm2valCtx
-    - `CTyp` := Carrier for trm2typCtx
-    - `Trm.eval` accepts `Trm CVar` and produce `Trm CVar`
-    - `Trm.infer` accepts `Trm CVar` and produce `Typ CTyp`, since some `Trm CVar` may contain `.ref` to free variables assigned `trm2valCtx`, the new `BuildEnv` will need access to both `trm2valCtx` and `trm2TypCtx` to work properly
-
-This is a large-scale migration, you should gradually migrate existing code to a new directory/package `Lp2lc/Next`, in multiple steps & git commits.
-
-- For a component, definition and implementation/discharge should be migrated in 2 different commits
-- After each commit, you must ask for permission before proceeding to the next step
-
-The following code are strictly prohibited, every commit should be followed by a subagent that warn against such violations:
-
-- duplicated definition (e.g. duplicated inductive cases in multiple definitions)
-- leaky abstraction & unnecessary copy & paste
-- moving/weakening goalpost (e.g. adding axiom, modifying theorem signature)
-- bloated code after migration
-- introducing new/exotic concept that doesn't exist in original code
-
+`inv` is the only way to obtain a UId: it requires a value, so a view alone
+cannot mint receipts from new values.
 -/
+class UIdEquiv (VK : UIdU → Type u) extends UIdView VK where
+  inv : (value : VK UId) → UId
+  rightInv : ∀ (value : VK UId), get (inv value) = value
+  leftInv : ∀ (receipt : UId), inv (get receipt) = receipt
 
 namespace UIdEquiv
 
-/-- Value bundled with its metadata over `M`. -/
-abbrev Bundle {V : Type} (M : V → Sort u) := PSigma M
+class HasEv (UId : UIdU) where
+  Ev : UId → Prop -- used to represent subtype of UId, implying extra condition
 
-/-- UId bundled with its evidence from `Ev`. -/
-abbrev Receipt {UId : UIdU} (Ev : UId → Prop) := PSigma Ev
+/-
+TODO: I don't think subtyping/`Lesser` is general enough, we need supertyping/`Greater`
 
-/--
-extension of [UIdEquiv] that can attach metadata `M : Type/Prop` to existing UId-value pairs:
-
-- [UIdEquiv.Aux.inv] requires both value and its metadata, but UId is only computed from value
-- [UIdEquiv.Aux.get] requires both UId and the evidence that its metadata has been saved before
-- all [UIdEquiv.Aux] instances derived from the same [UIdEquiv] share its [UIdEquiv.inv] and [UIdEquiv.get]
-
-`M` is a dependent family over `V` and is reconstructed by each [UIdEquiv.Aux]
-instance through [UIdEquiv.Aux.get]. [UIdEquiv.Receipt] restricts that
-reconstruction to identifiers carrying evidence for the auxiliary instance.
-
-[UIdEquiv.Aux.inv] saves a bundle using only its value through the shared group bridge.
-[UIdEquiv.Aux.get] reconstructs a value through the group and then this instance's metadata.
+Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
 -/
-class Aux {UId : UIdU} {V : Type}
-    (outer : UIdEquiv UId V) (M : V → Sort u) extends HasEv UId where
-  inv : (bundle : Bundle M) → Ev (outer.inv bundle.fst)
-  get : (rc : Receipt Ev) → M (outer.get rc.fst)
 
-namespace Aux
-
-section variable {UId : UIdU} {V : Type} {outer : UIdEquiv UId V} {M : V → Sort u} (self : Aux outer M)
-
-/-- Saving membership and reconstructing metadata preserves the original value. -/
-@[simp]
-theorem rightInvValue (bundle : Bundle M) :
-    (⟨outer.get (outer.inv bundle.fst),
-      self.get
-        ⟨outer.inv bundle.fst, self.inv bundle⟩⟩ : Bundle M).fst = bundle.fst :=
-  outer.rightInv bundle.fst
-
-end
-end Aux
+/-- an auxiliary equivalence for a subtype of [outer.VK T], Can attach independently witnessed metadata `M` to receipts from outer bridge. -/
+class Lesser {VK : UIdU → Type u}
+    (outer : UIdEquiv VK) (M : VK outer.UId → Sort v)
+    extends HasEv outer.UId where
+  get : (receipt : PSigma toHasEv.Ev) → M (outer.get receipt.fst)
+  inv : (bundle : PSigma M) → Ev (outer.inv bundle.fst)
 
 end UIdEquiv
 
 /--
-collection of free type variables used in HOAS bindings
+Owns the data representation `D`, the binary data type of primitive literals.
+
+The only way to construct `D` is to parse a primitive literal in AST.
+-/
+class HasData where
+  D : DataU -- Binary Data type
+
+/--
+the meaning of P in PHOAS, the collection of free type variables used in PHOAS bindings
 
 They are deliberately left free to ward off unlawful construction:
 
-- the only way to construct an `Index` is to get the UId of a `Value` through the fixpoint bridge
-- the only way to construct a `Data` is to parse a primitive literal in AST
+- the only way to construct `C` is to get the UId of something already existing through [UIdEquiv]
+- the only way to construct `D` is to parse a primitive literal in AST
 -/
-class Free : Type 1 where -- TODO: renamed to "Parameters"
-  Carrier : UIdU -- AKA variable binding -- TODO: renamed to F (for free carrier)
-  Data : DataU -- TODO: renamed to D (for Data)
+class Parameters extends HasData where
+  C : UIdU -- Carrier type, AKA variable binding
 
 namespace Free
-section variable (this : Free)
 
-abbrev Fixpoint (V : Type) :=
-  UIdEquiv this.Carrier V
+/-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
+abbrev Fixpoint (VK : UIdU → Type u) :=
+  UIdEquiv VK
 
-universe u
+/-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/
+class FixpointExtender where
+  mkLesser {VK : UIdU → Type u} (outer : Fixpoint VK) {M : VK outer.UId → Sort u} :
+    UIdEquiv.Lesser outer M
 
-/-- Constructs fixpoint bridges and universe-polymorphic metadata bridges for a free family. -/
-class FixpointCtor : Type (max 1 u) where
-  mkFixpoint (V : Type) : this.Fixpoint V
-  attachAux {UId : UIdU} {V : Type} (outer : this.Fixpoint V) (M : V → Sort u) : UIdEquiv.Aux outer M
-
-/--
-Extending the Carrier of a Free instance by [HasEv.Ev]
-
-This class is frequently used to define PHOAS AST with new, conpartmentalised carrier type
--/
-class WithEv (augmentation: HasEv this.Carrier) extends Free where
-  Carrier := augmentation.Receipt
-  Data := this.Data
-
-end
 end Free
 
 attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
