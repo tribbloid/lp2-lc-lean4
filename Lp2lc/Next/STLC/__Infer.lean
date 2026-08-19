@@ -14,7 +14,7 @@ def infer_core [env : BuildEnv]
     match self with
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
-      let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv (.lam body tIn))
+      let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv tIn)
       ((body index).infer_core fuel).map
         (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
@@ -29,9 +29,7 @@ def infer_core [env : BuildEnv]
         (env.trm2valCtx.get receipt).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
       original.asTrm.infer_core fuel
     | .ref (.inr receipt) =>
-      match env.trm2typCtx.get receipt with
-      | .lit _ => .yield (some .primitive)
-      | .lam _ tIn => .yield (some tIn)
+      .yield (some (env.trm2typCtx.get receipt))
 
 /-- Infers build types for executable terms. -/
 def infer [env : BuildEnv]
@@ -63,7 +61,7 @@ class ProvingBase extends BuildEnv
 def Safety [env : ProvingBase]
     (trm : AST.Trm env.ExeParameters) (t2 : AST.Typ env.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ v => v.asTrm.infer.isDecidable (λ t2 => t2 ≤ t2))
+    (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
 
 
 /-

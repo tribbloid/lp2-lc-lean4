@@ -114,8 +114,8 @@ theorem termInferMonotone [env : BuildEnv]
             simpa [infer_core, original] using hOriginalTop
           | inr rc =>
             cases env.trm2typCtx.get rc with
-            | lit repr => simpa [infer_core] using hInfer
-            | lam body tIn => simpa [infer_core] using hInfer
+            | primitive => simpa [infer_core] using hInfer
+            | fn tIn tOut => simpa [infer_core] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone [env : BuildEnv]
@@ -139,7 +139,7 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
     match trm with
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
-      let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv (.lam body tIn))
+      let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv tIn)
       let result := infer_prove (body index) fuel
       ⟨result.compilation.map
           (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
@@ -194,11 +194,11 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
           simp [Rec.Outcome.map, Function.comp_def]⟩
     | .ref (.inr receipt) => by
       cases h : env.trm2typCtx.get receipt with
-      | lit repr =>
+      | primitive =>
         exact ⟨.yield (some ⟨.primitive⟩), by
           simp [AST.infer_core, h, Rec.Outcome.map]⟩
-      | lam body tIn =>
-        exact ⟨.yield (some ⟨tIn⟩), by
+      | fn tIn tOut =>
+        exact ⟨.yield (some ⟨.fn tIn tOut⟩), by
           simp [AST.infer_core, h, Rec.Outcome.map]⟩
 
 end

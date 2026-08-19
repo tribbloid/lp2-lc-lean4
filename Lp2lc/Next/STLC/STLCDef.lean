@@ -106,21 +106,15 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
-open Lp2lc.Next.Util.Free (Fixpoint FixpointCtor)
+open Lp2lc.Next.Util.Free (Fixpoint)
 
-namespace ExeEnv
-
-end ExeEnv
-
-/-- Owns the bridge constructor shared by concrete STLC contexts. -/
-class ExeEnv extends FixpointCtor where
+/-- Owns the runtime receipt bridge for executable STLC values. -/
+class ExeEnv where
   D : DataU
+  trm2valCtx : Fixpoint (λ T => AST.Val { C := T, D := D })
 
 namespace ExeEnv
 section variable (env : ExeEnv)
-
-def trm2valCtx :=
-  env.mkFixpoint (λ T => AST.Val { C := T, D := env.D })
 
 abbrev ExeParameters : Parameters :=
   { C := env.trm2valCtx.UId, D := env.D }
@@ -151,16 +145,24 @@ def eval [env : ExeEnv]
 
 end AST
 
+/-
+TODO: this will allow BuildEnv to cheat at compile-time (by getting UIDs from new value).
+A real compiler should only be allowed to get value from UIDs, not vice versa. It should be fixed.
+
+suggestion:
+
+- create `UIdView`, a superclass of UIdEquiv that only contains `get` function.
+- BuildEnv should no longer extends ExeEnv, but it contains `trm2val : UIdView`
+- ProvingEnv should extends both ExeEnv and BuildEnv, with an equivalence proof of both versions of trm2val
+-/
 /-- Adds the compile-time typing context to an execution environment. -/
-class BuildEnv extends ExeEnv
+class BuildEnv extends ExeEnv where
+  trm2typCtx : Fixpoint (λ T =>
+    let TC := trm2valCtx.UId ⊕ T
+    AST.Typ { C := TC, D := D })
 
 namespace BuildEnv
 section variable (env : BuildEnv)
-
-def trm2typCtx :=
-  env.mkFixpoint (λ T =>
-    let TC := env.trm2valCtx.UId ⊕ T
-    AST.Val { C := TC, D := env.D })
 
 abbrev BuildParameters : Parameters :=
   { C := env.trm2valCtx.UId ⊕ env.trm2typCtx.UId, D := env.D }
