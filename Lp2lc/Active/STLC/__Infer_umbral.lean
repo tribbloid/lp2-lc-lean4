@@ -20,7 +20,7 @@ structure TypeWithSafey [env : ProvingBase] (trm : AST.Trm env.ExeParameters) wh
 
 /-- Infers build types for executable terms. -/
 def infer [env : UmbralEnv]
-    (self : AST.Trm env.ExeParameters) : RecOpt (TypeWithSafey self) := sorry
+    (trm : AST.Trm env.ExeParameters) : RecOpt (TypeWithSafey trm) := sorry
 
 end Umbral
 
