@@ -108,12 +108,8 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
 
 open Lp2lc.Next.Util.Free (Fixpoint FixpointExtender)
 
-/-- Owns the data representation shared by executable and build-time contexts. -/
-class DataOwner where -- TODO: rename to `HasData`, move into Util.lean, become a superclass of `Parameters`
-  D : DataU
-
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv extends DataOwner, FixpointExtender where
+class ExeEnv extends HasData, FixpointExtender where
   trm2valCtx : Fixpoint (λ T => AST.Val { C := T, D := D })
 
 namespace ExeEnv
@@ -152,7 +148,7 @@ end AST
 Adds the compile-time typing context; its value view only permits lookups,
 so compile-time code cannot mint receipts from new values.
 -/
-class BuildEnv extends DataOwner, FixpointExtender where
+class BuildEnv extends HasData, FixpointExtender where
   trm2val : UIdView (λ T => AST.Val { C := T, D := D })
   trm2typCtx : Fixpoint (λ T =>
     let TC := trm2val.UId ⊕ T
