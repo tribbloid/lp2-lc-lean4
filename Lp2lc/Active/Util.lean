@@ -56,6 +56,16 @@ class Lesser {VK : UIdU → Type u}
 
 end UIdEquiv
 
+/-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/
+class FixpointExtender where
+  mkLesser {VK : UIdU → Type u} (outer : UIdEquiv VK) {M : VK outer.UId → Sort u} :
+    UIdEquiv.Lesser outer M
+
+/-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
+abbrev Fixpoint := UIdEquiv
+
+attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
+
 /--
 Owns the data representation `D`, the binary data type of primitive literals.
 
@@ -74,21 +84,6 @@ They are deliberately left free to ward off unlawful construction:
 -/
 class Parameters extends HasData where
   C : UIdU -- Carrier type, AKA variable binding
-
-namespace Free
-
-/-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
-abbrev Fixpoint (VK : UIdU → Type u) :=
-  UIdEquiv VK
-
-/-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/
-class FixpointExtender where
-  mkLesser {VK : UIdU → Type u} (outer : Fixpoint VK) {M : VK outer.UId → Sort u} :
-    UIdEquiv.Lesser outer M
-
-end Free
-
-attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
 
 section variable {T : Sort u}
 
