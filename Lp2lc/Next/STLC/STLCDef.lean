@@ -109,7 +109,7 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
 open Lp2lc.Next.Util.Free (Fixpoint FixpointExtender)
 
 /-- Owns the data representation shared by executable and build-time contexts. -/
-class DataOwner where
+class DataOwner where -- TODO: rename to `HasData`, move into Util.lean, become a superclass of `Parameters`
   D : DataU
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/

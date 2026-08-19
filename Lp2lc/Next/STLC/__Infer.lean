@@ -68,9 +68,10 @@ theorem trm2valUIdAgree (env : ProvingBase) : env.trm2valCtx.UId = env.trm2val.U
 end ProvingBase
 
 def Safety [env : ProvingBase]
-    (trm : AST.Trm env.toExeEnv.ExeParameters) (t2 : AST.Typ env.toBuildEnv.BuildParameters) : Prop :=
+    (trm : AST.Trm env.ExeParameters) (t2 : AST.Typ env.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
     (λ v =>
+      -- TODO: shorten the following by using implicit coercion
       let v' : AST.Val env.toBuildEnv.ExeParameters :=
         v.map (F := env.toExeEnv.ExeParameters) (G := env.toBuildEnv.ExeParameters)
           (λ c => cast (env.trm2valUIdAgree) c) id
