@@ -64,7 +64,6 @@ namespace Free
 abbrev Fixpoint (VK : UIdU → Type u) :=
   UIdEquiv VK
 
--- TODO: both Build/Exe env should extend it
 /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/
 class FixpointExtender where
   mkLesser {VK : UIdU → Type u} (outer : Fixpoint VK) {M : VK outer.UId → Sort u} :

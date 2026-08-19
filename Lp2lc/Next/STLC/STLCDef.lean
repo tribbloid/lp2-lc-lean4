@@ -106,10 +106,10 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
-open Lp2lc.Next.Util.Free (Fixpoint)
+open Lp2lc.Next.Util.Free (Fixpoint FixpointExtender)
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv where
+class ExeEnv extends FixpointExtender where
   D : DataU
   trm2valCtx : Fixpoint (λ T => AST.Val { C := T, D := D })
 
