@@ -21,7 +21,7 @@ carriers can retain the receipt required by `get`.
 
 type V is deliberately a type constructor of V, without it V may be impossible to define due to cyclic references
 -/
-class UIdView (VK : UIdU → Type u) where
+class UIdView (VK : UIdU → Sort u) where
   UId : UIdU
   get : (uid : UId) → VK UId
 
@@ -31,7 +31,7 @@ Full receipt-indexed bridge, extending `UIdView` with the reverse direction.
 `inv` is the only way to obtain a UId: it requires a value, so a view alone
 cannot mint receipts from new values.
 -/
-class UIdEquiv (VK : UIdU → Type u) extends UIdView VK where
+class UIdEquiv (VK : UIdU → Sort u) extends UIdView VK where
   inv : (value : VK UId) → UId
   rightInv : ∀ (value : VK UId), get (inv value) = value
   leftInv : ∀ (receipt : UId), inv (get receipt) = receipt
@@ -48,18 +48,18 @@ Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. Th
 -/
 
 /-- an auxiliary equivalence for a subtype of [outer.VK T], Can attach independently witnessed metadata `M` to receipts from outer bridge. -/
-class Lesser {VK : UIdU → Type u}
-    (outer : UIdEquiv VK) (M : VK outer.UId → Sort v)
+class Lesser {VK : UIdU → Sort u}
+    (outer : UIdEquiv VK) (MK : VK outer.UId → Sort v)
     extends HasEv outer.UId where
-  get : (receipt : PSigma toHasEv.Ev) → M (outer.get receipt.fst)
-  inv : (bundle : PSigma M) → Ev (outer.inv bundle.fst)
+  get : (receipt : PSigma toHasEv.Ev) → MK (outer.get receipt.fst)
+  inv : (bundle : PSigma MK) → Ev (outer.inv bundle.fst)
 
 end UIdEquiv
 
 /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/
-class FixpointExtender where
-  mkLesser {VK : UIdU → Type u} (outer : UIdEquiv VK) {M : VK outer.UId → Sort u} :
-    UIdEquiv.Lesser outer M
+class CanMkUIdFor (VK : UIdU -> Sort u) where
+  mkEquiv  : UIdEquiv VK
+  mkLesser (outer : UIdEquiv VK) {MK : VK outer.UId → Sort u} : UIdEquiv.Lesser outer MK
 
 /-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
 abbrev Fixpoint := UIdEquiv

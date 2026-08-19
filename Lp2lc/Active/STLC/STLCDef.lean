@@ -124,14 +124,14 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
 open Lp2lc.Active.Util.Free (Fixpoint FixpointExtender)
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv extends HasData, FixpointExtender where
+class ExeEnv extends HasData where
+  mkUId4Val : CanMkUIdFor (λ T => AST.Val { C := T, D := D }) -- FIX this shit
   trm2valCtx : Fixpoint (λ T => AST.Val { C := T, D := D })
 
 namespace ExeEnv
 section variable (env : ExeEnv)
 
-abbrev ExeParameters : Parameters :=
-  { C := env.trm2valCtx.UId, D := env.D }
+abbrev ExeParameters : Parameters := { C := env.trm2valCtx.UId, D := env.D }
 
 end
 end ExeEnv
@@ -163,8 +163,11 @@ end AST
 Adds the compile-time typing context; its value view only permits lookups,
 so compile-time code cannot mint receipts from new values.
 -/
-class BuildEnv extends HasData, FixpointExtender where
+class BuildEnv extends HasData where
   trm2val : UIdView (λ T => AST.Val { C := T, D := D })
+  mkUId4Typ : CanMkUIdFor (λ T =>
+    let TC := trm2val.UId ⊕ T
+    AST.Typ { C := TC, D := D }) -- FIX this shit
   trm2typCtx : Fixpoint (λ T =>
     let TC := trm2val.UId ⊕ T
     AST.Typ { C := TC, D := D })
