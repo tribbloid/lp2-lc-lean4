@@ -5,17 +5,16 @@ namespace Tests.STLC.Sanity
 namespace Trm
 
 open Lp2lc.Active.Util
-open Lp2lc.Active.Util.Free (Fixpoint FixpointExtender)
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
 section eval
-class TestEnv extends FixpointExtender where
-  trm2valCtx : Fixpoint (λ T => AST.Val { C := T, D := String })
+class TestEnv where
+  mkUId4Val : CanMkUIdFor (λ T => AST.Val { C := T, D := String })
 
 variable [testEnv : TestEnv]
 
-@[reducible] instance env : ExeEnv := { D := String, trm2valCtx := testEnv.trm2valCtx, mkLesser := testEnv.mkLesser }
+@[reducible] instance env : ExeEnv := { D := String, mkUId4Val := testEnv.mkUId4Val }
 
 def upcast {l : Label} (self : AST Symbolic.I l) : AST env.ExeParameters l :=
   self.map (F := Symbolic.I) (G := env.ExeParameters) (λ (s : Symbol) => nomatch s) id

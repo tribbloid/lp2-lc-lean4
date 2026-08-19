@@ -121,15 +121,14 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
-open Lp2lc.Active.Util.Free (Fixpoint FixpointExtender)
-
 /-- Owns the runtime receipt bridge for executable STLC values. -/
 class ExeEnv extends HasData where
-  mkUId4Val : CanMkUIdFor (λ T => AST.Val { C := T, D := D }) -- FIX this shit
-  trm2valCtx : Fixpoint (λ T => AST.Val { C := T, D := D })
+  mkUId4Val : CanMkUIdFor (λ T => AST.Val { C := T, D := D })
 
 namespace ExeEnv
 section variable (env : ExeEnv)
+
+abbrev trm2valCtx : Fixpoint (λ T => AST.Val { C := T, D := env.D }) := env.mkUId4Val.mkEquiv
 
 abbrev ExeParameters : Parameters := { C := env.trm2valCtx.UId, D := env.D }
 
@@ -167,13 +166,14 @@ class BuildEnv extends HasData where
   trm2val : UIdView (λ T => AST.Val { C := T, D := D })
   mkUId4Typ : CanMkUIdFor (λ T =>
     let TC := trm2val.UId ⊕ T
-    AST.Typ { C := TC, D := D }) -- FIX this shit
-  trm2typCtx : Fixpoint (λ T =>
-    let TC := trm2val.UId ⊕ T
     AST.Typ { C := TC, D := D })
 
 namespace BuildEnv
 section variable (env : BuildEnv)
+
+abbrev trm2typCtx : Fixpoint (λ T =>
+  let TC := env.trm2val.UId ⊕ T
+  AST.Typ { C := TC, D := env.D }) := env.mkUId4Typ.mkEquiv
 
 abbrev ExeParameters : Parameters :=
   { C := env.trm2val.UId, D := env.D }
