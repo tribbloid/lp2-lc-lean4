@@ -5,71 +5,71 @@ namespace Tests.STLC.Sanity
 namespace Trm
 
 open Lp2lc.Active.Util
+open Lp2lc.Active.Util.Free (Fixpoint FixpointExtender)
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
 section eval
-variable [env : @ExeEnv Symbolic.I]
+class TestEnv extends FixpointExtender where
+  trm2valCtx : Fixpoint (λ T => AST.Val { C := T, D := String })
 
-example :
-    ((Trm.vFalse : Trm).eval).shouldYields
-      ((.lit "false") : Val) := by
+variable [testEnv : TestEnv]
+
+@[reducible] instance env : ExeEnv := { D := String, trm2valCtx := testEnv.trm2valCtx, mkLesser := testEnv.mkLesser }
+
+def upcast {l : Label} (self : AST Symbolic.I l) : AST env.ExeParameters l :=
+  self.map (F := Symbolic.I) (G := env.ExeParameters) (λ (s : Symbol) => nomatch s) id
+
+attribute [local simp] AST.eval AST.map upcast
+attribute [local simp] Trm.vFalse Trm.vTrue Trm.primitiveIdFn Trm.primitiveIdFnOnFalse
+attribute [local simp] Trm.get1st Trm.get2nd Trm.get1stOnTuple Trm.get2ndOnTuple
+attribute [local simp] Trm.primitiveTrueFn Trm.primitiveTrueFnOnFalse
+attribute [local simp] Trm.Malformed.applyIdFnOnItself Trm.Malformed.idFnOnFalse2
+attribute [local simp] Trm.Malformed.apply1 Trm.Malformed.primitiveApply Val.idFn
+
+example : (upcast Trm.vFalse).eval.shouldYields (.lit "false") := by
   constructor
-  · exact ⟨1, rfl⟩
+  · exact ⟨1, by simp⟩
   · rfl
 
-example :
-    ((Trm.primitiveIdFnOnFalse : Trm).eval).shouldYields
-      ((.lit "false") : Val) := by
+example : (upcast Trm.primitiveIdFnOnFalse).eval.shouldYields (.lit "false") := by
   constructor
-  · exact ⟨2, by simp [AST.eval, primitiveIdFnOnFalse, primitiveIdFn, vFalse]⟩
+  · exact ⟨2, by simp⟩
   · rfl
 
-example :
-    ((Trm.get1stOnTuple : Trm).eval).shouldYields
-      ((.lit "false") : Val) := by
+example : (upcast Trm.get1stOnTuple).eval.shouldYields (.lit "false") := by
   constructor
-  · exact ⟨3, by simp [AST.eval, get1stOnTuple, get1st, vFalse, vTrue]⟩
+  · exact ⟨3, by simp⟩
   · rfl
 
-example :
-    ((Trm.get2ndOnTuple : Trm).eval).shouldYields
-      ((.lit "true") : Val) := by
+example : (upcast Trm.get2ndOnTuple).eval.shouldYields (.lit "true") := by
   constructor
-  · exact ⟨3, by simp [AST.eval, get2ndOnTuple, get2nd, vFalse, vTrue]⟩
+  · exact ⟨3, by simp⟩
   · rfl
 
-example :
-    (Malformed.applyIdFnOnItself.eval).shouldYields
-      (Val.idFn : Val) := by
+example : (upcast Trm.Malformed.applyIdFnOnItself).eval.shouldYields (upcast Val.idFn) := by
   constructor
-  · exact ⟨2, by simp [AST.eval, Malformed.applyIdFnOnItself, primitiveIdFn, Val.idFn]⟩
+  · exact ⟨2, by simp⟩
   · rfl
 
-example :
-    ((Trm.Malformed.idFnOnFalse2 : Trm).eval).shouldYields
-      ((.lit "false") : Val) := by
+example : (upcast Trm.Malformed.idFnOnFalse2).eval.shouldYields (.lit "false") := by
   constructor
-  · exact ⟨3, by simp [AST.eval, Malformed.idFnOnFalse2, Malformed.applyIdFnOnItself, primitiveIdFn, vFalse]⟩
+  · exact ⟨3, by simp⟩
   · rfl
 
-example :
-    ((Trm.Malformed.apply1 : Trm).eval).shouldFail := by
+example : (upcast Trm.Malformed.apply1).eval.shouldFail := by
   constructor
-  · exact ⟨4, by simp [AST.eval, Malformed.apply1, primitiveIdFn, vFalse, vTrue]⟩
+  · exact ⟨4, by simp⟩
   · rfl
 
-example :
-    ((Trm.Malformed.primitiveApply : Trm).eval).shouldFail := by
+example : (upcast Trm.Malformed.primitiveApply).eval.shouldFail := by
   constructor
-  · exact ⟨2, rfl⟩
+  · exact ⟨2, by simp⟩
   · rfl
 
-example :
-    ((Trm.primitiveTrueFnOnFalse : Trm).eval).shouldYields
-      ((.lit "true") : Val) := by
+example : (upcast Trm.primitiveTrueFnOnFalse).eval.shouldYields (.lit "true") := by
   constructor
-  · exact ⟨2, rfl⟩
+  · exact ⟨2, by simp⟩
   · rfl
 
 end eval
