@@ -158,32 +158,6 @@ def eval [env : ExeEnv]
 
 end AST
 
-/--
-Adds the compile-time typing context; its value view only permits lookups,
-so compile-time code cannot mint receipts from new values.
--/
-class BuildEnv extends HasData where -- TODO: this class & namespace should be in __Infer.lean
-  trm2val : UIdView (λ T => AST.Val { C := T, D := D })
-  mkUId4Typ : CanMkUIdFor (λ T =>
-    let TC := trm2val.UId ⊕ T
-    AST.Typ { C := TC, D := D })
-
-namespace BuildEnv
-section variable (env : BuildEnv)
-
-abbrev trm2typCtx : Fixpoint (λ T =>
-  let TC := env.trm2val.UId ⊕ T
-  AST.Typ { C := TC, D := env.D }) := env.mkUId4Typ.mkEquiv
-
-abbrev ExeParameters : Parameters :=
-  { C := env.trm2val.UId, D := env.D }
-
-abbrev BuildParameters : Parameters :=
-  { C := env.trm2val.UId ⊕ env.trm2typCtx.UId, D := env.D }
-
-end
-end BuildEnv
-
 end
 
 end Lp2lc.Active.STLC
