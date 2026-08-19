@@ -125,11 +125,23 @@ theorem valueInferMonotone [env : BuildEnv]
 
 end AST
 
+namespace UmbralV1
+
 class ProvingEnv extends ProvingBase
 
-namespace Umbral
-
 section variable [env : ProvingEnv]
+
+structure SafetyOf (trm : AST.Trm env.BuildParameters) where
+  typ : AST.Typ env.BuildParameters
+  -- safety : Safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
+
+abbrev Compilation (trm : AST.Trm env.BuildParameters) :=
+  Rec.OutcomeOpt (SafetyOf trm) -- one observation of the semi-decidability of executing term
+
+/-- Requires the proving computation to shadow term inference at the selected fuel. -/
+structure Objective (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Type 2 where
+  compilation : Compilation trm
+  sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.infer_core fuel
 
 /-- Mirrors term inference while preserving its selected-fuel correspondence. -/
 def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm fuel :=
@@ -203,6 +215,6 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
 
 end
 
-end Umbral
+end UmbralV1
 
 end Lp2lc.Active.STLC
