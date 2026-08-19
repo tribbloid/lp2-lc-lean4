@@ -162,7 +162,7 @@ end AST
 Adds the compile-time typing context; its value view only permits lookups,
 so compile-time code cannot mint receipts from new values.
 -/
-class BuildEnv extends HasData where
+class BuildEnv extends HasData where -- TODO: this class & namespace should be in __Infer.lean
   trm2val : UIdView (λ T => AST.Val { C := T, D := D })
   mkUId4Typ : CanMkUIdFor (λ T =>
     let TC := trm2val.UId ⊕ T
