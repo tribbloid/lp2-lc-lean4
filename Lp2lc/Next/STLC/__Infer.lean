@@ -65,17 +65,17 @@ namespace ProvingBase
 theorem trm2valUIdAgree (env : ProvingBase) : env.trm2valCtx.UId = env.trm2val.UId := by
   rw [env.trm2valAgree]
 
+/-- Transports executable terms onto the build-time carrier along the bridged value view. -/
+instance trm2valCoe [env : ProvingBase] : Coe (AST.Trm env.ExeParameters) (AST.Trm env.toBuildEnv.ExeParameters) where
+  coe trm := trm.map (F := env.ExeParameters) (G := env.toBuildEnv.ExeParameters)
+    (λ c => cast (env.trm2valUIdAgree) c) id
+
 end ProvingBase
 
 def Safety [env : ProvingBase]
     (trm : AST.Trm env.ExeParameters) (t2 : AST.Typ env.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ v =>
-      -- TODO: shorten the following by using implicit coercion
-      let v' : AST.Val env.toBuildEnv.ExeParameters :=
-        v.map (F := env.toExeEnv.ExeParameters) (G := env.toBuildEnv.ExeParameters)
-          (λ c => cast (env.trm2valUIdAgree) c) id
-      v'.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
+    (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
 
 
 /-
@@ -84,11 +84,8 @@ safety condition given only a term
 comparing to the safety condition in [__Infer.lean], it is much shorter & has less arguments
 -/
 def Fundamental [env : ProvingBase]
-    (trm : AST.Trm env.toExeEnv.ExeParameters) : Prop :=
-  let trm' : AST.Trm env.toBuildEnv.ExeParameters :=
-    trm.map (F := env.toExeEnv.ExeParameters) (G := env.toBuildEnv.ExeParameters)
-      (λ c => cast (env.trm2valUIdAgree) c) id
-  trm'.infer.isSemiDecidable (
+    (trm : AST.Trm env.ExeParameters) : Prop :=
+  trm.infer.isSemiDecidable (
     λ t1 =>
       Safety trm t1
   )
