@@ -6,6 +6,15 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
 /--
+Evidence that a binder carrier [C] extends the enclosing carrier [E]:
+
+the evidence is the coercion embedding references to enclosing binders into
+[C], so lambda bodies can capture their environment while remaining
+covariant in [C].
+-/
+abbrev Greater (C E : UIdU) := Coe E C
+
+/--
 Source type syntax.
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
@@ -35,8 +44,14 @@ used by function application after both sides have been evaluated.
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
 | lit (repr : F.D) : AST F .val -- most specific type is always `primitive`
-/-- Binds over a carrier-parametric argument so `AST` remains covariant in its carrier. -/
-| lam (body : {C : UIdU} → (arg : C) → AST { C := C, D := F.D } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
+/--
+Binds over a carrier-parametric argument so `AST` remains covariant in its carrier.
+
+The body result is carried over [C] and [Greater C F.C] is required as evidence
+that enclosing binders can be embedded into [C]; without it every binder
+introduces a fresh carrier and closures cannot be expressed.
+-/
+| lam (body : {C : UIdU} → [s : Greater C F.C] → (arg : C) → AST { C := C, D := F.D } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
 
 section variable {P : Parameters}
 
@@ -74,9 +89,10 @@ def map {F G : Parameters} (mC : F.C → G.C) (mD : F.D → G.D)
   | .ref s => .ref (mC s)
   | .lit repr => .lit (mD repr)
   | .lam body tIn =>
-      let body' : {C : UIdU} → C → AST { C := C, D := G.D } .trm :=
-        λ {C} (arg : C) =>
-          (body arg).map (F := { C := C, D := F.D }) (G := { C := C, D := G.D })
+      let body' : {C : UIdU} → [sG : Greater C G.C] → C → AST { C := C, D := G.D } .trm :=
+        λ {C} [sG : Greater C G.C] (arg : C) =>
+          (body (s := ⟨λ f => sG.coe (mC f)⟩) arg).map
+            (F := { C := C, D := F.D }) (G := { C := C, D := G.D })
             (λ c => c) mD
       .lam body' (tIn.map mC mD)
 
@@ -134,7 +150,7 @@ def eval [env : ExeEnv]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         let receipt := env.trm2valCtx.inv input
-        eval (body receipt) fuel
+        eval (body (s := ⟨id⟩) receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none

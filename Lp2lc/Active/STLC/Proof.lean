@@ -50,12 +50,12 @@ theorem termEvalMonotone [env : ExeEnv]
                   | none =>
                     simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                   | some input =>
-                    cases hBody : (body (env.trm2valCtx.inv input)).eval fuel with
+                    cases hBody : (body (s := ⟨id⟩) (env.trm2valCtx.inv input)).eval fuel with
                     | outOfFuel =>
                       simp [AST.eval, hFn, hArg, hBody] at hEval
                     | yield bodyResult =>
                       have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
-                        (body (env.trm2valCtx.inv input))
+                        (body (s := ⟨id⟩) (env.trm2valCtx.inv input))
                         toFuel bodyResult hFuelTail hBody
                       simpa [AST.eval, hFn, hArg, hFnTop, hArgTop,
                         hBody, hBodyTop] using hEval
@@ -140,10 +140,10 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
       let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv tIn)
-      let result := infer_prove (body index) fuel
+      let result := infer_prove (body (s := ⟨id⟩) index) fuel
       ⟨result.compilation.map
           (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
-        change _ = ((body index).infer_core fuel).map (Option.map (AST.fn tIn))
+        change _ = ((body (s := ⟨id⟩) index).infer_core fuel).map (Option.map (AST.fn tIn))
         rw [← result.sameInfer]
         cases result.compilation <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
