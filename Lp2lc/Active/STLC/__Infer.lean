@@ -85,7 +85,13 @@ end AST
 /-
 TODO: remove it: it enables cheating in compilation/proving
 
-instead, defining Safety should require converting trm2val into a trm2valCtx and build an ExeEnv from it
+the `Safety` theorem can switch to the following definition instead:
+- define a subclass `ExeEnv.CompatibleWith` depending on an `BuildEnv` instance, which is an environment with equality proof between trm2typ and trm2typCtx.
+- the original argument [env : ProvingBase] can be broken into 2 args:
+  - the BuildEnv used by `infer`
+  - the ExeEnv.CompatibleWith used by `eval`, which depends on above
+- do not introduce any new parameter anywhere
+- some classes will now only have single usages and can be inlined
 -/
 /-- Combines the executable and build-time environments, equating their value bridges. -/
 class ProvingBase extends ExeEnv, BuildEnv where
@@ -110,15 +116,17 @@ def Safety [env : ProvingBase]
 
 
 /-
-safety condition given only a term
-
-comparing to the safety condition in [__Infer.lean], it is much shorter & has less arguments
+-- TODO: this is the "Paranoid Fundamental theorem": compilation may fail even but term evaluation may succeed.
+-- TODO: enable later
 -/
-def Fundamental [env : ProvingBase]
-    (trm : AST.Trm env.ExeParameters) : Prop :=
-  trm.infer.isSemiDecidable (
-    λ t1 =>
-      Safety trm t1
-  )
+-- /--
+-- if compiled a term and succeeded, the term must be safe
+-- -/
+-- def Fundamental [env : ProvingBase]
+--     (trm : AST.Trm env.ExeParameters) : Prop :=
+--   trm.infer.isSemiDecidable (
+--     λ t1 =>
+--       Safety trm t1
+--   )
 
 end Lp2lc.Active.STLC
