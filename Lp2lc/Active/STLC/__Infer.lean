@@ -82,9 +82,9 @@ def CanInhabit [env : BuildEnv]
 
 end AST
 
-class CompatExeEnv (build: BuildEnv) extends ExeEnv where
-  hD := D = build.D
-  hTrm2val := build.trm2val = trm2valCtx.toUIdView
+class CompatExeEnv (build : BuildEnv) extends ExeEnv where
+  hD : toExeEnv.toHasData = build.toHasData
+  hTrm2val : build.trm2val = hD ▸ (toExeEnv.trm2valCtx).toUIdView
 
 /-
 TODO: remove it: it enables cheating in compilation/proving
