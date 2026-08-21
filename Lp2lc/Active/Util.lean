@@ -14,12 +14,12 @@ inductive Label
 | val
 
 /--
-Receipt-indexed bridge between values and identifiers.
+Receipt-indexed bridge between values and identifiers. Read-only.
 
 The value family is indexed by this bridge's evidence so recursive PHOAS
 carriers can retain the receipt required by `get`.
 
-type V is deliberately a type constructor of V, without it V may be impossible to define due to cyclic references
+type VK is deliberately a type constructor of V, without it V may be impossible to define due to cyclic references
 -/
 class UIdView (VK : UIdU → Sort u) where
   UId : UIdU

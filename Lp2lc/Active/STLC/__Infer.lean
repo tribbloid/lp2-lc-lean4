@@ -32,7 +32,11 @@ end BuildEnv
 
 namespace AST
 
-/-- Infers build types for executable terms, recursively resolving runtime references. -/
+/--
+Infers build types for executable terms, recursively resolving runtime references.
+
+WARNING: this function should have no access to ExeEnv! Executing in compile time is strictly prohibited
+-/
 def infer_core [env : BuildEnv]
     (self : Trm env.BuildParameters) : RecOpt (Typ env.BuildParameters)
   | 0 => .outOfFuel
@@ -87,6 +91,9 @@ private theorem castUIdViewUId {left right : HasData} (h : left = right)
   cases h
   rfl
 
+/-
+TODO: this definition is transport hell, can it be shortened?
+-/
 class CompatExeEnv (build : BuildEnv) extends ExeEnv where
   hD : toExeEnv.toHasData = build.toHasData
   hTrm2val : build.trm2val = hD ▸ (toExeEnv.trm2valCtx).toUIdView
