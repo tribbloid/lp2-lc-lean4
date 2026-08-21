@@ -92,6 +92,25 @@ class CompatExeEnv (build : BuildEnv) extends ExeEnv where
   hD : toExeEnv.toHasData = build.toHasData
   hTrm2val : build.trm2val = hD ▸ (toExeEnv.trm2valCtx).toUIdView
 
+namespace CompatExeEnv
+
+/-- Equates the runtime and build-time receipt carriers. -/
+theorem trm2valUIdAgree [build : BuildEnv] (env : CompatExeEnv build) :
+    env.trm2valCtx.UId = build.trm2val.UId := by
+  calc
+    _ = (env.hD ▸ env.trm2valCtx.toUIdView).UId :=
+      (castUIdViewUId env.hD _).symm
+    _ = _ := (congrArg (λ view => view.UId) env.hTrm2val).symm
+
+/-- Transports executable terms to the compatible build-time carrier. -/
+instance trm2valCoe [build : BuildEnv] [env : CompatExeEnv build] :
+    Coe (AST.Trm env.ExeParameters) (AST.Trm build.ExeParameters) where
+  coe trm := trm.map (F := env.ExeParameters) (G := build.ExeParameters)
+    (λ receipt => cast (env.trm2valUIdAgree) receipt)
+    (λ data => cast (congrArg (λ source : HasData => source.D) env.hD) data)
+
+end CompatExeEnv
+
 def Safety [build : BuildEnv] [env : CompatExeEnv build]
     (trm : AST.Trm env.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
