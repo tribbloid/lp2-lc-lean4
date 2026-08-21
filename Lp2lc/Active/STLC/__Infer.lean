@@ -52,7 +52,7 @@ def infer_core [env : BuildEnv]
       | _, _ => .yield none
     | .ref (.inl receipt) =>
       let original : Val env.BuildParameters :=
-        (env.trm2val.get receipt).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
+        (env.trm2val.get receipt).map Sum.inl id
       original.asTrm.infer_core fuel
     | .ref (.inr receipt) =>
       .yield (some (env.trm2typCtx.get receipt))
@@ -60,8 +60,7 @@ def infer_core [env : BuildEnv]
 /-- Infers build types for executable terms. -/
 def infer [env : BuildEnv]
     (self : Trm env.ExeParameters) : RecOpt (Typ env.BuildParameters) :=
-    let upcasted := self.map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
-    infer_core upcasted
+  infer_core (self.map Sum.inl id)
 
 /-
 DEFER: GPT is right:
@@ -105,9 +104,8 @@ theorem trm2valUIdAgree [build : BuildEnv] (env : CompatExeEnv build) :
 /-- Transports executable terms to the compatible build-time carrier. -/
 instance trm2valCoe [build : BuildEnv] [env : CompatExeEnv build] :
     Coe (AST.Trm env.ExeParameters) (AST.Trm build.ExeParameters) where
-  coe trm := trm.map (F := env.ExeParameters) (G := build.ExeParameters)
-    (λ receipt => cast (env.trm2valUIdAgree) receipt)
-    (λ data => cast (congrArg (λ source : HasData => source.D) env.hD) data)
+  coe trm := trm.map (cast env.trm2valUIdAgree)
+    (cast (congrArg (λ source : HasData => source.D) env.hD))
 
 end CompatExeEnv
 

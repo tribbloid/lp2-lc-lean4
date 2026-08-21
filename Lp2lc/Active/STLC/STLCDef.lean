@@ -79,8 +79,8 @@ Rebuilds syntax over a different group of parameters along a carrier map.
 References are transported along the map while binders pass through
 unchanged, making `AST` covariant w.r.t both [Parameters.C] and [Parameters.D]
 -/
-def map {F G : Parameters} (mC : F.C → G.C) (mD : F.D → G.D)
-    {l : Label} (self : AST F l) : AST G l :=
+def map {F G : Parameters} {l : Label} (self : AST F l)
+    (mC : F.C → G.C) (mD : F.D → G.D) : AST G l :=
   match self with
   | .primitive => .primitive
   | .fn tIn tOut => .fn (tIn.map mC mD) (tOut.map mC mD)
