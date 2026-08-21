@@ -8,9 +8,7 @@ open Lp2lc.Active.Util.Rec
 
 namespace UmbralV1
 
-class ProvingEnv extends ProvingBase
-
-section variable [env : ProvingEnv]
+section variable [env : BuildEnv]
 
 structure SafetyOf (trm : AST.Trm env.BuildParameters) where
   typ : AST.Typ env.BuildParameters
@@ -78,7 +76,7 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
           simp [Rec.Outcome.map, Function.comp_def]⟩
     | .ref (.inl receipt) =>
       let original : AST.Val env.BuildParameters :=
-        (env.trm2val.get receipt).map (F := env.toBuildEnv.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
+        (env.trm2val.get receipt).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
       let result := infer_prove original.asTrm fuel
       ⟨result.compilation.map (Option.map (λ safety => ⟨safety.typ⟩)), by
         change _ = original.asTrm.infer_core fuel

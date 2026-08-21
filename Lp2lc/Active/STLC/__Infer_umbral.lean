@@ -6,15 +6,9 @@ open Lp2lc.Active.Util
 
 namespace Umbral
 
-/-- Combines the executable and build-time environments, equating their value bridges. -/
-class UmbralEnv extends ProvingBase where
-
-namespace UmbralEnv
-
-end UmbralEnv
-
-structure TypeWithSafey [env : ProvingBase] (trm : AST.Trm env.ExeParameters) where
-  t2 : AST.Typ env.BuildParameters
+structure TypeWithSafey [build : BuildEnv] [env : CompatExeEnv build]
+    (trm : AST.Trm env.ExeParameters) where
+  t2 : AST.Typ build.BuildParameters
   safety : Safety trm t2
 
 
@@ -26,7 +20,7 @@ In general function should have identical structure with Trm.infer in __Infer.le
 The original trm2valCtx and trm2typCtx are not designed to hold TypeWithSafey, you will need to make some new context for that
 -/
 /-- Infers build types for executable terms. -/
-def infer [env : UmbralEnv]
+def infer [build : BuildEnv] [env : CompatExeEnv build]
     (trm : AST.Trm env.ExeParameters) : RecOpt (TypeWithSafey trm) := sorry
 
 end Umbral

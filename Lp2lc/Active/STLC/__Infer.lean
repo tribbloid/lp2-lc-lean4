@@ -82,41 +82,28 @@ def CanInhabit [env : BuildEnv]
 
 end AST
 
+private theorem castUIdViewUId {left right : HasData} (h : left = right)
+    (view : UIdView (λ T => AST.Val { toHasData := left, C := T })) :
+    (h ▸ view).UId = view.UId := by
+  cases h
+  rfl
+
 class CompatExeEnv (build : BuildEnv) extends ExeEnv where
   hD : toExeEnv.toHasData = build.toHasData
   hTrm2val : build.trm2val = hD ▸ (toExeEnv.trm2valCtx).toUIdView
 
-/-
-TODO: remove it: it enables cheating in compilation/proving
-
-the `Safety` theorem can switch to use following definition instead:
-- the original argument [env : ProvingBase] can be broken into 2 args:
-  - the `build: BuildEnv` used by `infer`
-  - the `CompatExeEnv build` used by `eval`, which depends on above
-- do not introduce any new parameter anywhere
-- some classes will now only have single usages and can be inlined
-- do not duplicate argument anywhere
--/
-/-- Combines the executable and build-time environments, equating their value bridges. -/
-class ProvingBase extends ExeEnv, BuildEnv where
-  trm2valAgree : (toExeEnv.trm2valCtx).toUIdView = trm2val
-
-namespace ProvingBase
-
-theorem trm2valUIdAgree (env : ProvingBase) : env.trm2valCtx.UId = env.trm2val.UId := by
-  rw [env.trm2valAgree]
-
-/-- Transports executable terms onto the build-time carrier along the bridged value view. -/
-instance trm2valCoe [env : ProvingBase] : Coe (AST.Trm env.ExeParameters) (AST.Trm env.toBuildEnv.ExeParameters) where
-  coe trm := trm.map (F := env.ExeParameters) (G := env.toBuildEnv.ExeParameters)
-    (λ c => cast (env.trm2valUIdAgree) c) id
-
-end ProvingBase
-
-def Safety [env : ProvingBase]
-    (trm : AST.Trm env.ExeParameters) (t2 : AST.Typ env.BuildParameters) : Prop :=
+def Safety [build : BuildEnv] [env : CompatExeEnv build]
+    (trm : AST.Trm env.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
+    (λ v => (v.asTrm.map (F := env.ExeParameters) (G := build.ExeParameters)
+      (λ c => cast (by
+        change env.trm2valCtx.UId = build.trm2val.UId
+        calc
+          _ = (env.hD ▸ (env.trm2valCtx).toUIdView).UId :=
+            (castUIdViewUId env.hD _).symm
+          _ = _ := (congrArg (λ view => view.UId) env.hTrm2val).symm) c)
+      (λ d => cast (congrArg (λ data : HasData => data.D) env.hD) d)).infer.isDecidable
+        (λ t1 => t1 ≤ t2))
 
 
 /-
