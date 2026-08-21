@@ -52,21 +52,20 @@ Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. Th
 -/
 
 /-- an auxiliary equivalence for a subtype of [outer.VK T], Can attach independently witnessed metadata `M` to receipts from outer bridge. -/
-class Lesser {VK} {base}
-    (outer : UIdEquiv base) (MK : VK base.UId → Sort v)
-    extends HasEv outer.UId where
-  get : (receipt : PSigma toHasEv.Ev) → MK (outer.get receipt.fst)
-  inv : (bundle : PSigma MK) → Ev (outer.inv bundle.fst)
+class Lesser {VK} {base : UIdView VK}
+    (outer : UIdEquiv base) (Tagging : (VK base.UId) → Sort v)
+    extends HasEv base.UId where
+  get : (receipt : PSigma Ev) → Tagging (base.get receipt.fst)
+  inv : (tagged : PSigma Tagging) → Ev (outer.inv tagged.fst)
 
-
-class Extendable {VK} (base: UIdView VK) extends UIdEquiv base where
-  mkLesser {VK} {base} (outer : Extendable base) {MK : VK outer.UId → Sort u} : Lesser outer MK
+class Extendable {VK} {base : UIdView VK} extends UIdEquiv base where
+  mkLesser (Tagging : VK base.UId → Sort u) : Lesser toUIdEquiv Tagging
 
 end UIdEquiv
 
 
 /-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
-abbrev Fixpoint := Extendable -- TODO: inline this
+abbrev Fixpoint {VK} {base : UIdView VK} := UIdEquiv.Extendable (VK := VK) (base := base) -- TODO: inline this
 
 -- /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/ TOOD: delete, superseded by Extendable
 -- class CanGetUIdFor (VK : UIdU -> Sort u) where
