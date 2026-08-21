@@ -125,16 +125,20 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
 class EnvCore extends HasData where
   trm2val : UIdView (λ T => AST.Val { C := T, D := D })
 
+namespace EnvCore
+section variable (env : EnvCore)
+
+abbrev ExeParameters : Parameters := { C := env.trm2val.UId, D := env.D }
+
+end EnvCore
+
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv extends HasData where
-  mkUId4Val : CanGetUIdFor (λ T => AST.Val { C := T, D := D })
+class ExeEnv (core : EnvCore) where
+  trm2valCtx : UIdEquiv.Extendable core.trm2val (λ T => AST.Val { C := T, D := env.D })
 
 namespace ExeEnv
-section variable (env : ExeEnv)
+section variable (env : ExeEnv core)
 
-abbrev trm2valCtx : Fixpoint (λ T => AST.Val { C := T, D := env.D }) := env.mkUId4Val.mkEquiv
-
-abbrev ExeParameters : Parameters := { C := env.trm2valCtx.UId, D := env.D }
 
 end
 end ExeEnv

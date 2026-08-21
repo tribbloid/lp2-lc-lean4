@@ -21,9 +21,6 @@ abbrev trm2typCtx : Fixpoint (λ T =>
   let TC := self.trm2val.UId ⊕ T
   AST.Typ { C := TC, D := self.D }) := self.mkUId4Typ.mkEquiv
 
-abbrev ExeParameters : Parameters :=
-  { C := self.trm2val.UId, D := self.D }
-
 abbrev BuildParameters : Parameters :=
   { C := self.trm2val.UId ⊕ self.trm2typCtx.UId, D := self.D }
 
