@@ -15,17 +15,17 @@ class BuildEnv extends HasData where
     AST.Typ { C := TC, D := D })
 
 namespace BuildEnv
-section variable (env : BuildEnv)
+section variable (self : BuildEnv)
 
 abbrev trm2typCtx : Fixpoint (λ T =>
-  let TC := env.trm2val.UId ⊕ T
-  AST.Typ { C := TC, D := env.D }) := env.mkUId4Typ.mkEquiv
+  let TC := self.trm2val.UId ⊕ T
+  AST.Typ { C := TC, D := self.D }) := self.mkUId4Typ.mkEquiv
 
 abbrev ExeParameters : Parameters :=
-  { C := env.trm2val.UId, D := env.D }
+  { C := self.trm2val.UId, D := self.D }
 
 abbrev BuildParameters : Parameters :=
-  { C := env.trm2val.UId ⊕ env.trm2typCtx.UId, D := env.D }
+  { C := self.trm2val.UId ⊕ self.trm2typCtx.UId, D := self.D }
 
 end
 end BuildEnv
@@ -101,23 +101,23 @@ class CompatExeEnv (build : BuildEnv) extends ExeEnv where
 namespace CompatExeEnv
 
 /-- Equates the runtime and build-time receipt carriers. -/
-theorem trm2valUIdAgree [build : BuildEnv] (env : CompatExeEnv build) :
-    env.trm2valCtx.UId = build.trm2val.UId := by
+theorem trm2valUIdAgree [build : BuildEnv] (exe : CompatExeEnv build) :
+    exe.trm2valCtx.UId = build.trm2val.UId := by
   calc
-    _ = (env.hD ▸ env.trm2valCtx.toUIdView).UId :=
-      (castUIdViewUId env.hD _).symm
-    _ = _ := (congrArg (λ view => view.UId) env.hTrm2val).symm
+    _ = (exe.hD ▸ exe.trm2valCtx.toUIdView).UId :=
+      (castUIdViewUId exe.hD _).symm
+    _ = _ := (congrArg (λ view => view.UId) exe.hTrm2val).symm
 
 /-- Transports executable terms to the compatible build-time carrier. -/
-instance trm2valCoe [build : BuildEnv] [env : CompatExeEnv build] :
-    Coe (AST.Trm env.ExeParameters) (AST.Trm build.ExeParameters) where
-  coe trm := trm.map (cast env.trm2valUIdAgree)
-    (cast (congrArg (λ source : HasData => source.D) env.hD))
+instance trm2valCoe [build : BuildEnv] [exe : CompatExeEnv build] :
+    Coe (AST.Trm exe.ExeParameters) (AST.Trm build.ExeParameters) where
+  coe trm := trm.map (cast exe.trm2valUIdAgree)
+    (cast (congrArg (λ source : HasData => source.D) exe.hD))
 
 end CompatExeEnv
 
-def Safety [build : BuildEnv] [env : CompatExeEnv build]
-    (trm : AST.Trm env.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
+def Safety [build : BuildEnv] [exe : CompatExeEnv build]
+    (trm : AST.Trm exe.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
     (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
 

@@ -6,11 +6,11 @@ open Lp2lc.Active.Util
 
 namespace Umbral
 
-structure TypeWithSafey [build : BuildEnv] [env : CompatExeEnv build]
-    (trm : AST.Trm env.ExeParameters) where
-  t2 : AST.Typ build.BuildParameters
-  safety : Safety trm t2
-
+-- TODO: enable it
+-- structure TypeWithSafey [build : BuildEnv]
+--     (trm : AST.Trm build.ExeParameters) where
+--   t2 : AST.Typ build.BuildParameters
+--   safety : [exe : CompatExeEnv build] -> Safety trm t2
 
 /-
 TODO: discharge this function.
