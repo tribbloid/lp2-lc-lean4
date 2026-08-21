@@ -95,15 +95,7 @@ class CompatExeEnv (build : BuildEnv) extends ExeEnv where
 def Safety [build : BuildEnv] [env : CompatExeEnv build]
     (trm : AST.Trm env.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ v => (v.asTrm.map (F := env.ExeParameters) (G := build.ExeParameters)
-      (λ c => cast (by
-        change env.trm2valCtx.UId = build.trm2val.UId
-        calc
-          _ = (env.hD ▸ (env.trm2valCtx).toUIdView).UId :=
-            (castUIdViewUId env.hD _).symm
-          _ = _ := (congrArg (λ view => view.UId) env.hTrm2val).symm) c)
-      (λ d => cast (congrArg (λ data : HasData => data.D) env.hD) d)).infer.isDecidable
-        (λ t1 => t1 ≤ t2))
+    (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
 
 
 /-
