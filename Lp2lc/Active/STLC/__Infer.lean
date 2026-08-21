@@ -82,16 +82,21 @@ def CanInhabit [env : BuildEnv]
 
 end AST
 
+class CompatExeEnv (build: BuildEnv) extends ExeEnv where
+  D := build.D
+  hD := D = build.D
+  trm2val := build.trm2typCtx.toUIdView
+
 /-
 TODO: remove it: it enables cheating in compilation/proving
 
-the `Safety` theorem can switch to the following definition instead:
-- define a subclass `ExeEnv.CompatibleWith` depending on an `BuildEnv` instance, which is an environment with equality proof between trm2typ and trm2typCtx.
+the `Safety` theorem can switch to use following definition instead:
 - the original argument [env : ProvingBase] can be broken into 2 args:
-  - the BuildEnv used by `infer`
-  - the ExeEnv.CompatibleWith used by `eval`, which depends on above
+  - the `build: BuildEnv` used by `infer`
+  - the `CompatExeEnv build` used by `eval`, which depends on above
 - do not introduce any new parameter anywhere
 - some classes will now only have single usages and can be inlined
+- do not duplicate argument anywhere
 -/
 /-- Combines the executable and build-time environments, equating their value bridges. -/
 class ProvingBase extends ExeEnv, BuildEnv where
