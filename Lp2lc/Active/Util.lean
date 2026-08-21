@@ -26,20 +26,24 @@ class UIdView (VK : UIdU → Sort u) where
   get : (uid : UId) → VK UId
 
 /--
-Full receipt-indexed bridge, extending `UIdView` with the reverse direction.
+Full receipt-indexed bridge, extending [UIdView] with the reverse direction.
 
 `inv` is the only way to obtain a UId: it requires a value, so a view alone
 cannot mint receipts from new values.
+
+By default it is not extendable, if you need to use the hypothetical `mkLesser`, use [UIdEquiv.Extendable]
 -/
-class UIdEquiv (VK : UIdU → Sort u) extends UIdView VK where
-  inv : (value : VK UId) → UId
-  rightInv : ∀ (value : VK UId), get (inv value) = value
-  leftInv : ∀ (receipt : UId), inv (get receipt) = receipt
+class UIdEquiv {VK} (base: UIdView VK) where
+  inv : (value : VK base.UId) → base.UId
+  rightInv : ∀ (value : VK base.UId), base.get (inv value) = value
+  leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
 
 namespace UIdEquiv
 
+-- TODO: add coercion to base: UIdView VK
+
 class HasEv (UId : UIdU) where
-  Ev : UId → Prop -- used to represent subtype of UId, implying extra condition
+  Ev : UId → Prop -- a subtype of UId with extra contract
 
 /-
 TODO: I don't think subtyping/`Lesser` is general enough, we need supertyping/`Greater`
@@ -48,21 +52,27 @@ Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. Th
 -/
 
 /-- an auxiliary equivalence for a subtype of [outer.VK T], Can attach independently witnessed metadata `M` to receipts from outer bridge. -/
-class Lesser {VK : UIdU → Sort u}
-    (outer : UIdEquiv VK) (MK : VK outer.UId → Sort v)
+class Lesser {VK} {base}
+    (outer : UIdEquiv base) (MK : VK base.UId → Sort v)
     extends HasEv outer.UId where
   get : (receipt : PSigma toHasEv.Ev) → MK (outer.get receipt.fst)
   inv : (bundle : PSigma MK) → Ev (outer.inv bundle.fst)
 
+
+class Extendable {VK} (base: UIdView VK) extends UIdEquiv base where
+  mkLesser {VK} {base} (outer : Extendable base) {MK : VK outer.UId → Sort u} : Lesser outer MK
+
 end UIdEquiv
 
-/-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/
-class CanMkUIdFor (VK : UIdU -> Sort u) where
-  mkEquiv  : UIdEquiv VK
-  mkLesser (outer : UIdEquiv VK) {MK : VK outer.UId → Sort u} : UIdEquiv.Lesser outer MK
 
 /-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
-abbrev Fixpoint := UIdEquiv
+abbrev Fixpoint := Extendable -- TODO: inline this
+
+-- /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/ TOOD: delete, superseded by Extendable
+-- class CanGetUIdFor (VK : UIdU -> Sort u) where
+--   mkEquiv  : UIdEquiv VK
+--   mkLesser (outer : UIdEquiv VK) {MK : VK outer.UId → Sort u} : UIdEquiv.Lesser outer MK
+
 
 attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
 

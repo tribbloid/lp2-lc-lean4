@@ -121,9 +121,13 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
+
+class EnvCore extends HasData where
+  trm2val : UIdView (λ T => AST.Val { C := T, D := D })
+
 /-- Owns the runtime receipt bridge for executable STLC values. -/
 class ExeEnv extends HasData where
-  mkUId4Val : CanMkUIdFor (λ T => AST.Val { C := T, D := D })
+  mkUId4Val : CanGetUIdFor (λ T => AST.Val { C := T, D := D })
 
 namespace ExeEnv
 section variable (env : ExeEnv)

@@ -10,7 +10,7 @@ open Tests.STLC.Sanity.Symbolic
 
 section eval
 class TestEnv where
-  mkUId4Val : CanMkUIdFor (λ T => AST.Val { C := T, D := String })
+  mkUId4Val : CanGetUIdFor (λ T => AST.Val { C := T, D := String })
 
 variable [testEnv : TestEnv]
 
