@@ -40,13 +40,13 @@ class UIdEquiv {VK} (base: UIdView VK) where
 
 namespace UIdEquiv
 
--- TODO: add coercion to base: UIdView VK
+-- TODO: add coercion to (base: UIdView VK)
 
 class HasEv (UId : UIdU) where
   Ev : UId → Prop -- a subtype of UId with extra contract
 
 /-
-TODO: I don't think subtyping/`Lesser` is general enough, we need supertyping/`Greater`
+DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`Greater`
 
 Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
 -/
