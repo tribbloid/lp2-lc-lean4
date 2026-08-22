@@ -9,6 +9,7 @@ class TestEnv where
   trm2val : UIdView (λ T => AST.Val { C := T, D := String })
   trm2valCtx : UIdEquiv.Extendable.{3, 3}
     (VK := λ T => AST.Val { C := T, D := String }) (base := trm2val)
+  decidableEq (C : UIdU) : DecidableEq C
 
 variable [testEnv : TestEnv]
 

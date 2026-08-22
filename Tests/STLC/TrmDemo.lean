@@ -83,6 +83,20 @@ def apply1 : Trm :=
     (.apply primitiveIdFn vFalse)
     vTrue
 
+def binderIdentityCounterexample : Trm :=
+  let input : Val := .lit "false"
+  let receipt := testEnv.trm2valCtx.inv input
+  .apply
+    (.val
+      (.lam (λ {C} [embedding : Greater C refs.uid2val.UId] (arg : C) =>
+        let _ : DecidableEq C := testEnv.decidableEq C
+        if arg = embedding.coe receipt then
+          .apply (.val (.lit "false")) (.val (.lit "true"))
+        else
+          .ref arg)
+        .primitive))
+    (.val input)
+
 end Malformed
 
 end Trm
