@@ -72,9 +72,10 @@ DEFER: GPT is right:
 - or AST.ref have to carry the entire UIdEquiv for lookup
 -/
 
+-- TODO: remove, not useful
 def CanInhabit {core} [env : BuildEnv core]
-    (self : Trm env.BuildParameters) (typ : Typ env.BuildParameters) : Prop :=
-  self.infer_core.isDecidable (λ inferred => inferred ≤ typ)
+    (trm : Trm core.ExeParameters) (t2 : Typ env.BuildParameters) : Prop :=
+  trm.infer.isDecidable (λ t1 => t1 ≤ t2)
 
 end AST
 

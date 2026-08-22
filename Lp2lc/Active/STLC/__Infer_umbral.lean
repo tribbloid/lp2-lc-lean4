@@ -11,7 +11,15 @@ structure TypeWithSafey {core} [build : BuildEnv core]
   t2 : AST.Typ build.BuildParameters
   safety : [_exe : ExeEnv core] -> Safety trm t2
 
+class ProvingEnv (core : EnvCore) extends BuildEnv core where
+  trm2typWithSafetyCtx := trm2typCtx.Lesser
+    (λ _v => PSigma (λ (trm : AST.Trm core.ExeParameters) => TypeWithSafey trm))
+
 /-
+This is an agumented version of [AST.Trm.infer].
+
+The scaffold
+
 TODO: discharge this function.
 
 In general function should have identical structure with Trm.infer in __Infer.lean, but every output is a `TypeWithSafey`, the safety of the term argument have to be proven on-spot

@@ -55,7 +55,7 @@ Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. Th
 
 /-- an auxiliary equivalence for a subtype of [outer.VK T], Can attach independently witnessed metadata `M` to receipts from outer bridge. -/
 class Lesser {VK} {base : UIdView VK}
-    (outer : UIdEquiv base) (Tagging : (VK base.UId) → Sort v)
+    (outer : UIdEquiv base) (Tagging : (v: VK base.UId) → Sort v)
     extends HasEv base.UId where
   get : (receipt : PSigma Ev) → Tagging (base.get receipt.fst)
   inv : (tagged : PSigma Tagging) → Ev (outer.inv tagged.fst)
