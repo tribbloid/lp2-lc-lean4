@@ -57,8 +57,8 @@ Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. Th
 class Lesser {VK} {base : UIdView VK}
     (outer : UIdEquiv base) (Tagging : (v: VK base.UId) → Sort v)
     extends HasEv base.UId where
-  get : (receipt : PSigma Ev) → Tagging (base.get receipt.fst)
-  inv : (tagged : PSigma Tagging) → Ev (outer.inv tagged.fst)
+  get {uid} : (receipt : Ev uid) → Tagging (base.get uid)
+  inv {v} : (tagged : Tagging v) → Ev (outer.inv v)
 
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (Tagging : VK base.UId → Sort u) : Lesser toUIdEquiv Tagging
