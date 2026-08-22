@@ -12,11 +12,7 @@ class BuildEnv (core : EnvCore) where
   trm2typ : UIdView (λ T =>
     let TC := core.trm2val.UId ⊕ T
     AST.Typ { C := TC, D := core.D })
-  trm2typCtx : UIdEquiv.Extendable.{3, 3}
-    (VK := λ T =>
-      let TC := core.trm2val.UId ⊕ T
-      AST.Typ { C := TC, D := core.D })
-    (base := trm2typ)
+  trm2typCtx : UIdEquiv.Extendable.{3, 3} trm2typ
 
 namespace BuildEnv
 section variable {core : EnvCore} (self : BuildEnv core)
@@ -34,7 +30,7 @@ Infers build types for executable terms, recursively resolving runtime reference
 
 WARNING: this function should have no access to ExeEnv! Executing in compile time is strictly prohibited
 -/
-def infer_core [core : EnvCore] [env : BuildEnv core]
+def infer_core {core} [env : BuildEnv core]
     (self : Trm env.BuildParameters) : RecOpt (Typ env.BuildParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -59,7 +55,7 @@ def infer_core [core : EnvCore] [env : BuildEnv core]
       .yield (some (env.trm2typ.get receipt))
 
 /-- Infers build types for executable terms. -/
-def infer [core : EnvCore] [env : BuildEnv core]
+def infer {core} [env : BuildEnv core]
     (self : Trm core.ExeParameters) : RecOpt (Typ env.BuildParameters) :=
   infer_core (self.map Sum.inl id)
 
@@ -76,36 +72,29 @@ DEFER: GPT is right:
 - or AST.ref have to carry the entire UIdEquiv for lookup
 -/
 
-def CanInhabit [core : EnvCore] [env : BuildEnv core]
+def CanInhabit {core} [env : BuildEnv core]
     (self : Trm env.BuildParameters) (typ : Typ env.BuildParameters) : Prop :=
   self.infer_core.isDecidable (λ inferred => inferred ≤ typ)
 
 end AST
 
-/-
-TODO: this definition is transport hell, can it be shortened?
-
-Resolved by making `ExeEnv` and `BuildEnv` depend on the same `EnvCore`, so
-their data representation and runtime value view are shared definitionally.
--/
-def Safety [core : EnvCore] [build : BuildEnv core] [exe : ExeEnv core]
+def Safety {core : EnvCore} [build : BuildEnv core] [exe : ExeEnv core]
     (trm : AST.Trm core.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
     (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
 
-
 /-
 -- TODO: this is the "Paranoid Fundamental theorem": compilation may fail even but term evaluation may succeed.
--- TODO: enable later
+-- TODO: prove it later?
 -/
--- /--
--- if compiled a term and succeeded, the term must be safe
--- -/
--- def Fundamental [env : ProvingBase]
---     (trm : AST.Trm env.ExeParameters) : Prop :=
---   trm.infer.isSemiDecidable (
---     λ t1 =>
---       Safety trm t1
---   )
+/--
+if compiled a term and succeeded, the term must be safe
+-/
+def Fundamental {core : EnvCore} [build : BuildEnv core] [exe : ExeEnv core]
+    (trm : AST.Trm core.ExeParameters) : Prop :=
+  trm.infer.isSemiDecidable (
+    λ t1 =>
+      Safety trm t1
+  )
 
 end Lp2lc.Active.STLC

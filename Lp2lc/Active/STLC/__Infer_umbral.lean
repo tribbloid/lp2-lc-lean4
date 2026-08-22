@@ -6,11 +6,10 @@ open Lp2lc.Active.Util
 
 namespace Umbral
 
--- TODO: enable it
--- structure TypeWithSafey [core : EnvCore] [build : BuildEnv core]
---     (trm : AST.Trm core.ExeParameters) where
---   t2 : AST.Typ build.BuildParameters
---   safety : [exe : ExeEnv core] -> Safety trm t2
+structure TypeWithSafey {core} [build : BuildEnv core]
+    (trm : AST.Trm core.ExeParameters) where
+  t2 : AST.Typ build.BuildParameters
+  safety : [_exe : ExeEnv core] -> Safety trm t2
 
 /-
 TODO: discharge this function.
@@ -19,9 +18,9 @@ In general function should have identical structure with Trm.infer in __Infer.le
 
 The original trm2valCtx and trm2typCtx are not designed to hold TypeWithSafey, you will need to make some new context for that
 -/
--- /-- Infers build types for executable terms. -/
--- def infer [core : EnvCore] [build : BuildEnv core] [env : ExeEnv core]
---     (trm : AST.Trm core.ExeParameters) : RecOpt (TypeWithSafey trm) := sorry
+/-- Infers build types for executable terms. -/
+def infer [core : EnvCore] [build : BuildEnv core] [env : ExeEnv core]
+    (trm : AST.Trm core.ExeParameters) : RecOpt (TypeWithSafey trm) := sorry
 
 end Umbral
 

@@ -60,7 +60,7 @@ class Lesser {VK} {base : UIdView VK}
   get : (receipt : PSigma Ev) → Tagging (base.get receipt.fst)
   inv : (tagged : PSigma Tagging) → Ev (outer.inv tagged.fst)
 
-class Extendable {VK} {base : UIdView VK} extends UIdEquiv base where
+class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (Tagging : VK base.UId → Sort u) : Lesser toUIdEquiv Tagging
 
 end UIdEquiv
