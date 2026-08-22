@@ -59,7 +59,8 @@ class Lesser {VK} {base : UIdView VK}
     extends HasEv base.UId where
   get {uid} (receipt : Ev uid) : Tagging (base.get uid)
   inv {v} (tagged : Tagging v) : Ev (outer.inv v)
-  -- TODO: add the axiom of rightInv and leftInv here, such that `get` and `inv` can cancel each other
+  rightInv : ∀ {v} (tagged : Tagging v), HEq (get (inv tagged)) tagged
+  leftInv : ∀ {uid} (receipt : Ev uid), HEq (inv (get receipt)) receipt
 
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (Tagging : VK base.UId → Sort u) : Lesser toUIdEquiv Tagging
@@ -77,6 +78,7 @@ abbrev Fixpoint {VK} {base : UIdView VK} := UIdEquiv.Extendable (VK := VK) (base
 
 
 attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
+  UIdEquiv.Lesser.rightInv UIdEquiv.Lesser.leftInv
 
 /--
 Owns the data representation `D`, the binary data type of primitive literals.

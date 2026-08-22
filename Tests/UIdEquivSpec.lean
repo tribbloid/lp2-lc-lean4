@@ -41,11 +41,24 @@ open UIdEquiv
   Ev := λ receipt => receipt.fst = 1
   inv := λ tagged => tagged
   get := λ receipt => receipt
+  rightInv := by
+    intro _value tagged
+    rfl
+  leftInv := by
+    intro _uid receipt
+    rfl
 
 @[reducible] def unitMetadata : Lesser group (λ _value => Unit) where
   Ev := λ _receipt => True
   inv := λ _bundle => True.intro
   get := λ _receipt => ()
+  rightInv := by
+    intro _value tagged
+    cases tagged
+    rfl
+  leftInv := by
+    intro _uid receipt
+    exact proof_irrel_heq _ _
 
 section receipt
 
@@ -76,6 +89,14 @@ example :
 example :
     unitMetadata.Ev (group.inv 1) → Unit :=
   λ h => unitMetadata.get h
+
+example {value : Nat} (tagged : value = 1) :
+    HEq (eqOneMetadata.get (eqOneMetadata.inv tagged)) tagged := by
+  simp
+
+example {uid : groupView.UId} (receipt : eqOneMetadata.Ev uid) :
+    HEq (eqOneMetadata.inv (eqOneMetadata.get receipt)) receipt := by
+  simp
 
 end receipt
 
