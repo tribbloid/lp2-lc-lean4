@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.STLCDef
+import «Tests».STLC.Fixture
 
 namespace Tests.STLC.Sanity
 open Lp2lc.Active.Util
@@ -13,7 +13,9 @@ inductive Symbol where
 
 namespace Symbolic
 
-abbrev I : Parameters := { C := Symbol, D := String }
+variable [testEnv : TestEnv]
+
+abbrev I : Parameters := refs.ExeParameters
 
 abbrev Typ := AST.Typ I
 abbrev Val := AST.Val I
@@ -22,6 +24,8 @@ abbrev Trm := AST.Trm I
 end Symbolic
 
 open Tests.STLC.Sanity.Symbolic
+
+variable [testEnv : TestEnv]
 
 namespace Val
 

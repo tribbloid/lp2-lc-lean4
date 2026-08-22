@@ -1,18 +1,17 @@
-import «Tests».STLC.TrmDemo
+import «Lp2lc».Active.STLC.STLCDef
 
 namespace Tests.STLC.Sanity
 
-namespace Trm
-
 open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
-open Tests.STLC.Sanity.Symbolic
 
-namespace Fixture
+class TestEnv where
+  trm2val : UIdView (λ T => AST.Val { C := T, D := String })
+  trm2valCtx : UIdEquiv.Extendable.{3, 3}
+    (VK := λ T => AST.Val { C := T, D := String }) (base := trm2val)
 
+variable [testEnv : TestEnv]
 
-end Fixture
-
-end Trm
+@[reducible] instance refs : ExeRefs := { D := String, uid2val := testEnv.trm2val }
 
 end Tests.STLC.Sanity

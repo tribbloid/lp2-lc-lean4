@@ -5,6 +5,8 @@ open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
+variable [testEnv : TestEnv]
+
 namespace Trm
 
 def vFalse : Trm :=
