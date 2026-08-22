@@ -121,7 +121,7 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
-
+-- TODO: renamed to `ExeRefs`, all instance variables renamed to `refs`
 class EnvCore extends HasData where
   uid2val : UIdView (λ T => AST.Val { C := T, D := D })
 
