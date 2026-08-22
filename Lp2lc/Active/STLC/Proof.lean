@@ -106,14 +106,14 @@ theorem termInferMonotone [core : EnvCore] [env : BuildEnv core]
           cases receipt with
           | inl rc =>
             let original : Val env.BuildParameters :=
-              (core.trm2val.get rc).map (F := core.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
+              (core.uid2val.get rc).map (F := core.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
             have hOriginal : original.asTrm.infer_core fuel = .yield result := by
               simpa [infer_core, original] using hInfer
             have hOriginalTop := ih fuel (Nat.lt_succ_self fuel)
               original.asTrm toFuel result hFuelTail hOriginal
             simpa [infer_core, original] using hOriginalTop
           | inr rc =>
-            cases env.trm2typ.get rc with
+            cases env.uid2typ.get rc with
             | primitive => simpa [infer_core] using hInfer
             | fn tIn tOut => simpa [infer_core] using hInfer
 

@@ -9,16 +9,16 @@ Adds the compile-time typing context; its value view only permits lookups,
 so compile-time code cannot mint receipts from new values.
 -/
 class BuildEnv (core : EnvCore) where
-  trm2typ : UIdView (λ T =>
-    let TC := core.trm2val.UId ⊕ T
+  uid2typ : UIdView (λ T =>
+    let TC := core.uid2val.UId ⊕ T
     AST.Typ { C := TC, D := core.D })
-  trm2typCtx : UIdEquiv.Extendable.{3, 3} trm2typ
+  uid2typCtx : UIdEquiv.Extendable.{3, 3} trm2typ
 
 namespace BuildEnv
 section variable {core : EnvCore} (self : BuildEnv core)
 
 abbrev BuildParameters : Parameters :=
-  { C := core.trm2val.UId ⊕ self.trm2typ.UId, D := core.D }
+  { C := core.uid2val.UId ⊕ self.uid2typ.UId, D := core.D }
 
 end
 end BuildEnv
@@ -37,7 +37,7 @@ def infer_core {core} [env : BuildEnv core]
     match self with
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
-      let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv tIn)
+      let index : env.BuildParameters.C := .inr (env.uid2typCtx.inv tIn)
       ((body (s := ⟨id⟩) index).infer_core fuel).map
         (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
@@ -49,10 +49,10 @@ def infer_core {core} [env : BuildEnv core]
       | _, _ => .yield none
     | .ref (.inl receipt) =>
       let original : Val env.BuildParameters :=
-        (core.trm2val.get receipt).map Sum.inl id
+        (core.uid2val.get receipt).map Sum.inl id
       original.asTrm.infer_core fuel
     | .ref (.inr receipt) =>
-      .yield (some (env.trm2typ.get receipt))
+      .yield (some (env.uid2typ.get receipt))
 
 /-- Infers build types for executable terms. -/
 def infer {core} [env : BuildEnv core]

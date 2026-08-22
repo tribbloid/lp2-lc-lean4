@@ -17,8 +17,8 @@ class TestEnv where
 
 variable [testEnv : TestEnv]
 
-@[reducible] instance core : EnvCore := { D := String, trm2val := testEnv.trm2val }
-@[reducible] instance env : ExeEnv core := { trm2valCtx := testEnv.trm2valCtx }
+@[reducible] instance core : EnvCore := { D := String, uid2val := testEnv.trm2val }
+@[reducible] instance env : ExeEnv core := { uid2valCtx := testEnv.trm2valCtx }
 
 def upcast {l : Label} (self : AST Symbolic.I l) : AST core.ExeParameters l :=
   self.map (F := Symbolic.I) (G := core.ExeParameters) (λ (s : Symbol) => nomatch s) id
@@ -83,7 +83,7 @@ variable [compilerCore : EnvCore] [build : BuildEnv compilerCore]
 
 example : True := by
   fail_if_success
-    have _receipt := compilerCore.trm2val.inv
+    have _receipt := compilerCore.uid2val.inv
   trivial
 
 example : True := by

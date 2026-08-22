@@ -123,20 +123,20 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
 
 
 class EnvCore extends HasData where
-  trm2val : UIdView (λ T => AST.Val { C := T, D := D })
+  uid2val : UIdView (λ T => AST.Val { C := T, D := D })
 
 namespace EnvCore
 section variable (self : EnvCore)
 
-abbrev ExeParameters : Parameters := { C := self.trm2val.UId, D := self.D }
+abbrev ExeParameters : Parameters := { C := self.uid2val.UId, D := self.D }
 
 end
 end EnvCore
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
 class ExeEnv (core : EnvCore) where
-  trm2valCtx : UIdEquiv.Extendable.{3, 3}
-    (VK := λ T => AST.Val { C := T, D := core.D }) (base := core.trm2val)
+  uid2valCtx : UIdEquiv.Extendable.{3, 3}
+    (VK := λ T => AST.Val { C := T, D := core.D }) (base := core.uid2val)
 
 namespace AST
 
@@ -151,13 +151,13 @@ def eval [core : EnvCore] [env : ExeEnv core]
       let anf := (eval fnTerm fuel, eval arg fuel)
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
-        let receipt := env.trm2valCtx.inv input
+        let receipt := env.uid2valCtx.inv input
         eval (body (s := ⟨id⟩) receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref receipt =>
-      .yield (some (core.trm2val.get receipt))
+      .yield (some (core.uid2val.get receipt))
 
 end AST
 

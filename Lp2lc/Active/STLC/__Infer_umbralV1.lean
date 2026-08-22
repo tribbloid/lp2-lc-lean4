@@ -30,7 +30,7 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
     match trm with
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
-      let index : env.BuildParameters.C := .inr (env.trm2typCtx.inv tIn)
+      let index : env.BuildParameters.C := .inr (env.uid2typCtx.inv tIn)
       let result := infer_prove (body (s := ⟨id⟩) index) fuel
       ⟨result.compilation.map
           (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
@@ -76,7 +76,7 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
           simp [Rec.Outcome.map, Function.comp_def]⟩
     | .ref (.inl receipt) =>
       let original : AST.Val env.BuildParameters :=
-        (core.trm2val.get receipt).map (F := core.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
+        (core.uid2val.get receipt).map (F := core.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
       let result := infer_prove original.asTrm fuel
       ⟨result.compilation.map (Option.map (λ safety => ⟨safety.typ⟩)), by
         change _ = original.asTrm.infer_core fuel
@@ -84,7 +84,7 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
         cases result.compilation <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
     | .ref (.inr receipt) => by
-      cases h : env.trm2typ.get receipt with
+      cases h : env.uid2typ.get receipt with
       | primitive =>
         exact ⟨.yield (some ⟨.primitive⟩), by
           simp [AST.infer_core, h, Rec.Outcome.map]⟩
