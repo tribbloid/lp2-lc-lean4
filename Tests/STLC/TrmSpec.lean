@@ -1,4 +1,5 @@
 import «Tests».STLC.Fixture
+import «Lp2lc».Active.STLC.__Infer
 
 namespace Tests.STLC.Sanity
 
@@ -10,14 +11,17 @@ open Tests.STLC.Sanity.Symbolic
 
 section eval
 class TestEnv where
-  mkUId4Val : CanGetUIdFor (λ T => AST.Val { C := T, D := String })
+  trm2val : UIdView (λ T => AST.Val { C := T, D := String })
+  trm2valCtx : UIdEquiv.Extendable.{3, 3}
+    (VK := λ T => AST.Val { C := T, D := String }) (base := trm2val)
 
 variable [testEnv : TestEnv]
 
-@[reducible] instance env : ExeEnv := { D := String, mkUId4Val := testEnv.mkUId4Val }
+@[reducible] instance core : EnvCore := { D := String, trm2val := testEnv.trm2val }
+@[reducible] instance env : ExeEnv core := { trm2valCtx := testEnv.trm2valCtx }
 
-def upcast {l : Label} (self : AST Symbolic.I l) : AST env.ExeParameters l :=
-  self.map (F := Symbolic.I) (G := env.ExeParameters) (λ (s : Symbol) => nomatch s) id
+def upcast {l : Label} (self : AST Symbolic.I l) : AST core.ExeParameters l :=
+  self.map (F := Symbolic.I) (G := core.ExeParameters) (λ (s : Symbol) => nomatch s) id
 
 attribute [local simp] AST.eval AST.map upcast
 attribute [local simp] Trm.vFalse Trm.vTrue Trm.primitiveIdFn Trm.primitiveIdFnOnFalse
@@ -72,6 +76,22 @@ example : (upcast Trm.primitiveTrueFnOnFalse).eval.shouldYields (.lit "true") :=
   · rfl
 
 end eval
+
+section compilerCapability
+
+variable [compilerCore : EnvCore] [build : BuildEnv compilerCore]
+
+example : True := by
+  fail_if_success
+    have _receipt := compilerCore.trm2val.inv
+  trivial
+
+example : True := by
+  fail_if_success
+    have _exe : ExeEnv compilerCore := inferInstance
+  trivial
+
+end compilerCapability
 
 end Trm
 

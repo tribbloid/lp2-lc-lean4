@@ -8,21 +8,21 @@ open Lp2lc.Active.Util
 Adds the compile-time typing context; its value view only permits lookups,
 so compile-time code cannot mint receipts from new values.
 -/
-class BuildEnv extends HasData where
-  trm2val : UIdView (λ T => AST.Val { C := T, D := D })
-  mkUId4Typ : CanMkUIdFor (λ T =>
-    let TC := trm2val.UId ⊕ T
-    AST.Typ { C := TC, D := D })
+class BuildEnv (core : EnvCore) where
+  trm2typ : UIdView (λ T =>
+    let TC := core.trm2val.UId ⊕ T
+    AST.Typ { C := TC, D := core.D })
+  trm2typCtx : UIdEquiv.Extendable.{3, 3}
+    (VK := λ T =>
+      let TC := core.trm2val.UId ⊕ T
+      AST.Typ { C := TC, D := core.D })
+    (base := trm2typ)
 
 namespace BuildEnv
-section variable (self : BuildEnv)
-
-abbrev trm2typCtx : Fixpoint (λ T =>
-  let TC := self.trm2val.UId ⊕ T
-  AST.Typ { C := TC, D := self.D }) := self.mkUId4Typ.mkEquiv
+section variable {core : EnvCore} (self : BuildEnv core)
 
 abbrev BuildParameters : Parameters :=
-  { C := self.trm2val.UId ⊕ self.trm2typCtx.UId, D := self.D }
+  { C := core.trm2val.UId ⊕ self.trm2typ.UId, D := core.D }
 
 end
 end BuildEnv
@@ -34,7 +34,7 @@ Infers build types for executable terms, recursively resolving runtime reference
 
 WARNING: this function should have no access to ExeEnv! Executing in compile time is strictly prohibited
 -/
-def infer_core [env : BuildEnv]
+def infer_core [core : EnvCore] [env : BuildEnv core]
     (self : Trm env.BuildParameters) : RecOpt (Typ env.BuildParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -53,14 +53,14 @@ def infer_core [env : BuildEnv]
       | _, _ => .yield none
     | .ref (.inl receipt) =>
       let original : Val env.BuildParameters :=
-        (env.trm2val.get receipt).map Sum.inl id
+        (core.trm2val.get receipt).map Sum.inl id
       original.asTrm.infer_core fuel
     | .ref (.inr receipt) =>
-      .yield (some (env.trm2typCtx.get receipt))
+      .yield (some (env.trm2typ.get receipt))
 
 /-- Infers build types for executable terms. -/
-def infer [env : BuildEnv]
-    (self : Trm env.ExeParameters) : RecOpt (Typ env.BuildParameters) :=
+def infer [core : EnvCore] [env : BuildEnv core]
+    (self : Trm core.ExeParameters) : RecOpt (Typ env.BuildParameters) :=
   infer_core (self.map Sum.inl id)
 
 /-
@@ -76,45 +76,20 @@ DEFER: GPT is right:
 - or AST.ref have to carry the entire UIdEquiv for lookup
 -/
 
-def CanInhabit [env : BuildEnv]
+def CanInhabit [core : EnvCore] [env : BuildEnv core]
     (self : Trm env.BuildParameters) (typ : Typ env.BuildParameters) : Prop :=
   self.infer_core.isDecidable (λ inferred => inferred ≤ typ)
 
 end AST
 
-private theorem castUIdViewUId {left right : HasData} (h : left = right)
-    (view : UIdView (λ T => AST.Val { toHasData := left, C := T })) :
-    (h ▸ view).UId = view.UId := by
-  cases h
-  rfl
-
 /-
 TODO: this definition is transport hell, can it be shortened?
+
+Resolved by making `ExeEnv` and `BuildEnv` depend on the same `EnvCore`, so
+their data representation and runtime value view are shared definitionally.
 -/
-class CompatExeEnv (build : BuildEnv) extends ExeEnv where
-  hD : toExeEnv.toHasData = build.toHasData
-  hTrm2val : build.trm2val = hD ▸ (toExeEnv.trm2valCtx).toUIdView
-
-namespace CompatExeEnv
-
-/-- Equates the runtime and build-time receipt carriers. -/
-theorem trm2valUIdAgree [build : BuildEnv] (exe : CompatExeEnv build) :
-    exe.trm2valCtx.UId = build.trm2val.UId := by
-  calc
-    _ = (exe.hD ▸ exe.trm2valCtx.toUIdView).UId :=
-      (castUIdViewUId exe.hD _).symm
-    _ = _ := (congrArg (λ view => view.UId) exe.hTrm2val).symm
-
-/-- Transports executable terms to the compatible build-time carrier. -/
-instance trm2valCoe [build : BuildEnv] [exe : CompatExeEnv build] :
-    Coe (AST.Trm exe.ExeParameters) (AST.Trm build.ExeParameters) where
-  coe trm := trm.map (cast exe.trm2valUIdAgree)
-    (cast (congrArg (λ source : HasData => source.D) exe.hD))
-
-end CompatExeEnv
-
-def Safety [build : BuildEnv] [exe : CompatExeEnv build]
-    (trm : AST.Trm exe.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
+def Safety [core : EnvCore] [build : BuildEnv core] [exe : ExeEnv core]
+    (trm : AST.Trm core.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
     (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
 

@@ -5,10 +5,12 @@ namespace Tests.UIdEquivSpec
 open Lp2lc.Active.Util
 open UIdEquiv
 
-@[reducible] def group : UIdEquiv.{1} (λ _evidence => Nat) where
+@[reducible] def groupView : UIdView.{1} (λ _evidence => Nat) where
   UId := PSigma (λ _id : Nat => True)
-  inv := λ value => ⟨value, True.intro⟩
   get := λ receipt => receipt.fst
+
+@[reducible] def group : UIdEquiv groupView where
+  inv := λ value => ⟨value, True.intro⟩
   rightInv := by
     intro value
     rfl
@@ -19,10 +21,12 @@ open UIdEquiv
       cases evidence
       rfl
 
-@[reducible] def equalityGroup : UIdEquiv.{1} (λ _evidence => Nat) where
+@[reducible] def equalityView : UIdView.{1} (λ _evidence => Nat) where
   UId := PSigma (λ _id : Nat => 0 = 0)
-  inv := λ value => ⟨value, rfl⟩
   get := λ receipt => receipt.fst
+
+@[reducible] def equalityGroup : UIdEquiv equalityView where
+  inv := λ value => ⟨value, rfl⟩
   rightInv := by
     intro value
     rfl
@@ -45,12 +49,14 @@ open UIdEquiv
 
 section receipt
 
+example : UIdView (λ _evidence => Nat) := group
+
 example :
-    group.get (group.inv 1) = 1 := by
+    (group : UIdView (λ _evidence => Nat)).get (group.inv 1) = 1 := by
   exact group.rightInv 1
 
 example :
-    group.inv (group.get (group.inv 1)) = group.inv 1 := by
+    group.inv ((group : UIdView (λ _evidence => Nat)).get (group.inv 1)) = group.inv 1 := by
   exact group.leftInv (group.inv 1)
 
 example :
@@ -79,12 +85,18 @@ section rejection
 
 example : True := by
   fail_if_success
-    have _value : Nat := group.get 1
+    have _receipt := groupView.inv 1
   trivial
 
 example : True := by
   fail_if_success
-    have _value : Nat := equalityGroup.get (group.inv 1)
+    have _value : Nat := groupView.get 1
+  trivial
+
+example : True := by
+  fail_if_success
+    have _value : Nat :=
+      (equalityGroup : UIdView (λ _evidence => Nat)).get (group.inv 1)
   trivial
 
 end rejection

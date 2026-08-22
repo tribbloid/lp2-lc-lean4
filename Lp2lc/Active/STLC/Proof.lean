@@ -10,8 +10,8 @@ open Lp2lc.Active.Util.Rec
 namespace AST
 
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
-theorem termEvalMonotone [env : ExeEnv]
-    (trm : Trm env.ExeParameters) :
+theorem termEvalMonotone [core : EnvCore] [env : ExeEnv core]
+    (trm : Trm core.ExeParameters) :
     trm.eval.Monotone := by
   intro less more result hFuel hEval
   induction less using Nat.strongRecOn generalizing trm more result with
@@ -63,7 +63,7 @@ theorem termEvalMonotone [env : ExeEnv]
           simpa [AST.eval] using hEval
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
-theorem termInferMonotone [env : BuildEnv]
+theorem termInferMonotone [core : EnvCore] [env : BuildEnv core]
     (trm : Trm env.BuildParameters) : -- TODO: this is actually a theorem for `infer_core`
     trm.infer_core.Monotone := by
   intro less more result hFuel hInfer
@@ -106,19 +106,19 @@ theorem termInferMonotone [env : BuildEnv]
           cases receipt with
           | inl rc =>
             let original : Val env.BuildParameters :=
-              (env.trm2val.get rc).map (F := env.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
+              (core.trm2val.get rc).map (F := core.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
             have hOriginal : original.asTrm.infer_core fuel = .yield result := by
               simpa [infer_core, original] using hInfer
             have hOriginalTop := ih fuel (Nat.lt_succ_self fuel)
               original.asTrm toFuel result hFuelTail hOriginal
             simpa [infer_core, original] using hOriginalTop
           | inr rc =>
-            cases env.trm2typCtx.get rc with
+            cases env.trm2typ.get rc with
             | primitive => simpa [infer_core] using hInfer
             | fn tIn tOut => simpa [infer_core] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
-theorem valueInferMonotone [env : BuildEnv]
+theorem valueInferMonotone [core : EnvCore] [env : BuildEnv core]
     (value : Val env.BuildParameters) :
     value.asTrm.infer_core.Monotone :=
   termInferMonotone value.asTrm

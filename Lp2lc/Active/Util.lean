@@ -40,7 +40,9 @@ class UIdEquiv {VK} (base: UIdView VK) where
 
 namespace UIdEquiv
 
--- TODO: add coercion to (base: UIdView VK)
+/-- Coerces a full bridge to the read-only view that it completes. -/
+instance {VK} {base : UIdView VK} : CoeOut (UIdEquiv base) (UIdView VK) where
+  coe _self := base
 
 class HasEv (UId : UIdU) where
   Ev : UId → Prop -- a subtype of UId with extra contract
