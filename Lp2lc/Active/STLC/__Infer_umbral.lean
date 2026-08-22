@@ -12,8 +12,9 @@ structure TypeWithSafey {core} [build : BuildEnv core]
   safety : [_exe : ExeEnv core] -> Safety trm t2
 
 class ProvingEnv (core : EnvCore) extends BuildEnv core where
-  trm2typWithSafetyCtx := uid2typCtx.Lesser
-    (λ _v => PSigma (λ (trm : AST.Trm core.ExeParameters) => TypeWithSafey trm))
+  trm2typWithSafetyCtx :=
+    (toBuildEnv.uid2typCtx (trm2typ := uid2typ)).mkLesser
+      (λ _v => PSigma (λ (trm : AST.Trm core.ExeParameters) => TypeWithSafey (build := toBuildEnv) trm))
 
 /-
 This is an agumented version of [AST.Trm.infer].
