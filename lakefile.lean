@@ -19,5 +19,5 @@ lean_lib «Spike» where
 require aesop from git
   "https://github.com/leanprover-community/aesop" @ "v4.33.0"
 
-require iris from git
-  "https://github.com/leanprover-community/iris-lean.git" @ "master" / "Iris"
+-- require iris from git
+--   "https://github.com/leanprover-community/iris-lean.git" @ "master" / "Iris"
