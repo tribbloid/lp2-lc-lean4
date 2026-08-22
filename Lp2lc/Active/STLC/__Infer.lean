@@ -12,7 +12,7 @@ class BuildEnv (refs : ExeRefs) where
   uid2typ : UIdView (λ T =>
     let TC := refs.uid2val.UId ⊕ T
     AST.Typ { C := TC, D := refs.D })
-  uid2typCtx : UIdEquiv.Extendable.{3, 3} trm2typ
+  uid2typCtx : UIdEquiv.Extendable.{3, 3} uid2typ
 
 namespace BuildEnv
 section variable {refs : ExeRefs} (self : BuildEnv refs)

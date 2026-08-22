@@ -13,7 +13,7 @@ structure TypeWithSafey {refs} [build : BuildEnv refs]
 
 class ProvingEnv (refs : ExeRefs) extends BuildEnv refs where
   uid2typWithSafetyCtx :=
-    (toBuildEnv.uid2typCtx (trm2typ := uid2typ)).mkLesser
+    toBuildEnv.uid2typCtx.mkLesser
       (λ _v => PSigma (λ (trm : AST.Trm refs.ExeParameters) => TypeWithSafey (build := toBuildEnv) trm))
 
 /-
