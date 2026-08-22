@@ -59,7 +59,7 @@ class Lesser {VK} {base : UIdView VK}
     extends HasEv base.UId where
   get {uid} (receipt : Ev uid) : Tagging (base.get uid)
   inv {v} (tagged : Tagging v) : Ev (outer.inv v)
-  rightInv : ∀ {v} (tagged : Tagging v), HEq (get (inv tagged)) tagged
+  rightInv : ∀ {v} (tagged : Tagging v), HEq (get (inv tagged)) tagged -- TODO: are these provable?
   leftInv : ∀ {uid} (receipt : Ev uid), HEq (inv (get receipt)) receipt
 
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
