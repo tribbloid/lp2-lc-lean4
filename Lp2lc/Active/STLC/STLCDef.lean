@@ -126,28 +126,23 @@ class EnvCore extends HasData where
   trm2val : UIdView (λ T => AST.Val { C := T, D := D })
 
 namespace EnvCore
-section variable (env : EnvCore)
+section variable (self : EnvCore)
 
-abbrev ExeParameters : Parameters := { C := env.trm2val.UId, D := env.D }
+abbrev ExeParameters : Parameters := { C := self.trm2val.UId, D := self.D }
 
+end
 end EnvCore
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
 class ExeEnv (core : EnvCore) where
-  trm2valCtx : UIdEquiv.Extendable core.trm2val (λ T => AST.Val { C := T, D := env.D })
-
-namespace ExeEnv
-section variable (env : ExeEnv core)
-
-
-end
-end ExeEnv
+  trm2valCtx : UIdEquiv.Extendable.{3, 3}
+    (VK := λ T => AST.Val { C := T, D := core.D }) (base := core.trm2val)
 
 namespace AST
 
 /-- Evaluates terms whose references carry receipts from the runtime context. -/
-def eval [env : ExeEnv]
-    (self : Trm env.ExeParameters) : RecOpt (Val env.ExeParameters)
+def eval [core : EnvCore] [env : ExeEnv core]
+    (self : Trm core.ExeParameters) : RecOpt (Val core.ExeParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -162,7 +157,7 @@ def eval [env : ExeEnv]
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref receipt =>
-      .yield (some (env.trm2valCtx.get receipt))
+      .yield (some (core.trm2val.get receipt))
 
 end AST
 
