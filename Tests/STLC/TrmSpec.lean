@@ -61,6 +61,11 @@ example : Trm.Malformed.primitiveApply.eval.shouldFail := by
   · exact ⟨2, by simp⟩
   · rfl
 
+example : Trm.Malformed.binderIdentityCounterexample.eval.shouldFail := by
+  constructor
+  · exact ⟨3, by simp [Trm.Malformed.binderIdentityCounterexample]⟩
+  · rfl
+
 example : Trm.primitiveTrueFnOnFalse.eval.shouldYields (.lit "true") := by
   constructor
   · exact ⟨2, by simp⟩
