@@ -39,8 +39,8 @@ open UIdEquiv
 
 @[reducible] def eqOneMetadata : Lesser group (λ value => value = 1) where
   Ev := λ receipt => receipt.fst = 1
-  inv := λ bundle => bundle.snd
-  get := λ receipt => receipt.snd
+  inv := λ tagged => tagged
+  get := λ receipt => receipt
 
 @[reducible] def unitMetadata : Lesser group (λ _value => Unit) where
   Ev := λ _receipt => True
@@ -61,23 +61,21 @@ example :
 
 example :
     eqOneMetadata.Ev (group.inv 1) :=
-  eqOneMetadata.inv ⟨1, rfl⟩
+  eqOneMetadata.inv rfl
 
 example :
     eqOneMetadata.Ev (group.inv 1) ∧
       unitMetadata.Ev (group.inv 1) :=
-  ⟨eqOneMetadata.inv ⟨1, rfl⟩,
-    unitMetadata.inv ⟨1, ()⟩⟩
+  ⟨eqOneMetadata.inv rfl,
+    unitMetadata.inv ()⟩
 
 example :
-    eqOneMetadata.get
-      ⟨group.inv 1, eqOneMetadata.inv ⟨1, rfl⟩⟩ = rfl := by
-  rfl
+    eqOneMetadata.Ev (group.inv 1) → (1 = 1) :=
+  λ h => eqOneMetadata.get h
 
 example :
-    unitMetadata.get
-      ⟨group.inv 1, unitMetadata.inv ⟨1, ()⟩⟩ = () := by
-  rfl
+    unitMetadata.Ev (group.inv 1) → Unit :=
+  λ h => unitMetadata.get h
 
 end receipt
 

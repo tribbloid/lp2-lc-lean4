@@ -34,7 +34,7 @@ cannot mint receipts from new values.
 By default it is not extendable, if you need to use the hypothetical `mkLesser`, use [UIdEquiv.Extendable]
 -/
 class UIdEquiv {VK} (base: UIdView VK) where
-  inv : (value : VK base.UId) → base.UId
+  inv (value : VK base.UId) : base.UId
   rightInv : ∀ (value : VK base.UId), base.get (inv value) = value
   leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
 
@@ -57,8 +57,8 @@ Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. Th
 class Lesser {VK} {base : UIdView VK}
     (outer : UIdEquiv base) (Tagging : (v: VK base.UId) → Sort v)
     extends HasEv base.UId where
-  get {uid} : (receipt : Ev uid) → Tagging (base.get uid)
-  inv {v} : (tagged : Tagging v) → Ev (outer.inv v)
+  get {uid} (receipt : Ev uid) : Tagging (base.get uid)
+  inv {v} (tagged : Tagging v) : Ev (outer.inv v)
 
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (Tagging : VK base.UId → Sort u) : Lesser toUIdEquiv Tagging
