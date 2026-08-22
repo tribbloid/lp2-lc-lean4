@@ -59,6 +59,7 @@ class Lesser {VK} {base : UIdView VK}
     extends HasEv base.UId where
   get {uid} (receipt : Ev uid) : Tagging (base.get uid)
   inv {v} (tagged : Tagging v) : Ev (outer.inv v)
+  -- TODO: add the axiom of rightInv and leftInv here, such that `get` and `inv` can cancel each other
 
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (Tagging : VK base.UId → Sort u) : Lesser toUIdEquiv Tagging
