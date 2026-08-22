@@ -10,8 +10,8 @@ open Lp2lc.Active.Util.Rec
 namespace AST
 
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
-theorem termEvalMonotone [core : EnvCore] [env : ExeEnv core]
-    (trm : Trm core.ExeParameters) :
+theorem termEvalMonotone [refs : ExeRefs] [env : ExeEnv refs]
+    (trm : Trm refs.ExeParameters) :
     trm.eval.Monotone := by
   intro less more result hFuel hEval
   induction less using Nat.strongRecOn generalizing trm more result with
@@ -63,7 +63,7 @@ theorem termEvalMonotone [core : EnvCore] [env : ExeEnv core]
           simpa [AST.eval] using hEval
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
-theorem termInferMonotone [core : EnvCore] [env : BuildEnv core]
+theorem termInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
     (trm : Trm env.BuildParameters) : -- TODO: this is actually a theorem for `infer_core`
     trm.infer_core.Monotone := by
   intro less more result hFuel hInfer
@@ -106,7 +106,7 @@ theorem termInferMonotone [core : EnvCore] [env : BuildEnv core]
           cases receipt with
           | inl rc =>
             let original : Val env.BuildParameters :=
-              (core.uid2val.get rc).map (F := core.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
+              (refs.uid2val.get rc).map (F := refs.ExeParameters) (G := env.BuildParameters) (Sum.inl) id
             have hOriginal : original.asTrm.infer_core fuel = .yield result := by
               simpa [infer_core, original] using hInfer
             have hOriginalTop := ih fuel (Nat.lt_succ_self fuel)
@@ -118,7 +118,7 @@ theorem termInferMonotone [core : EnvCore] [env : BuildEnv core]
             | fn tIn tOut => simpa [infer_core] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
-theorem valueInferMonotone [core : EnvCore] [env : BuildEnv core]
+theorem valueInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
     (value : Val env.BuildParameters) :
     value.asTrm.infer_core.Monotone :=
   termInferMonotone value.asTrm

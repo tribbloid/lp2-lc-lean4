@@ -8,17 +8,17 @@ open Lp2lc.Active.Util
 Adds the compile-time typing context; its value view only permits lookups,
 so compile-time code cannot mint receipts from new values.
 -/
-class BuildEnv (core : EnvCore) where
+class BuildEnv (refs : ExeRefs) where
   uid2typ : UIdView (λ T =>
-    let TC := core.uid2val.UId ⊕ T
-    AST.Typ { C := TC, D := core.D })
+    let TC := refs.uid2val.UId ⊕ T
+    AST.Typ { C := TC, D := refs.D })
   uid2typCtx : UIdEquiv.Extendable.{3, 3} trm2typ
 
 namespace BuildEnv
-section variable {core : EnvCore} (self : BuildEnv core)
+section variable {refs : ExeRefs} (self : BuildEnv refs)
 
 abbrev BuildParameters : Parameters :=
-  { C := core.uid2val.UId ⊕ self.uid2typ.UId, D := core.D }
+  { C := refs.uid2val.UId ⊕ self.uid2typ.UId, D := refs.D }
 
 end
 end BuildEnv
@@ -30,7 +30,7 @@ Infers build types for executable terms, recursively resolving runtime reference
 
 WARNING: this function should have no access to ExeEnv! Executing in compile time is strictly prohibited
 -/
-def infer_core {core} [env : BuildEnv core]
+def infer_core {refs} [env : BuildEnv refs]
     (self : Trm env.BuildParameters) : RecOpt (Typ env.BuildParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -49,14 +49,14 @@ def infer_core {core} [env : BuildEnv core]
       | _, _ => .yield none
     | .ref (.inl receipt) =>
       let original : Val env.BuildParameters :=
-        (core.uid2val.get receipt).map Sum.inl id
+        (refs.uid2val.get receipt).map Sum.inl id
       original.asTrm.infer_core fuel
     | .ref (.inr receipt) =>
       .yield (some (env.uid2typ.get receipt))
 
 /-- Infers build types for executable terms. -/
-def infer {core} [env : BuildEnv core]
-    (self : Trm core.ExeParameters) : RecOpt (Typ env.BuildParameters) :=
+def infer {refs} [env : BuildEnv refs]
+    (self : Trm refs.ExeParameters) : RecOpt (Typ env.BuildParameters) :=
   infer_core (self.map Sum.inl id)
 
 /-
@@ -73,14 +73,14 @@ DEFER: GPT is right:
 -/
 
 -- TODO: remove, not useful
-def CanInhabit {core} [env : BuildEnv core]
-    (trm : Trm core.ExeParameters) (t2 : Typ env.BuildParameters) : Prop :=
+def CanInhabit {refs} [env : BuildEnv refs]
+    (trm : Trm refs.ExeParameters) (t2 : Typ env.BuildParameters) : Prop :=
   trm.infer.isDecidable (λ t1 => t1 ≤ t2)
 
 end AST
 
-def Safety {core : EnvCore} [build : BuildEnv core] [exe : ExeEnv core]
-    (trm : AST.Trm core.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
+def Safety {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
+    (trm : AST.Trm refs.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
     (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
 
@@ -91,8 +91,8 @@ def Safety {core : EnvCore} [build : BuildEnv core] [exe : ExeEnv core]
 /--
 if compiled a term and succeeded, the term must be safe
 -/
-def Fundamental {core : EnvCore} [build : BuildEnv core] [exe : ExeEnv core]
-    (trm : AST.Trm core.ExeParameters) : Prop :=
+def Fundamental {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
+    (trm : AST.Trm refs.ExeParameters) : Prop :=
   trm.infer.isSemiDecidable (
     λ t1 =>
       Safety trm t1

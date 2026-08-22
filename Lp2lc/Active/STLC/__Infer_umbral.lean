@@ -6,15 +6,15 @@ open Lp2lc.Active.Util
 
 namespace Umbral
 
-structure TypeWithSafey {core} [build : BuildEnv core]
-    (trm : AST.Trm core.ExeParameters) where
+structure TypeWithSafey {refs} [build : BuildEnv refs]
+    (trm : AST.Trm refs.ExeParameters) where
   t2 : AST.Typ build.BuildParameters
-  safety : [_exe : ExeEnv core] -> Safety trm t2
+  safety : [_exe : ExeEnv refs] -> Safety trm t2
 
-class ProvingEnv (core : EnvCore) extends BuildEnv core where
+class ProvingEnv (refs : ExeRefs) extends BuildEnv refs where
   uid2typWithSafetyCtx :=
     (toBuildEnv.uid2typCtx (trm2typ := uid2typ)).mkLesser
-      (λ _v => PSigma (λ (trm : AST.Trm core.ExeParameters) => TypeWithSafey (build := toBuildEnv) trm))
+      (λ _v => PSigma (λ (trm : AST.Trm refs.ExeParameters) => TypeWithSafey (build := toBuildEnv) trm))
 
 /-
 This is an agumented version of [AST.Trm.infer].
@@ -28,8 +28,8 @@ You are also encouraged to make more context to meet proving demand
 TODO: discharge this function.
 -/
 /-- Infers build types for executable terms. -/
-def infer [core : EnvCore] [proving : ProvingEnv core] [env : ExeEnv core]
-    (trm : AST.Trm core.ExeParameters) : RecOpt (TypeWithSafey trm) := sorry
+def infer [refs : ExeRefs] [proving : ProvingEnv refs] [env : ExeEnv refs]
+    (trm : AST.Trm refs.ExeParameters) : RecOpt (TypeWithSafey trm) := sorry
 
 end Umbral
 

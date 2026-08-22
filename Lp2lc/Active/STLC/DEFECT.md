@@ -24,5 +24,5 @@
 ### Doctrine of an optimal design:
 
 - UIdEquiv type should depend on UIdView, `x: UIDEquiv V` and `v : V` always share the same UId (But don't drop the subtyping/coercion)
-- ExeEnv and BuildEnv should both depends on an `EnvCore`, such that consistency of `D` and `UIDView` is enforced by its member, but both Env cannot construct each other
-  - `ExeParameter` and `BuildParameters` can be members of `EnvCore` directly.
+- ExeEnv and BuildEnv should both depends on an `ExeRefs`, such that consistency of `D` and `UIDView` is enforced by its member, but both Env cannot construct each other
+  - `ExeParameter` and `BuildParameters` can be members of `ExeRefs` directly.

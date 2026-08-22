@@ -121,28 +121,27 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
--- TODO: renamed to `ExeRefs`, all instance variables renamed to `refs`
-class EnvCore extends HasData where
+class ExeRefs extends HasData where
   uid2val : UIdView (λ T => AST.Val { C := T, D := D })
 
-namespace EnvCore
-section variable (self : EnvCore)
+namespace ExeRefs
+section variable (self : ExeRefs)
 
 abbrev ExeParameters : Parameters := { C := self.uid2val.UId, D := self.D }
 
 end
-end EnvCore
+end ExeRefs
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv (core : EnvCore) where
+class ExeEnv (refs : ExeRefs) where
   uid2valCtx : UIdEquiv.Extendable.{3, 3}
-    (VK := λ T => AST.Val { C := T, D := core.D }) (base := core.uid2val)
+    (VK := λ T => AST.Val { C := T, D := refs.D }) (base := refs.uid2val)
 
 namespace AST
 
 /-- Evaluates terms whose references carry receipts from the runtime context. -/
-def eval [core : EnvCore] [env : ExeEnv core]
-    (self : Trm core.ExeParameters) : RecOpt (Val core.ExeParameters)
+def eval [refs : ExeRefs] [env : ExeEnv refs]
+    (self : Trm refs.ExeParameters) : RecOpt (Val refs.ExeParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -157,7 +156,7 @@ def eval [core : EnvCore] [env : ExeEnv core]
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref receipt =>
-      .yield (some (core.uid2val.get receipt))
+      .yield (some (refs.uid2val.get receipt))
 
 end AST
 
