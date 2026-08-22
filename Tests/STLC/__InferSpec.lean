@@ -155,6 +155,15 @@ example :
   · exact ⟨2, rfl⟩
   · rfl
 
+example : Malformed.binderIdentityCounterexample.infer.shouldYields .primitive := by
+  constructor
+  · refine ⟨3, ?_⟩
+    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
+      rfl
+    simp [Malformed.binderIdentityCounterexample, AST.infer, AST.infer_core,
+      AST.map, Outcome.map, hPrimitive]
+  · rfl
+
 end infer
 
 end Trm
