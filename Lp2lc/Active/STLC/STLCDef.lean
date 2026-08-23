@@ -41,7 +41,7 @@ Captured outer binders remain values of the same [P.B], as required by PHOAS,
 while free references stay behind [P.F] and cannot route into the body
 argument.
 -/
-| lam (body : {B : UIdU} → (arg : B) → AST { P with B := B} .trm) (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
+| lam (body : {B : UIdU} → (s : B -> P.B) → (arg : B) → AST { P with B := B} .trm) (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
 
 section variable {P : Parameters}
 
@@ -132,7 +132,7 @@ def eval [refs : ExeRefs] [env : ExeEnv refs]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         let receipt := env.uid2valCtx.inv input
-        eval (body receipt) fuel
+        eval (body id receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
