@@ -33,7 +33,7 @@ directly at [BuildEnv.uid2typ]'s carrier; bound references are read through
 WARNING: this function should have no access to ExeEnv! Executing in compile time is strictly prohibited
 -/
 def infer {refs} [env : BuildEnv refs]
-    (self : Trm env.BuildParameters) : RecOpt (Typ env.BuildParameters)
+    (self : Trm refs.ExeParameters) : RecOpt (Typ env.BuildParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -71,17 +71,15 @@ DEFER: GPT is right:
 
 -- TODO: remove, not useful
 def CanInhabit {refs} [env : BuildEnv refs]
-    (trm : ∀ {B : UIdU}, Trm { F := refs.uid2val.UId, B := B, D := refs.D })
-    (t2 : Typ env.BuildParameters) : Prop :=
-  (trm (B := env.uid2typ.UId)).infer.isDecidable (λ t1 => t1 ≤ t2)
+    (trm : Trm refs.ExeParameters) (t2 : Typ env.BuildParameters) : Prop :=
+  trm.infer.isDecidable (λ t1 => t1 ≤ t2)
 
 end AST
 
 def Safety {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
-    (trm : ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }) --TODO: this is defective
-    (t2 : AST.Typ build.BuildParameters) : Prop :=
-  (trm (B := refs.uid2val.UId)).eval.isSemiDecidable
-    (λ _ => (trm (B := build.uid2typ.UId)).infer.isDecidable (λ t1 => t1 ≤ t2))
+    (trm : AST.Trm refs.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
+  trm.eval.isSemiDecidable
+    (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
 
 /-
 -- TODO: this is the "Paranoid Fundamental theorem": compilation may fail even but term evaluation may succeed.
@@ -91,7 +89,10 @@ def Safety {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
 if compiled a term and succeeded, the term must be safe
 -/
 def Fundamental {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
-    (trm : ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }) : Prop :=
-  (trm (B := build.uid2typ.UId)).infer.isSemiDecidable (Safety trm)
+    (trm : AST.Trm refs.ExeParameters) : Prop :=
+  trm.infer.isSemiDecidable (
+    λ t1 =>
+      Safety trm t1
+  )
 
 end Lp2lc.Active.STLC

@@ -63,13 +63,7 @@ section variable (P : Parameters)
 
 end
 
--- /--
--- Rebuilds syntax over a different group of parameters along a carrier map.
-
--- Free references are transported along the map while the bound carrier and the
--- binders pass through unchanged, making `AST` covariant w.r.t both
--- [Parameters.F] and [Parameters.D] while keeping [Parameters.B] fixed.
--- -/
+-- TOOD: remove & don't use it, we don't need general upcast for AST.
 -- def map {B : UIdU} {PF QF : UIdU} {PD QD : DataU} {l : Label}
 --     (self : AST { F := PF, B := B, D := PD } l)
 --     (mF : PF → QF) (mD : PD → QD) :
