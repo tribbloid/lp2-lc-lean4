@@ -5,23 +5,13 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-/--
-Evidence that a binder carrier [C] extends the enclosing carrier [E]:
-
-the evidence is the coercion embedding references to enclosing binders into
-[C], so lambda bodies can capture their environment while remaining
-covariant in [C].
--/
-abbrev Greater (C E : UIdU) := Coe E C
-
-/--
-Source type syntax.
+/-- Source type syntax.
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
 -/
 inductive AST : Parameters → Label → Type 2 where
-| primitive : AST F .typ -- `AnyVal` in Scala, accepts only primitive values
-| fn (tIn : AST F .typ) (tOut : AST F .typ) : AST F .typ -- function
+| primitive : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
+| fn (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
 /--
 Source term syntax.
 
@@ -32,9 +22,9 @@ In HOAS there is no syntax-level context binding terms to types, so function
 input annotations are the extrinsic typing evidence available to the compiler.
 They are not intrinsic typing indices on terms.
 -/
-| val (v : AST F .val) : AST F .trm -- AKA literal
-| apply (fn : AST F .trm) (arg : AST F .trm) : AST F .trm -- fn must be a function that can be applied on arg
-| ref (s : F.C) : AST F .trm -- binded reference, AKA variable/var (I don't like this name as it implies mutability in Scala), Evidence is required to proof that `x` is a valid index in the variable context
+| val (v : AST P .val) : AST P .trm -- AKA literal
+| apply (fn : AST P .trm) (arg : AST P .trm) : AST P .trm -- fn must be a function that can be applied on arg
+| ref (s : P.F ⊕ P.B) : AST P .trm -- free (.inl) or lambda-bound (.inr) reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 /--
 Value syntax, containing neither references nor applications.
 
@@ -43,58 +33,56 @@ used by function application after both sides have been evaluated.
 
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
-| lit (repr : F.D) : AST F .val -- most specific type is always `primitive`
+| lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
 /--
-Binds over a carrier-parametric argument so `AST` remains covariant in its carrier.
+Binds only a fresh [P.B] receipt for its body.
 
-The body result is carried over [C] and [Greater C F.C] is required as evidence
-that enclosing binders can be embedded into [C]; without it every binder
-introduces a fresh carrier and closures cannot be expressed.
+Captured outer binders remain values of the same [P.B], as required by PHOAS,
+while free references stay behind [P.F] and cannot route into the body
+argument.
 -/
-| lam (body : {C : UIdU} → [s : Greater C F.C] → (arg : C) → AST { C := C, D := F.D } .trm) (tIn : AST F .typ) : AST F .val -- most specific type is always `.fn tIn _`
+| lam (body : (arg : P.B) → AST P .trm) (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
 
 section variable {P : Parameters}
 
 namespace AST
 
-abbrev Typ (F : Parameters) := AST F .typ
-abbrev Trm (F : Parameters) := AST F .trm
-abbrev Val (F : Parameters) := AST F .val
+abbrev Typ (P : Parameters) := AST P .typ
+abbrev Trm (P : Parameters) := AST P .trm
+abbrev Val (P : Parameters) := AST P .val
 
-section variable (F : Parameters)
+section variable (P : Parameters)
 
 -- structure Trm2Typ where -- TODO: cleanup, inferering with recarrier
---   trm : Trm F
---   typ : Typ F
+--   trm : Trm P
+--   typ : Typ P
 
 -- structure Trm2Val where
---   trm : Trm F
---   val : Val F
+--   trm : Trm P
+--   val : Val P
 
 end
 
-/--
-Rebuilds syntax over a different group of parameters along a carrier map.
+-- /--
+-- Rebuilds syntax over a different group of parameters along a carrier map.
 
-References are transported along the map while binders pass through
-unchanged, making `AST` covariant w.r.t both [Parameters.C] and [Parameters.D]
--/
-def map {F G : Parameters} {l : Label} (self : AST F l)
-    (mC : F.C → G.C) (mD : F.D → G.D) : AST G l :=
-  match self with
-  | .primitive => .primitive
-  | .fn tIn tOut => .fn (tIn.map mC mD) (tOut.map mC mD)
-  | .val v => .val (v.map mC mD)
-  | .apply fnTerm arg => .apply (fnTerm.map mC mD) (arg.map mC mD)
-  | .ref s => .ref (mC s)
-  | .lit repr => .lit (mD repr)
-  | .lam body tIn =>
-      let body' : {C : UIdU} → [sG : Greater C G.C] → C → AST { C := C, D := G.D } .trm :=
-        λ {C} [sG : Greater C G.C] (arg : C) =>
-          (body (s := ⟨λ f => sG.coe (mC f)⟩) arg).map
-            (F := { C := C, D := F.D }) (G := { C := C, D := G.D })
-            (λ c => c) mD
-      .lam body' (tIn.map mC mD)
+-- Free references are transported along the map while the bound carrier and the
+-- binders pass through unchanged, making `AST` covariant w.r.t both
+-- [Parameters.F] and [Parameters.D] while keeping [Parameters.B] fixed.
+-- -/
+-- def map {B : UIdU} {PF QF : UIdU} {PD QD : DataU} {l : Label}
+--     (self : AST { F := PF, B := B, D := PD } l)
+--     (mF : PF → QF) (mD : PD → QD) :
+--     AST { F := QF, B := B, D := QD } l :=
+--   match self with
+--   | .primitive => .primitive
+--   | .fn tIn tOut => .fn (tIn.map mF mD) (tOut.map mF mD)
+--   | .val v => .val (v.map mF mD)
+--   | .apply fnTerm arg => .apply (fnTerm.map mF mD) (arg.map mF mD)
+--   | .ref (.inl f) => .ref (.inl (mF f))
+--   | .ref (.inr b) => .ref (.inr b)
+--   | .lit repr => .lit (mD repr)
+--   | .lam body tIn => .lam (λ arg => (body arg).map mF mD) (tIn.map mF mD)
 
 namespace Val
 
@@ -122,24 +110,23 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
 class ExeRefs extends HasData where
-  uid2val : UIdView (λ T => AST.Val { C := T, D := D })
+  uid2val : UIdView (λ T => AST.Val { F := T, B := T, D := D })
 
 namespace ExeRefs
 section variable (self : ExeRefs)
 
-abbrev ExeParameters : Parameters := { C := self.uid2val.UId, D := self.D }
+abbrev ExeParameters : Parameters := { F := self.uid2val.UId, B := self.uid2val.UId, D := self.D }
 
 end
 end ExeRefs
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
 class ExeEnv (refs : ExeRefs) where
-  uid2valCtx : UIdEquiv.Extendable.{3, 3}
-    (VK := λ T => AST.Val { C := T, D := refs.D }) (base := refs.uid2val)
+  uid2valCtx : UIdEquiv.Extendable.{3, 3} (base := refs.uid2val)
 
 namespace AST
 
-/-- Evaluates terms whose references carry receipts from the runtime context. -/
+/-- Evaluates executable terms whose references carry receipts from the runtime context. -/
 def eval [refs : ExeRefs] [env : ExeEnv refs]
     (self : Trm refs.ExeParameters) : RecOpt (Val refs.ExeParameters)
   | 0 => .outOfFuel
@@ -151,11 +138,13 @@ def eval [refs : ExeRefs] [env : ExeEnv refs]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         let receipt := env.uid2valCtx.inv input
-        eval (body (s := ⟨id⟩) receipt) fuel
+        eval (body receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
-    | .ref receipt =>
+    | .ref (.inl receipt) =>
+      .yield (some (refs.uid2val.get receipt))
+    | .ref (.inr receipt) =>
       .yield (some (refs.uid2val.get receipt))
 
 end AST

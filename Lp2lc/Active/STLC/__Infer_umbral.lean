@@ -7,14 +7,15 @@ open Lp2lc.Active.Util
 namespace Umbral
 
 structure TypeWithSafey {refs} [build : BuildEnv refs]
-    (trm : AST.Trm refs.ExeParameters) where
+    (trm : ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }) where
   t2 : AST.Typ build.BuildParameters
   safety : [_exe : ExeEnv refs] -> Safety trm t2
 
 class ProvingEnv (refs : ExeRefs) extends BuildEnv refs where
   uid2typWithSafetyCtx := --TODO: this impl should be final, move into namespace
     toBuildEnv.uid2typCtx.mkLesser
-      (λ _v => PSigma (λ (trm : AST.Trm refs.ExeParameters) => TypeWithSafey (build := toBuildEnv) trm))
+      (λ _v => PSigma (λ (trm : ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }) =>
+        TypeWithSafey trm))
 
 namespace ProvingEnv
 
@@ -38,7 +39,8 @@ TODO: discharge this function.
 -/
 /-- Infers build types for executable terms. -/
 def infer [refs : ExeRefs] [proving : ProvingEnv refs] [env : ExeEnv refs]
-    (trm : AST.Trm refs.ExeParameters) : RecOpt (TypeWithSafey trm) := sorry
+    (trm : ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }) :
+    RecOpt (TypeWithSafey trm) := sorry
 
 end Umbral
 

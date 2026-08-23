@@ -16,7 +16,7 @@ def vTrue : Trm :=
   .val (.lit "true")
 
 def primitiveIdFn : Trm :=
-  .val (.lam (λ x => .ref x) .primitive)
+  .val (.lam (λ x => .ref (.inr x)) .primitive)
 
 def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
@@ -25,14 +25,14 @@ def get1st : Trm :=
   .val
     (.lam (λ x =>
       .val
-        (.lam (λ _y => .ref x) .primitive))
+        (.lam (λ _y => .ref (.inr x)) .primitive))
       .primitive)
 
 def get2nd : Trm :=
   .val
     (.lam (λ _x =>
       .val
-        (.lam (λ y => .ref y) .primitive))
+        (.lam (λ y => .ref (.inr y)) .primitive))
       .primitive)
 
 def get1stOnTuple : Trm :=
@@ -54,13 +54,34 @@ def primitiveTrueFn : Trm :=
 def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn vFalse
 
+namespace FreeCapture
+
+def value : Val :=
+  .lit "false"
+
+/-- Runtime receipt for [value], minted through the fixture's executable bridge. -/
+def receipt : refs.uid2valExe.UId :=
+  testEnv.trm2valExeCtx.inv value
+
+def directRef : Trm :=
+  .ref (.inl receipt)
+
+def capturedRef : Trm :=
+  .val
+    (.lam (λ _x => .ref (.inl receipt)) .primitive)
+
+def capturedRefOnFalse : Trm :=
+  .apply capturedRef vFalse
+
+end FreeCapture
+
 namespace TypeHinted
 
 def hintedFalse : Trm :=
   .val (.lit "false")
 
 def hintedIdFn : Trm :=
-  .val (.lam (λ x => .ref x) .primitive)
+  .val (.lam (λ x => .ref (.inr x)) .primitive)
 
 def hintedIdFnOnFalse : Trm :=
   .apply hintedIdFn hintedFalse
@@ -82,20 +103,6 @@ def apply1 : Trm :=
   .apply
     (.apply primitiveIdFn vFalse)
     vTrue
-
-def binderIdentityCounterexample : Trm :=
-  let input : Val := .lit "false"
-  let receipt := testEnv.trm2valCtx.inv input
-  .apply
-    (.val
-      (.lam (λ {C} [embedding : Greater C refs.uid2val.UId] (arg : C) =>
-        let _ : DecidableEq C := testEnv.decidableEq C
-        if arg = embedding.coe receipt then
-          .apply (.val (.lit "false")) (.val (.lit "true"))
-        else
-          .ref arg)
-        .primitive))
-    (.val input)
 
 end Malformed
 

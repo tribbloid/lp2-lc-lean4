@@ -9,16 +9,14 @@ Adds the compile-time typing context; its value view only permits lookups,
 so compile-time code cannot mint receipts from new values.
 -/
 class BuildEnv (refs : ExeRefs) where
-  uid2typ : UIdView (λ T =>
-    let TC := refs.uid2val.UId ⊕ T
-    AST.Typ { C := TC, D := refs.D })
+  uid2typ : UIdView (λ T => AST.Typ { F := refs.uid2val.UId, B := T, D := refs.D })
   uid2typCtx : UIdEquiv.Extendable.{3, 3} uid2typ
 
 namespace BuildEnv
 section variable {refs : ExeRefs} (self : BuildEnv refs)
 
 abbrev BuildParameters : Parameters :=
-  { C := refs.uid2val.UId ⊕ self.uid2typ.UId, D := refs.D }
+  { F := refs.uid2val.UId, B := self.uid2typ.UId, D := refs.D }
 
 end
 end BuildEnv
@@ -28,36 +26,35 @@ namespace AST
 /--
 Infers build types for executable terms, recursively resolving runtime references.
 
+Free references are resolved by instantiating the stored value polymorphism
+directly at [BuildEnv.uid2typ]'s carrier; bound references are read through
+[BuildEnv.uid2typ].
+
 WARNING: this function should have no access to ExeEnv! Executing in compile time is strictly prohibited
 -/
-def infer_core {refs} [env : BuildEnv refs]
+def infer {refs} [env : BuildEnv refs]
     (self : Trm env.BuildParameters) : RecOpt (Typ env.BuildParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
-      let index : env.BuildParameters.C := .inr (env.uid2typCtx.inv tIn)
-      ((body (s := ⟨id⟩) index).infer_core fuel).map
+      let index : env.BuildParameters.B := env.uid2typCtx.inv tIn
+      ((body index).infer fuel).map
         (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
-      match infer_core fnTerm fuel, infer_core arg fuel with
+      match infer fnTerm fuel, infer arg fuel with
       | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
         if argTyp ≤ tIn then .yield (some tOut) else .yield none
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
-    | .ref (.inl receipt) =>
+    | .ref (.inl free) =>
       let original : Val env.BuildParameters :=
-        (refs.uid2val.get receipt).map Sum.inl id
-      original.asTrm.infer_core fuel
-    | .ref (.inr receipt) =>
-      .yield (some (env.uid2typ.get receipt))
-
-/-- Infers build types for executable terms. -/
-def infer {refs} [env : BuildEnv refs]
-    (self : Trm refs.ExeParameters) : RecOpt (Typ env.BuildParameters) :=
-  infer_core (self.map Sum.inl id)
+        infer (refs.uid2val.get free)
+      original.asTrm.infer fuel
+    | .ref (.inr bounded) =>
+      .yield (some (env.uid2typ.get bounded))
 
 /-
 DEFER: GPT is right:
@@ -74,15 +71,17 @@ DEFER: GPT is right:
 
 -- TODO: remove, not useful
 def CanInhabit {refs} [env : BuildEnv refs]
-    (trm : Trm refs.ExeParameters) (t2 : Typ env.BuildParameters) : Prop :=
-  trm.infer.isDecidable (λ t1 => t1 ≤ t2)
+    (trm : ∀ {B : UIdU}, Trm { F := refs.uid2val.UId, B := B, D := refs.D })
+    (t2 : Typ env.BuildParameters) : Prop :=
+  (trm (B := env.uid2typ.UId)).infer.isDecidable (λ t1 => t1 ≤ t2)
 
 end AST
 
 def Safety {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
-    (trm : AST.Trm refs.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
-  trm.eval.isSemiDecidable
-    (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
+    (trm : ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }) --TODO: this is defective
+    (t2 : AST.Typ build.BuildParameters) : Prop :=
+  (trm (B := refs.uid2val.UId)).eval.isSemiDecidable
+    (λ _ => (trm (B := build.uid2typ.UId)).infer.isDecidable (λ t1 => t1 ≤ t2))
 
 /-
 -- TODO: this is the "Paranoid Fundamental theorem": compilation may fail even but term evaluation may succeed.
@@ -92,10 +91,7 @@ def Safety {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
 if compiled a term and succeeded, the term must be safe
 -/
 def Fundamental {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
-    (trm : AST.Trm refs.ExeParameters) : Prop :=
-  trm.infer.isSemiDecidable (
-    λ t1 =>
-      Safety trm t1
-  )
+    (trm : ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }) : Prop :=
+  (trm (B := build.uid2typ.UId)).infer.isSemiDecidable (Safety trm)
 
 end Lp2lc.Active.STLC

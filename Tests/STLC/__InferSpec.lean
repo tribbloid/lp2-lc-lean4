@@ -29,7 +29,7 @@ example :
 example :
     (primitiveIdFn.infer).shouldYields (.fn .primitive .primitive) := by
   constructor
-  · exact ⟨2, by simp [AST.infer, AST.infer_core, AST.map, Outcome.map, primitiveIdFn]⟩
+  · exact ⟨2, by simp [AST.infer, Outcome.map, primitiveIdFn]⟩
   · rfl
 
 example :
@@ -38,20 +38,20 @@ example :
   · refine ⟨3, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, AST.infer_core, AST.map, Outcome.map,
+    simp [AST.infer, Outcome.map,
       primitiveIdFnOnFalse, primitiveIdFn, vFalse, hPrimitive]
   · rfl
 
 example :
     (get1st.infer).shouldYields (.fn .primitive (.fn .primitive .primitive)) := by
   constructor
-  · exact ⟨3, by simp [AST.infer, AST.infer_core, AST.map, Outcome.map, get1st]⟩
+  · exact ⟨3, by simp [AST.infer, Outcome.map, get1st]⟩
   · rfl
 
 example :
     (get2nd.infer).shouldYields (.fn .primitive (.fn .primitive .primitive)) := by
   constructor
-  · exact ⟨3, by simp [AST.infer, AST.infer_core, AST.map, Outcome.map, get2nd]⟩
+  · exact ⟨3, by simp [AST.infer, Outcome.map, get2nd]⟩
   · rfl
 
 example :
@@ -60,7 +60,7 @@ example :
   · refine ⟨5, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, AST.infer_core, AST.map, Outcome.map,
+    simp [AST.infer, Outcome.map,
       get1stOnTuple, get1st, vFalse, vTrue, hPrimitive]
   · rfl
 
@@ -70,14 +70,14 @@ example :
   · refine ⟨5, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, AST.infer_core, AST.map, Outcome.map,
+    simp [AST.infer, Outcome.map,
       get2ndOnTuple, get2nd, vFalse, vTrue, hPrimitive]
   · rfl
 
 example :
     (primitiveTrueFn.infer).shouldYields (.fn .primitive .primitive) := by
   constructor
-  · exact ⟨2, by simp [AST.infer, AST.infer_core, AST.map, Outcome.map, primitiveTrueFn]⟩
+  · exact ⟨2, by simp [AST.infer, Outcome.map, primitiveTrueFn]⟩
   · rfl
 
 example :
@@ -86,7 +86,7 @@ example :
   · refine ⟨3, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, AST.infer_core, AST.map, Outcome.map,
+    simp [AST.infer, Outcome.map,
       primitiveTrueFnOnFalse, primitiveTrueFn, vFalse, hPrimitive]
   · rfl
 
@@ -99,7 +99,7 @@ example :
 example :
     (TypeHinted.hintedIdFn.infer).shouldYields (.fn .primitive .primitive) := by
   constructor
-  · exact ⟨2, by simp [AST.infer, AST.infer_core, AST.map, Outcome.map,
+  · exact ⟨2, by simp [AST.infer, Outcome.map,
       TypeHinted.hintedIdFn]⟩
   · rfl
 
@@ -109,7 +109,7 @@ example :
   · refine ⟨3, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, AST.infer_core, AST.map, Outcome.map,
+    simp [AST.infer, Outcome.map,
       TypeHinted.hintedIdFnOnFalse, TypeHinted.hintedIdFn,
       TypeHinted.hintedFalse, hPrimitive]
   · rfl
@@ -122,7 +122,7 @@ example :
         ¬ ((AST.fn .primitive .primitive : Typ) ≤ .primitive) := by
       intro h
       cases h
-    simp [AST.infer, AST.infer_core, AST.map, Outcome.map,
+    simp [AST.infer, Outcome.map,
       Malformed.applyIdFnOnItself, primitiveIdFn, hFnNotPrimitive]
   · rfl
 
@@ -134,7 +134,7 @@ example :
         ¬ ((AST.fn .primitive .primitive : Typ) ≤ .primitive) := by
       intro h
       cases h
-    simp [AST.infer, AST.infer_core, AST.map, Outcome.map,
+    simp [AST.infer, Outcome.map,
       Malformed.idFnOnFalse2, Malformed.applyIdFnOnItself,
       primitiveIdFn, vFalse, hFnNotPrimitive]
   · rfl
@@ -145,7 +145,7 @@ example :
   · refine ⟨4, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, AST.infer_core, AST.map, Outcome.map,
+    simp [AST.infer, Outcome.map,
       Malformed.apply1, primitiveIdFn, vFalse, vTrue, hPrimitive]
   · rfl
 
@@ -153,15 +153,6 @@ example :
     (Malformed.primitiveApply.infer).shouldFail := by
   constructor
   · exact ⟨2, rfl⟩
-  · rfl
-
-example : Malformed.binderIdentityCounterexample.infer.shouldYields .primitive := by
-  constructor
-  · refine ⟨3, ?_⟩
-    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
-      rfl
-    simp [Malformed.binderIdentityCounterexample, AST.infer, AST.infer_core,
-      AST.map, Outcome.map, hPrimitive]
   · rfl
 
 end infer

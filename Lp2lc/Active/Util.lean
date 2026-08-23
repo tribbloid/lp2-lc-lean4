@@ -93,11 +93,12 @@ the meaning of P in PHOAS, the collection of free type variables used in PHOAS b
 
 They are deliberately left free to ward off unlawful construction:
 
-- the only way to construct `C` is to get the UId of something already existing through [UIdEquiv]
+- the only way to construct `F` and `B` is to get the UId of something already existing through [UIdEquiv]
 - the only way to construct `D` is to parse a primitive literal in AST
 -/
 class Parameters extends HasData where
-  C : UIdU -- Carrier type, AKA variable binding
+  F : UIdU -- free receipt carrier, AKA captured variable binding
+  B : UIdU -- bound receipt carrier, introduced per binder by [AST.lam]
 
 section variable {T : Sort u}
 
