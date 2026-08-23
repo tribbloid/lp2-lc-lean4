@@ -24,6 +24,16 @@ end BuildEnv
 namespace AST
 
 /--
+converting an executable term AST (with only references to value) to a compilable term AST (free variable references to value, bounded variable references to type)
+
+rule-of-thumb: every variable reference in the input AST is automatically lifted into a free variable reference.
+
+as a result, this conversion is fairly universal and doesn't require the term to be closed.
+  In fact, it even works if the term is a debugging expression at a breakpoint in the middle of execution.
+-/
+def exe2build {refs} [env : BuildEnv refs] (trm: Trm refs.ExeParameters): Trm env.BuildParameters := sorry
+
+/--
 Infers build types for executable terms, recursively resolving runtime references.
 
 Free references are resolved by instantiating the stored value polymorphism
@@ -32,29 +42,34 @@ directly at [BuildEnv.uid2typ]'s carrier; bound references are read through
 
 WARNING: this function should have no access to ExeEnv! Executing in compile time is strictly prohibited
 -/
-def infer {refs} [env : BuildEnv refs]
-    (self : Trm refs.ExeParameters) : RecOpt (Typ env.BuildParameters)
+def inferCore {refs} [env : BuildEnv refs]
+    (self : Trm env.BuildParameters) : RecOpt (Typ env.BuildParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
       let index : env.BuildParameters.B := env.uid2typCtx.inv tIn
-      ((body index).infer fuel).map
+      ((body index).inferCore fuel).map
         (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
-      match infer fnTerm fuel, infer arg fuel with
+      match inferCore fnTerm fuel, inferCore arg fuel with
       | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
         if argTyp ≤ tIn then .yield (some tOut) else .yield none
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
     | .ref (.inl free) =>
-      let original : Val env.BuildParameters :=
-        infer (refs.uid2val.get free)
-      original.asTrm.infer fuel
+      let exeTrm : Trm refs.ExeParameters := (refs.uid2val.get free).asTrm
+      let buildTrm := exeTrm.exe2build
+      buildTrm.inferCore fuel
     | .ref (.inr bounded) =>
       .yield (some (env.uid2typ.get bounded))
+
+
+def infer {refs} [env : BuildEnv refs]
+    (self : Trm refs.ExeParameters) : RecOpt (Typ env.BuildParameters) :=
+    self.exe2build.inferCore
 
 /-
 DEFER: GPT is right:
