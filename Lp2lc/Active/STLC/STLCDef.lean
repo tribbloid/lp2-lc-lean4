@@ -35,13 +35,13 @@ Function values carry their input type so the compiler can type-check HOAS bodie
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
 /--
-Binds only a fresh [P.B] receipt for its body.
+Binds only a fresh `B` receipt for its body, with [P.B] as the outer carrier.
 
-Captured outer binders remain values of the same [P.B], as required by PHOAS,
-while free references stay behind [P.F] and cannot route into the body
-argument.
+Captured outer binders remain values of the same [P.B] at the constructor
+boundary, as required by PHOAS. `lift` embeds them into the body carrier,
+while free references stay behind [P.F] and cannot route into the body argument.
 -/
-| lam (body : {B : UIdU} → (arg : B ) → AST { P with B := B ⊕ P.B} .trm) (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
+| lam (body : {B : UIdU} → (lift : P.B → B) → (arg : B) → AST { P with B := B } .trm) (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
 
 section variable {P : Parameters}
 
