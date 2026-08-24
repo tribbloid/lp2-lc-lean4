@@ -16,23 +16,23 @@ def vTrue : Trm :=
   .val (.lit "true")
 
 def primitiveIdFn : Trm :=
-  .val (.lam (λ x => .ref (.inr x)) .primitive)
+  .val (.lam (λ _lift x => .ref (.inr x)) .primitive)
 
 def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
 
 def get1st : Trm :=
   .val
-    (.lam (λ x =>
+    (.lam (λ _liftOuter x =>
       .val
-        (.lam (λ _y => .ref (.inr x)) .primitive))
+        (.lam (λ liftInner _y => .ref (.inr (liftInner x))) .primitive))
       .primitive)
 
 def get2nd : Trm :=
   .val
-    (.lam (λ _x =>
+    (.lam (λ _liftOuter _x =>
       .val
-        (.lam (λ y => .ref (.inr y)) .primitive))
+        (.lam (λ _liftInner y => .ref (.inr y)) .primitive))
       .primitive)
 
 def get1stOnTuple : Trm :=
@@ -47,7 +47,7 @@ def get2ndOnTuple : Trm :=
 
 def primitiveTrueFn : Trm :=
   .val
-    (.lam (λ _x =>
+    (.lam (λ _lift _x =>
       .val (.lit "true"))
       .primitive)
 
@@ -60,7 +60,7 @@ def value : Val :=
   .lit "false"
 
 /-- Runtime receipt for [value], minted through the fixture's executable bridge. -/
-def receipt : refs.uid2valExe.UId :=
+def receipt : refs.uid2val.UId :=
   testEnv.trm2valExeCtx.inv value
 
 def directRef : Trm :=
@@ -68,7 +68,7 @@ def directRef : Trm :=
 
 def capturedRef : Trm :=
   .val
-    (.lam (λ _x => .ref (.inl receipt)) .primitive)
+    (.lam (λ _lift _x => .ref (.inl receipt)) .primitive)
 
 def capturedRefOnFalse : Trm :=
   .apply capturedRef vFalse
@@ -81,7 +81,7 @@ def hintedFalse : Trm :=
   .val (.lit "false")
 
 def hintedIdFn : Trm :=
-  .val (.lam (λ x => .ref (.inr x)) .primitive)
+  .val (.lam (λ _lift x => .ref (.inr x)) .primitive)
 
 def hintedIdFnOnFalse : Trm :=
   .apply hintedIdFn hintedFalse

@@ -13,6 +13,7 @@ open Tests.STLC.Sanity.Symbolic
 section infer
 variable [testEnv : TestEnv] [build : BuildEnv refs]
 abbrev Typ := AST.Typ build.BuildParameters
+attribute [local simp] AST.exe2build AST.inferCore
 
 example :
     (vFalse.infer).shouldYields .primitive := by
