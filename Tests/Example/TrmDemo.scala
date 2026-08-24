@@ -82,5 +82,15 @@ object TrmDemo extends Preamble {
 
     lazy val idFnAsPrimitive: Boolean =
       idFn.asInstanceOf[Boolean]
+
+    lazy val binderIdentityCounterexample: Boolean = {
+      val fn: Boolean => Boolean => Boolean =
+        outer => inner =>
+          if (inner == outer)
+            inner
+          else
+            vFalse.asInstanceOf[Boolean => Boolean](vTrue)
+      fn(vFalse)(vTrue)
+    }
   }
 }

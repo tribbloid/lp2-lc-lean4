@@ -104,6 +104,26 @@ def apply1 : Trm :=
     (.apply primitiveIdFn vFalse)
     vTrue
 
+def binderIdentityCounterexample
+    (decEq : (B : UIdU) → DecidableEq B) : Trm :=
+  .apply
+    (.apply
+      (.val
+        (.lam
+          (λ _liftOuter outer =>
+            .val
+              (.lam
+                (λ {B} liftInner inner =>
+                  let _ := decEq B
+                  if inner = liftInner outer then
+                    .ref (.inr inner)
+                  else
+                    .apply vFalse vTrue)
+                .primitive))
+          .primitive))
+      vFalse)
+    vTrue
+
 end Malformed
 
 end Trm

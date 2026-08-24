@@ -63,6 +63,23 @@ example : Trm.Malformed.primitiveApply.eval.shouldFail := by
   · exact ⟨2, by simp⟩
   · rfl
 
+example :
+    (Trm.Malformed.binderIdentityCounterexample
+      (λ B => Classical.typeDecidableEq B)).eval.shouldFail := by
+  constructor
+  · refine ⟨5, ?_⟩
+    have hReceipt :
+        testEnv.trm2valExeCtx.inv (.lit "true") ≠
+          testEnv.trm2valExeCtx.inv (.lit "false") := by
+      intro h
+      have hValue := congrArg testEnv.trm2val.get h
+      have hLiteral :
+          (AST.lit "true" : AST.Val refs.ExeParameters) = .lit "false" := by
+        simpa only [UIdEquiv.rightInv] using hValue
+      exact (by decide : ("true" : String) ≠ "false") (AST.lit.inj hLiteral)
+    simp [Trm.Malformed.binderIdentityCounterexample, hReceipt]
+  · rfl
+
 example : Trm.primitiveTrueFnOnFalse.eval.shouldYields (.lit "true") := by
   constructor
   · exact ⟨2, by simp⟩
