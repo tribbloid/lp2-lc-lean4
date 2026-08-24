@@ -24,6 +24,7 @@ end BuildEnv
 namespace AST
 
 /-- Rebuilds syntax while classifying source binders as target free or bound references. -/
+@[simp]
 private def recarrier {P Q : Parameters} {l : Label} (self : AST P l)
     (mF : P.F → Q.F) (mB : P.B → Q.F ⊕ Q.B) (mD : P.D → Q.D) : AST Q l :=
   match self with

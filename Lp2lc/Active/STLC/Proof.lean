@@ -50,12 +50,12 @@ theorem termEvalMonotone [refs : ExeRefs] [env : ExeEnv refs]
                   | none =>
                     simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                   | some input =>
-                    cases hBody : (body (env.uid2valCtx.inv input)).eval fuel with
+                    cases hBody : (body id (env.uid2valCtx.inv input)).eval fuel with
                     | outOfFuel =>
                       simp [AST.eval, hFn, hArg, hBody] at hEval
                     | yield bodyResult =>
                       have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
-                        (body (env.uid2valCtx.inv input))
+                        (body id (env.uid2valCtx.inv input))
                         toFuel bodyResult hFuelTail hBody
                       simpa [AST.eval, hFn, hArg, hFnTop, hArgTop,
                         hBody, hBodyTop] using hEval
@@ -68,14 +68,14 @@ theorem termEvalMonotone [refs : ExeRefs] [env : ExeEnv refs]
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
-    (trm : Trm env.BuildParameters) : -- TODO: this is actually a theorem for `infer`
-    trm.infer.Monotone := by
+    (trm : Trm env.BuildParameters) : -- TODO: lift this core theorem to `infer`
+    trm.inferCore.Monotone := by
   intro less more result hFuel hInfer
   induction less using Nat.strongRecOn generalizing trm more result with
   | ind fromFuel ih =>
     cases fromFuel with
     | zero =>
-      cases trm <;> simp [infer] at hInfer
+      cases trm <;> simp [inferCore] at hInfer
     | succ fuel =>
       cases more with
       | zero => cases hFuel
@@ -84,9 +84,9 @@ theorem termInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
         cases trm with
         | val value =>
           cases value with
-          | lit repr => simpa [infer] using hInfer
+          | lit repr => simpa [inferCore] using hInfer
           | lam body tIn =>
-            simp only [infer, Outcome.map] at hInfer ⊢
+            simp only [inferCore, Outcome.map] at hInfer ⊢
             split at hInfer
             next _ bodyResult hBody =>
               have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
@@ -95,36 +95,36 @@ theorem termInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
             next _ hBody =>
               cases hInfer
         | apply fnTerm arg =>
-          cases hFn : fnTerm.infer fuel with
-          | outOfFuel => simp [infer, hFn] at hInfer
+          cases hFn : fnTerm.inferCore fuel with
+          | outOfFuel => simp [inferCore, hFn] at hInfer
           | yield fnResult =>
-            cases hArg : arg.infer fuel with
-            | outOfFuel => simp [infer, hFn, hArg] at hInfer
+            cases hArg : arg.inferCore fuel with
+            | outOfFuel => simp [inferCore, hFn, hArg] at hInfer
             | yield argResult =>
               have hFnTop := ih fuel (Nat.lt_succ_self fuel)
                 fnTerm toFuel fnResult hFuelTail hFn
               have hArgTop := ih fuel (Nat.lt_succ_self fuel)
                 arg toFuel argResult hFuelTail hArg
-              simpa [infer, hFn, hArg, hFnTop, hArgTop] using hInfer
+              simpa [inferCore, hFn, hArg, hFnTop, hArgTop] using hInfer
         | ref receipt =>
           cases receipt with
           | inl rc =>
-            let original : Val env.BuildParameters :=
-              refs.uid2val.get rc (B := env.uid2typ.UId)
-            have hOriginal : original.asTrm.infer fuel = .yield result := by
-              simpa [infer, original] using hInfer
+            let executable : Trm refs.ExeParameters := (refs.uid2val.get rc).asTrm
+            let original := executable.exe2build
+            have hOriginal : original.inferCore fuel = .yield result := by
+              simpa [inferCore, executable, original] using hInfer
             have hOriginalTop := ih fuel (Nat.lt_succ_self fuel)
-              original.asTrm toFuel result hFuelTail hOriginal
-            simpa [infer, original] using hOriginalTop
+              original toFuel result hFuelTail hOriginal
+            simpa [inferCore, executable, original] using hOriginalTop
           | inr rc =>
             cases env.uid2typ.get rc with
-            | primitive => simpa [infer] using hInfer
-            | fn tIn tOut => simpa [infer] using hInfer
+            | primitive => simpa [inferCore] using hInfer
+            | fn tIn tOut => simpa [inferCore] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
     (value : Val env.BuildParameters) :
-    value.asTrm.infer.Monotone :=
+    value.asTrm.inferCore.Monotone :=
   termInferMonotone value.asTrm
 
 end AST
