@@ -1,55 +1,50 @@
 namespace Tests.ParametricityNaturalityDemo
 
-universe u
+abbrev TypeFamily := Type → Type
 
-abbrev TypeFamily := Type u → Type u
-
-def Graph {A B : Type u} (f : A → B) : A → B → Prop :=
+def Graph {A B : Type} (f : A → B) : A → B → Prop :=
   λ x y => f x = y
 
-structure RelationalType (F : TypeFamily) where
-  map : {A B : Type u} → (f : A → B) → (x : F A) → F B
-  rel : {A B : Type u} → (R : A → B → Prop) → (x : F A) → (y : F B) → Prop
-  relGraph : ∀ {A B : Type u} (f : A → B) (x : F A) (y : F B),
+structure RelationalType (G : TypeFamily) where
+  map : {A B : Type} → (f : A → B) → (x : G A) → G B
+  rel : {A B : Type} → (R : A → B → Prop) → (x : G A) → (y : G B) → Prop
+  relGraph : ∀ {A B : Type} (f : A → B) (x : G A) (y : G B),
     rel (Graph f) x y ↔ map f x = y
 
-abbrev PolymorphicFunction (F G : TypeFamily) :=
-  {A : Type u} → (x : F A) → G A
+abbrev PolyFunction (G : TypeFamily) :=
+  {A : Type} → (x : A) → G A
 
 structure ParametricFunction
-    {F G : TypeFamily}
-    (relF : RelationalType F)
+    {G : TypeFamily}
     (relG : RelationalType G) where
-  toFun : PolymorphicFunction F G
-  preservesRelation : ∀ {A B : Type u} (R : A → B → Prop) (x : F A) (y : F B),
-    relF.rel R x y → relG.rel R (toFun x) (toFun y)
+  toFun : PolyFunction G
+  preservesRelation : ∀ {A B : Type} (R : A → B → Prop) (x : A) (y : B),
+    R x y → relG.rel R (toFun x) (toFun y)
 
-instance {F G : TypeFamily} {relF : RelationalType F} {relG : RelationalType G} :
-    CoeFun (ParametricFunction relF relG) (λ _ => PolymorphicFunction F G) where
+instance {G : TypeFamily} {relG : RelationalType G} :
+    CoeFun (ParametricFunction relG) (λ _ => PolyFunction G) where
   coe self := self.toFun
 
 structure NaturalFunction
-    {F G : TypeFamily}
-    (relF : RelationalType F)
+    {G : TypeFamily}
     (relG : RelationalType G) where
-  toFun : PolymorphicFunction F G
-  naturality : ∀ {A B : Type u} (f : A → B) (x : F A),
-    relG.map f (toFun x) = toFun (relF.map f x)
+  toFun : PolyFunction G
+  naturality : ∀ {A B : Type} (f : A → B) (x : A),
+    relG.map f (toFun x) = toFun (f x)
 
-instance {F G : TypeFamily} {relF : RelationalType F} {relG : RelationalType G} :
-    CoeFun (NaturalFunction relF relG) (λ _ => PolymorphicFunction F G) where
+instance {G : TypeFamily} {relG : RelationalType G} :
+    CoeFun (NaturalFunction relG) (λ _ => PolyFunction G) where
   coe self := self.toFun
 
 def ParametricFunction.toNatural
-    {F G : TypeFamily}
-    {relF : RelationalType F}
+    {G : TypeFamily}
     {relG : RelationalType G}
-    (self : ParametricFunction relF relG) : NaturalFunction relF relG where
+    (self : ParametricFunction relG) : NaturalFunction relG where
   toFun := self.toFun
   naturality := by
     intro A B f x
-    apply (relG.relGraph f (self x) (self (relF.map f x))).mp
-    apply self.preservesRelation (Graph f) x (relF.map f x)
-    exact (relF.relGraph f x (relF.map f x)).mpr rfl
+    apply (relG.relGraph f (self x) (self (f x))).mp
+    apply self.preservesRelation (Graph f) x (f x)
+    rfl
 
 end Tests.ParametricityNaturalityDemo
