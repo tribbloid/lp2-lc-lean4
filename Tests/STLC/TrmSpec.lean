@@ -106,6 +106,36 @@ example : True := by
       .val (.lam (λ _lift arg => .ref (.inr arg)) .primitive)
   trivial
 
+namespace Malformed
+
+example (_decEq : (B : UIdU) → DecidableEq B) : True := by
+  fail_if_success
+    have _binderResultTypeCounterexample : Trm :=
+      λ {Outer} =>
+        .apply
+          (.apply
+            (.val
+              (.lam
+                (.val
+                  (.lam
+                    (λ {B} (liftInner : Outer ⊕ Unit → B) (inner : B) =>
+                      (let _ := _decEq B
+                       if inner = liftInner (.inr ()) then vFalse else primitiveIdFn :
+                        AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }))
+                    .primitive))
+                .primitive))
+            vFalse)
+          vTrue
+  trivial
+
+end Malformed
+
+example :
+    ((primitiveIdFn : AST.Trm refs.ExeParameters).recarrier
+      id (λ _ => .inl FreeCapture.receipt) id) =
+      (primitiveIdFn : AST.Trm refs.ExeParameters) := by
+  rfl
+
 end structuralLambda
 
 end Trm
