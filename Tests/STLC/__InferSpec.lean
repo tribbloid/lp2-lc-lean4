@@ -156,17 +156,6 @@ example :
   · exact ⟨2, rfl⟩
   · rfl
 
-example :
-    (Malformed.binderIdentityCounterexample
-      (λ B => Classical.typeDecidableEq B)).infer.shouldYields .primitive := by
-  constructor
-  · refine ⟨5, ?_⟩
-    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
-      rfl
-    simp [AST.infer, Outcome.map, Malformed.binderIdentityCounterexample,
-      vFalse, vTrue, hPrimitive]
-  · rfl
-
 end infer
 
 end Trm

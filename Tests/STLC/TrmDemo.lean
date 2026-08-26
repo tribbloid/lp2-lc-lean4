@@ -16,23 +16,23 @@ def vTrue : Trm :=
   .val (.lit "true")
 
 def primitiveIdFn : Trm :=
-  .val (.lam (λ _lift x => .ref (.inr x)) .primitive)
+  .val (.lam (.ref (.inr (.inr ()))) .primitive)
 
 def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
 
 def get1st : Trm :=
   .val
-    (.lam (λ _liftOuter x =>
-      .val
-        (.lam (λ liftInner _y => .ref (.inr (liftInner x))) .primitive))
+    (.lam
+      (.val
+        (.lam (.ref (.inr (.inl (.inr ())))) .primitive))
       .primitive)
 
 def get2nd : Trm :=
   .val
-    (.lam (λ _liftOuter _x =>
-      .val
-        (.lam (λ _liftInner y => .ref (.inr y)) .primitive))
+    (.lam
+      (.val
+        (.lam (.ref (.inr (.inr ()))) .primitive))
       .primitive)
 
 def get1stOnTuple : Trm :=
@@ -47,8 +47,8 @@ def get2ndOnTuple : Trm :=
 
 def primitiveTrueFn : Trm :=
   .val
-    (.lam (λ _lift _x =>
-      .val (.lit "true"))
+    (.lam
+      (.val (.lit "true"))
       .primitive)
 
 def primitiveTrueFnOnFalse : Trm :=
@@ -68,7 +68,7 @@ def directRef : Trm :=
 
 def capturedRef : Trm :=
   .val
-    (.lam (λ _lift _x => .ref (.inl receipt)) .primitive)
+    (.lam (.ref (.inl receipt)) .primitive)
 
 def capturedRefOnFalse : Trm :=
   .apply capturedRef vFalse
@@ -81,7 +81,7 @@ def hintedFalse : Trm :=
   .val (.lit "false")
 
 def hintedIdFn : Trm :=
-  .val (.lam (λ _lift x => .ref (.inr x)) .primitive)
+  .val (.lam (.ref (.inr (.inr ()))) .primitive)
 
 def hintedIdFnOnFalse : Trm :=
   .apply hintedIdFn hintedFalse
@@ -102,26 +102,6 @@ def primitiveApply : Trm :=
 def apply1 : Trm :=
   .apply
     (.apply primitiveIdFn vFalse)
-    vTrue
-
-def binderIdentityCounterexample
-    (decEq : (B : UIdU) → DecidableEq B) : Trm :=
-  .apply
-    (.apply
-      (.val
-        (.lam
-          (λ _liftOuter outer =>
-            .val
-              (.lam
-                (λ {B} liftInner inner =>
-                  let _ := decEq B
-                  if inner = liftInner outer then
-                    .ref (.inr inner)
-                  else
-                    .apply vFalse vTrue)
-                .primitive))
-          .primitive))
-      vFalse)
     vTrue
 
 end Malformed

@@ -31,10 +31,11 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
       let index : env.BuildParameters.B := env.uid2typCtx.inv tIn
-      let result := infer_prove (body id index) fuel
+      let instantiated := body.instantiateLamBody index
+      let result := infer_prove instantiated fuel
       ⟨result.compilation.map
           (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
-        change _ = ((body id index).inferCore fuel).map (Option.map (AST.fn tIn))
+        change _ = (instantiated.inferCore fuel).map (Option.map (AST.fn tIn))
         rw [← result.sameInfer]
         cases result.compilation <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩

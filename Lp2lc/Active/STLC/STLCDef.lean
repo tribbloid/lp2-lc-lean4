@@ -18,9 +18,8 @@ Source term syntax.
 Primitive value terms are self-typed, while function values carry their input
 type. Applications and references are unannotated.
 
-In HOAS there is no syntax-level context binding terms to types, so function
-input annotations are the extrinsic typing evidence available to the compiler.
-They are not intrinsic typing indices on terms.
+Terms are not intrinsically indexed by object-language types, so function input
+annotations are the extrinsic typing evidence available to the compiler.
 -/
 | val (v : AST P .val) : AST P .trm -- AKA literal
 | apply (fn : AST P .trm) (arg : AST P .trm) : AST P .trm -- fn must be a function that can be applied on arg
@@ -31,17 +30,14 @@ Value syntax, containing neither references nor applications.
 Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
 
-Function values carry their input type so the compiler can type-check HOAS bodies.
+Function values carry their input type so the compiler can type-check their bodies.
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
-/--
-Binds only a fresh `B` receipt for its body, with [P.B] as the outer carrier.
-
-Captured outer binders remain values of the same [P.B] at the constructor
-boundary, as required by PHOAS. `lift` embeds them into the body carrier,
-while free references stay behind [P.F] and cannot route into the body argument.
--/
-| lam (body : {B : UIdU} → (lift : P.B → B) → (arg : B) → AST { P with B := B } .trm) (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
+/-- Binds one fresh structural slot, after the outer [P.B] binder carrier. -/
+| lam
+    (body : AST { P with B := P.B ⊕ Unit } .trm)
+    (tIn : AST P .typ) :
+    AST P .val -- most specific type is always `.fn tIn _`
 
 section variable {P : Parameters}
 
@@ -77,6 +73,43 @@ end
 --   | .ref (.inr b) => .ref (.inr b)
 --   | .lit repr => .lit (mD repr)
 --   | .lam body tIn => .lam (λ arg => (body arg).map mF mD) (tIn.map mF mD)
+
+/-- Rebuilds syntax while classifying source binders as target free or bound references. -/
+@[simp]
+def recarrier {P Q : Parameters} {l : Label} (self : AST P l)
+    (mF : P.F → Q.F) (mB : P.B → Q.F ⊕ Q.B) (mD : P.D → Q.D) : AST Q l :=
+  match self with
+  | .primitive => .primitive
+  | .fn tIn tOut => .fn (tIn.recarrier mF mB mD) (tOut.recarrier mF mB mD)
+  | .val value => .val (value.recarrier mF mB mD)
+  | .apply fnTerm arg => .apply (fnTerm.recarrier mF mB mD) (arg.recarrier mF mB mD)
+  | .ref (.inl free) => .ref (.inl (mF free))
+  | .ref (.inr bound) => .ref (mB bound)
+  | .lit repr => .lit (mD repr)
+  | .lam body tIn =>
+    .lam
+      (body.recarrier mF
+        (λ bound =>
+          match bound with
+          | .inl outer =>
+            match mB outer with
+            | .inl free => .inl free
+            | .inr target => .inr (.inl target)
+          | .inr () => .inr (.inr ()))
+        mD)
+      (tIn.recarrier mF mB mD)
+
+/-- Replaces the newest structural lambda slot while preserving outer binders. -/
+@[simp]
+def instantiateLamBody {P : Parameters}
+    (self : AST { P with B := P.B ⊕ Unit } .trm) (arg : P.B) : AST P .trm :=
+  self.recarrier
+    (id : P.F → P.F)
+    (λ bound =>
+      match bound with
+      | .inl outer => .inr outer
+      | .inr () => .inr arg)
+    (id : P.D → P.D)
 
 namespace Val
 
@@ -132,7 +165,7 @@ def eval [refs : ExeRefs] [env : ExeEnv refs]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         let receipt := env.uid2valCtx.inv input
-        eval (body id receipt) fuel
+        eval (body.instantiateLamBody receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none

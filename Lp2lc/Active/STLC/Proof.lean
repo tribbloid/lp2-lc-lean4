@@ -50,14 +50,16 @@ theorem termEvalMonotone [refs : ExeRefs] [env : ExeEnv refs]
                   | none =>
                     simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                   | some input =>
-                    cases hBody : (body id (env.uid2valCtx.inv input)).eval fuel with
+                    cases hBody :
+                        (body.instantiateLamBody (env.uid2valCtx.inv input)).eval fuel with
                     | outOfFuel =>
-                      simp [AST.eval, hFn, hArg, hBody] at hEval
+                      simp only [AST.eval, hFn, hArg, hBody] at hEval
+                      cases hEval
                     | yield bodyResult =>
                       have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
-                        (body id (env.uid2valCtx.inv input))
+                        (body.instantiateLamBody (env.uid2valCtx.inv input))
                         toFuel bodyResult hFuelTail hBody
-                      simpa [AST.eval, hFn, hArg, hFnTop, hArgTop,
+                      simpa only [AST.eval, hFn, hArg, hFnTop, hArgTop,
                         hBody, hBodyTop] using hEval
         | ref receipt =>
           cases receipt with
@@ -91,7 +93,7 @@ theorem termInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
             next _ bodyResult hBody =>
               have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
                 _ toFuel bodyResult hFuelTail hBody
-              simpa [hBodyTop] using hInfer
+              simpa only [hBodyTop] using hInfer
             next _ hBody =>
               cases hInfer
         | apply fnTerm arg =>

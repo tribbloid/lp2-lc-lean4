@@ -23,29 +23,6 @@ end BuildEnv
 
 namespace AST
 
-/-- Rebuilds syntax while classifying source binders as target free or bound references. -/
-@[simp]
-private def recarrier {P Q : Parameters} {l : Label} (self : AST P l)
-    (mF : P.F → Q.F) (mB : P.B → Q.F ⊕ Q.B) (mD : P.D → Q.D) : AST Q l :=
-  match self with
-  | .primitive => .primitive
-  | .fn tIn tOut => .fn (tIn.recarrier mF mB mD) (tOut.recarrier mF mB mD)
-  | .val value => .val (value.recarrier mF mB mD)
-  | .apply fnTerm arg => .apply (fnTerm.recarrier mF mB mD) (arg.recarrier mF mB mD)
-  | .ref (.inl free) => .ref (.inl (mF free))
-  | .ref (.inr bound) => .ref (mB bound)
-  | .lit repr => .lit (mD repr)
-  | .lam body tIn =>
-    .lam
-      (λ {B} lift arg =>
-        let sourceLift : P.B → Q.F ⊕ B :=
-          λ bound =>
-            match mB bound with
-            | .inl free => .inl free
-            | .inr outer => .inr (lift outer)
-        (body (B := Q.F ⊕ B) sourceLift (.inr arg)).recarrier mF id mD)
-      (tIn.recarrier mF mB mD)
-
 /--
 converting an executable term AST (with only references to value) to a compilable term AST (free variable references to value, bounded variable references to type)
 
@@ -75,7 +52,7 @@ def inferCore {refs} [env : BuildEnv refs]
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
       let index : env.BuildParameters.B := env.uid2typCtx.inv tIn
-      ((body id index).inferCore fuel).map
+      ((body.instantiateLamBody index).inferCore fuel).map
         (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
       match inferCore fnTerm fuel, inferCore arg fuel with
