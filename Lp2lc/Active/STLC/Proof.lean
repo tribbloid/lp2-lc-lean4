@@ -1,6 +1,5 @@
 import «Lp2lc».Active.STLC.STLCDef
 import «Lp2lc».Active.STLC.__Infer
-import «Lp2lc».Active.STLC.__Infer_umbral
 
 namespace Lp2lc.Active.STLC
 
