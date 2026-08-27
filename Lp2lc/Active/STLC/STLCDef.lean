@@ -104,7 +104,7 @@ TODO: the base type `(body : AST { P with B := P.B ⊕ Unit } .trm)` and this im
 
 - `body` become `body` (structure member): an AST that uses layers of `X ⊕ Unit` type as de Bruijn serial
 - `instantiateLamBody` become `reify` or `specialise` (dot-method): the actual PHOAS body function derived from above, this is the only data used by Trm.eval and Trm.infer
-- `Conjecture` (dot-method): a collection of all the minimal conjecture types required to make the above lambda definition safe to compile
+- `Conjecture` (dot-method): a collection of all the minimal pre-condition types required to make the above lambda definition safe to compile, this may include `Mathlib.Logic.Relator.liftFun` or other conditions
 - `hConjecture` (dot-method): a prove of the above
 -/
 /-- Replaces the newest structural lambda slot while preserving outer binders. -/
