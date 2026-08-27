@@ -22,6 +22,8 @@ attribute [local simp] Trm.Malformed.applyIdFnOnItself Trm.Malformed.idFnOnFalse
 attribute [local simp] Trm.Malformed.apply1 Trm.Malformed.primitiveApply Val.idFn
 attribute [local simp] Trm.FreeCapture.receipt Trm.FreeCapture.directRef Trm.FreeCapture.capturedRef
 attribute [local simp] Trm.FreeCapture.capturedRefOnFalse
+attribute [local simp] LamBody.body LamBody.specialise AST.CarrierMap.identity
+  AST.CarrierMap.bind AST.CarrierMap.mapRef AST.CarrierMap.underBinder
 
 example : Trm.vFalse.eval.shouldYields (.lit "false") := by
   constructor
@@ -116,13 +118,14 @@ example (_decEq : (B : UIdU) → DecidableEq B) : True := by
           (.apply
             (.val
               (.lam
-                (.val
-                  (.lam
+                (.mk
+                  (.val
+                    (.lam
                     (λ {B} (liftInner : Outer ⊕ Unit → B) (inner : B) =>
                       (let _ := _decEq B
                        if inner = liftInner (.inr ()) then vFalse else primitiveIdFn :
                         AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }))
-                    .primitive))
+                    .primitive)))
                 .primitive))
             vFalse)
           vTrue
@@ -132,7 +135,7 @@ end Malformed
 
 example :
     ((primitiveIdFn : AST.Trm refs.ExeParameters).recarrier
-      id (λ _ => .inl FreeCapture.receipt) id) =
+      { mapF := id, mapB := λ _ => .inl FreeCapture.receipt, mapD := id }) =
       (primitiveIdFn : AST.Trm refs.ExeParameters) := by
   rfl
 

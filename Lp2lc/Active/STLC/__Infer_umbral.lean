@@ -3,6 +3,7 @@ import «Lp2lc».Active.STLC.Proof
 namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
+open AST
 
 namespace Umbral
 
@@ -25,70 +26,29 @@ end ProvingEnv
 /-- Type syntax is independent of every free, bound, and data carrier map. -/
 private theorem recarrierTypEq {refs : ExeRefs} [build : BuildEnv refs]
     {P : Parameters} (self : AST.Typ P)
-    (leftF rightF : P.F → build.BuildParameters.F)
-    (leftB rightB : P.B → build.BuildParameters.F ⊕ build.BuildParameters.B)
-    (leftD rightD : P.D → build.BuildParameters.D) :
-    self.recarrier leftF leftB leftD = self.recarrier rightF rightB rightD :=
+    (left right : CarrierMap P build.BuildParameters) :
+    self.recarrier left = self.recarrier right :=
   match self with
   | .primitive => rfl
   | .fn tIn tOut => by
     simp only [AST.recarrier]
-    rw [recarrierTypEq tIn leftF rightF leftB rightB leftD rightD,
-      recarrierTypEq tOut leftF rightF leftB rightB leftD rightD]
+    rw [recarrierTypEq tIn left right, recarrierTypEq tOut left right]
 
 
 
 
 /-- Pointwise-equal carrier maps rebuild identical syntax. -/
 private theorem recarrierCongr {P Q : Parameters} {l : Label} (self : AST P l)
-    (leftF rightF : P.F → Q.F) (leftB rightB : P.B → Q.F ⊕ Q.B)
-    (leftD rightD : P.D → Q.D)
-    (hFree : ∀ free, leftF free = rightF free)
-    (hBound : ∀ bound, leftB bound = rightB bound)
-    (hData : ∀ repr, leftD repr = rightD repr) :
-    self.recarrier leftF leftB leftD = self.recarrier rightF rightB rightD := by
-  have hFreeMap := funext hFree
-  have hBoundMap := funext hBound
-  have hDataMap := funext hData
-  subst rightF
-  subst rightB
-  subst rightD
-  rfl
-
-/-- Consecutive carrier changes compose without changing structural binder slots. -/
-@[simp]
-private theorem recarrierComp {P Q R : Parameters} {l : Label} (self : AST P l)
-    (firstF : P.F → Q.F) (firstB : P.B → Q.F ⊕ Q.B) (firstD : P.D → Q.D)
-    (secondF : Q.F → R.F) (secondB : Q.B → R.F ⊕ R.B) (secondD : Q.D → R.D) :
-    (self.recarrier firstF firstB firstD).recarrier secondF secondB secondD =
-      self.recarrier
-        (λ free => secondF (firstF free))
-        (λ bound =>
-          match firstB bound with
-          | .inl free => .inl (secondF free)
-          | .inr target => secondB target)
-        (λ repr => secondD (firstD repr)) := by
-  induction self generalizing Q R with
-  | primitive => rfl
-  | fn tIn tOut ihIn ihOut => simp [AST.recarrier, ihIn, ihOut]
-  | val value ih => simp [AST.recarrier, ih]
-  | apply fnTerm arg ihFn ihArg => simp [AST.recarrier, ihFn, ihArg]
-  | ref source =>
-    cases source with
-    | inl free => rfl
-    | inr bound => cases h : firstB bound <;> simp [AST.recarrier, h]
-  | lit repr => rfl
-  | lam body tIn ihBody ihIn =>
-    simp [AST.recarrier, ihBody, ihIn]
-    congr 1
-    funext bound
-    cases bound with
-    | inl outer =>
-      cases hFirst : firstB outer with
-      | inl free => simp [hFirst]
-      | inr target =>
-        cases hSecond : secondB target <;> simp [hFirst, hSecond]
-    | inr newest => cases newest; rfl
+    (left right : CarrierMap P Q)
+    (hFree : ∀ free, left.mapF free = right.mapF free)
+    (hBound : ∀ bound, left.mapB bound = right.mapB bound)
+    (hData : ∀ repr, left.mapD repr = right.mapD repr) :
+    self.recarrier left = self.recarrier right := by
+  apply congrArg self.recarrier
+  ext value
+  · exact hFree value
+  · exact hBound value
+  · exact hData value
 
 /-- A mapped successful outcome exposes the successful source outcome. -/
 private theorem outcomeMapYield {T T2 : Type 2} (self : Rec.Outcome T)
@@ -100,12 +60,13 @@ private theorem outcomeMapYield {T T2 : Type 2} (self : Rec.Outcome T)
 
 /-- Successful lambda inference exposes successful inference of its instantiated body. -/
 private theorem lamInferInv {refs : ExeRefs} [build : BuildEnv refs]
-    (body : AST {build.BuildParameters with B := build.BuildParameters.B ⊕ Unit} .trm)
+    (body : LamBody build.BuildParameters)
     (tIn typ : AST.Typ build.BuildParameters)
     (hInfer : ∃ fuel, (AST.val (.lam body tIn) : AST.Trm build.BuildParameters).inferCore
       fuel = .yield (some typ)) :
     ∃ fuel tOut,
-      (body.instantiateLamBody (build.uid2typCtx.inv tIn)).inferCore fuel =
+      (body.specialise (CarrierMap.identity _)
+        (.inr (build.uid2typCtx.inv tIn))).inferCore fuel =
         .yield (some tOut) ∧
       typ = .fn tIn tOut := by
   rcases hInfer with ⟨fuel, hInfer⟩
@@ -114,7 +75,8 @@ private theorem lamInferInv {refs : ExeRefs} [build : BuildEnv refs]
   | succ fuel =>
     simp only [AST.inferCore] at hInfer
     have hMapped := outcomeMapYield
-      ((body.instantiateLamBody (build.uid2typCtx.inv tIn)).inferCore fuel)
+      ((body.specialise (CarrierMap.identity _)
+        (.inr (build.uid2typCtx.inv tIn))).inferCore fuel)
       (λ out => out.map (λ tOut => AST.fn tIn tOut)) (some typ) hInfer
     rcases hMapped with ⟨bodyResult, hBody, hType⟩
     cases bodyResult with
@@ -123,129 +85,144 @@ private theorem lamInferInv {refs : ExeRefs} [build : BuildEnv refs]
 
 /-- Successful instantiated-body inference reconstructs successful lambda inference. -/
 private theorem lamInferIntro {refs : ExeRefs} [build : BuildEnv refs]
-    (body : AST {build.BuildParameters with B := build.BuildParameters.B ⊕ Unit} .trm)
+    (body : LamBody build.BuildParameters)
     (tIn tOut : AST.Typ build.BuildParameters) (fuel : Nat)
-    (hBody : (body.instantiateLamBody (build.uid2typCtx.inv tIn)).inferCore fuel =
+    (hBody : (body.specialise (CarrierMap.identity _)
+      (.inr (build.uid2typCtx.inv tIn))).inferCore fuel =
       .yield (some tOut)) :
     (AST.val (.lam body tIn) : AST.Trm build.BuildParameters).inferCore (fuel + 1) =
       .yield (some (.fn tIn tOut)) := by
   have hMapped := congrArg
     (λ result => result.map (λ out => out.map (λ bodyType => AST.fn tIn bodyType)))
     hBody
-  simpa only [AST.inferCore, AST.instantiateLamBody, Rec.Outcome.map,
-    Option.map] using hMapped
+  simpa only [AST.inferCore, Rec.Outcome.map, Option.map] using hMapped
 
 /-- Recarried lambda inference exposes the normalized compiler body. -/
 private theorem recarrierLamInferInv {refs : ExeRefs} [build : BuildEnv refs]
     {P : Parameters}
-    (body : AST {P with B := P.B ⊕ Unit} .trm) (tIn : AST.Typ P)
-    (mapF : P.F → build.BuildParameters.F)
-    (mapB : P.B → build.BuildParameters.F ⊕ build.BuildParameters.B)
-    (mapD : P.D → build.BuildParameters.D) (typ : AST.Typ build.BuildParameters)
+    (body : LamBody P) (tIn : AST.Typ P)
+    (map : CarrierMap P build.BuildParameters)
+    (typ : AST.Typ build.BuildParameters)
     (hInfer : ∃ fuel,
-      (AST.val ((AST.lam body tIn).recarrier mapF mapB mapD) :
+      (AST.val ((AST.lam body tIn).recarrier map) :
         AST.Trm build.BuildParameters).inferCore fuel = .yield (some typ)) :
     ∃ fuel tOut,
-      (body.recarrier mapF
-        (λ bound =>
-          match bound with
-          | .inl outer => mapB outer
-          | .inr () => .inr (build.uid2typCtx.inv
-            (tIn.recarrier mapF mapB mapD)))
-        mapD).inferCore fuel = .yield (some tOut) ∧
-      typ = .fn (tIn.recarrier mapF mapB mapD) tOut := by
-  cases hCarried : (AST.lam body tIn).recarrier mapF mapB mapD with
-  | lit repr => simp [AST.recarrier] at hCarried
-  | lam carriedBody carriedInput =>
-    rw [hCarried] at hInfer
-    simp only [AST.recarrier] at hCarried
-    have hBodyCarrier := (AST.lam.inj hCarried).1
-    have hInputCarrier := (AST.lam.inj hCarried).2
-    rcases lamInferInv (build := build) carriedBody carriedInput typ hInfer with
-      ⟨fuel, tOut, hBody, hType⟩
-    refine ⟨fuel, tOut, ?_, ?_⟩
-    rw [← hBodyCarrier, ← hInputCarrier] at hBody
-    simp only [AST.instantiateLamBody, recarrierComp, id_eq] at hBody
-    rw [← hBody]
-    apply congrArg (λ term : AST.Trm build.BuildParameters => term.inferCore fuel)
-    apply recarrierCongr
-    · intro free
-      rfl
-    · intro bound
-      cases bound with
-      | inl outer => cases h : mapB outer <;> simp [h]
-      | inr newest => cases newest; rfl
-    · intro repr
-      rfl
-    simpa only [hInputCarrier] using hType
-
-/-- Normalized compiler-body inference reconstructs recarried lambda inference. -/
-private theorem recarrierLamInferIntro {refs : ExeRefs} [build : BuildEnv refs]
-    {P : Parameters}
-    (body : AST {P with B := P.B ⊕ Unit} .trm) (tIn : AST.Typ P)
-    (mapF : P.F → build.BuildParameters.F)
-    (mapB : P.B → build.BuildParameters.F ⊕ build.BuildParameters.B)
-    (mapD : P.D → build.BuildParameters.D) (tOut : AST.Typ build.BuildParameters)
-    (fuel : Nat)
-    (hBody : (body.recarrier mapF
-      (λ bound =>
-        match bound with
-        | .inl outer => mapB outer
-        | .inr () => .inr (build.uid2typCtx.inv
-          (tIn.recarrier mapF mapB mapD)))
-      mapD).inferCore fuel = .yield (some tOut)) :
-    (AST.val ((AST.lam body tIn).recarrier mapF mapB mapD) :
-      AST.Trm build.BuildParameters).inferCore (fuel + 1) =
-        .yield (some (.fn (tIn.recarrier mapF mapB mapD) tOut)) := by
-  cases hCarried : (AST.lam body tIn).recarrier mapF mapB mapD with
-  | lit repr => simp [AST.recarrier] at hCarried
-  | lam carriedBody carriedInput =>
-    simp only [AST.recarrier] at hCarried
-    have hBodyCarrier := (AST.lam.inj hCarried).1
-    have hInputCarrier := (AST.lam.inj hCarried).2
-    have hInstantiated :
-        (carriedBody.instantiateLamBody
-          (build.uid2typCtx.inv carriedInput)).inferCore fuel =
-            .yield (some tOut) := by
-      rw [← hBodyCarrier, ← hInputCarrier]
-      simp only [AST.instantiateLamBody, recarrierComp, id_eq]
-      rw [← hBody]
-      apply congrArg (λ term : AST.Trm build.BuildParameters => term.inferCore fuel)
+      (body.specialise map (.inr (build.uid2typCtx.inv
+        (tIn.recarrier map)))).inferCore fuel = .yield (some tOut) ∧
+      typ = .fn (tIn.recarrier map) tOut := by
+  have hCarried : ∃ fuel,
+      (AST.val (.lam (body.recarrier map) (tIn.recarrier map)) :
+        AST.Trm build.BuildParameters).inferCore fuel = .yield (some typ) := by
+    simpa only [AST.recarrier] using hInfer
+  rcases lamInferInv (build := build) (body.recarrier map) (tIn.recarrier map)
+    typ hCarried with ⟨fuel, tOut, hBody, hType⟩
+  have hSpecialise :
+      (body.recarrier map).specialise (CarrierMap.identity _)
+          (.inr (build.uid2typCtx.inv (tIn.recarrier map))) =
+        body.specialise map (.inr (build.uid2typCtx.inv (tIn.recarrier map))) := by
+    cases body with
+    | mk body =>
+      simp only [LamBody.specialise, LamBody.body, LamBody.recarrier, AST.recarrierComp]
       apply recarrierCongr
       · intro free
         rfl
       · intro bound
         cases bound with
-        | inl outer => cases h : mapB outer <;> simp [h]
+        | inl outer => cases h : map.mapB outer <;> simp [CarrierMap.«then»,
+            CarrierMap.identity, CarrierMap.bind, CarrierMap.mapRef,
+            CarrierMap.underBinder, h]
         | inr newest => cases newest; rfl
       · intro repr
         rfl
-    have hInfer := lamInferIntro (build := build) carriedBody carriedInput tOut
-      fuel hInstantiated
-    rw [hInputCarrier]
-    exact hInfer
+  rw [hSpecialise] at hBody
+  exact ⟨fuel, tOut, hBody, hType⟩
+
+/-- Normalized compiler-body inference reconstructs recarried lambda inference. -/
+private theorem recarrierLamInferIntro {refs : ExeRefs} [build : BuildEnv refs]
+    {P : Parameters}
+    (body : LamBody P) (tIn : AST.Typ P)
+    (map : CarrierMap P build.BuildParameters)
+    (tOut : AST.Typ build.BuildParameters)
+    (fuel : Nat)
+    (hBody : (body.specialise map (.inr (build.uid2typCtx.inv
+      (tIn.recarrier map)))).inferCore fuel = .yield (some tOut)) :
+    (AST.val ((AST.lam body tIn).recarrier map) :
+      AST.Trm build.BuildParameters).inferCore (fuel + 1) =
+        .yield (some (.fn (tIn.recarrier map) tOut)) := by
+  have hSpecialise :
+      (body.recarrier map).specialise (CarrierMap.identity _)
+          (.inr (build.uid2typCtx.inv (tIn.recarrier map))) =
+        body.specialise map (.inr (build.uid2typCtx.inv (tIn.recarrier map))) := by
+    cases body with
+    | mk body =>
+      simp only [LamBody.specialise, LamBody.body, LamBody.recarrier, AST.recarrierComp]
+      apply recarrierCongr
+      · intro free
+        rfl
+      · intro bound
+        cases bound with
+        | inl outer => cases h : map.mapB outer <;> simp [CarrierMap.«then»,
+            CarrierMap.identity, CarrierMap.bind, CarrierMap.mapRef,
+            CarrierMap.underBinder, h]
+        | inr newest => cases newest; rfl
+      · intro repr
+        rfl
+  have hInstantiated :
+      ((body.recarrier map).specialise (CarrierMap.identity _)
+        (.inr (build.uid2typCtx.inv (tIn.recarrier map)))).inferCore fuel =
+          .yield (some tOut) := by
+    rw [hSpecialise]
+    exact hBody
+  simpa only [AST.recarrier] using lamInferIntro (build := build)
+    (body.recarrier map) (tIn.recarrier map) tOut fuel hInstantiated
+
+mutual
+
+  /-- Counts syntax constructors to justify semantic recursion through a lambda body. -/
+  private def syntaxSize {P : Parameters} {l : Label} (self : AST P l) : Nat :=
+    match self with
+    | .primitive => 1
+    | .fn tIn tOut => syntaxSize tIn + syntaxSize tOut + 1
+    | .val value => syntaxSize value + 1
+    | .apply fnTerm arg => syntaxSize fnTerm + syntaxSize arg + 1
+    | .ref _ => 1
+    | .lit _ => 1
+    | .lam body tIn => lamBodySyntaxSize body + syntaxSize tIn + 1
+
+  /-- Counts the wrapper constructor together with its stored body syntax. -/
+  private def lamBodySyntaxSize {P : Parameters} (self : LamBody P) : Nat :=
+    match self with
+    | .mk body => syntaxSize body + 1
+
+end
+
+@[simp]
+private theorem lamBodySyntaxSizeEq {P : Parameters} (self : LamBody P) :
+    lamBodySyntaxSize self = syntaxSize self.body + 1 := by
+  cases self
+  rfl
 
 mutual
 
   private theorem recarrierValInfer {refs : ExeRefs} [build : BuildEnv refs]
       {P : Parameters} (self : AST.Val P)
-      (leftF rightF : P.F → build.BuildParameters.F)
-      (leftB rightB : P.B → build.BuildParameters.F ⊕ build.BuildParameters.B)
-      (leftD rightD : P.D → build.BuildParameters.D)
+      (left right : CarrierMap P build.BuildParameters)
       (hFree : ∀ (free : P.F) (typ : AST.Typ build.BuildParameters),
-        (∃ fuel, (AST.ref (.inl (leftF free)) : AST.Trm build.BuildParameters).inferCore fuel =
+        (∃ fuel, (AST.ref (.inl (left.mapF free)) :
+          AST.Trm build.BuildParameters).inferCore fuel =
           .yield (some typ)) →
-        ∃ fuel, (AST.ref (.inl (rightF free)) : AST.Trm build.BuildParameters).inferCore fuel =
+        ∃ fuel, (AST.ref (.inl (right.mapF free)) :
+          AST.Trm build.BuildParameters).inferCore fuel =
           .yield (some typ))
       (hBound : ∀ (bound : P.B) (typ : AST.Typ build.BuildParameters),
-        (∃ fuel, (AST.ref (leftB bound) : AST.Trm build.BuildParameters).inferCore fuel =
+        (∃ fuel, (AST.ref (left.mapB bound) : AST.Trm build.BuildParameters).inferCore fuel =
           .yield (some typ)) →
-        ∃ fuel, (AST.ref (rightB bound) : AST.Trm build.BuildParameters).inferCore fuel =
+        ∃ fuel, (AST.ref (right.mapB bound) : AST.Trm build.BuildParameters).inferCore fuel =
           .yield (some typ))
       (typ : AST.Typ build.BuildParameters)
       (hInfer : ∃ fuel,
-        (AST.val (self.recarrier leftF leftB leftD)).inferCore fuel = .yield (some typ)) :
-      ∃ fuel, (AST.val (self.recarrier rightF rightB rightD)).inferCore fuel =
+        (AST.val (self.recarrier left)).inferCore fuel = .yield (some typ)) :
+      ∃ fuel, (AST.val (self.recarrier right)).inferCore fuel =
         .yield (some typ) := by
     cases self with
     | lit repr =>
@@ -258,75 +235,71 @@ mutual
         subst typ
         exact ⟨1, rfl⟩
     | lam body tIn =>
-      rcases recarrierLamInferInv body tIn leftF leftB leftD typ hInfer with
+      rcases recarrierLamInferInv body tIn left typ hInfer with
         ⟨fuel, bodyType, hBody, hType⟩
       subst typ
-      let leftBodyB : P.B ⊕ Unit →
-          build.BuildParameters.F ⊕ build.BuildParameters.B :=
-        λ bound =>
-          match bound with
-          | .inl outer => leftB outer
-          | .inr () => .inr (build.uid2typCtx.inv
-            (tIn.recarrier leftF leftB leftD))
-      have hInputType := recarrierTypEq tIn leftF rightF leftB rightB
-        leftD rightD
-      let rightBodyB : P.B ⊕ Unit →
-          build.BuildParameters.F ⊕ build.BuildParameters.B :=
-        λ bound =>
-          match bound with
-          | .inl outer => rightB outer
-          | .inr () => .inr (build.uid2typCtx.inv
-            (tIn.recarrier rightF rightB rightD))
+      let leftBodyMap := left.bind (.inr (build.uid2typCtx.inv (tIn.recarrier left)))
+      have hInputType := recarrierTypEq tIn left right
+      let rightBodyMap := right.bind (.inr (build.uid2typCtx.inv (tIn.recarrier right)))
       have hIndex :
-          build.uid2typCtx.inv (tIn.recarrier leftF leftB leftD) =
-            build.uid2typCtx.inv (tIn.recarrier rightF rightB rightD) :=
+          build.uid2typCtx.inv (tIn.recarrier left) =
+            build.uid2typCtx.inv (tIn.recarrier right) :=
         congrArg build.uid2typCtx.inv hInputType
       have hNestedBound :
           ∀ (bound : P.B ⊕ Unit) (refType : AST.Typ build.BuildParameters),
             (∃ refFuel,
-              (AST.ref (leftBodyB bound) : AST.Trm build.BuildParameters).inferCore
+              (AST.ref (leftBodyMap.mapB bound) : AST.Trm build.BuildParameters).inferCore
                 refFuel = .yield (some refType)) →
             ∃ refFuel,
-              (AST.ref (rightBodyB bound) : AST.Trm build.BuildParameters).inferCore
+              (AST.ref (rightBodyMap.mapB bound) : AST.Trm build.BuildParameters).inferCore
                 refFuel = .yield (some refType) := by
         intro bound refType hRef
         cases bound with
-        | inl outer => exact hBound outer refType hRef
+        | inl outer =>
+          have hOuter := hBound outer refType hRef
+          simpa only [leftBodyMap, rightBodyMap, CarrierMap.bind] using hOuter
         | inr newest =>
           cases newest
-          simpa only [leftBodyB, rightBodyB, hIndex] using hRef
-      have hRightBody := recarrierTrmInfer body leftF rightF leftBodyB
-        rightBodyB leftD rightD hFree hNestedBound bodyType
+          simpa only [leftBodyMap, rightBodyMap, CarrierMap.bind, hIndex] using hRef
+      have hRightBody := recarrierTrmInfer body.body leftBodyMap rightBodyMap
+        hFree hNestedBound bodyType
         ⟨fuel, hBody⟩
       rcases hRightBody with ⟨rightFuel, hRightBody⟩
       refine ⟨rightFuel + 1, ?_⟩
       rw [hInputType]
-      simpa only [rightBodyB] using recarrierLamInferIntro body tIn rightF
-        rightB rightD bodyType rightFuel hRightBody
+      simpa only [LamBody.specialise, rightBodyMap] using
+        recarrierLamInferIntro body tIn right bodyType rightFuel hRightBody
+  termination_by syntaxSize self
+  decreasing_by
+    all_goals
+      first
+      | cases ‹self ≍ AST.lam _ _›
+      | cases ‹self ≍ AST.val _›
+      | cases ‹self ≍ AST.apply _ _›
+      simp [syntaxSize, lamBodySyntaxSizeEq, LamBody.body] <;> omega
 
   private theorem recarrierTrmInfer {refs : ExeRefs} [build : BuildEnv refs]
       {P : Parameters} (self : AST.Trm P)
-      (leftF rightF : P.F → build.BuildParameters.F)
-      (leftB rightB : P.B → build.BuildParameters.F ⊕ build.BuildParameters.B)
-      (leftD rightD : P.D → build.BuildParameters.D)
+      (left right : CarrierMap P build.BuildParameters)
       (hFree : ∀ (free : P.F) (typ : AST.Typ build.BuildParameters),
-        (∃ fuel, (AST.ref (.inl (leftF free)) : AST.Trm build.BuildParameters).inferCore fuel =
+        (∃ fuel, (AST.ref (.inl (left.mapF free)) :
+          AST.Trm build.BuildParameters).inferCore fuel =
           .yield (some typ)) →
-        ∃ fuel, (AST.ref (.inl (rightF free)) : AST.Trm build.BuildParameters).inferCore fuel =
+        ∃ fuel, (AST.ref (.inl (right.mapF free)) :
+          AST.Trm build.BuildParameters).inferCore fuel =
           .yield (some typ))
       (hBound : ∀ (bound : P.B) (typ : AST.Typ build.BuildParameters),
-        (∃ fuel, (AST.ref (leftB bound) : AST.Trm build.BuildParameters).inferCore fuel =
+        (∃ fuel, (AST.ref (left.mapB bound) : AST.Trm build.BuildParameters).inferCore fuel =
           .yield (some typ)) →
-        ∃ fuel, (AST.ref (rightB bound) : AST.Trm build.BuildParameters).inferCore fuel =
+        ∃ fuel, (AST.ref (right.mapB bound) : AST.Trm build.BuildParameters).inferCore fuel =
           .yield (some typ))
       (typ : AST.Typ build.BuildParameters)
       (hInfer : ∃ fuel,
-        (self.recarrier leftF leftB leftD).inferCore fuel = .yield (some typ)) :
-      ∃ fuel, (self.recarrier rightF rightB rightD).inferCore fuel = .yield (some typ) := by
+        (self.recarrier left).inferCore fuel = .yield (some typ)) :
+      ∃ fuel, (self.recarrier right).inferCore fuel = .yield (some typ) := by
     cases self with
     | val value =>
-      exact recarrierValInfer value leftF rightF leftB rightB leftD rightD
-        hFree hBound typ hInfer
+      exact recarrierValInfer value left right hFree hBound typ hInfer
     | ref source =>
       cases source with
       | inl free => exact hFree free typ hInfer
@@ -336,10 +309,10 @@ mutual
       cases fuel with
       | zero => simp [AST.inferCore] at hInfer
       | succ fuel =>
-        let leftFn := fnTerm.recarrier leftF leftB leftD
-        let rightFn := fnTerm.recarrier rightF rightB rightD
-        let leftArg := arg.recarrier leftF leftB leftD
-        let rightArg := arg.recarrier rightF rightB rightD
+        let leftFn := fnTerm.recarrier left
+        let rightFn := fnTerm.recarrier right
+        let leftArg := arg.recarrier left
+        let rightArg := arg.recarrier right
         cases hFn : leftFn.inferCore fuel with
         | outOfFuel => simp [AST.inferCore, leftFn, hFn] at hInfer
         | yield fnResult =>
@@ -359,10 +332,10 @@ mutual
                   · have hType : tOut = typ := by
                       simpa [AST.inferCore, leftFn, leftArg, hFn, hArg, hSubtype] using hInfer
                     subst typ
-                    have hRightFn := recarrierTrmInfer fnTerm leftF rightF leftB rightB
-                      leftD rightD hFree hBound (.fn tIn tOut) ⟨fuel, hFn⟩
-                    have hRightArg := recarrierTrmInfer arg leftF rightF leftB rightB
-                      leftD rightD hFree hBound argType ⟨fuel, hArg⟩
+                    have hRightFn := recarrierTrmInfer fnTerm left right
+                      hFree hBound (.fn tIn tOut) ⟨fuel, hFn⟩
+                    have hRightArg := recarrierTrmInfer arg left right
+                      hFree hBound argType ⟨fuel, hArg⟩
                     rcases hRightFn with ⟨fnFuel, hRightFn⟩
                     rcases hRightArg with ⟨argFuel, hRightArg⟩
                     let combined := max fnFuel argFuel
@@ -373,6 +346,14 @@ mutual
                     refine ⟨combined + 1, ?_⟩
                     simp [AST.inferCore, rightFn, rightArg, hFnTop, hArgTop, hSubtype]
                   · simp [AST.inferCore, leftFn, leftArg, hFn, hArg, hSubtype] at hInfer
+  termination_by syntaxSize self
+  decreasing_by
+    all_goals
+      first
+      | cases ‹self ≍ AST.lam _ _›
+      | cases ‹self ≍ AST.val _›
+      | cases ‹self ≍ AST.apply _ _›
+      simp [syntaxSize] <;> omega
 
 end
 
@@ -431,7 +412,8 @@ private theorem referenceInferInv {refs : ExeRefs} [build : BuildEnv refs]
   | zero => simp [AST.infer, AST.inferCore] at hInfer
   | succ inferFuel =>
     exact ⟨inferFuel, by
-      simpa [AST.infer, AST.exe2build, AST.inferCore] using hInfer⟩
+      simpa [AST.infer, AST.exe2build, AST.inferCore,
+        CarrierMap.mapRef] using hInfer⟩
 
 /-- A primitive value cannot infer a function type. -/
 private theorem literalNotFunction {refs : ExeRefs} [build : BuildEnv refs]
@@ -446,7 +428,7 @@ private theorem literalNotFunction {refs : ExeRefs} [build : BuildEnv refs]
 
 /-- Structural lambda inference is preserved when the compiler slot is beta-instantiated. -/
 private theorem betaInfer {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
-    (body : AST {refs.ExeParameters with B := refs.ExeParameters.B ⊕ Unit} .trm)
+    (body : LamBody refs.ExeParameters)
     (tIn : AST.Typ refs.ExeParameters) (input : AST.Val refs.ExeParameters)
     (compileIn compileOut : AST.Typ build.BuildParameters)
     (hLam : ∃ inferFuel,
@@ -455,34 +437,27 @@ private theorem betaInfer {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv
     (hInput : ∃ inferFuel, input.asTrm.infer inferFuel =
       .yield (some compileIn)) :
     ∃ inferFuel,
-      (body.instantiateLamBody (exe.uid2valCtx.inv input)).infer inferFuel =
+      (body.specialise (CarrierMap.identity _)
+        (.inr (exe.uid2valCtx.inv input))).infer inferFuel =
         .yield (some compileOut) := by
+  let exeToBuild : CarrierMap refs.ExeParameters build.BuildParameters :=
+    { mapF := id, mapB := Sum.inl, mapD := id }
   have hLamCore : ∃ inferFuel,
-      (AST.val ((AST.lam body tIn).recarrier id Sum.inl id) :
+      (AST.val ((AST.lam body tIn).recarrier exeToBuild) :
         AST.Trm build.BuildParameters).inferCore inferFuel =
           .yield (some (.fn compileIn compileOut)) := by
-    simpa only [AST.infer, AST.exe2build, AST.recarrier] using hLam
-  rcases recarrierLamInferInv body tIn id Sum.inl id (.fn compileIn compileOut)
+    simpa only [AST.infer, AST.exe2build, AST.recarrier, exeToBuild] using hLam
+  rcases recarrierLamInferInv body tIn exeToBuild (.fn compileIn compileOut)
     hLamCore with ⟨bodyFuel, bodyType, hBody, hType⟩
   have hInputType := (AST.fn.inj hType).1
   have hOutputType := (AST.fn.inj hType).2
   subst compileIn
   subst compileOut
-  let inputType : AST.Typ build.BuildParameters := tIn.recarrier id Sum.inl id
+  let inputType : AST.Typ build.BuildParameters := tIn.recarrier exeToBuild
   let index := build.uid2typCtx.inv inputType
   let receipt := exe.uid2valCtx.inv input
-  let leftBodyB : refs.ExeParameters.B ⊕ Unit →
-      build.BuildParameters.F ⊕ build.BuildParameters.B :=
-    λ bound =>
-      match bound with
-      | .inl outer => .inl outer
-      | .inr () => .inr index
-  let rightBodyB : refs.ExeParameters.B ⊕ Unit →
-      build.BuildParameters.F ⊕ build.BuildParameters.B :=
-    λ bound =>
-      match bound with
-      | .inl outer => .inl outer
-      | .inr () => .inl receipt
+  let leftBodyMap := exeToBuild.bind (.inr index)
+  let rightBodyMap := exeToBuild.bind (.inl receipt)
   have hFree :
       ∀ (free : refs.ExeParameters.F) (typ : AST.Typ build.BuildParameters),
         (∃ inferFuel,
@@ -497,10 +472,10 @@ private theorem betaInfer {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv
       ∀ (bound : refs.ExeParameters.B ⊕ Unit)
         (typ : AST.Typ build.BuildParameters),
         (∃ inferFuel,
-          (AST.ref (leftBodyB bound) : AST.Trm build.BuildParameters).inferCore
+          (AST.ref (leftBodyMap.mapB bound) : AST.Trm build.BuildParameters).inferCore
             inferFuel = .yield (some typ)) →
         ∃ inferFuel,
-          (AST.ref (rightBodyB bound) : AST.Trm build.BuildParameters).inferCore
+          (AST.ref (rightBodyMap.mapB bound) : AST.Trm build.BuildParameters).inferCore
             inferFuel = .yield (some typ) := by
     intro bound typ hRef
     cases bound with
@@ -512,33 +487,25 @@ private theorem betaInfer {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv
       | zero => simp [AST.inferCore] at hRef
       | succ inferFuel =>
         have hRefType : inputType = typ := by
-          simpa [AST.inferCore, leftBodyB, index] using hRef
+          simpa [AST.inferCore, leftBodyMap, exeToBuild, CarrierMap.bind,
+            index] using hRef
         subst typ
         rcases hInput with ⟨inputFuel, hInput⟩
         exact ⟨inputFuel + 1, by
-          simpa [AST.inferCore, AST.infer, rightBodyB, receipt] using hInput⟩
+          simpa [AST.inferCore, AST.infer, rightBodyMap, exeToBuild,
+            CarrierMap.bind, receipt, CarrierMap.mapRef] using hInput⟩
   have hLeftBody : ∃ inferFuel,
-      (body.recarrier (Q := build.BuildParameters) id leftBodyB id).inferCore inferFuel =
+      (body.body.recarrier leftBodyMap).inferCore inferFuel =
         .yield (some bodyType) := by
-    refine ⟨bodyFuel, ?_⟩
-    rw [← hBody]
-    apply congrArg (λ term : AST.Trm build.BuildParameters => term.inferCore bodyFuel)
-    apply recarrierCongr
-    · intro free
-      rfl
-    · intro bound
-      cases bound with
-      | inl outer => rfl
-      | inr newest => cases newest; rfl
-    · intro repr
-      rfl
-  have hRightBody := recarrierTrmInfer body id id leftBodyB rightBodyB id id
+    exact ⟨bodyFuel, by simpa only [LamBody.specialise, leftBodyMap,
+      inputType, index] using hBody⟩
+  have hRightBody := recarrierTrmInfer body.body leftBodyMap rightBodyMap
     hFree hBound bodyType hLeftBody
   rcases hRightBody with ⟨rightFuel, hRightBody⟩
   have hBetaBuild :
-      (body.instantiateLamBody receipt).exe2build =
-        body.recarrier (Q := build.BuildParameters) id rightBodyB id := by
-    simp only [AST.instantiateLamBody, AST.exe2build, recarrierComp, id_eq]
+      (body.specialise (CarrierMap.identity _) (.inr receipt)).exe2build =
+        body.body.recarrier rightBodyMap := by
+    simp only [AST.exe2build, LamBody.specialise, AST.recarrierComp]
     apply recarrierCongr
     · intro free
       rfl
@@ -551,7 +518,7 @@ private theorem betaInfer {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv
   refine ⟨rightFuel, ?_⟩
   simp only [AST.infer]
   rw [hBetaBuild]
-  simpa only [rightBodyB] using hRightBody
+  exact hRightBody
 
 /-- Successful inference is preserved by every finite evaluation observation. -/
 private theorem inferEval {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
@@ -577,7 +544,8 @@ private theorem inferEval {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv
         have hFree : ∃ inferFuel,
             (AST.ref (.inl receipt) : AST.Trm refs.ExeParameters).infer inferFuel =
               .yield (some typ) := by
-          simpa [AST.infer, AST.exe2build, AST.recarrier] using hInfer
+          simpa [AST.infer, AST.exe2build, AST.recarrier,
+            CarrierMap.mapRef] using hInfer
         have hStored := referenceInferInv receipt typ hFree
         simpa [AST.eval] using hStored
     | apply fnTerm arg =>
@@ -606,7 +574,8 @@ private theorem inferEval {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv
                 have hBeta := betaInfer body sourceIn input tIn tOut
                   hFnResult hArgResult
                 have hBodyResult := ih
-                  (body.instantiateLamBody (exe.uid2valCtx.inv input)) tOut hBeta
+                  (body.specialise (CarrierMap.identity _)
+                    (.inr (exe.uid2valCtx.inv input))) tOut hBeta
                 simpa only [AST.eval, hFnEval, hArgEval] using hBodyResult
 
 /-- A successfully inferred executable term satisfies the public safety judgment. -/

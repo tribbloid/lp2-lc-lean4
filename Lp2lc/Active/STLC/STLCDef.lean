@@ -5,6 +5,77 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
+namespace AST
+
+/-- Maps the free, bound, and data carriers of one syntax parameter set into another. -/
+@[ext]
+structure CarrierMap (P Q : Parameters) where
+  mapF : P.F → Q.F
+  mapB : P.B → Q.F ⊕ Q.B
+  mapD : P.D → Q.D
+
+namespace CarrierMap
+
+/-- Leaves free and data carriers unchanged and keeps bound references bound. -/
+def identity (P : Parameters) : CarrierMap P P where
+  mapF := id
+  mapB := Sum.inr
+  mapD := id
+
+/-- Applies a carrier map to a free-or-bound reference. -/
+def mapRef {P Q : Parameters} (self : CarrierMap P Q) : P.F ⊕ P.B → Q.F ⊕ Q.B
+  | .inl free => .inl (self.mapF free)
+  | .inr bound => self.mapB bound
+
+/-- Composes two carrier maps in source-to-target order. -/
+def «then» {P Q R : Parameters} (self : CarrierMap P Q)
+    (next : CarrierMap Q R) : CarrierMap P R where
+  mapF := λ free => next.mapF (self.mapF free)
+  mapB := λ bound => next.mapRef (self.mapB bound)
+  mapD := λ repr => next.mapD (self.mapD repr)
+
+/-- Extends a carrier map beneath one structural lambda binder. -/
+def underBinder {P Q : Parameters} (self : CarrierMap P Q) :
+    CarrierMap { P with B := P.B ⊕ Unit } { Q with B := Q.B ⊕ Unit } where
+  mapF := self.mapF
+  mapB
+    | .inl outer =>
+      match self.mapB outer with
+      | .inl free => .inl free
+      | .inr target => .inr (.inl target)
+    | .inr () => .inr (.inr ())
+  mapD := self.mapD
+
+/-- Replaces the newest structural slot while mapping all outer carriers. -/
+def bind {P Q : Parameters} (self : CarrierMap P Q) (arg : Q.F ⊕ Q.B) :
+    CarrierMap { P with B := P.B ⊕ Unit } Q where
+  mapF := self.mapF
+  mapB
+    | .inl outer => self.mapB outer
+    | .inr () => arg
+  mapD := self.mapD
+
+@[simp]
+theorem underBinderThen {P Q R : Parameters} (first : CarrierMap P Q)
+    (second : CarrierMap Q R) :
+    first.underBinder.«then» second.underBinder = (first.«then» second).underBinder := by
+  ext value
+  · rfl
+  · cases value with
+    | inl outer =>
+      cases hFirst : first.mapB outer with
+      | inl free => simp [«then», mapRef, underBinder, hFirst]
+      | inr target =>
+        cases hSecond : second.mapB target <;>
+          simp [«then», mapRef, underBinder, hFirst, hSecond]
+    | inr newest => cases newest; simp [«then», mapRef, underBinder]
+  · rfl
+
+end CarrierMap
+end AST
+
+mutual
+
 /-- Source type syntax.
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
@@ -35,9 +106,15 @@ Function values carry their input type so the compiler can type-check their bodi
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
 /-- Binds one fresh structural slot, after the outer [P.B] binder carrier. -/
 | lam
-    (body : AST { P with B := P.B ⊕ Unit } .trm)
+    (body : LamBody P)
     (tIn : AST P .typ) :
     AST P .val -- most specific type is always `.fn tIn _`
+
+/-- First-order syntax for a lambda body with one distinguished newest binder slot. -/
+inductive LamBody : Parameters → Type 2 where
+| mk (body : AST { P with B := P.B ⊕ Unit } .trm) : LamBody P
+
+end
 
 section variable {P : Parameters}
 
@@ -74,50 +151,95 @@ end
 --   | .lit repr => .lit (mD repr)
 --   | .lam body tIn => .lam (λ arg => (body arg).map mF mD) (tIn.map mF mD)
 
-/-- Rebuilds syntax while classifying source binders as target free or bound references. -/
-@[simp]
-def recarrier {P Q : Parameters} {l : Label} (self : AST P l)
-    (mF : P.F → Q.F) (mB : P.B → Q.F ⊕ Q.B) (mD : P.D → Q.D) : AST Q l :=
+end AST
+
+namespace LamBody
+
+/-- Exposes the structural syntax stored by a lambda body. -/
+def body {P : Parameters} (self : LamBody P) :
+    AST { P with B := P.B ⊕ Unit } .trm :=
   match self with
-  | .primitive => .primitive
-  | .fn tIn tOut => .fn (tIn.recarrier mF mB mD) (tOut.recarrier mF mB mD)
-  | .val value => .val (value.recarrier mF mB mD)
-  | .apply fnTerm arg => .apply (fnTerm.recarrier mF mB mD) (arg.recarrier mF mB mD)
-  | .ref (.inl free) => .ref (.inl (mF free))
-  | .ref (.inr bound) => .ref (mB bound)
-  | .lit repr => .lit (mD repr)
-  | .lam body tIn =>
-    .lam
-      (body.recarrier mF
-        (λ bound =>
-          match bound with
-          | .inl outer =>
-            match mB outer with
-            | .inl free => .inl free
-            | .inr target => .inr (.inl target)
-          | .inr () => .inr (.inr ()))
-        mD)
-      (tIn.recarrier mF mB mD)
+  | .mk body => body
 
-/-
-TODO: the base type `(body : AST { P with B := P.B ⊕ Unit } .trm)` and this implementation can be fold into a structure
+end LamBody
 
-- `body` become `body` (structure member): an AST that uses layers of `X ⊕ Unit` type as de Bruijn serial
-- `instantiateLamBody` become `reify` or `specialise` (dot-method): the actual PHOAS body function derived from above, this is the only data used by Trm.eval and Trm.infer
-- `Conjecture` (dot-method): a collection of all the minimal pre-condition types required to make the above lambda definition safe to compile, this may include `Mathlib.Logic.Relator.liftFun` or other conditions
-- `hConjecture` (dot-method): a prove of the above
--/
-/-- Replaces the newest structural lambda slot while preserving outer binders. -/
+mutual
+
+  /-- Rebuilds syntax while classifying source binders as target free or bound references. -/
+  @[simp]
+  def AST.recarrier {P Q : Parameters} {l : Label} (self : AST P l)
+      (map : AST.CarrierMap P Q) : AST Q l :=
+    match self with
+    | .primitive => .primitive
+    | .fn tIn tOut => .fn (tIn.recarrier map) (tOut.recarrier map)
+    | .val value => .val (value.recarrier map)
+    | .apply fnTerm arg => .apply (fnTerm.recarrier map) (arg.recarrier map)
+    | .ref source => .ref (map.mapRef source)
+    | .lit repr => .lit (map.mapD repr)
+    | .lam body tIn => .lam (body.recarrier map) (tIn.recarrier map)
+
+  /-- Rebuilds a structural lambda body beneath a carrier map. -/
+  @[simp]
+  def LamBody.recarrier {P Q : Parameters} (self : LamBody P)
+      (map : AST.CarrierMap P Q) : LamBody Q :=
+    match self with
+    | .mk body => .mk (body.recarrier map.underBinder)
+
+end
+
+/-- Consecutive carrier changes are equivalent to their bundled composition. -/
 @[simp]
-def instantiateLamBody {P : Parameters}
-    (self : AST { P with B := P.B ⊕ Unit } .trm) (arg : P.B) : AST P .trm :=
-  self.recarrier
-    (id : P.F → P.F)
-    (λ bound =>
-      match bound with
-      | .inl outer => .inr outer
-      | .inr () => .inr arg)
-    (id : P.D → P.D)
+theorem AST.recarrierComp {P Q R : Parameters} {l : Label} (self : AST P l)
+    (first : AST.CarrierMap P Q) (second : AST.CarrierMap Q R) :
+    (self.recarrier first).recarrier second = self.recarrier (first.«then» second) := by
+  induction self using AST.rec
+    (motive_2 := λ P body =>
+      ∀ {Q R : Parameters} (first : AST.CarrierMap P Q) (second : AST.CarrierMap Q R),
+        (body.recarrier first).recarrier second = body.recarrier (first.«then» second))
+    generalizing Q R with
+  | primitive => rfl
+  | fn tIn tOut ihIn ihOut => simp [ihIn, ihOut]
+  | val value ih => simp [ih]
+  | apply fnTerm arg ihFn ihArg => simp [ihFn, ihArg]
+  | ref source =>
+    cases source with
+    | inl free => rfl
+    | inr bound =>
+      cases hFirst : first.mapB bound <;> simp [AST.CarrierMap.«then»,
+        AST.CarrierMap.mapRef, hFirst]
+  | lit repr => rfl
+  | lam body tIn ihBody ihIn => simp [ihBody, ihIn]
+  | mk body ihBody =>
+    simp only [LamBody.recarrier]
+    rw [ihBody, AST.CarrierMap.underBinderThen]
+
+/-- Consecutive carrier changes beneath a lambda preserve its newest binder slot. -/
+@[simp]
+theorem LamBody.recarrierComp {P Q R : Parameters} (self : LamBody P)
+    (first : AST.CarrierMap P Q) (second : AST.CarrierMap Q R) :
+    (self.recarrier first).recarrier second = self.recarrier (first.«then» second) := by
+  cases self with
+  | mk body =>
+    simp only [LamBody.recarrier]
+    rw [AST.recarrierComp, AST.CarrierMap.underBinderThen]
+
+namespace LamBody
+
+/-- Generates a body term by mapping outer carriers and replacing the newest slot. -/
+def specialise {P Q : Parameters} (self : LamBody P) (map : AST.CarrierMap P Q)
+    (arg : Q.F ⊕ Q.B) : AST Q .trm :=
+  self.body.recarrier (map.bind arg)
+
+/-- Generalized naturality of specialization under a subsequent carrier map. -/
+def Conjecture {P : Parameters} (self : LamBody P) : Prop :=
+  ∀ {Q R : Parameters} (first : AST.CarrierMap P Q) (second : AST.CarrierMap Q R)
+    (arg : Q.F ⊕ Q.B),
+    (self.specialise first arg).recarrier second =
+      self.specialise (first.«then» second) (second.mapRef arg)
+
+end LamBody
+
+namespace AST
 
 namespace Val
 
@@ -173,7 +295,7 @@ def eval [refs : ExeRefs] [env : ExeEnv refs]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         let receipt := env.uid2valCtx.inv input
-        eval (body.instantiateLamBody receipt) fuel
+        eval (body.specialise (CarrierMap.identity _) (.inr receipt)) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none

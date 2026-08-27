@@ -33,7 +33,7 @@ as a result, this conversion is fairly universal and doesn't require the term to
 -/
 def exe2build {refs} [env : BuildEnv refs]
     (trm : Trm refs.ExeParameters) : Trm env.BuildParameters :=
-  trm.recarrier id Sum.inl id
+  trm.recarrier { mapF := id, mapB := Sum.inl, mapD := id }
 
 /--
 Infers build types for executable terms, recursively resolving runtime references.
@@ -52,7 +52,7 @@ def inferCore {refs} [env : BuildEnv refs]
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
       let index : env.BuildParameters.B := env.uid2typCtx.inv tIn
-      ((body.instantiateLamBody index).inferCore fuel).map
+      ((body.specialise (CarrierMap.identity _) (.inr index)).inferCore fuel).map
         (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
       match inferCore fnTerm fuel, inferCore arg fuel with
