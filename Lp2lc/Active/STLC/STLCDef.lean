@@ -71,6 +71,18 @@ theorem underBinderThen {P Q R : Parameters} (first : CarrierMap P Q)
     | inr newest => cases newest; simp [«then», mapRef, underBinder]
   · rfl
 
+@[simp]
+theorem bindThen {P Q R : Parameters} (first : CarrierMap P Q)
+    (second : CarrierMap Q R) (arg : Q.F ⊕ Q.B) :
+    (first.bind arg).«then» second =
+      (first.«then» second).bind (second.mapRef arg) := by
+  ext value
+  · rfl
+  · cases value with
+    | inl outer => rfl
+    | inr newest => cases newest; rfl
+  · rfl
+
 end CarrierMap
 end AST
 
@@ -236,6 +248,12 @@ def Conjecture {P : Parameters} (self : LamBody P) : Prop :=
     (arg : Q.F ⊕ Q.B),
     (self.specialise first arg).recarrier second =
       self.specialise (first.«then» second) (second.mapRef arg)
+
+/-- Structural lambda specialization is natural across every carrier map. -/
+theorem hConjecture {P : Parameters} (self : LamBody P) : self.Conjecture := by
+  intro Q R first second arg
+  unfold specialise
+  rw [AST.recarrierComp, AST.CarrierMap.bindThen]
 
 end LamBody
 
