@@ -99,6 +99,14 @@ def recarrier {P Q : Parameters} {l : Label} (self : AST P l)
         mD)
       (tIn.recarrier mF mB mD)
 
+/-
+TODO: the base type `(body : AST { P with B := P.B ⊕ Unit } .trm)` and this implementation can be fold into a general class
+
+- `body` become `protoAST` (abstract class member): an AST that uses layers of `X ⊕ Unit` type as de Bruijn serial
+- `instantiateLamBody` become `impl` (concrete class member): the actual PHOAS body function derived from `protoAST`
+- `ImplParametricity` (concrete class member): a conjecture type indicating the parametricity of `impl`
+- `hImplParametricity` (concrete class member): a prove that inhabits `ImplParametricity`.
+-/
 /-- Replaces the newest structural lambda slot while preserving outer binders. -/
 @[simp]
 def instantiateLamBody {P : Parameters}
