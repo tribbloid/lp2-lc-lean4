@@ -83,6 +83,11 @@ theorem bindThen {P Q R : Parameters} (first : CarrierMap P Q)
     | inr newest => cases newest; rfl
   · rfl
 
+@[simp]
+theorem identityThen {P Q : Parameters} (self : CarrierMap P Q) :
+    (identity P).«then» self = self := by
+  ext value <;> rfl
+
 end CarrierMap
 end AST
 
