@@ -7,6 +7,7 @@ open Lp2lc.Active.Util
 
 namespace AST
 
+-- TODO: all the following auxiliary function & data should be moved into the companion namespace of `Parameters`
 /-- Maps the free, bound, and data carriers of one syntax parameter set into another. -/
 @[ext]
 structure CarrierMap (P Q : Parameters) where
@@ -142,14 +143,6 @@ abbrev Trm (P : Parameters) := AST P .trm
 abbrev Val (P : Parameters) := AST P .val
 
 section variable (P : Parameters)
-
--- structure Trm2Typ where -- TODO: cleanup, inferering with recarrier
---   trm : Trm P
---   typ : Typ P
-
--- structure Trm2Val where
---   trm : Trm P
---   val : Val P
 
 end
 
