@@ -571,6 +571,8 @@ There is only 1 difference: it must produce a type judge with safety proof that 
 
 It also has access to [ProvingEnv], a mirror of [BuildEnv] with [uid2typWithSafetyCtx] : an extra equivalence between type with safety proof and a subtype of UId
 
+this function is meant to be self-contained and refer to no other file.
+
 TODO: discharge this function.
 - The execution of `Trm.infer` should yield identical `TypeWithSafey.t2` without safety proof
 - If the original `Trm.infer` is unsafe, revise it to be safe first
