@@ -100,6 +100,93 @@ class Parameters extends HasData where
   F : UIdU -- free receipt carrier, AKA captured variable binding
   B : UIdU -- bound receipt carrier, introduced per binder by [AST.lam]
 
+namespace Parameters
+
+/-- Maps the free, bound, and data carriers of one syntax parameter set into another. -/
+@[ext]
+structure CarrierMap (P Q : Parameters) where
+  mapF : P.F → Q.F
+  mapB : P.B → Q.F ⊕ Q.B
+  mapD : P.D → Q.D
+
+namespace CarrierMap
+
+/-- Leaves free and data carriers unchanged and keeps bound references bound. -/
+def identity (P : Parameters) : CarrierMap P P where
+  mapF := id
+  mapB := Sum.inr
+  mapD := id
+
+/-- Applies a carrier map to a free-or-bound reference. -/
+def mapRef {P Q : Parameters} (self : CarrierMap P Q) : P.F ⊕ P.B → Q.F ⊕ Q.B
+  | .inl free => .inl (self.mapF free)
+  | .inr bound => self.mapB bound
+
+/-- Composes two carrier maps in source-to-target order. -/
+def «then» {P Q R : Parameters} (self : CarrierMap P Q)
+    (next : CarrierMap Q R) : CarrierMap P R where
+  mapF := λ free => next.mapF (self.mapF free)
+  mapB := λ bound => next.mapRef (self.mapB bound)
+  mapD := λ repr => next.mapD (self.mapD repr)
+
+/-- Extends a carrier map beneath one structural lambda binder. -/
+def underBinder {P Q : Parameters} (self : CarrierMap P Q) :
+    CarrierMap { P with B := P.B ⊕ Unit } { Q with B := Q.B ⊕ Unit } where
+  mapF := self.mapF
+  mapB
+    | .inl outer =>
+      match self.mapB outer with
+      | .inl free => .inl free
+      | .inr target => .inr (.inl target)
+    | .inr () => .inr (.inr ())
+  mapD := self.mapD
+
+/-- Replaces the newest structural slot while mapping all outer carriers. -/
+def bind {P Q : Parameters} (self : CarrierMap P Q) (arg : Q.F ⊕ Q.B) :
+    CarrierMap { P with B := P.B ⊕ Unit } Q where
+  mapF := self.mapF
+  mapB
+    | .inl outer => self.mapB outer
+    | .inr () => arg
+  mapD := self.mapD
+
+@[simp]
+theorem underBinderThen {P Q R : Parameters} (first : CarrierMap P Q)
+    (second : CarrierMap Q R) :
+    first.underBinder.«then» second.underBinder = (first.«then» second).underBinder := by
+  ext value
+  · rfl
+  · cases value with
+    | inl outer =>
+      cases hFirst : first.mapB outer with
+      | inl free => simp [«then», mapRef, underBinder, hFirst]
+      | inr target =>
+        cases hSecond : second.mapB target <;>
+          simp [«then», mapRef, underBinder, hFirst, hSecond]
+    | inr newest => cases newest; simp [«then», mapRef, underBinder]
+  · rfl
+
+@[simp]
+theorem bindThen {P Q R : Parameters} (first : CarrierMap P Q)
+    (second : CarrierMap Q R) (arg : Q.F ⊕ Q.B) :
+    (first.bind arg).«then» second =
+      (first.«then» second).bind (second.mapRef arg) := by
+  ext value
+  · rfl
+  · cases value with
+    | inl outer => rfl
+    | inr newest => cases newest; rfl
+  · rfl
+
+@[simp]
+theorem identityThen {P Q : Parameters} (self : CarrierMap P Q) :
+    (identity P).«then» self = self := by
+  ext value <;> rfl
+
+end CarrierMap
+
+end Parameters
+
 section variable {T : Sort u}
 
 namespace Rec

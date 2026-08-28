@@ -3,6 +3,7 @@ import «Lp2lc».Active.STLC.Proof
 namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
+open Lp2lc.Active.Util.Parameters
 open AST
 
 namespace Umbral

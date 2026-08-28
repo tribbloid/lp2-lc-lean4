@@ -14,8 +14,8 @@ section infer
 variable [testEnv : TestEnv] [build : BuildEnv refs]
 abbrev Typ := AST.Typ build.BuildParameters
 attribute [local simp] AST.exe2build AST.inferCore
-attribute [local simp] LamBody.body LamBody.specialise AST.CarrierMap.identity
-  AST.CarrierMap.bind AST.CarrierMap.mapRef AST.CarrierMap.underBinder
+attribute [local simp] LamBody.body LamBody.specialise Parameters.CarrierMap.identity
+  Parameters.CarrierMap.bind Parameters.CarrierMap.mapRef Parameters.CarrierMap.underBinder
 
 example :
     (vFalse.infer).shouldYields .primitive := by

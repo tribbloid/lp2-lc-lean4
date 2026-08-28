@@ -22,8 +22,8 @@ attribute [local simp] Trm.Malformed.applyIdFnOnItself Trm.Malformed.idFnOnFalse
 attribute [local simp] Trm.Malformed.apply1 Trm.Malformed.primitiveApply Val.idFn
 attribute [local simp] Trm.FreeCapture.receipt Trm.FreeCapture.directRef Trm.FreeCapture.capturedRef
 attribute [local simp] Trm.FreeCapture.capturedRefOnFalse
-attribute [local simp] LamBody.body LamBody.specialise AST.CarrierMap.identity
-  AST.CarrierMap.bind AST.CarrierMap.mapRef AST.CarrierMap.underBinder
+attribute [local simp] LamBody.body LamBody.specialise Parameters.CarrierMap.identity
+  Parameters.CarrierMap.bind Parameters.CarrierMap.mapRef Parameters.CarrierMap.underBinder
 
 example : Trm.vFalse.eval.shouldYields (.lit "false") := by
   constructor
