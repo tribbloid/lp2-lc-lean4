@@ -139,14 +139,15 @@ def specialise {P Q : Parameters} (self : LamBody P) (map : Parameters.CarrierMa
   self.body.recarrier (map.bind arg)
 
 /-- Generalized naturality of specialization under a subsequent carrier map. -/
-def Conjecture {P : Parameters} (self : LamBody P) : Prop :=
+def SpecialiseNaturality {P : Parameters} (self : LamBody P) : Prop :=
   ∀ {Q R : Parameters} (first : Parameters.CarrierMap P Q) (second : Parameters.CarrierMap Q R)
     (arg : Q.F ⊕ Q.B),
     (self.specialise first arg).recarrier second =
       self.specialise (first.«then» second) (second.mapRef arg)
 
 /-- Structural lambda specialization is natural across every carrier map. -/
-theorem hConjecture {P : Parameters} (self : LamBody P) : self.Conjecture := by
+theorem specialiseNaturality {P : Parameters} (self : LamBody P) :
+    self.SpecialiseNaturality := by
   intro Q R first second arg
   unfold specialise
   rw [AST.recarrierComp, Parameters.CarrierMap.bindThen]

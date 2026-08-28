@@ -477,7 +477,7 @@ private theorem betaInfer {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv
         body.specialise exeToBuild (.inl receipt) := by
     simpa only [AST.exe2build, exeToBuild, CarrierMap.identityThen,
       CarrierMap.mapRef] using
-        body.hConjecture (CarrierMap.identity _) exeToBuild (.inr receipt)
+        body.specialiseNaturality (CarrierMap.identity _) exeToBuild (.inr receipt)
   refine ⟨rightFuel, ?_⟩
   simp only [AST.infer]
   rw [hBetaBuild]
