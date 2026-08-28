@@ -97,7 +97,7 @@ end
 
 /-- Consecutive carrier changes are equivalent to their bundled composition. -/
 @[simp]
-theorem AST.recarrierComp {P Q R : Parameters} {l : Label} (self : AST P l)
+theorem AST.recarrierComposability {P Q R : Parameters} {l : Label} (self : AST P l)
     (first : Parameters.CarrierMap P Q) (second : Parameters.CarrierMap Q R) :
     (self.recarrier first).recarrier second = self.recarrier (first.«then» second) := by
   induction self using AST.rec
@@ -123,13 +123,13 @@ theorem AST.recarrierComp {P Q R : Parameters} {l : Label} (self : AST P l)
 
 /-- Consecutive carrier changes beneath a lambda preserve its newest binder slot. -/
 @[simp]
-theorem LamBody.recarrierComp {P Q R : Parameters} (self : LamBody P)
+theorem LamBody.recarrierComposability {P Q R : Parameters} (self : LamBody P)
     (first : Parameters.CarrierMap P Q) (second : Parameters.CarrierMap Q R) :
     (self.recarrier first).recarrier second = self.recarrier (first.«then» second) := by
   cases self with
   | mk body =>
     simp only [LamBody.recarrier]
-    rw [AST.recarrierComp, Parameters.CarrierMap.underBinderThen]
+    rw [AST.recarrierComposability, Parameters.CarrierMap.underBinderThen]
 
 namespace LamBody
 
@@ -150,7 +150,7 @@ theorem specialiseNaturality {P : Parameters} (self : LamBody P) :
     self.SpecialiseNaturality := by
   intro Q R first second arg
   unfold specialise
-  rw [AST.recarrierComp, Parameters.CarrierMap.bindThen]
+  rw [AST.recarrierComposability, Parameters.CarrierMap.bindThen]
 
 end LamBody
 
