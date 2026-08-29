@@ -35,10 +35,6 @@ def exe2build {refs} [env : BuildEnv refs]
     (trm : Trm refs.ExeParameters) : Trm env.BuildParameters :=
   trm.recarrier { mapF := id, mapB := Sum.inl, mapD := id }
 
-def inferVal {refs} [build : BuildEnv refs]
-    (self : Val refs.ExeParameters) : (AST.Typ build.BuildParameters) :=
-  sorry
-
 /--
 Infers build types for executable terms, recursively resolving runtime references.
 
