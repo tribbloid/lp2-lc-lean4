@@ -87,9 +87,7 @@ theorem fundamental {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
     Safety trm typ := sorry
 
 /--
-if compiled a term and succeeded, the term must be safe
-
-TODO: this is the "Paranoid Fundamental theorem": compilation may fail even but term evaluation may succeed
+alternative formulation of fundamental lemma that has fewer argument, but proof is less straightforward (because lean metaprogramming)
 -/
 theorem fundamental_fwd {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
     (trm : AST.Trm refs.ExeParameters) : trm.infer.ifSucceedMustSatisfy (
@@ -97,5 +95,8 @@ theorem fundamental_fwd {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv r
       Safety trm t1
   ) := sorry
 
+/-
+TODO: the above are "Paranoid Fundamental Lemma": compilation may fail even but term evaluation may succeed, can this be improved?
+-/
 
 end STLC
