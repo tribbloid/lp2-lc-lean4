@@ -71,4 +71,23 @@ theorem valueInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
 
 end AST
 
+/-- A successfully inferred type makes the executable term safe at that type. -/
+theorem fundamental {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
+    (trm : AST.Trm refs.ExeParameters) (fuel : Nat)
+    (typ : AST.Typ build.BuildParameters)
+    (hInfer : trm.infer fuel = .yield (some typ)) :
+    Safety trm typ := sorry
+
+/--
+if compiled a term and succeeded, the term must be safe
+
+TODO: this is the "Paranoid Fundamental theorem": compilation may fail even but term evaluation may succeed
+-/
+theorem paranoidFundamental {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
+    (trm : AST.Trm refs.ExeParameters) : trm.infer.isSemiDecidable (
+    λ t1 =>
+      Safety trm t1
+  ) := sorry
+
+
 end STLC

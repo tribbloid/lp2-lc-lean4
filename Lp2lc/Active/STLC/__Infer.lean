@@ -98,18 +98,4 @@ def Safety {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
   trm.eval.isSemiDecidable
     (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
 
-/-
--- TODO: this is the "Paranoid Fundamental theorem": compilation may fail even but term evaluation may succeed.
--- TODO: prove it later?
--/
-/--
-if compiled a term and succeeded, the term must be safe
--/
-def Fundamental {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
-    (trm : AST.Trm refs.ExeParameters) : Prop :=
-  trm.infer.isSemiDecidable (
-    λ t1 =>
-      Safety trm t1
-  )
-
 end Lp2lc.Active.STLC
