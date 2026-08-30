@@ -71,6 +71,14 @@ theorem valueInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
 
 end AST
 
+/-
+TODO: Prove `fundamental` as the canonical pointwise soundness lemma for `AST.Trm.infer`
+without changing its statement. Use `hInfer` to eliminate explicit failure and
+out-of-fuel branches and to expose successful recursive-inference equations. After
+this proof is complete, discharge `fundamental_fwd` from `fundamental` by
+unfolding `RecOpt.ifSucceedMustSatisfy` and splitting on `trm.infer fuel`; do not
+maintain two independent soundness proofs.
+-/
 /-- A successfully inferred type makes the executable term safe at that type. -/
 theorem fundamental {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
     (trm : AST.Trm refs.ExeParameters) (fuel : Nat)
@@ -83,7 +91,7 @@ if compiled a term and succeeded, the term must be safe
 
 TODO: this is the "Paranoid Fundamental theorem": compilation may fail even but term evaluation may succeed
 -/
-theorem paranoidFundamental {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
+theorem fundamental_fwd {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
     (trm : AST.Trm refs.ExeParameters) : trm.infer.ifSucceedMustSatisfy (
     λ t1 =>
       Safety trm t1
