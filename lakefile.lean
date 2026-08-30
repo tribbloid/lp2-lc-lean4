@@ -12,7 +12,7 @@ lean_lib «Tests» where
 @[default_target] -- compiled but should never publish
 lean_lib «Docs» where
   srcDir := "Docs"
-  roots := #[`ContextualEmbedding, `LeanCompiler, `Phoas, `Tc]
+  roots := #[`ContextualEmbedding, `LeanCompiler, `Phoas, `CertifiedTypeChecker]
 
 lean_lib «Spike» where
 

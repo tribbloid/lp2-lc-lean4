@@ -1,4 +1,6 @@
 /-!
+(Source: https://github.com/leanprover/lean4/blob/master/doc/examples/tc.lean)
+
 # A Certified Type Checker
 
 In this example, we build a certified type checker for a simple expression
