@@ -84,7 +84,7 @@ if compiled a term and succeeded, the term must be safe
 TODO: this is the "Paranoid Fundamental theorem": compilation may fail even but term evaluation may succeed
 -/
 theorem paranoidFundamental {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
-    (trm : AST.Trm refs.ExeParameters) : trm.infer.isSemiDecidable (
+    (trm : AST.Trm refs.ExeParameters) : trm.infer.ifSucceedMustSatisfy (
     λ t1 =>
       Safety trm t1
   ) := sorry

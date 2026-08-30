@@ -266,6 +266,11 @@ def isSemiDecidable (condition: T -> Prop := λ _ => True) : Prop :=
   | .outOfFuel => true
   | .yield (some v) => condition v
 
+def ifSucceedMustSatisfy (condition: T -> Prop := λ _ => True) : Prop :=
+  ∀ (fuel : Nat), match (self fuel) with
+  | .yield (some v) => condition v
+  | _ => true
+
 def shouldYields (expectedV : T) : Prop :=
   let hasFuel := RecOpt.isDecidable self (λ v => v = expectedV)
   let noFuel := self 0 = .outOfFuel
