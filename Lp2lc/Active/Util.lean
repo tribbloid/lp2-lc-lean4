@@ -38,11 +38,7 @@ class UIdEquiv {VK} (base: UIdView VK) where
   rightInv : ∀ (value : VK base.UId), base.get (inv value) = value
   leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
 
-namespace UIdEquiv
-
-/-- Coerces a full bridge to the read-only view that it completes. -/
-instance {VK} {base : UIdView VK} : CoeOut (UIdEquiv base) (UIdView VK) where
-  coe _self := base
+namespace UIdView
 
 class HasEv (UId : UIdU) where
   Ev : UId → Prop -- a subtype of UId with extra contract
@@ -54,13 +50,21 @@ Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. Th
 -/
 
 /-- Read-only metadata view over a subtype of receipts from `base`. -/
-class LesserView {VK} (base : UIdView VK) (Tagging : (v : VK base.UId) → Sort v) -- TODO: moved into the namespace of `UIdView` and renamed "Lesser", move dependent classes if necessary
+class Lesser {VK} (base : UIdView VK) (Tagging : (v : VK base.UId) → Sort v)
     extends HasEv base.UId where
   get {uid} (receipt : Ev uid) : Tagging (base.get uid)
 
+end UIdView
+
+namespace UIdEquiv
+
+/-- Coerces a full bridge to the read-only view that it completes. -/
+instance {VK} {base : UIdView VK} : CoeOut (UIdEquiv base) (UIdView VK) where
+  coe _self := base
+
 /-- Adds a reverse metadata bridge that is lawful for every equivalence over `base`. -/
 class Lesser {VK} {base : UIdView VK} (Tagging : (v : VK base.UId) → Sort v)
-    extends LesserView base Tagging where
+    extends toUIdViewLesser : UIdView.Lesser base Tagging where
   inv (outer : UIdEquiv base) {v} (tagged : Tagging v) : Ev (outer.inv v)
   rightInv : ∀ (outer : UIdEquiv base) {v} (tagged : Tagging v),
     HEq (get (inv outer tagged)) tagged -- TODO: are these provable?

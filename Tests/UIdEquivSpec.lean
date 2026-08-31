@@ -37,12 +37,12 @@ open UIdEquiv
       cases evidence
       rfl
 
-@[reducible] def eqOneMetadataView : LesserView groupView (λ value => value = 1) where
+@[reducible] def eqOneMetadataView : UIdView.Lesser groupView (λ value => value = 1) where
   Ev := λ receipt => receipt.fst = 1
   get := λ receipt => receipt
 
 @[reducible] def eqOneMetadata : Lesser (base := groupView) (λ value => value = 1) where
-  toLesserView := eqOneMetadataView
+  toUIdViewLesser := eqOneMetadataView
   inv := by
     intro outer value tagged
     change groupView.get (outer.inv value) = 1
@@ -55,12 +55,12 @@ open UIdEquiv
     intro _outer _uid receipt
     exact proof_irrel_heq _ receipt
 
-@[reducible] def unitMetadataView : LesserView groupView (λ _value => Unit) where
+@[reducible] def unitMetadataView : UIdView.Lesser groupView (λ _value => Unit) where
   Ev := λ _receipt => True
   get := λ _receipt => ()
 
 @[reducible] def unitMetadata : Lesser (base := groupView) (λ _value => Unit) where
-  toLesserView := unitMetadataView
+  toUIdViewLesser := unitMetadataView
   inv := λ _outer _value _bundle => True.intro
   rightInv := by
     intro _outer _value tagged
