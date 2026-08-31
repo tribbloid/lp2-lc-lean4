@@ -78,12 +78,6 @@ class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
 
 end UIdEquiv
 
--- /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/ TOOD: delete, superseded by Extendable
--- class CanGetUIdFor (VK : UIdU -> Sort u) where
---   mkEquiv  : UIdEquiv VK
---   mkLesser (outer : UIdEquiv VK) {MK : VK outer.UId → Sort u} : UIdEquiv.Lesser outer MK
-
-
 attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
   UIdEquiv.Lesser.rightInv UIdEquiv.Lesser.leftInv
 
