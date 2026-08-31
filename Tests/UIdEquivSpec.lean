@@ -64,6 +64,51 @@ open UIdEquiv
     cases tagged
     rfl
 
+inductive WiderReceipt
+  | base (receipt : groupView.UId)
+  | extra
+
+inductive WiderValue
+  | base (value : Nat)
+  | extra
+
+@[reducible] def widerVK : UIdU → Type := λ _ => WiderValue
+
+def upcastReceipt : Upcast groupView.UId WiderReceipt where
+  apply receipt := .base receipt
+  injective := by
+    intro left right equality
+    cases equality
+    rfl
+
+def upcastValue : Upcast Nat WiderValue where
+  apply value := .base value
+  injective := by
+    intro left right equality
+    cases equality
+    rfl
+
+@[reducible] def widerView : UIdView.Greater (VK2 := widerVK) groupView where
+  UId := WiderReceipt
+  get
+    | .base receipt => .base (groupView.get receipt)
+    | .extra => .extra
+  upcastUId := upcastReceipt
+  upcastVK := upcastValue
+  getUpcast _receipt := rfl
+
+@[reducible] def widerGroup :
+    Greater (base := groupView) widerView where
+  inv
+    | .base value => .base (group.inv value)
+    | .extra => .extra
+  rightInv value := by
+    cases value <;> rfl
+  leftInv receipt := by
+    cases receipt with
+    | base receipt => exact congrArg WiderReceipt.base (group.leftInv receipt)
+    | extra => rfl
+
 section receipt
 
 example : UIdView (λ _evidence => Nat) := group
@@ -108,6 +153,35 @@ example (outer : UIdEquiv groupView) {uid : groupView.UId}
   simp
 
 end receipt
+
+section greater
+
+example (receipt : groupView.UId) :
+    widerView.get (upcastReceipt receipt) = upcastValue (groupView.get receipt) := by
+  exact widerView.getUpcast receipt
+
+example : Function.Injective upcastReceipt :=
+  upcastReceipt.injective
+
+example : Function.Injective upcastValue :=
+  upcastValue.injective
+
+example (value : WiderValue) :
+    widerView.get (widerGroup.inv value) = value := by
+  simp
+
+example (receipt : WiderReceipt) :
+    widerGroup.inv (widerView.get receipt) = receipt := by
+  simp
+
+example : widerView.get (widerGroup.inv .extra) = .extra := by
+  rfl
+
+example (outer : Extendable groupView) :
+    Greater (base := groupView) widerView :=
+  outer.mkGreater widerView
+
+end greater
 
 section rejection
 

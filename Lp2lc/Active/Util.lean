@@ -38,27 +38,46 @@ class UIdEquiv {VK} (base: UIdView VK) where
   rightInv : ∀ (value : VK base.UId), base.get (inv value) = value
   leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
 
+/-- An explicit injective function from one carrier into a supertype. -/
+structure Upcast (Under : Sort u) (Over : Sort v) where
+  apply (value : Under) : Over
+  injective : Function.Injective apply
+
+instance {Under : Sort u} {Over : Sort v} : CoeFun (Upcast Under Over) (λ _ => Under → Over) where
+  coe self := self.apply
+
 namespace UIdView
 
 class HasEv (UId : UIdU) where
   Ev : UId → Prop -- a subtype of UId with extra contract
 
 /-
-TODO: `Lesser` is used to map both UId and value of a `UIdView` to their respective subtypes
+`Lesser` maps both the UId and value of a `UIdView` to their respective subtypes,
+while `Greater` maps both to explicitly supplied supertypes.
 
-We should have a class `Greater` that can is almost similar, but  map both UId and value of a `UIdView` to their respective supertypes
+The supertypes are represented by new type arguments for both `UId` and `VK`,
+each accompanied by its upcast function. `Extendable` supports both directions.
 
-The supertypes are represented by new type arguments (for both `UId` and `VK`), each accompanied by upcast function instance next to them
-
-the constructor of `Greater` should also be added into `Extendable` class
-
-Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
+Math discovery relies on continuous supertyping (e.g. N -> Q), not only
+subtyping, so `UIdEquiv` supports both directions.
 -/
 
 /-- Read-only metadata view over a subtype of receipts from `base`. -/
 class Lesser {VK} (base : UIdView VK) (Tagging : (v : VK base.UId) → Sort v)
     extends HasEv base.UId where
   get {uid} (receipt : Ev uid) : Tagging (base.get uid)
+
+/-- Extends a read-only view with symmetric `get` access over wider carriers. -/
+class Greater {VK VK2} (base : UIdView VK) extends UIdView VK2 where
+  upcastUId : Upcast base.UId UId
+  upcastVK : Upcast (VK base.UId) (VK2 UId)
+  getUpcast : ∀ (receipt : base.UId),
+    get (upcastUId receipt) = upcastVK (base.get receipt)
+
+/-- Coerces a greater view to the widened read-only view that it contains. -/
+instance {VK VK2} {base : UIdView VK} :
+    CoeOut (Greater (VK2 := VK2) base) (UIdView VK2) where
+  coe self := self.toUIdView
 
 end UIdView
 
@@ -79,12 +98,20 @@ class Lesser {VK} {base : UIdView VK} (Tagging : (v : VK base.UId) → Sort v)
       intro _outer _uid receipt
       exact proof_irrel_heq _ receipt
 
+/-- Adds a lawful inverse to a widened read-only view. -/
+class Greater {VK VK2} {base : UIdView VK}
+    (view : UIdView.Greater (VK2 := VK2) base) extends UIdEquiv view.toUIdView
+
+/-- Extends a base equivalence with lawful subtype metadata and supertype bridges. -/
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (Tagging : VK base.UId → Sort u) : Lesser Tagging
+  mkGreater {VK2 : UIdU → Sort u}
+      (view : UIdView.Greater (VK2 := VK2) base) : Greater view
 
 end UIdEquiv
 
 attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
+  UIdView.Greater.getUpcast
   UIdEquiv.Lesser.rightInv UIdEquiv.Lesser.leftInv
 
 /--
