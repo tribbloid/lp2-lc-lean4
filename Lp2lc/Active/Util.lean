@@ -78,10 +78,6 @@ class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
 
 end UIdEquiv
 
-
-/-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
-abbrev Fixpoint {VK} {base : UIdView VK} := UIdEquiv.Extendable (VK := VK) (base := base) -- TODO: inline this
-
 -- /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/ TOOD: delete, superseded by Extendable
 -- class CanGetUIdFor (VK : UIdU -> Sort u) where
 --   mkEquiv  : UIdEquiv VK
