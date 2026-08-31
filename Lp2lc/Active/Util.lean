@@ -53,6 +53,12 @@ DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`
 Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
 -/
 
+/-
+TODO: this class should be be split into 2 layers:
+- layer 1 wraps UIdView and only provide get function between UId with Evidence and tagged value
+- layer 2 is functionally identical to this class
+- the construction of layer 2 should no require `UIdEquiv base`, rightInv and leftInv should hold for any `UIdEquiv base` derived from the same `base : UIdView VK`
+-/
 /-- an auxiliary equivalence for a subtype of [outer.VK T], Can attach independently witnessed metadata `M` to receipts from outer bridge. -/
 class Lesser {VK} {base : UIdView VK}
     (outer : UIdEquiv base) (Tagging : (v: VK base.UId) → Sort v)
