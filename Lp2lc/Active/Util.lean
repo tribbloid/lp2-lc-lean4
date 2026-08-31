@@ -67,9 +67,11 @@ class Lesser {VK} {base : UIdView VK} (Tagging : (v : VK base.UId) → Sort v)
     extends toUIdViewLesser : UIdView.Lesser base Tagging where
   inv (outer : UIdEquiv base) {v} (tagged : Tagging v) : Ev (outer.inv v)
   rightInv : ∀ (outer : UIdEquiv base) {v} (tagged : Tagging v),
-    HEq (get (inv outer tagged)) tagged -- TODO: are these provable?
+    HEq (get (inv outer tagged)) tagged
   leftInv : ∀ (outer : UIdEquiv base) {uid} (receipt : Ev uid),
-    HEq (inv outer (get receipt)) receipt
+    HEq (inv outer (get receipt)) receipt := by
+      intro _outer _uid receipt
+      exact proof_irrel_heq _ receipt
 
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (Tagging : VK base.UId → Sort u) : Lesser Tagging

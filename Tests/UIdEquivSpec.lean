@@ -51,9 +51,6 @@ open UIdEquiv
   rightInv := by
     intro _outer _value tagged
     exact proof_irrel_heq _ tagged
-  leftInv := by
-    intro _outer _uid receipt
-    exact proof_irrel_heq _ receipt
 
 @[reducible] def unitMetadataView : UIdView.Lesser groupView (λ _value => Unit) where
   Ev := λ _receipt => True
@@ -66,9 +63,6 @@ open UIdEquiv
     intro _outer _value tagged
     cases tagged
     rfl
-  leftInv := by
-    intro _outer _uid receipt
-    exact proof_irrel_heq _ _
 
 section receipt
 
