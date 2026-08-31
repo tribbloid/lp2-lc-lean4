@@ -53,23 +53,22 @@ DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`
 Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
 -/
 
-/-
-TODO: this class should be be split into 2 layers:
-- layer 1 wraps UIdView and only provide get function between UId with Evidence and tagged value
-- layer 2 is functionally identical to this class
-- the construction of layer 2 should no require `UIdEquiv base`, rightInv and leftInv should hold for any `UIdEquiv base` derived from the same `base : UIdView VK`
--/
-/-- an auxiliary equivalence for a subtype of [outer.VK T], Can attach independently witnessed metadata `M` to receipts from outer bridge. -/
-class Lesser {VK} {base : UIdView VK}
-    (outer : UIdEquiv base) (Tagging : (v: VK base.UId) → Sort v)
+/-- Read-only metadata view over a subtype of receipts from `base`. -/
+class LesserView {VK} (base : UIdView VK) (Tagging : (v : VK base.UId) → Sort v)
     extends HasEv base.UId where
   get {uid} (receipt : Ev uid) : Tagging (base.get uid)
-  inv {v} (tagged : Tagging v) : Ev (outer.inv v)
-  rightInv : ∀ {v} (tagged : Tagging v), HEq (get (inv tagged)) tagged -- TODO: are these provable?
-  leftInv : ∀ {uid} (receipt : Ev uid), HEq (inv (get receipt)) receipt
+
+/-- Adds a reverse metadata bridge that is lawful for every equivalence over `base`. -/
+class Lesser {VK} {base : UIdView VK} (Tagging : (v : VK base.UId) → Sort v)
+    extends LesserView base Tagging where
+  inv (outer : UIdEquiv base) {v} (tagged : Tagging v) : Ev (outer.inv v)
+  rightInv : ∀ (outer : UIdEquiv base) {v} (tagged : Tagging v),
+    HEq (get (inv outer tagged)) tagged -- TODO: are these provable?
+  leftInv : ∀ (outer : UIdEquiv base) {uid} (receipt : Ev uid),
+    HEq (inv outer (get receipt)) receipt
 
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
-  mkLesser (Tagging : VK base.UId → Sort u) : Lesser toUIdEquiv Tagging
+  mkLesser (Tagging : VK base.UId → Sort u) : Lesser Tagging
 
 end UIdEquiv
 

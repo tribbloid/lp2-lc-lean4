@@ -37,27 +37,37 @@ open UIdEquiv
       cases evidence
       rfl
 
-@[reducible] def eqOneMetadata : Lesser group (λ value => value = 1) where
+@[reducible] def eqOneMetadataView : LesserView groupView (λ value => value = 1) where
   Ev := λ receipt => receipt.fst = 1
-  inv := λ tagged => tagged
   get := λ receipt => receipt
-  rightInv := by
-    intro _value tagged
-    rfl
-  leftInv := by
-    intro _uid receipt
-    rfl
 
-@[reducible] def unitMetadata : Lesser group (λ _value => Unit) where
-  Ev := λ _receipt => True
-  inv := λ _bundle => True.intro
-  get := λ _receipt => ()
+@[reducible] def eqOneMetadata : Lesser (base := groupView) (λ value => value = 1) where
+  toLesserView := eqOneMetadataView
+  inv := by
+    intro outer value tagged
+    change groupView.get (outer.inv value) = 1
+    rw [outer.rightInv]
+    exact tagged
   rightInv := by
-    intro _value tagged
+    intro _outer _value tagged
+    exact proof_irrel_heq _ tagged
+  leftInv := by
+    intro _outer _uid receipt
+    exact proof_irrel_heq _ receipt
+
+@[reducible] def unitMetadataView : LesserView groupView (λ _value => Unit) where
+  Ev := λ _receipt => True
+  get := λ _receipt => ()
+
+@[reducible] def unitMetadata : Lesser (base := groupView) (λ _value => Unit) where
+  toLesserView := unitMetadataView
+  inv := λ _outer _value _bundle => True.intro
+  rightInv := by
+    intro _outer _value tagged
     cases tagged
     rfl
   leftInv := by
-    intro _uid receipt
+    intro _outer _uid receipt
     exact proof_irrel_heq _ _
 
 section receipt
@@ -74,13 +84,17 @@ example :
 
 example :
     eqOneMetadata.Ev (group.inv 1) :=
-  eqOneMetadata.inv rfl
+  eqOneMetadata.inv group rfl
+
+example (outer : UIdEquiv groupView) :
+    eqOneMetadata.Ev (outer.inv 1) :=
+  eqOneMetadata.inv outer rfl
 
 example :
     eqOneMetadata.Ev (group.inv 1) ∧
       unitMetadata.Ev (group.inv 1) :=
-  ⟨eqOneMetadata.inv rfl,
-    unitMetadata.inv ()⟩
+  ⟨eqOneMetadata.inv group rfl,
+    unitMetadata.inv group ()⟩
 
 example :
     eqOneMetadata.Ev (group.inv 1) → (1 = 1) :=
@@ -90,12 +104,13 @@ example :
     unitMetadata.Ev (group.inv 1) → Unit :=
   λ h => unitMetadata.get h
 
-example {value : Nat} (tagged : value = 1) :
-    HEq (eqOneMetadata.get (eqOneMetadata.inv tagged)) tagged := by
+example (outer : UIdEquiv groupView) {value : Nat} (tagged : value = 1) :
+    HEq (eqOneMetadata.get (eqOneMetadata.inv outer tagged)) tagged := by
   simp
 
-example {uid : groupView.UId} (receipt : eqOneMetadata.Ev uid) :
-    HEq (eqOneMetadata.inv (eqOneMetadata.get receipt)) receipt := by
+example (outer : UIdEquiv groupView) {uid : groupView.UId}
+    (receipt : eqOneMetadata.Ev uid) :
+    HEq (eqOneMetadata.inv outer (eqOneMetadata.get receipt)) receipt := by
   simp
 
 end receipt
