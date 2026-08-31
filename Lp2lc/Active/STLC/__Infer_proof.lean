@@ -639,7 +639,15 @@ theorem fundamental_fwd {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv r
     (trm : AST.Trm refs.ExeParameters) : trm.infer.ifSucceedMustSatisfy (
     λ t1 =>
       Safety trm t1
-  ) := sorry
+  ) := by
+  unfold RecOpt.ifSucceedMustSatisfy
+  intro fuel
+  cases hInfer : trm.infer fuel with
+  | outOfFuel => rfl
+  | yield result =>
+    cases result with
+    | none => rfl
+    | some typ => exact fundamental trm fuel typ hInfer
 
 /-
 TODO: the above are "Paranoid Fundamental Lemma": compilation may fail even but term evaluation may succeed, can this be improved?
