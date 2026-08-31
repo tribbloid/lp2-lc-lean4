@@ -44,7 +44,13 @@ class HasEv (UId : UIdU) where
   Ev : UId → Prop -- a subtype of UId with extra contract
 
 /-
-DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`Greater`
+TODO: `Lesser` is used to map both UId and value of a `UIdView` to their respective subtypes
+
+We should have a class `Greater` that can is almost similar, but  map both UId and value of a `UIdView` to their respective supertypes
+
+The supertypes are represented by new type arguments accompanied by `[upcast_function]`
+
+the constructor of `Greater` should also be added into `Extendable` class
 
 Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
 -/
