@@ -54,7 +54,7 @@ Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. Th
 -/
 
 /-- Read-only metadata view over a subtype of receipts from `base`. -/
-class LesserView {VK} (base : UIdView VK) (Tagging : (v : VK base.UId) → Sort v)
+class LesserView {VK} (base : UIdView VK) (Tagging : (v : VK base.UId) → Sort v) -- TODO: moved into the namespace of `UIdView` and renamed "Lesser", move dependent classes if necessary
     extends HasEv base.UId where
   get {uid} (receipt : Ev uid) : Tagging (base.get uid)
 
