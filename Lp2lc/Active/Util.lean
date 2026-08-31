@@ -48,7 +48,7 @@ TODO: `Lesser` is used to map both UId and value of a `UIdView` to their respect
 
 We should have a class `Greater` that can is almost similar, but  map both UId and value of a `UIdView` to their respective supertypes
 
-The supertypes are represented by new type arguments accompanied by `[upcast_function]`
+The supertypes are represented by new type arguments (for both `UId` and `VK`), each accompanied by upcast function instance next to them
 
 the constructor of `Greater` should also be added into `Extendable` class
 
