@@ -70,7 +70,7 @@ class Lesser {VK} (base : UIdView VK) (VK2 : (v : VK base.UId) → Sort v)
   get {uid} (receipt : Ev uid) : VK2 (base.get uid)
 
 /-- Extends a read-only view with symmetric `get` access over wider carriers. -/
-class Greater {VK} (base : UIdView VK) (VK2 : UIdU → Sort v) extends UIdView VK2 where
+class Greater {VK} (base : UIdView VK) (VK2 : UIdU → Sort v) extends UIdView VK2 where -- FIXME: type signature of VK2 should be `(VK2 : (v : VK base.UId) → Sort v)`, see above code
   upcastUId : Upcast base.UId UId
   upcastVK : Upcast (VK base.UId) (VK2 UId)
   getUpcast : ∀ (receipt : base.UId), -- FIXME: bad name, predicates/axioms should
