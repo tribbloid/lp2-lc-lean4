@@ -65,14 +65,16 @@ subtyping, so `UIdEquiv` supports both directions.
 -/
 
 /-- Read-only metadata view over a subtype of receipts from `base`. -/
-class Lesser {VK} (base : UIdView VK) (VK2 : (v : VK base.UId) → Sort v)
+class Lesser {VK} (base : UIdView VK)
+  (annotateV : (v : VK base.UId) → Sort v) -- FIXME: should be a class member
     extends HasEv base.UId where
-  get {uid} (receipt : Ev uid) : VK2 (base.get uid)
+  get {uid} (receipt : Ev uid) : annotateV (base.get uid)
 
 /-- Extends a read-only view with symmetric `get` access over wider carriers. -/
-class Greater {VK} (base : UIdView VK) (VK2 : UIdU → Sort v) extends UIdView VK2 where -- FIXME: type signature of VK2 should be `(VK2 : (v : VK base.UId) → Sort v)`, see above code
-  upcastUId : Upcast base.UId UId
-  upcastVK : Upcast (VK base.UId) (VK2 UId)
+class Greater {VK VK2} (base : UIdView VK)
+   extends UIdView VK2 where
+  upcastUId : base.UId -> UId
+  upcastV : VK base.UId -> VK2 UId
   getUpcast : ∀ (receipt : base.UId), -- FIXME: bad name, predicates/axioms should
     get (upcastUId receipt) = upcastVK (base.get receipt)
 
