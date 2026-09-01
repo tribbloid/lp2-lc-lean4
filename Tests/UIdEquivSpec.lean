@@ -74,27 +74,19 @@ inductive WiderValue
 
 @[reducible] def widerVK : UIdU → Type := λ _ => WiderValue
 
-def upcastReceipt : Upcast groupView.UId WiderReceipt where
-  apply receipt := .base receipt
-  injective := by
-    intro left right equality
-    cases equality
-    rfl
+def upcastReceipt (receipt : groupView.UId) : WiderReceipt :=
+  .base receipt
 
-def upcastValue : Upcast Nat WiderValue where
-  apply value := .base value
-  injective := by
-    intro left right equality
-    cases equality
-    rfl
+def upcastValue (value : Nat) : WiderValue :=
+  .base value
 
-@[reducible] def widerView : UIdView.Greater groupView widerVK where
+@[reducible] def widerView : UIdView.Greater (VK2 := widerVK) groupView where
   UId := WiderReceipt
   get
     | .base receipt => .base (groupView.get receipt)
     | .extra => .extra
   upcastUId := upcastReceipt
-  upcastVK := upcastValue
+  upcastV := upcastValue
   getUpcast _receipt := rfl
 
 @[reducible] def widerGroup :
@@ -163,11 +155,15 @@ example (receipt : groupView.UId) :
     widerGroup.get (upcastReceipt receipt) = upcastValue (groupView.get receipt) := by
   exact widerGroup.getUpcast receipt
 
-example : Function.Injective upcastReceipt :=
-  upcastReceipt.injective
+example : Function.Injective upcastReceipt := by
+  intro left right equality
+  cases equality
+  rfl
 
-example : Function.Injective upcastValue :=
-  upcastValue.injective
+example : Function.Injective upcastValue := by
+  intro left right equality
+  cases equality
+  rfl
 
 example (value : WiderValue) :
     widerGroup.get (widerGroup.inv group value) = value := by

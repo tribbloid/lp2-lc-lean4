@@ -38,15 +38,6 @@ class UIdEquiv {VK} (base: UIdView VK) where
   rightInv : ∀ (value : VK base.UId), base.get (inv value) = value
   leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
 
- --FIXME: this entire thing should be replaced by a common function, there is no use for injective axiom.
--- /-- An explicit injective function from one carrier into a supertype. -/
--- structure Upcast (Under : Sort u) (Over : Sort v) where
---   apply (value : Under) : Over
---   injective : Function.Injective apply
-
--- instance {Under : Sort u} {Over : Sort v} : CoeFun (Upcast Under Over) (λ _ => Under → Over) where
---   coe self := self.apply
-
 namespace UIdView
 
 class HasEv (UId : UIdU) where
@@ -76,7 +67,7 @@ class Greater {VK VK2} (base : UIdView VK)
   upcastUId : base.UId -> UId
   upcastV : VK base.UId -> VK2 UId
   getUpcast : ∀ (receipt : base.UId), -- FIXME: bad name, predicates/axioms should
-    get (upcastUId receipt) = upcastVK (base.get receipt)
+    get (upcastUId receipt) = upcastV (base.get receipt)
 
 -- FIXME: we don't need Coe here
 -- /-- Coerces a greater view to the widened read-only view that it contains. -/
@@ -105,7 +96,7 @@ class Lesser {VK} {base : UIdView VK} (VK2 : (v : VK base.UId) → Sort v)
 
 /-- Adds a lawful inverse to a widened read-only view. -/
 class Greater {VK} {base : UIdView VK} (VK2 : UIdU → Sort v)
-    extends UIdView.Greater base VK2 where
+    extends UIdView.Greater (VK2 := VK2) base where
   inv (outer : UIdEquiv base) (value : VK2 UId) : UId
   -- FIXME: prove the following if possible
   rightInv : ∀ (outer : UIdEquiv base) (value : VK2 UId),
