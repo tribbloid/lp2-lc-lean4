@@ -38,13 +38,14 @@ class UIdEquiv {VK} (base: UIdView VK) where
   rightInv : ∀ (value : VK base.UId), base.get (inv value) = value
   leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
 
-/-- An explicit injective function from one carrier into a supertype. -/
-structure Upcast (Under : Sort u) (Over : Sort v) where
-  apply (value : Under) : Over
-  injective : Function.Injective apply
+ --FIXME: this entire thing should be replaced by a common function, there is no use for injective axiom.
+-- /-- An explicit injective function from one carrier into a supertype. -/
+-- structure Upcast (Under : Sort u) (Over : Sort v) where
+--   apply (value : Under) : Over
+--   injective : Function.Injective apply
 
-instance {Under : Sort u} {Over : Sort v} : CoeFun (Upcast Under Over) (λ _ => Under → Over) where
-  coe self := self.apply
+-- instance {Under : Sort u} {Over : Sort v} : CoeFun (Upcast Under Over) (λ _ => Under → Over) where
+--   coe self := self.apply
 
 namespace UIdView
 
@@ -52,6 +53,7 @@ class HasEv (UId : UIdU) where
   Ev : UId → Prop -- a subtype of UId with extra contract
 
 /-
+FIXME: this section should be moved into proper doc string
 `Lesser` maps both the UId and value of a `UIdView` to their respective subtypes,
 while `Greater` maps both to explicitly supplied supertypes.
 
@@ -71,13 +73,14 @@ class Lesser {VK} (base : UIdView VK) (VK2 : (v : VK base.UId) → Sort v)
 class Greater {VK} (base : UIdView VK) (VK2 : UIdU → Sort v) extends UIdView VK2 where
   upcastUId : Upcast base.UId UId
   upcastVK : Upcast (VK base.UId) (VK2 UId)
-  getUpcast : ∀ (receipt : base.UId),
+  getUpcast : ∀ (receipt : base.UId), -- FIXME: bad name, predicates/axioms should
     get (upcastUId receipt) = upcastVK (base.get receipt)
 
-/-- Coerces a greater view to the widened read-only view that it contains. -/
-instance {VK VK2} {base : UIdView VK} :
-    CoeOut (Greater base VK2) (UIdView VK2) where
-  coe self := self.toUIdView
+-- FIXME: we don't need Coe here
+-- /-- Coerces a greater view to the widened read-only view that it contains. -/
+-- instance {VK VK2} {base : UIdView VK} :
+--     CoeOut (Greater base VK2) (UIdView VK2) where
+--   coe self := self.toUIdView
 
 end UIdView
 
@@ -102,6 +105,7 @@ class Lesser {VK} {base : UIdView VK} (VK2 : (v : VK base.UId) → Sort v)
 class Greater {VK} {base : UIdView VK} (VK2 : UIdU → Sort v)
     extends UIdView.Greater base VK2 where
   inv (outer : UIdEquiv base) (value : VK2 UId) : UId
+  -- FIXME: prove the following if possible
   rightInv : ∀ (outer : UIdEquiv base) (value : VK2 UId),
     get (inv outer value) = value
   leftInv : ∀ (outer : UIdEquiv base) (receipt : UId),
@@ -115,7 +119,6 @@ class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
 end UIdEquiv
 
 attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
-  UIdView.Greater.getUpcast
   UIdEquiv.Lesser.rightInv UIdEquiv.Lesser.leftInv
   UIdEquiv.Greater.rightInv UIdEquiv.Greater.leftInv
 
