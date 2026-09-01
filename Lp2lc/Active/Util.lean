@@ -25,26 +25,13 @@ class UIdView (VK : UIdU → Sort u) where
   UId : UIdU
   get : (uid : UId) → VK UId
 
-/--
-Full receipt-indexed bridge, extending [UIdView] with the reverse direction.
-
-`inv` is the only way to obtain a UId: it requires a value, so a view alone
-cannot mint receipts from new values.
-
-By default it is not extendable, if you need to use the hypothetical `mkLesser`, use [UIdEquiv.Extendable]
--/
-class UIdEquiv {VK} (base: UIdView VK) where
-  inv (value : VK base.UId) : base.UId
-  rightInv : ∀ (value : VK base.UId), base.get (inv value) = value
-  leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
-
 namespace UIdView
 
 class HasEv (UId : UIdU) where
   Ev : UId → Prop -- a subtype of UId with extra contract
 
 /-
-FIXME: this section should be moved into proper doc string
+FIXME: this comment section should be moved into proper doc string
 `Lesser` maps both the UId and value of a `UIdView` to their respective subtypes,
 while `Greater` maps both to explicitly supplied supertypes.
 
@@ -57,9 +44,9 @@ subtyping, so `UIdEquiv` supports both directions.
 
 /-- Read-only metadata view over a subtype of receipts from `base`. -/
 class Lesser {VK} (base : UIdView VK)
-  (annotateV : (v : VK base.UId) → Sort v) -- FIXME: should be a class member
+  (VK2 : (v : VK base.UId) → Sort v)
     extends HasEv base.UId where
-  get {uid} (receipt : Ev uid) : annotateV (base.get uid)
+  get {uid} (receipt : Ev uid) : VK2 (base.get uid)
 
 /-- Extends a read-only view with symmetric `get` access over wider carriers. -/
 class Greater {VK VK2} (base : UIdView VK)
@@ -77,6 +64,19 @@ class Greater {VK VK2} (base : UIdView VK)
 
 end UIdView
 
+/--
+Full receipt-indexed bridge, extending [UIdView] with the reverse direction.
+
+`inv` is the only way to obtain a UId: it requires a value, so a view alone
+cannot mint receipts from new values.
+
+By default it is not extendable, if you need to use the hypothetical `mkLesser`, use [UIdEquiv.Extendable]
+-/
+class UIdEquiv {VK} (base: UIdView VK) where
+  inv (value : VK base.UId) : base.UId
+  rightInv : ∀ (value : VK base.UId), base.get (inv value) = value
+  leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
+
 namespace UIdEquiv
 
 /-- Coerces a full bridge to the read-only view that it completes. -/
@@ -84,8 +84,9 @@ instance {VK} {base : UIdView VK} : CoeOut (UIdEquiv base) (UIdView VK) where
   coe _self := base
 
 /-- Adds a reverse metadata bridge that is lawful for every equivalence over `base`. -/
-class Lesser {VK} {base : UIdView VK} (VK2 : (v : VK base.UId) → Sort v)
+class Lesser {VK} {base : UIdView VK} (outer : UIdEquiv base) (VK2 : (v : VK base.UId) → Sort v)
     extends UIdView.Lesser base VK2 where
+  -- FIXME: no need to define `(outer : UIdEquiv base)` again in the following
   inv (outer : UIdEquiv base) {v} (tagged : VK2 v) : Ev (outer.inv v)
   rightInv : ∀ (outer : UIdEquiv base) {v} (tagged : VK2 v),
     HEq (get (inv outer tagged)) tagged
