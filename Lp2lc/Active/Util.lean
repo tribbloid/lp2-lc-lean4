@@ -63,12 +63,12 @@ subtyping, so `UIdEquiv` supports both directions.
 -/
 
 /-- Read-only metadata view over a subtype of receipts from `base`. -/
-class Lesser {VK} (base : UIdView VK) (Tagging : (v : VK base.UId) → Sort v)
+class Lesser {VK} (base : UIdView VK) (VK2 : (v : VK base.UId) → Sort v)
     extends HasEv base.UId where
-  get {uid} (receipt : Ev uid) : Tagging (base.get uid)
+  get {uid} (receipt : Ev uid) : VK2 (base.get uid)
 
 /-- Extends a read-only view with symmetric `get` access over wider carriers. -/
-class Greater {VK VK2} (base : UIdView VK) extends UIdView VK2 where
+class Greater {VK VK2} (base : UIdView VK) extends UIdView VK2 where -- FIXME: VK2 should be explicit and after base
   upcastUId : Upcast base.UId UId
   upcastVK : Upcast (VK base.UId) (VK2 UId)
   getUpcast : ∀ (receipt : base.UId),
@@ -88,10 +88,10 @@ instance {VK} {base : UIdView VK} : CoeOut (UIdEquiv base) (UIdView VK) where
   coe _self := base
 
 /-- Adds a reverse metadata bridge that is lawful for every equivalence over `base`. -/
-class Lesser {VK} {base : UIdView VK} (Tagging : (v : VK base.UId) → Sort v)
-    extends toUIdViewLesser : UIdView.Lesser base Tagging where
-  inv (outer : UIdEquiv base) {v} (tagged : Tagging v) : Ev (outer.inv v)
-  rightInv : ∀ (outer : UIdEquiv base) {v} (tagged : Tagging v),
+class Lesser {VK} {base : UIdView VK} (VK2 : (v : VK base.UId) → Sort v)
+    extends UIdView.Lesser base VK2 where
+  inv (outer : UIdEquiv base) {v} (tagged : VK2 v) : Ev (outer.inv v)
+  rightInv : ∀ (outer : UIdEquiv base) {v} (tagged : VK2 v),
     HEq (get (inv outer tagged)) tagged
   leftInv : ∀ (outer : UIdEquiv base) {uid} (receipt : Ev uid),
     HEq (inv outer (get receipt)) receipt := by
@@ -99,8 +99,9 @@ class Lesser {VK} {base : UIdView VK} (Tagging : (v : VK base.UId) → Sort v)
       exact proof_irrel_heq _ receipt
 
 /-- Adds a lawful inverse to a widened read-only view. -/
-class Greater {VK VK2} {base : UIdView VK}
-    (view : UIdView.Greater (VK2 := VK2) base) extends UIdEquiv view.toUIdView
+class Greater {VK VK2} {base : UIdView VK} -- FIXME: ditto, VK2 should be explicit and after base
+    (view : UIdView.Greater (VK2 := VK2) base) extends UIdEquiv view.toUIdView -- FIXME:  should remove `view` argument similar to Lesser
+    -- FIXME: should have have rightInv and leftInv axiom/theorem, similar to Lesser
 
 /-- Extends a base equivalence with lawful subtype metadata and supertype bridges. -/
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
