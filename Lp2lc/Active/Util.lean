@@ -68,7 +68,7 @@ class Lesser {VK} (base : UIdView VK) (VK2 : (v : VK base.UId) → Sort v)
   get {uid} (receipt : Ev uid) : VK2 (base.get uid)
 
 /-- Extends a read-only view with symmetric `get` access over wider carriers. -/
-class Greater {VK VK2} (base : UIdView VK) extends UIdView VK2 where -- FIXME: VK2 should be explicit and after base
+class Greater {VK} (base : UIdView VK) (VK2 : UIdU → Sort v) extends UIdView VK2 where
   upcastUId : Upcast base.UId UId
   upcastVK : Upcast (VK base.UId) (VK2 UId)
   getUpcast : ∀ (receipt : base.UId),
@@ -76,7 +76,7 @@ class Greater {VK VK2} (base : UIdView VK) extends UIdView VK2 where -- FIXME: V
 
 /-- Coerces a greater view to the widened read-only view that it contains. -/
 instance {VK VK2} {base : UIdView VK} :
-    CoeOut (Greater (VK2 := VK2) base) (UIdView VK2) where
+    CoeOut (Greater base VK2) (UIdView VK2) where
   coe self := self.toUIdView
 
 end UIdView
@@ -100,14 +100,14 @@ class Lesser {VK} {base : UIdView VK} (VK2 : (v : VK base.UId) → Sort v)
 
 /-- Adds a lawful inverse to a widened read-only view. -/
 class Greater {VK VK2} {base : UIdView VK} -- FIXME: ditto, VK2 should be explicit and after base
-    (view : UIdView.Greater (VK2 := VK2) base) extends UIdEquiv view.toUIdView -- FIXME:  should remove `view` argument similar to Lesser
+    (view : UIdView.Greater base VK2) extends UIdEquiv view.toUIdView -- FIXME:  should remove `view` argument similar to Lesser
     -- FIXME: should have have rightInv and leftInv axiom/theorem, similar to Lesser
 
 /-- Extends a base equivalence with lawful subtype metadata and supertype bridges. -/
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (Tagging : VK base.UId → Sort u) : Lesser Tagging
   mkGreater {VK2 : UIdU → Sort u}
-      (view : UIdView.Greater (VK2 := VK2) base) : Greater view
+      (view : UIdView.Greater base VK2) : Greater view
 
 end UIdEquiv
 

@@ -42,7 +42,7 @@ open UIdEquiv
   get := λ receipt => receipt
 
 @[reducible] def eqOneMetadata : Lesser (base := groupView) (λ value => value = 1) where
-  toUIdViewLesser := eqOneMetadataView
+  toLesser := eqOneMetadataView
   inv := by
     intro outer value tagged
     change groupView.get (outer.inv value) = 1
@@ -57,7 +57,7 @@ open UIdEquiv
   get := λ _receipt => ()
 
 @[reducible] def unitMetadata : Lesser (base := groupView) (λ _value => Unit) where
-  toUIdViewLesser := unitMetadataView
+  toLesser := unitMetadataView
   inv := λ _outer _value _bundle => True.intro
   rightInv := by
     intro _outer _value tagged
@@ -88,7 +88,7 @@ def upcastValue : Upcast Nat WiderValue where
     cases equality
     rfl
 
-@[reducible] def widerView : UIdView.Greater (VK2 := widerVK) groupView where
+@[reducible] def widerView : UIdView.Greater groupView widerVK where
   UId := WiderReceipt
   get
     | .base receipt => .base (groupView.get receipt)
