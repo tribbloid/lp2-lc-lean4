@@ -98,7 +98,7 @@ def upcastValue : Upcast Nat WiderValue where
   getUpcast _receipt := rfl
 
 @[reducible] def widerGroup :
-    Greater (base := groupView) widerView where
+    Greater (base := groupView) widerVK widerView where
   inv
     | .base value => .base (group.inv value)
     | .extra => .extra
@@ -178,7 +178,7 @@ example : widerView.get (widerGroup.inv .extra) = .extra := by
   rfl
 
 example (outer : Extendable groupView) :
-    Greater (base := groupView) widerView :=
+    Greater (base := groupView) widerVK widerView :=
   outer.mkGreater widerView
 
 end greater

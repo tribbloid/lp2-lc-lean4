@@ -99,7 +99,7 @@ class Lesser {VK} {base : UIdView VK} (VK2 : (v : VK base.UId) → Sort v)
       exact proof_irrel_heq _ receipt
 
 /-- Adds a lawful inverse to a widened read-only view. -/
-class Greater {VK VK2} {base : UIdView VK} -- FIXME: ditto, VK2 should be explicit and after base
+class Greater {VK} {base : UIdView VK} (VK2 : UIdU → Sort v)
     (view : UIdView.Greater base VK2) extends UIdEquiv view.toUIdView -- FIXME:  should remove `view` argument similar to Lesser
     -- FIXME: should have have rightInv and leftInv axiom/theorem, similar to Lesser
 
@@ -107,7 +107,7 @@ class Greater {VK VK2} {base : UIdView VK} -- FIXME: ditto, VK2 should be explic
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (Tagging : VK base.UId → Sort u) : Lesser Tagging
   mkGreater {VK2 : UIdU → Sort u}
-      (view : UIdView.Greater base VK2) : Greater view
+      (view : UIdView.Greater base VK2) : Greater VK2 view
 
 end UIdEquiv
 
