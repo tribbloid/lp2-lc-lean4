@@ -100,8 +100,12 @@ class Lesser {VK} {base : UIdView VK} (VK2 : (v : VK base.UId) → Sort v)
 
 /-- Adds a lawful inverse to a widened read-only view. -/
 class Greater {VK} {base : UIdView VK} (VK2 : UIdU → Sort v)
-    (view : UIdView.Greater base VK2) extends UIdEquiv view.toUIdView -- FIXME:  should remove `view` argument similar to Lesser
-    -- FIXME: should have have rightInv and leftInv axiom/theorem, similar to Lesser
+    (view : UIdView.Greater base VK2) where -- FIXME:  should remove `view` argument similar to Lesser
+  inv (outer : UIdEquiv base) (value : VK2 view.UId) : view.UId
+  rightInv : ∀ (outer : UIdEquiv base) (value : VK2 view.UId),
+    view.get (inv outer value) = value
+  leftInv : ∀ (outer : UIdEquiv base) (receipt : view.UId),
+    inv outer (view.get receipt) = receipt
 
 /-- Extends a base equivalence with lawful subtype metadata and supertype bridges. -/
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
@@ -114,6 +118,7 @@ end UIdEquiv
 attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
   UIdView.Greater.getUpcast
   UIdEquiv.Lesser.rightInv UIdEquiv.Lesser.leftInv
+  UIdEquiv.Greater.rightInv UIdEquiv.Greater.leftInv
 
 /--
 Owns the data representation `D`, the binary data type of primitive literals.

@@ -99,14 +99,16 @@ def upcastValue : Upcast Nat WiderValue where
 
 @[reducible] def widerGroup :
     Greater (base := groupView) widerVK widerView where
-  inv
-    | .base value => .base (group.inv value)
+  inv outer
+    | .base value => .base (outer.inv value)
     | .extra => .extra
-  rightInv value := by
-    cases value <;> rfl
-  leftInv receipt := by
+  rightInv outer value := by
+    cases value with
+    | base value => exact congrArg WiderValue.base (outer.rightInv value)
+    | extra => rfl
+  leftInv outer receipt := by
     cases receipt with
-    | base receipt => exact congrArg WiderReceipt.base (group.leftInv receipt)
+    | base receipt => exact congrArg WiderReceipt.base (outer.leftInv receipt)
     | extra => rfl
 
 section receipt
@@ -167,14 +169,14 @@ example : Function.Injective upcastValue :=
   upcastValue.injective
 
 example (value : WiderValue) :
-    widerView.get (widerGroup.inv value) = value := by
+    widerView.get (widerGroup.inv group value) = value := by
   simp
 
 example (receipt : WiderReceipt) :
-    widerGroup.inv (widerView.get receipt) = receipt := by
+    widerGroup.inv group (widerView.get receipt) = receipt := by
   simp
 
-example : widerView.get (widerGroup.inv .extra) = .extra := by
+example : widerView.get (widerGroup.inv group .extra) = .extra := by
   rfl
 
 example (outer : Extendable groupView) :
