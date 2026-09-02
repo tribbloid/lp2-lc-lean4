@@ -62,23 +62,6 @@ DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`
 Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
 -/
 
-private theorem lesserLeftInv {VK : UIdU → Sort u} {V2 : Sort v} --FIXME: inline this
-    {base : UIdView VK} (outer : UIdEquiv base)
-    (upcast : V2 → VK base.UId) (Ev : base.UId → Prop)
-    (get : {uid // Ev uid} → V2) (inv : V2 → {uid // Ev uid})
-    (equivariance : ∀ (receipt : {uid // Ev uid}),
-      upcast (get receipt) = base.get receipt.val)
-    (rightInv : ∀ (value : V2), get (inv value) = value)
-    (receipt : {uid // Ev uid}) : inv (get receipt) = receipt := by
-  apply Subtype.ext
-  apply Function.LeftInverse.injective outer.leftInv
-  calc
-    base.get (inv (get receipt)).val = upcast (get (inv (get receipt))) :=
-      (equivariance (inv (get receipt))).symm
-    _ = upcast (get receipt) := congrArg upcast (rightInv (get receipt))
-    _ = base.get receipt.val := equivariance receipt
-
-
 /-
 FIXME: refactor `UIdEquiv.Lesser` to be a subclass of `UIdView.Lesser`
 
@@ -101,7 +84,11 @@ class Lesser {VK} {V2 : Sort v} {base : UIdView VK}
   equivariance : ∀ (receipt : {uid // Ev uid}), upcast (get receipt) = base.get receipt.val
   rightInv : ∀ (value : V2), get (inv value) = value
   leftInv : ∀ (receipt : {uid // Ev uid}), inv (get receipt) = receipt :=
-    lesserLeftInv outer upcast Ev get inv equivariance rightInv
+    λ receipt => Subtype.ext (Function.LeftInverse.injective outer.leftInv (calc
+      base.get (inv (get receipt)).val = upcast (get (inv (get receipt))) :=
+        (equivariance (inv (get receipt))).symm
+      _ = upcast (get receipt) := congrArg upcast (rightInv (get receipt))
+      _ = base.get receipt.val := equivariance receipt))
 
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (V2 : Sort u) (upcast : V2 → VK base.UId) :
