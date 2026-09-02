@@ -27,20 +27,12 @@ class UIdView (VK : UIdU → Sort u) where
 
 namespace UIdView
 
-/-
-TODO: refactor `UIdEquiv.Lesser` through a dependent refined view.
+class HasEv (UId : UIdU) where
+  Ev : UId → Prop -- a subtype of UId with extra contract
 
-- Add `UIdView.Lesser`, parameterized by a `base : UIdView VK`, a refined
-  value carrier `V2`, and an explicit `upcast : V2 → VK base.UId`.
-- Make the refined view a subclass of `UIdView (λ _ => V2)`. Its `UId`
-  carrier must be `{uid : base.UId // Ev uid}`; it should own `Ev`, `get`, and
-  the equivariance law relating its `get` to `base.get` through `upcast`.
-- Refactor `UIdEquiv.Lesser` to own this refined view and reuse `UIdEquiv` on
-  it for `inv`, `rightInv`, and `leftInv`. Remove the fixed `outer` parameter,
-  the duplicated equivalence fields, and `lesserLeftInv`.
-- Migrate `Extendable.mkLesser`, Umbral, and `Tests.UIdEquivSpec` without
-  weakening the explicit-upcast or receipt-isolation contracts.
--/
+class Lesser {VK} {V2 : Sort v} (base : UIdView VK)
+     (upcast : V2 → VK base.UId) extends HasEv base.UId
+     where
 
 
 end UIdView
@@ -64,9 +56,6 @@ namespace UIdEquiv
 instance {VK} {base : UIdView VK} : CoeOut (UIdEquiv base) (UIdView VK) where
   coe _self := base
 
-class HasEv (UId : UIdU) where
-  Ev : UId → Prop -- a subtype of UId with extra contract
-
 /-
 DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`Greater`
 
@@ -89,6 +78,13 @@ private theorem lesserLeftInv {VK : UIdU → Sort u} {V2 : Sort v} --FIXME: inli
     _ = upcast (get receipt) := congrArg upcast (rightInv (get receipt))
     _ = base.get receipt.val := equivariance receipt
 
+
+/-
+FIXME: refactor `UIdEquiv.Lesser` to be a subclass of `UIdView.Lesser`
+
+- some of it's members can be moved there
+-/
+
 /--
 An auxiliary equivalence between a refined value carrier `V2` and the receipts
 from `base` satisfying `Ev`.
@@ -99,7 +95,7 @@ refined receipt agrees with reading its underlying receipt from `base`.
 -/
 class Lesser {VK} {V2 : Sort v} {base : UIdView VK}
     (outer : UIdEquiv base) (upcast : V2 → VK base.UId)
-    extends HasEv base.UId where
+    extends UIdView.HasEv base.UId where
   get (receipt : {uid // Ev uid}) : V2
   inv (value : V2) : {uid // Ev uid}
   equivariance : ∀ (receipt : {uid // Ev uid}), upcast (get receipt) = base.get receipt.val
@@ -115,7 +111,7 @@ end UIdEquiv
 
 
 /-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
-abbrev Fixpoint {VK} {base : UIdView VK} := UIdEquiv.Extendable (VK := VK) (base := base) -- TODO: inline this
+abbrev Fixpoint {VK} {base : UIdView VK} := UIdEquiv.Extendable (VK := VK) (base := base) -- FIXME: inline this
 
 -- /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/ TOOD: delete, superseded by Extendable
 -- class CanGetUIdFor (VK : UIdU -> Sort u) where
