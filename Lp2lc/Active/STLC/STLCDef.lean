@@ -35,20 +35,25 @@ Function values carry their input type so the compiler can type-check HOAS bodie
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
 /-
-TODO: In my previous attempt to make AST.lam PHOAS definition covariant, I accidentally introduced a vulnerability to define exotic term:
+TODO: Prevent the lambda body from discarding its phase-specific receipt certification.
 
-the current lambda body can be defined to produce different AST based on arg type, breaking its parametricity
+The callback's `arg.val` always has type `P.C`, but `.ref arg.val` stores only that
+raw receipt and erases `arg.property : ev arg.val`. Runtime and build contexts can
+mint different `P.C` receipts for corresponding binders, so an unchecked callback
+can compare receipt identities and produce phase-dependent syntax. The
+`binderIdentityCounterexample` demonstrates this mismatch: evaluation fails while
+inference yields `.primitive`.
 
-The single-carrier migration keeps this callback intentionally unchecked. Although
-the argument is certified by `{x : C // ev x}`, proof irrelevance does not erase
-`x.val`; the binder-identity regression therefore remains the explicit witness for
-this unresolved soundness issue.
+The callback/reference boundary must preserve the `ev` evidence or otherwise make
+raw receipt identity unobservable before this representation can support a
+soundness claim.
 -/
 /--
 Binds a phase-certified receipt over the shared [P.C] carrier.
 
-The callback is intentionally unchecked: it may inspect the underlying receipt,
-so this representation does not by itself guarantee relational parametricity.
+The carrier type is always [P.C]. The callback remains unchecked because it can
+inspect raw receipt identity and construct `.ref arg.val`, which discards the
+phase-specific `ev` evidence.
 -/
 | lam (body : {ev : P.C → Prop} → (arg : {uid : P.C // ev uid}) → AST P .trm)
     (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
@@ -120,8 +125,9 @@ Shares one receipt carrier between executable values and build-time types.
 
 The underlying view stores a tagged value-or-type payload. Runtime and build
 contexts refine that view independently through [UIdEquiv.Lesser]. The subtype
-proof certifies which payload is available, but the unchecked lambda callback
-can still inspect its underlying receipt; no soundness claim is made here.
+proof certifies which payload is available, but [AST.ref] stores only the raw
+receipt. Projecting a lambda argument to `.val` therefore discards that proof, so
+this infrastructure alone does not prevent phase-dependent lambda bodies.
 -/
 class TypOrValRefs extends HasData where --FIXME: rename to ValOrTypRefs
   uid2either : UIdView (λ T =>
