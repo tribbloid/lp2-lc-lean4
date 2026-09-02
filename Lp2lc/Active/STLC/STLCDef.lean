@@ -24,7 +24,7 @@ They are not intrinsic typing indices on terms.
 -/
 | val (v : AST P .val) : AST P .trm -- AKA literal
 | apply (fn : AST P .trm) (arg : AST P .trm) : AST P .trm -- fn must be a function that can be applied on arg
-| ref (s : P.F ⊕ P.B) : AST P .trm -- free (.inl) or lambda-bound (.inr) reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
+| ref (receipt : P.C) : AST P .trm -- reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 /--
 Value syntax, containing neither references nor applications.
 
@@ -39,25 +39,19 @@ TODO: In my previous attempt to make AST.lam PHOAS definition covariant, I accid
 
 the current lambda body can be defined to produce different AST based on arg type, breaking its parametricity
 
-To fix it, I want to try the following refactoring:
-
-- The bounded variable carrier `B` in `Parameter` should be broken into 2 members: the base carrier type `B` and a subtype predicate `ev : B -> Prop`
-- ExeParameters and BuildParameters are now identical
-  - As a result, .lam no longer accepts {B : UIdU} (as P.B are always the same), the lambda body should accpet {b // ev b} and produce an AST with the same ev
-- this makes the subtyping relationship `{b // ev b} <:< P.B` still valid, but `ev` is erased by proof irrelevance, thereby can no longer be used to define exotic term
-- this feature heavily relies on the new implementation of:
-  - TypOrValRefs: a shared KV map that mix both ExeEnv values and BuildEnv types
-  - contexts in ExeEnv/BuildEnv are both its subset/submap (represented by `Lesser`) that attach `ev` to carriers to certify them for value or type retrieval
-  - some of these new implementation may be broken, you should try to fix one file at a time based on their dependency tree.
+The single-carrier migration keeps this callback intentionally unchecked. Although
+the argument is certified by `{x : C // ev x}`, proof irrelevance does not erase
+`x.val`; the binder-identity regression therefore remains the explicit witness for
+this unresolved soundness issue.
 -/
 /--
-Binds only a fresh `B` receipt for its body, with [P.B] as the outer carrier.
+Binds a phase-certified receipt over the shared [P.C] carrier.
 
-Captured outer binders remain values of the same [P.B] at the constructor
-boundary, as required by PHOAS. `lift` embeds them into the body carrier,
-while free references stay behind [P.F] and cannot route into the body argument.
+The callback is intentionally unchecked: it may inspect the underlying receipt,
+so this representation does not by itself guarantee relational parametricity.
 -/
-| lam (body : {B : UIdU} → (lift : P.B → B) → (arg : B) → AST { P with B := B } .trm) (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
+| lam (body : {ev : P.C → Prop} → (arg : {uid : P.C // ev uid}) → AST P .trm)
+    (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
 
 section variable {P : Parameters}
 
@@ -121,54 +115,41 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
 
 
 
-/-
-FIXME: The definition of the following infrastruture for ExeEnv and BuildEnv has changed
-
-Before, the UId used to get Val and Typ are represented by different parameters F and B, which can be upcasted to `F ⊕ B`
-
-Now they are just different subtypes (certified by different `Ev`) of the same parameter (F === B).
-
-
-- The bounded variable carrier `B` and `F` in `Parameter` should be merged into 1 `C` (for PHOAS Carrier):
-- ExeParameters and BuildParameters are now identical
-  - AST.lam body now accepts `{x : C // ev x}`, where ev is different depending on which Refs/Ctx is used
-- the upcasting `{b // ev b} -> P.B` still valid, but `ev` is not decidable and erased by proof irrelevance
-- this feature heavily relies on the new implementation of:
-  - TypOrValRefs: a shared KV map that mix both ExeEnv values and BuildEnv types
-  - contexts in ExeEnv/BuildEnv are both its subset/submap (represented by `Lesser`) that attach `ev` to carriers to certify them for value or type retrieval
-  - some of these new implementation may be broken, you should try to fix one file at a time based on their dependency tree.
--/
 /--
-Binds only a fresh `B` receipt for its body, with [P.B] as the outer carrier.
+Shares one receipt carrier between executable values and build-time types.
 
-Captured outer binders remain values of the same [P.B] at the constructor
-boundary, as required by PHOAS. `lift` embeds them into the body carrier,
-while free references stay behind [P.F] and cannot route into the body argument.
+The underlying view stores a tagged value-or-type payload. Runtime and build
+contexts refine that view independently through [UIdEquiv.Lesser]. The subtype
+proof certifies which payload is available, but the unchecked lambda callback
+can still inspect its underlying receipt; no soundness claim is made here.
 -/
 class TypOrValRefs extends HasData where --FIXME: rename to ValOrTypRefs
   uid2either : UIdView (λ T =>
-    let P : Parameters := { F := T, B := T, D := D }
+    let P : Parameters := { C := T, D := D }
 
     AST.Val P ⊕ AST.Typ P
   )
-  uid2val := uid2either.Lesser (λ v : AST.Val P => .inl v)
-  Parameters : Parameters := { F := uid2either.UId, B := uid2either.UId, D := D } -- FIXME: make final
 
-namespace ExeRefs
+namespace TypOrValRefs
 section variable (self : TypOrValRefs)
 
+/-- The shared syntax parameters are fixed by the mixed receipt view. -/
+abbrev Parameters : Parameters := { C := self.uid2either.UId, D := self.D }
+
 end
-end ExeRefs
+end TypOrValRefs
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
 class ExeEnv (refs : TypOrValRefs) where
-  uid2valCtx := UIdEquiv.Lesser (refs.uid2val) -- can save value to get UId with Ev
+  uid2valCtx : UIdEquiv.Lesser (base := refs.uid2either)
+    (Sum.inl : AST.Val refs.Parameters →
+      AST.Val refs.Parameters ⊕ AST.Typ refs.Parameters)
 
 namespace AST
 
 /-- Evaluates executable terms whose references carry receipts from the runtime context. -/
 def eval [refs : TypOrValRefs] [env : ExeEnv refs]
-    (self : Trm refs.ExeParameters) : RecOpt (Val refs.ExeParameters)
+    (self : Trm refs.Parameters) : RecOpt (Val refs.Parameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -178,14 +159,14 @@ def eval [refs : TypOrValRefs] [env : ExeEnv refs]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         let receipt := env.uid2valCtx.inv input
-        eval (body id receipt) fuel
+        eval (body receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
-    | .ref (.inl receipt) =>
-      .yield (some (refs.uid2either.get receipt))
-    | .ref (.inr receipt) =>
-      .yield (some (refs.uid2either.get receipt))
+    | .ref receipt =>
+      match refs.uid2either.get receipt with
+      | .inl value => .yield (some value)
+      | .inr _typ => .yield none
 
 end AST
 

@@ -31,10 +31,10 @@ class HasEv (UId : UIdU) where
   ev : UId → Prop -- a subtype of UId with extra contract
 
 /-- Read-only access to refined receipts compatible with a base view. -/
-class Lesser {VK} {V2 : Sort v} (base : UIdView VK) extends HasEv base.UId where
-  upcast : V2 → VK base.UId
-  get (receipt : {uid // Ev uid}) : V2
-  equivariance : ∀ (receipt : {uid // Ev uid}), upcast (get receipt) = base.get receipt.val
+class Lesser {VK} {V2 : Sort v} (base : UIdView VK)
+    (upcast : V2 → VK base.UId) extends HasEv base.UId where
+  get (receipt : {uid // ev uid}) : V2
+  equivariance : ∀ (receipt : {uid // ev uid}), upcast (get receipt) = base.get receipt.val
 
 end UIdView
 
@@ -65,25 +65,25 @@ Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. Th
 
 /--
 An auxiliary equivalence between a refined value carrier `V2` and the receipts
-from `base` satisfying `Ev`.
+from `base` satisfying `ev`.
 
 `upcast` forgets the refinement, while `equivariance` ensures that reading a
 refined receipt agrees with reading its underlying receipt from `base`.
-`leftInv` follows from `equivariance`, `rightInv`, and `outer.leftInv`.
+The inverse laws are explicit because the read-only base has no inverse.
 -/
-class Lesser {VK} {V2 : Sort v} {base}
-    (toLesser : UIdView.Lesser base)
-    extends UIdView.Lesser base where
-  inv (value : V2) : {uid // Ev uid}
+class Lesser {VK} {V2 : Sort v} {base : UIdView VK}
+    (upcast : V2 → VK base.UId)
+    extends UIdView.Lesser base upcast where
+  inv (value : V2) : {uid // ev uid}
   -- TODO: prove if possible
   rightInv : ∀ (value : V2), get (inv value) = value
-  leftInv : ∀ (receipt : {uid // Ev uid}), inv (get receipt) = receipt
+  leftInv : ∀ (receipt : {uid // ev uid}), inv (get receipt) = receipt
 
 
 /-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (V2 : Sort u) (upcast : V2 → VK base.UId) :
-    Lesser toUIdEquiv upcast
+    Lesser (base := base) upcast
 
 end UIdEquiv
 
@@ -105,16 +105,15 @@ class HasData where
   D : DataU -- Binary Data type
 
 /--
-the meaning of P in PHOAS, the collection of free type variables used in PHOAS bindings
+the meaning of P in PHOAS, the shared carrier used in PHOAS bindings
 
-They are deliberately left free to ward off unlawful construction:
+It is deliberately left abstract to ward off unlawful construction:
 
-- the only way to construct `F` and `B` is to get the UId of something already existing through [UIdEquiv]
+- certified `C` receipts are obtained only through the runtime or build [UIdEquiv.Lesser]
 - the only way to construct `D` is to parse a primitive literal in AST
 -/
 class Parameters extends HasData where
-  F : UIdU -- free receipt carrier, AKA captured variable binding
-  B : UIdU -- bound receipt carrier, introduced per binder by [AST.lam]
+  C : UIdU -- shared PHOAS receipt carrier
 
 section variable {T : Sort u}
 
