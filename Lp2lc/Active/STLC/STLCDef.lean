@@ -35,7 +35,7 @@ Function values carry their input type so the compiler can type-check HOAS bodie
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
 /-
-FIXME: In my previous attempt to make AST.lam PHOAS definition covariant, I accidentally introduced a vulnerability to define exotic term:
+TODO: In my previous attempt to make AST.lam PHOAS definition covariant, I accidentally introduced a vulnerability to define exotic term:
 
 the current lambda body can be defined to produce different AST based on arg type, breaking its parametricity
 
@@ -119,6 +119,32 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
+
+
+/-
+FIXME: The definition of the following infrastruture for ExeEnv and BuildEnv has changed
+
+Before, the UId used to get Val and Typ are represented by different parameters F and B, which can be upcasted to `F ⊕ B`
+
+Now they are just different subtypes (certified by different `Ev`) of the same parameter (F === B).
+
+
+- The bounded variable carrier `B` and `F` in `Parameter` should be merged into 1 `C` (for PHOAS Carrier):
+- ExeParameters and BuildParameters are now identical
+  - AST.lam body now accepts `{x : C // ev x}`, where ev is different depending on which Refs/Ctx is used
+- the upcasting `{b // ev b} -> P.B` still valid, but `ev` is not decidable and erased by proof irrelevance
+- this feature heavily relies on the new implementation of:
+  - TypOrValRefs: a shared KV map that mix both ExeEnv values and BuildEnv types
+  - contexts in ExeEnv/BuildEnv are both its subset/submap (represented by `Lesser`) that attach `ev` to carriers to certify them for value or type retrieval
+  - some of these new implementation may be broken, you should try to fix one file at a time based on their dependency tree.
+-/
+/--
+Binds only a fresh `B` receipt for its body, with [P.B] as the outer carrier.
+
+Captured outer binders remain values of the same [P.B] at the constructor
+boundary, as required by PHOAS. `lift` embeds them into the body carrier,
+while free references stay behind [P.F] and cannot route into the body argument.
+-/
 class TypOrValRefs extends HasData where --FIXME: rename to ValOrTypRefs
   uid2either : UIdView (λ T =>
     let P : Parameters := { F := T, B := T, D := D }
