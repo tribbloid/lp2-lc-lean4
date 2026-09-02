@@ -25,6 +25,12 @@ class UIdView (VK : UIdU → Sort u) where
   UId : UIdU
   get : (uid : UId) → VK UId
 
+namespace UIdView
+
+
+
+end UIdView
+
 /--
 Full receipt-indexed bridge, extending [UIdView] with the reverse direction.
 
@@ -65,8 +71,8 @@ class Lesser {VK} {V2 : Sort v} {base : UIdView VK}
     extends HasEv base.UId where
   get (receipt : {uid // Ev uid}) : V2
   inv (value : V2) : {uid // Ev uid}
-  getUpcast : ∀ (receipt : {uid // Ev uid}),
-    upcast (get receipt) = base.get receipt.val
+  -- FIXME: some of these axioms can have a default proof impl
+  equivariance : ∀ (receipt : {uid // Ev uid}), upcast (get receipt) = base.get receipt.val
   rightInv : ∀ (value : V2), get (inv value) = value
   leftInv : ∀ (receipt : {uid // Ev uid}), inv (get receipt) = receipt
 

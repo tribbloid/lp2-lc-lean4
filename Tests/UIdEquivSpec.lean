@@ -44,7 +44,7 @@ abbrev EqOneValue := {value : Nat // value = 1}
   Ev := λ receipt => receipt.fst = 1
   get := λ receipt => ⟨receipt.val.fst, receipt.property⟩
   inv := λ value => ⟨group.inv value.val, value.property⟩
-  getUpcast := by
+  equivariance := by
     intro receipt
     rfl
   rightInv := by
@@ -60,7 +60,7 @@ abbrev EqOneValue := {value : Nat // value = 1}
   Ev := λ _receipt => True
   get := λ receipt => (groupView.get receipt.val, ())
   inv := λ value => ⟨group.inv value.fst, True.intro⟩
-  getUpcast := by
+  equivariance := by
     intro receipt
     rfl
   rightInv := by
@@ -106,11 +106,11 @@ example :
 
 example (receipt : {uid // eqOneMetadata.Ev uid}) :
     (eqOneMetadata.get receipt).val = groupView.get receipt.val := by
-  exact eqOneMetadata.getUpcast receipt
+  exact eqOneMetadata.equivariance receipt
 
 example (receipt : {uid // unitMetadata.Ev uid}) :
     (unitMetadata.get receipt).fst = groupView.get receipt.val := by
-  exact unitMetadata.getUpcast receipt
+  exact unitMetadata.equivariance receipt
 
 example (value : EqOneValue) :
     eqOneMetadata.get (eqOneMetadata.inv value) = value := by
