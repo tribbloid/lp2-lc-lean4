@@ -10,39 +10,39 @@ namespace UmbralV1
 
 section variable [refs : TypOrValRefs] [env : BuildEnv refs]
 
-structure SafetyOf (trm : AST.Trm env.BuildParameters) where
-  typ : AST.Typ env.BuildParameters
+structure SafetyOf (trm : AST.Trm refs.Parameters) where
+  typ : AST.Typ refs.Parameters
   -- safety : Safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
 
-abbrev Compilation (trm : AST.Trm env.BuildParameters) :=
+abbrev Compilation (trm : AST.Trm refs.Parameters) :=
   Rec.OutcomeOpt (SafetyOf trm) -- one observation of the semi-decidability of executing term
 
 /-- Requires the proving computation to shadow term inference at the selected fuel. -/
-structure Objective (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Type 2 where
+structure Objective (trm : AST.Trm refs.Parameters) (fuel : Nat) : Type 2 where
   compilation : Compilation trm
-  sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.inferCore fuel
+  sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.infer fuel
 
 /-- Mirrors term inference while preserving its selected-fuel correspondence. -/
-def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm fuel :=
+def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fuel :=
   match fuel with
   | 0 => ⟨.outOfFuel, rfl⟩
   | fuel + 1 =>
     match trm with
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
-      let index : env.BuildParameters.B := env.uid2typCtx.inv tIn
-      let result := infer_prove (body id index) fuel
+      let receipt := env.uid2typCtx.inv tIn
+      let result := infer_prove (body receipt) fuel
       ⟨result.compilation.map
           (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
-        change _ = ((body id index).inferCore fuel).map (Option.map (AST.fn tIn))
+        change _ = ((body receipt).infer fuel).map (Option.map (AST.fn tIn))
         rw [← result.sameInfer]
         cases result.compilation <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
     | .apply fnTerm arg =>
       let fnResult := infer_prove fnTerm fuel
       let argResult := infer_prove arg fuel
-      let applyResult (fnType argType : Rec.Outcome (Option (AST.Typ env.BuildParameters))) :
-          Rec.Outcome (Option (AST.Typ env.BuildParameters)) :=
+      let applyResult (fnType argType : Rec.Outcome (Option (AST.Typ refs.Parameters))) :
+          Rec.Outcome (Option (AST.Typ refs.Parameters)) :=
         match fnType, argType with
         | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
           if argTyp ≤ tIn then .yield (some tOut) else .yield none
@@ -53,44 +53,46 @@ def infer_prove (trm : AST.Trm env.BuildParameters) (fuel : Nat) : Objective trm
         (fnResult.compilation.map (Option.map SafetyOf.typ))
         (argResult.compilation.map (Option.map SafetyOf.typ))
       ⟨result.map (Option.map (λ typ => ⟨typ⟩)), by
-        have hResult : result = (AST.apply fnTerm arg).inferCore (fuel + 1) := by
+        have hResult : result = (AST.apply fnTerm arg).infer (fuel + 1) := by
           calc
             result = applyResult
                 (fnResult.compilation.map (Option.map SafetyOf.typ))
                 (argResult.compilation.map (Option.map SafetyOf.typ)) := rfl
             _ = applyResult
-                (fnTerm.inferCore fuel)
-                (arg.inferCore fuel) := by
+                (fnTerm.infer fuel)
+                (arg.infer fuel) := by
               congr 1
               · exact fnResult.sameInfer
               · exact argResult.sameInfer
-            _ = (AST.apply fnTerm arg).inferCore (fuel + 1) := by
+            _ = (AST.apply fnTerm arg).infer (fuel + 1) := by
               conv =>
                 rhs
-                unfold AST.inferCore
+                unfold AST.infer
                 simp only
               dsimp only [applyResult]
               split <;> simp_all
         rw [hResult]
-        cases (AST.apply fnTerm arg).inferCore (fuel + 1) <;>
+        cases (AST.apply fnTerm arg).infer (fuel + 1) <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
-    | .ref (.inl receipt) =>
-      let exeTrm : AST.Trm refs.ExeParameters := (refs.uid2val.get receipt).asTrm
-      let original := exeTrm.exe2build
-      let result := infer_prove original fuel
-      ⟨result.compilation.map (Option.map (λ safety => ⟨safety.typ⟩)), by
-        change _ = original.inferCore fuel
-        rw [← result.sameInfer]
-        cases result.compilation <;>
-          simp [Rec.Outcome.map, Function.comp_def]⟩
-    | .ref (.inr receipt) => by
-      cases h : env.uid2typ.get receipt with
-      | primitive =>
-        exact ⟨.yield (some ⟨.primitive⟩), by
-          simp [AST.inferCore, h, Rec.Outcome.map]⟩
-      | fn tIn tOut =>
-        exact ⟨.yield (some ⟨.fn tIn tOut⟩), by
-          simp [AST.inferCore, h, Rec.Outcome.map]⟩
+    | .ref receipt => by
+      cases h : refs.uid2either.get receipt with
+      | inl value =>
+        let original := value.asTrm
+        let result := infer_prove original fuel
+        exact ⟨result.compilation.map (Option.map (λ safety => ⟨safety.typ⟩)), by
+          rw [show (AST.ref receipt).infer (fuel + 1) = original.infer fuel by
+            simp [AST.infer, h, original]]
+          rw [← result.sameInfer]
+          cases result.compilation <;>
+            simp [Rec.Outcome.map, Function.comp_def]⟩
+      | inr typ =>
+        cases typ with
+        | primitive =>
+          exact ⟨.yield (some ⟨.primitive⟩), by
+            simp [AST.infer, h, Rec.Outcome.map]⟩
+        | fn tIn tOut =>
+          exact ⟨.yield (some ⟨.fn tIn tOut⟩), by
+            simp [AST.infer, h, Rec.Outcome.map]⟩
 
 end
 

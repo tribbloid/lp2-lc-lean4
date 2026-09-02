@@ -16,23 +16,23 @@ def vTrue : Trm :=
   .val (.lit "true")
 
 def primitiveIdFn : Trm :=
-  .val (.lam (λ _lift x => .ref (.inr x)) .primitive)
+  .val (.lam (λ x => .ref x.val) .primitive)
 
 def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
 
 def get1st : Trm :=
   .val
-    (.lam (λ _liftOuter x =>
+    (.lam (λ x =>
       .val
-        (.lam (λ liftInner _y => .ref (.inr (liftInner x))) .primitive))
+        (.lam (λ _y => .ref x.val) .primitive))
       .primitive)
 
 def get2nd : Trm :=
   .val
-    (.lam (λ _liftOuter _x =>
+    (.lam (λ _x =>
       .val
-        (.lam (λ _liftInner y => .ref (.inr y)) .primitive))
+        (.lam (λ y => .ref y.val) .primitive))
       .primitive)
 
 def get1stOnTuple : Trm :=
@@ -47,7 +47,7 @@ def get2ndOnTuple : Trm :=
 
 def primitiveTrueFn : Trm :=
   .val
-    (.lam (λ _lift _x =>
+    (.lam (λ _x =>
       .val (.lit "true"))
       .primitive)
 
@@ -60,15 +60,15 @@ def value : Val :=
   .lit "false"
 
 /-- Runtime receipt for [value], minted through the fixture's executable bridge. -/
-def receipt : refs.uid2val.UId :=
-  testEnv.trm2valExeCtx.inv value
+def receipt : refs.Parameters.C :=
+  (testEnv.trm2valExeCtx.inv value).val
 
 def directRef : Trm :=
-  .ref (.inl receipt)
+  .ref receipt
 
 def capturedRef : Trm :=
   .val
-    (.lam (λ _lift _x => .ref (.inl receipt)) .primitive)
+    (.lam (λ _x => .ref receipt) .primitive)
 
 def capturedRefOnFalse : Trm :=
   .apply capturedRef vFalse
@@ -81,7 +81,7 @@ def hintedFalse : Trm :=
   .val (.lit "false")
 
 def hintedIdFn : Trm :=
-  .val (.lam (λ _lift x => .ref (.inr x)) .primitive)
+  .val (.lam (λ x => .ref x.val) .primitive)
 
 def hintedIdFnOnFalse : Trm :=
   .apply hintedIdFn hintedFalse
@@ -105,18 +105,18 @@ def apply1 : Trm :=
     vTrue
 
 def binderIdentityCounterexample
-    (decEq : (B : UIdU) → DecidableEq B) : Trm :=
+    (decEq : (C : UIdU) → DecidableEq C) : Trm :=
   .apply
     (.apply
       (.val
         (.lam
-          (λ _liftOuter outer =>
+          (λ outer =>
             .val
               (.lam
-                (λ {B} liftInner inner =>
-                  let _ := decEq B
-                  if inner = liftInner outer then
-                    .ref (.inr inner)
+                (λ inner =>
+                  let _ := decEq refs.Parameters.C
+                  if inner.val = outer.val then
+                    .ref inner.val
                   else
                     .apply vFalse vTrue)
                 .primitive))

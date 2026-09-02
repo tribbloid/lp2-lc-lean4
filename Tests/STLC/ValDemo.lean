@@ -15,11 +15,11 @@ namespace Symbolic
 
 variable [testEnv : TestEnv]
 
-abbrev I : Parameters := refs.ExeParameters
+abbrev I : Parameters := refs.Parameters
 
 abbrev Typ := AST.Typ I
 abbrev Val := AST.Val I
-abbrev Trm := ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }
+abbrev Trm := AST.Trm I
 
 end Symbolic
 
@@ -30,7 +30,7 @@ variable [testEnv : TestEnv]
 namespace Val
 
 def idFn : Val :=
-  .lam (λ _lift x => .ref (.inr x)) .primitive
+  .lam (λ x => .ref x.val) .primitive
 
 end Val
 

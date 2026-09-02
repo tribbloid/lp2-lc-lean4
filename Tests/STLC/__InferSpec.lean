@@ -12,8 +12,13 @@ open Tests.STLC.Sanity.Symbolic
 
 section infer
 variable [testEnv : TestEnv] [build : BuildEnv refs]
-abbrev Typ := AST.Typ build.BuildParameters
-attribute [local simp] AST.exe2build AST.inferCore
+abbrev Typ := AST.Typ refs.Parameters
+
+@[local simp]
+theorem trm2typLookup
+    (receipt : {uid // build.uid2typCtx.ev uid}) :
+    refs.uid2either.get receipt.val = .inr (build.uid2typCtx.get receipt) :=
+  (build.uid2typCtx.equivariance receipt).symm
 
 example :
     (vFalse.infer).shouldYields .primitive := by
@@ -113,6 +118,20 @@ example :
     simp [AST.infer, Outcome.map,
       TypeHinted.hintedIdFnOnFalse, TypeHinted.hintedIdFn,
       TypeHinted.hintedFalse, hPrimitive]
+  · rfl
+
+example :
+    (FreeCapture.directRef.infer).shouldYields .primitive := by
+  constructor
+  · exact ⟨2, by simp [AST.infer, AST.Val.asTrm, FreeCapture.directRef,
+      FreeCapture.receipt, FreeCapture.value]⟩
+  · rfl
+
+example :
+    (AST.ref (build.uid2typCtx.inv (.primitive : Typ)).val : Trm).infer.shouldYields
+      .primitive := by
+  constructor
+  · exact ⟨1, by simp [AST.infer]⟩
   · rfl
 
 example :

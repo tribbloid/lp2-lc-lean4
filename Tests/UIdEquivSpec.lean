@@ -48,12 +48,16 @@ abbrev EqOneValue := {value : Nat // value = 1}
     rfl
 
 @[reducible] def eqOneMetadata :
-    Lesser (V2 := EqOneValue) group Subtype.val where
+    Lesser (V2 := EqOneValue) (base := groupView) Subtype.val where
   toLesser := eqOneMetadataView
   inv := λ value => ⟨group.inv value.val, value.property⟩
   rightInv := by
     intro value
     rfl
+  leftInv := by
+    intro receipt
+    apply Subtype.ext
+    exact group.leftInv receipt.val
 
 @[reducible] def unitMetadataView :
     UIdView.Lesser (V2 := Nat × Unit) groupView Prod.fst where
@@ -64,7 +68,7 @@ abbrev EqOneValue := {value : Nat // value = 1}
     rfl
 
 @[reducible] def unitMetadata :
-    Lesser (V2 := Nat × Unit) group Prod.fst where
+    Lesser (V2 := Nat × Unit) (base := groupView) Prod.fst where
   toLesser := unitMetadataView
   inv := λ value => ⟨group.inv value.fst, True.intro⟩
   rightInv := by
@@ -73,6 +77,10 @@ abbrev EqOneValue := {value : Nat // value = 1}
     | mk value metadata =>
       cases metadata
       rfl
+  leftInv := by
+    intro receipt
+    apply Subtype.ext
+    exact group.leftInv receipt.val
 
 section receipt
 

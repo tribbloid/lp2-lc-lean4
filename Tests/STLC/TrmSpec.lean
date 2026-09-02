@@ -69,13 +69,13 @@ example :
   constructor
   · refine ⟨5, ?_⟩
     have hReceipt :
-        testEnv.trm2valExeCtx.inv (.lit "true") ≠
-          testEnv.trm2valExeCtx.inv (.lit "false") := by
+        (testEnv.trm2valExeCtx.inv (.lit "true")).val ≠
+          (testEnv.trm2valExeCtx.inv (.lit "false")).val := by
       intro h
-      have hValue := congrArg testEnv.trm2val.get h
+      have hValue := congrArg testEnv.trm2valExeCtx.get (Subtype.ext h)
       have hLiteral :
-          (AST.lit "true" : AST.Val refs.ExeParameters) = .lit "false" := by
-        simpa only [UIdEquiv.rightInv] using hValue
+          (AST.lit "true" : AST.Val refs.Parameters) = .lit "false" := by
+        simpa only [UIdEquiv.Lesser.rightInv] using hValue
       exact (by decide : ("true" : String) ≠ "false") (AST.lit.inj hLiteral)
     simp [Trm.Malformed.binderIdentityCounterexample, hReceipt]
   · rfl
@@ -95,6 +95,17 @@ example : Trm.FreeCapture.capturedRefOnFalse.eval.shouldYields Trm.FreeCapture.v
   · exact ⟨2, by simp⟩
   · rfl
 
+example [build : BuildEnv refs] :
+    (AST.ref (build.uid2typCtx.inv (.primitive : AST.Typ refs.Parameters)).val : Trm).eval.shouldFail := by
+  constructor
+  · refine ⟨1, ?_⟩
+    have hLookup :
+        refs.uid2either.get (build.uid2typCtx.inv (.primitive)).val = .inr .primitive :=
+      (build.uid2typCtx.equivariance (build.uid2typCtx.inv .primitive)).symm.trans
+        (congrArg Sum.inr (build.uid2typCtx.rightInv .primitive))
+    simp [AST.eval, hLookup]
+  · rfl
+
 end eval
 
 section compilerCapability
@@ -103,12 +114,22 @@ variable [refs : TypOrValRefs] [build : BuildEnv refs]
 
 example : True := by
   fail_if_success
-    have _receipt := refs.uid2val.inv
+    have _receipt := refs.uid2either.inv
   trivial
 
 example : True := by
   fail_if_success
     have _exe : ExeEnv refs := inferInstance
+  trivial
+
+example [_exe : ExeEnv refs] : True := by
+  fail_if_success
+    have _receipt := _exe.uid2typCtx.inv
+  trivial
+
+example : True := by
+  fail_if_success
+    have _receipt := build.uid2valCtx.inv
   trivial
 
 end compilerCapability
