@@ -14,8 +14,9 @@ structure TypeWithSafey {refs} [build : BuildEnv refs]
 class ProvingEnv (refs : ExeRefs) extends BuildEnv refs where
   uid2typWithSafetyCtx := --TODO: this impl should be final, move into namespace
     toBuildEnv.uid2typCtx.mkLesser
-      (λ _v => PSigma (λ (trm : ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }) =>
+      (PSigma (λ (trm : ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }) =>
         TypeWithSafey trm))
+      (λ value => value.snd.t2)
 
 namespace ProvingEnv
 
