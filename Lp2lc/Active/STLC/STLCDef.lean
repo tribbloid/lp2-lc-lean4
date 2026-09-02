@@ -35,7 +35,7 @@ Function values carry their input type so the compiler can type-check HOAS bodie
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
 /-
-TODO: In my previous attempt to make AST.lam PHOAS definition covariant, I accidentally introduced a vulnerability to define exotic term:
+FIXME: In my previous attempt to make AST.lam PHOAS definition covariant, I accidentally introduced a vulnerability to define exotic term:
 
 the current lambda body can be defined to produce different AST based on arg type, breaking its parametricity
 
