@@ -8,15 +8,12 @@ open Lp2lc.Active.Util
 Adds the compile-time typing context; its value view only permits lookups,
 so compile-time code cannot mint receipts from new values.
 -/
-class BuildEnv (refs : ExeRefs) where
-  uid2typ : UIdView (λ T => AST.Typ { F := refs.uid2val.UId, B := T, D := refs.D })
-  uid2typCtx : UIdEquiv.Extendable.{3, 3} uid2typ
+class BuildEnv (refs : TypOrValRefs) where
+  uid2typ : refs.uid2either.Lesser (λ v : AST.Typ P => .inr v)
+  uid2typCtx : UIdEquiv.Lesser (base := refs.uid2typ) -- can save type to get UId with Ev
 
 namespace BuildEnv
-section variable {refs : ExeRefs} (self : BuildEnv refs)
-
-abbrev BuildParameters : Parameters :=
-  { F := refs.uid2val.UId, B := self.uid2typ.UId, D := refs.D }
+section variable {refs : TypOrValRefs} (self : BuildEnv refs)
 
 end
 end BuildEnv
@@ -116,7 +113,7 @@ def CanInhabit {refs} [env : BuildEnv refs]
 
 end AST
 
-def Safety {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
+def Safety {refs : TypOrValRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
     (trm : AST.Trm refs.ExeParameters) (t2 : AST.Typ build.BuildParameters) : Prop :=
   trm.eval.isSemiDecidable
     (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
@@ -128,7 +125,7 @@ def Safety {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
 /--
 if compiled a term and succeeded, the term must be safe
 -/
-def Fundamental {refs : ExeRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
+def Fundamental {refs : TypOrValRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
     (trm : AST.Trm refs.ExeParameters) : Prop :=
   trm.infer.isSemiDecidable (
     λ t1 =>

@@ -28,11 +28,11 @@ class UIdView (VK : UIdU → Sort u) where
 namespace UIdView
 
 class HasEv (UId : UIdU) where
-  Ev : UId → Prop -- a subtype of UId with extra contract
+  ev : UId → Prop -- a subtype of UId with extra contract
 
 /-- Read-only access to refined receipts compatible with a base view. -/
-class Lesser {VK} {V2 : Sort v} (base : UIdView VK)
-    (upcast : V2 → VK base.UId) extends HasEv base.UId where
+class Lesser {VK} {V2 : Sort v} (base : UIdView VK) extends HasEv base.UId where
+  upcast : V2 → VK base.UId
   get (receipt : {uid // Ev uid}) : V2
   equivariance : ∀ (receipt : {uid // Ev uid}), upcast (get receipt) = base.get receipt.val
 
@@ -71,17 +71,14 @@ from `base` satisfying `Ev`.
 refined receipt agrees with reading its underlying receipt from `base`.
 `leftInv` follows from `equivariance`, `rightInv`, and `outer.leftInv`.
 -/
-class Lesser {VK} {V2 : Sort v} {base : UIdView VK}
-    (outer : UIdEquiv base) (upcast : V2 → VK base.UId)
-    extends toLesser : UIdView.Lesser base upcast where
+class Lesser {VK} {V2 : Sort v} {base}
+    (toLesser : UIdView.Lesser base)
+    extends UIdView.Lesser base where
   inv (value : V2) : {uid // Ev uid}
+  -- TODO: prove if possible
   rightInv : ∀ (value : V2), get (inv value) = value
-  leftInv : ∀ (receipt : {uid // Ev uid}), inv (get receipt) = receipt :=
-    λ receipt => Subtype.ext (Function.LeftInverse.injective outer.leftInv (calc
-      base.get (inv (get receipt)).val = upcast (get (inv (get receipt))) :=
-        (equivariance (inv (get receipt))).symm
-      _ = upcast (get receipt) := congrArg upcast (rightInv (get receipt))
-      _ = base.get receipt.val := equivariance receipt))
+  leftInv : ∀ (receipt : {uid // Ev uid}), inv (get receipt) = receipt
+
 
 /-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where

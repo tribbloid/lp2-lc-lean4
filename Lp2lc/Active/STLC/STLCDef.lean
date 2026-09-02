@@ -41,9 +41,14 @@ the current lambda body can be defined to produce different AST based on arg typ
 
 To fix it, I want to try the following refactoring:
 
-- The bounded variable carrier `B` in `Parameter` should be broken into 2 members: the base carrier type `B` and a subtype predicate `suffix : B -> Prop`
-- lambda can now accept an argument of subtype `{x // suffix x}`, where `B` have to be identical to the dependent parameter, but `suffix` can be different and supplied from case constructor
-- this makes the subtyping relationship `P.B <:< B` still valid, but suffix is erased by proof irrelevance, thereby can no longer be used to define exotic term
+- The bounded variable carrier `B` in `Parameter` should be broken into 2 members: the base carrier type `B` and a subtype predicate `ev : B -> Prop`
+- ExeParameters and BuildParameters are now identical
+  - As a result, .lam no longer accepts {B : UIdU} (as P.B are always the same), the lambda body should accpet {b // ev b} and produce an AST with the same ev
+- this makes the subtyping relationship `{b // ev b} <:< P.B` still valid, but `ev` is erased by proof irrelevance, thereby can no longer be used to define exotic term
+- this feature heavily relies on the new implementation of:
+  - TypOrValRefs: a shared KV map that mix both ExeEnv values and BuildEnv types
+  - contexts in ExeEnv/BuildEnv are both its subset/submap (represented by `Lesser`) that attach `ev` to carriers to certify them for value or type retrieval
+  - some of these new implementation may be broken, you should try to fix one file at a time based on their dependency tree.
 -/
 /--
 Binds only a fresh `B` receipt for its body, with [P.B] as the outer carrier.
@@ -114,25 +119,29 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
-class ExeRefs extends HasData where
-  uid2val : UIdView (λ T => AST.Val { F := T, B := T, D := D })
+class TypOrValRefs extends HasData where --FIXME: rename to ValOrTypRefs
+  uid2either : UIdView (λ T =>
+    let P : Parameters := { F := T, B := T, D := D }
+
+    AST.Val P ⊕ AST.Typ P
+  )
+  uid2val := uid2either.Lesser (λ v : AST.Val P => .inl v)
+  Parameters : Parameters := { F := uid2either.UId, B := uid2either.UId, D := D } -- FIXME: make final
 
 namespace ExeRefs
-section variable (self : ExeRefs)
-
-abbrev ExeParameters : Parameters := { F := self.uid2val.UId, B := self.uid2val.UId, D := self.D }
+section variable (self : TypOrValRefs)
 
 end
 end ExeRefs
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv (refs : ExeRefs) where
-  uid2valCtx : UIdEquiv.Extendable.{3, 3} (base := refs.uid2val)
+class ExeEnv (refs : TypOrValRefs) where
+  uid2valCtx := UIdEquiv.Lesser (refs.uid2val) -- can save value to get UId with Ev
 
 namespace AST
 
 /-- Evaluates executable terms whose references carry receipts from the runtime context. -/
-def eval [refs : ExeRefs] [env : ExeEnv refs]
+def eval [refs : TypOrValRefs] [env : ExeEnv refs]
     (self : Trm refs.ExeParameters) : RecOpt (Val refs.ExeParameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -148,9 +157,9 @@ def eval [refs : ExeRefs] [env : ExeEnv refs]
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref (.inl receipt) =>
-      .yield (some (refs.uid2val.get receipt))
+      .yield (some (refs.uid2either.get receipt))
     | .ref (.inr receipt) =>
-      .yield (some (refs.uid2val.get receipt))
+      .yield (some (refs.uid2either.get receipt))
 
 end AST
 

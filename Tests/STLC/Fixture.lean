@@ -11,6 +11,6 @@ class TestEnv where
 
 variable [testEnv : TestEnv]
 
-@[reducible] instance refs : ExeRefs := { D := String, uid2val := testEnv.trm2val }
+@[reducible] instance refs : TypOrValRefs := { D := String, uid2val := testEnv.trm2val }
 
 end Tests.STLC.Sanity

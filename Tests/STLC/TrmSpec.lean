@@ -99,7 +99,7 @@ end eval
 
 section compilerCapability
 
-variable [refs : ExeRefs] [build : BuildEnv refs]
+variable [refs : TypOrValRefs] [build : BuildEnv refs]
 
 example : True := by
   fail_if_success

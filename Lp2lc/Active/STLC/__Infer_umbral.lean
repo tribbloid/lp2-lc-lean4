@@ -11,7 +11,7 @@ structure TypeWithSafey {refs} [build : BuildEnv refs]
   t2 : AST.Typ build.BuildParameters
   safety : [_exe : ExeEnv refs] -> Safety trm t2
 
-class ProvingEnv (refs : ExeRefs) extends BuildEnv refs where
+class ProvingEnv (refs : TypOrValRefs) extends BuildEnv refs where
   uid2typWithSafetyCtx := --TODO: this impl should be final, move into namespace
     toBuildEnv.uid2typCtx.mkLesser
       (PSigma (λ (trm : ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }) =>
@@ -39,7 +39,7 @@ TODO: discharge this function.
 - You are allowed to add more context into ProvingEnv namespace to meet proving demand
 -/
 /-- Infers build types for executable terms. -/
-def infer [refs : ExeRefs] [proving : ProvingEnv refs] [env : ExeEnv refs]
+def infer [refs : TypOrValRefs] [proving : ProvingEnv refs] [env : ExeEnv refs]
     (trm : ∀ {B : UIdU}, AST.Trm { F := refs.uid2val.UId, B := B, D := refs.D }) :
     RecOpt (TypeWithSafey trm) := sorry
 

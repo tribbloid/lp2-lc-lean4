@@ -10,7 +10,7 @@ open Lp2lc.Active.Util.Rec
 namespace AST
 
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
-theorem termEvalMonotone [refs : ExeRefs] [env : ExeEnv refs]
+theorem termEvalMonotone [refs : TypOrValRefs] [env : ExeEnv refs]
     (trm : Trm refs.ExeParameters) :
     trm.eval.Monotone := by
   intro less more result hFuel hEval
@@ -67,7 +67,7 @@ theorem termEvalMonotone [refs : ExeRefs] [env : ExeEnv refs]
             simpa [AST.eval] using hEval
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
-theorem termInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
+theorem termInferMonotone [refs : TypOrValRefs] [env : BuildEnv refs]
     (trm : Trm env.BuildParameters) : -- TODO: lift this core theorem to `infer`
     trm.inferCore.Monotone := by
   intro less more result hFuel hInfer
@@ -122,7 +122,7 @@ theorem termInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
             | fn tIn tOut => simpa [inferCore] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
-theorem valueInferMonotone [refs : ExeRefs] [env : BuildEnv refs]
+theorem valueInferMonotone [refs : TypOrValRefs] [env : BuildEnv refs]
     (value : Val env.BuildParameters) :
     value.asTrm.inferCore.Monotone :=
   termInferMonotone value.asTrm
