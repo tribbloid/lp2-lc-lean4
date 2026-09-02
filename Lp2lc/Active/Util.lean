@@ -83,15 +83,12 @@ class Lesser {VK} {V2 : Sort v} {base : UIdView VK}
       _ = upcast (get receipt) := congrArg upcast (rightInv (get receipt))
       _ = base.get receipt.val := equivariance receipt))
 
+/-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (V2 : Sort u) (upcast : V2 → VK base.UId) :
     Lesser toUIdEquiv upcast
 
 end UIdEquiv
-
-
-/-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
-abbrev Fixpoint {VK} {base : UIdView VK} := UIdEquiv.Extendable (VK := VK) (base := base) -- FIXME: inline this
 
 -- /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/ TOOD: delete, superseded by Extendable
 -- class CanGetUIdFor (VK : UIdU -> Sort u) where
