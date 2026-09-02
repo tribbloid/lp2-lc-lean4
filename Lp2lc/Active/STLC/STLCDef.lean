@@ -34,6 +34,17 @@ used by function application after both sides have been evaluated.
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
+/-
+TODO: In my previous attempt to make AST.lam PHOAS definition covariant, I accidentally introduced a vulnerability to define exotic term:
+
+the current lambda body can be defined to produce different AST based on arg type, breaking its parametricity
+
+To fix it, I want to try the following refactoring:
+
+- The bounded variable carrier `B` in `Parameter` should be broken into 2 members: the base carrier type `B` and a subtype predicate `suffix : B -> Prop`
+- lambda can now accept an argument of subtype `{x : B // suffix x}`, where `B` have to be identical to the dependent parameter, but `suffix` can be different and supplied from case constructor
+- this makes the subtyping relationship `P.B <:< B` still valid, but suffix is erased by proof irrelevance, thereby can no longer be used to define exotic term
+-/
 /--
 Binds only a fresh `B` receipt for its body, with [P.B] as the outer carrier.
 
