@@ -39,26 +39,34 @@ open UIdEquiv
 
 abbrev EqOneValue := {value : Nat // value = 1}
 
-@[reducible] def eqOneMetadata :
-    Lesser (V2 := EqOneValue) group Subtype.val where
+@[reducible] def eqOneMetadataView :
+    UIdView.Lesser (V2 := EqOneValue) groupView Subtype.val where
   Ev := λ receipt => receipt.fst = 1
   get := λ receipt => ⟨receipt.val.fst, receipt.property⟩
-  inv := λ value => ⟨group.inv value.val, value.property⟩
   equivariance := by
     intro receipt
     rfl
+
+@[reducible] def eqOneMetadata :
+    Lesser (V2 := EqOneValue) group Subtype.val where
+  toLesser := eqOneMetadataView
+  inv := λ value => ⟨group.inv value.val, value.property⟩
   rightInv := by
     intro value
     rfl
 
-@[reducible] def unitMetadata :
-    Lesser (V2 := Nat × Unit) group Prod.fst where
+@[reducible] def unitMetadataView :
+    UIdView.Lesser (V2 := Nat × Unit) groupView Prod.fst where
   Ev := λ _receipt => True
   get := λ receipt => (groupView.get receipt.val, ())
-  inv := λ value => ⟨group.inv value.fst, True.intro⟩
   equivariance := by
     intro receipt
     rfl
+
+@[reducible] def unitMetadata :
+    Lesser (V2 := Nat × Unit) group Prod.fst where
+  toLesser := unitMetadataView
+  inv := λ value => ⟨group.inv value.fst, True.intro⟩
   rightInv := by
     intro value
     cases value with
@@ -100,9 +108,17 @@ example (receipt : {uid // eqOneMetadata.Ev uid}) :
     (eqOneMetadata.get receipt).val = groupView.get receipt.val := by
   exact eqOneMetadata.equivariance receipt
 
+example (receipt : {uid // eqOneMetadataView.Ev uid}) :
+    (eqOneMetadataView.get receipt).val = groupView.get receipt.val := by
+  exact eqOneMetadataView.equivariance receipt
+
 example (receipt : {uid // unitMetadata.Ev uid}) :
     (unitMetadata.get receipt).fst = groupView.get receipt.val := by
   exact unitMetadata.equivariance receipt
+
+example (receipt : {uid // unitMetadataView.Ev uid}) :
+    (unitMetadataView.get receipt).fst = groupView.get receipt.val := by
+  exact unitMetadataView.equivariance receipt
 
 example (value : EqOneValue) :
     eqOneMetadata.get (eqOneMetadata.inv value) = value := by

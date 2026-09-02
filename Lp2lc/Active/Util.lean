@@ -30,10 +30,11 @@ namespace UIdView
 class HasEv (UId : UIdU) where
   Ev : UId → Prop -- a subtype of UId with extra contract
 
+/-- Read-only access to refined receipts compatible with a base view. -/
 class Lesser {VK} {V2 : Sort v} (base : UIdView VK)
-     (upcast : V2 → VK base.UId) extends HasEv base.UId
-     where
-
+    (upcast : V2 → VK base.UId) extends HasEv base.UId where
+  get (receipt : {uid // Ev uid}) : V2
+  equivariance : ∀ (receipt : {uid // Ev uid}), upcast (get receipt) = base.get receipt.val
 
 end UIdView
 
@@ -62,12 +63,6 @@ DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`
 Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
 -/
 
-/-
-FIXME: refactor `UIdEquiv.Lesser` to be a subclass of `UIdView.Lesser`
-
-- some of it's members can be moved there
--/
-
 /--
 An auxiliary equivalence between a refined value carrier `V2` and the receipts
 from `base` satisfying `Ev`.
@@ -78,10 +73,8 @@ refined receipt agrees with reading its underlying receipt from `base`.
 -/
 class Lesser {VK} {V2 : Sort v} {base : UIdView VK}
     (outer : UIdEquiv base) (upcast : V2 → VK base.UId)
-    extends UIdView.HasEv base.UId where
-  get (receipt : {uid // Ev uid}) : V2
+    extends toLesser : UIdView.Lesser base upcast where
   inv (value : V2) : {uid // Ev uid}
-  equivariance : ∀ (receipt : {uid // Ev uid}), upcast (get receipt) = base.get receipt.val
   rightInv : ∀ (value : V2), get (inv value) = value
   leftInv : ∀ (receipt : {uid // Ev uid}), inv (get receipt) = receipt :=
     λ receipt => Subtype.ext (Function.LeftInverse.injective outer.leftInv (calc
