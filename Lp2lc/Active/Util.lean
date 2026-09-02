@@ -59,22 +59,39 @@ DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`
 Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
 -/
 
+private theorem lesserLeftInv {VK : UIdU → Sort u} {V2 : Sort v}
+    {base : UIdView VK} (outer : UIdEquiv base)
+    (upcast : V2 → VK base.UId) (Ev : base.UId → Prop)
+    (get : {uid // Ev uid} → V2) (inv : V2 → {uid // Ev uid})
+    (equivariance : ∀ (receipt : {uid // Ev uid}),
+      upcast (get receipt) = base.get receipt.val)
+    (rightInv : ∀ (value : V2), get (inv value) = value)
+    (receipt : {uid // Ev uid}) : inv (get receipt) = receipt := by
+  apply Subtype.ext
+  apply Function.LeftInverse.injective outer.leftInv
+  calc
+    base.get (inv (get receipt)).val = upcast (get (inv (get receipt))) :=
+      (equivariance (inv (get receipt))).symm
+    _ = upcast (get receipt) := congrArg upcast (rightInv (get receipt))
+    _ = base.get receipt.val := equivariance receipt
+
 /--
 An auxiliary equivalence between a refined value carrier `V2` and the receipts
 from `base` satisfying `Ev`.
 
-`upcast` forgets the refinement, while `getUpcast` ensures that reading a
+`upcast` forgets the refinement, while `equivariance` ensures that reading a
 refined receipt agrees with reading its underlying receipt from `base`.
+`leftInv` follows from `equivariance`, `rightInv`, and `outer.leftInv`.
 -/
 class Lesser {VK} {V2 : Sort v} {base : UIdView VK}
     (outer : UIdEquiv base) (upcast : V2 → VK base.UId)
     extends HasEv base.UId where
   get (receipt : {uid // Ev uid}) : V2
   inv (value : V2) : {uid // Ev uid}
-  -- FIXME: some of these axioms can have a default proof impl
   equivariance : ∀ (receipt : {uid // Ev uid}), upcast (get receipt) = base.get receipt.val
   rightInv : ∀ (value : V2), get (inv value) = value
-  leftInv : ∀ (receipt : {uid // Ev uid}), inv (get receipt) = receipt
+  leftInv : ∀ (receipt : {uid // Ev uid}), inv (get receipt) = receipt :=
+    lesserLeftInv outer upcast Ev get inv equivariance rightInv
 
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (V2 : Sort u) (upcast : V2 → VK base.UId) :

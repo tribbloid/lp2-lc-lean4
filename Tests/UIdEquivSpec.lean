@@ -50,10 +50,6 @@ abbrev EqOneValue := {value : Nat // value = 1}
   rightInv := by
     intro value
     rfl
-  leftInv := by
-    intro receipt
-    apply Subtype.ext
-    exact group.leftInv receipt.val
 
 @[reducible] def unitMetadata :
     Lesser (V2 := Nat × Unit) group Prod.fst where
@@ -69,10 +65,6 @@ abbrev EqOneValue := {value : Nat // value = 1}
     | mk value metadata =>
       cases metadata
       rfl
-  leftInv := by
-    intro receipt
-    apply Subtype.ext
-    exact group.leftInv receipt.val
 
 section receipt
 
