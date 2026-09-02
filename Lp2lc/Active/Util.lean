@@ -73,7 +73,7 @@ DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`
 Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
 -/
 
-private theorem lesserLeftInv {VK : UIdU → Sort u} {V2 : Sort v}
+private theorem lesserLeftInv {VK : UIdU → Sort u} {V2 : Sort v} --FIXME: inline this
     {base : UIdView VK} (outer : UIdEquiv base)
     (upcast : V2 → VK base.UId) (Ev : base.UId → Prop)
     (get : {uid // Ev uid} → V2) (inv : V2 → {uid // Ev uid})
