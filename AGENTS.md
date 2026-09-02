@@ -67,6 +67,13 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 #### Task-specific Guardrails
 
 When working on a issue that contains multiple subtasks:
+- If one requested change would otherwise combine a **Conjecture Revision** with
+  **Proving/Discharge**, always split it into two ordered subtasks and commits:
+  1. First, make a **Conjecture Revision** commit containing only the proposition/type
+     definitions and required statement-signature revisions. This scaffolding commit
+     may temporarily fail to compile solely because its dependent proofs are stale.
+  2. Second, make a **Proving/Discharge** commit containing the dependent proof
+     revisions and restore a successful build.
 - Each subtask should have its own independent git commit. When you complete one, commit immediately.
 - Each subtask should be classified into one of the following Categories:
   - **Refactoring/Cleanup** is for enforcing code format & compliance without introduce meaningful change. DO NOT introduce or update type signature, definition, or proof (even if it is missing or `sorry`). Existing code structure should be preserved at all cost.
