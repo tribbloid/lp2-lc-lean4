@@ -42,7 +42,7 @@ the current lambda body can be defined to produce different AST based on arg typ
 To fix it, I want to try the following refactoring:
 
 - The bounded variable carrier `B` in `Parameter` should be broken into 2 members: the base carrier type `B` and a subtype predicate `suffix : B -> Prop`
-- lambda can now accept an argument of subtype `{x : B // suffix x}`, where `B` have to be identical to the dependent parameter, but `suffix` can be different and supplied from case constructor
+- lambda can now accept an argument of subtype `{x // suffix x}`, where `B` have to be identical to the dependent parameter, but `suffix` can be different and supplied from case constructor
 - this makes the subtyping relationship `P.B <:< B` still valid, but suffix is erased by proof irrelevance, thereby can no longer be used to define exotic term
 -/
 /--

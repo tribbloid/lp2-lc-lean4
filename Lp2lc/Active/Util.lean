@@ -53,6 +53,13 @@ DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`
 Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
 -/
 
+/-
+FIXME: `Tagging` always assume that the output of get is a subtype/tagged product of base `V`
+
+this is too specific and can be relaxed a bit.
+
+Let's see if you can adopt the design of `Lesser_improved` here, where the subtype relationship is replaced with the "upcast" function.
+-/
 /-- an auxiliary equivalence for a subtype of [outer.VK T], Can attach independently witnessed metadata `M` to receipts from outer bridge. -/
 class Lesser {VK} {base : UIdView VK}
     (outer : UIdEquiv base) (Tagging : (v: VK base.UId) → Sort v)
@@ -61,6 +68,12 @@ class Lesser {VK} {base : UIdView VK}
   inv {v} (tagged : Tagging v) : Ev (outer.inv v)
   rightInv : ∀ {v} (tagged : Tagging v), HEq (get (inv tagged)) tagged -- TODO: are these provable?
   leftInv : ∀ {uid} (receipt : Ev uid), HEq (inv (get receipt)) receipt
+
+class Lesser_improved {VK V2} {base : UIdView VK}
+    (outer : UIdEquiv base) (upcast : (v: VK base.UId) → V2)
+    extends HasEv base.UId where
+  get (receipt : {uid // Ev uid}) : V2
+  inv (v2 : V2) : {uid // Ev uid}
 
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (Tagging : VK base.UId → Sort u) : Lesser toUIdEquiv Tagging
