@@ -68,14 +68,6 @@ abbrev Val (P : Parameters) := AST P .val
 
 section variable (P : Parameters)
 
--- structure Trm2Typ where -- TODO: cleanup, inferering with recarrier
---   trm : Trm P
---   typ : Typ P
-
--- structure Trm2Val where
---   trm : Trm P
---   val : Val P
-
 end
 
 -- TOOD: remove & don't use it, we don't need general upcast for AST.

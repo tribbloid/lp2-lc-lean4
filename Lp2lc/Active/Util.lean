@@ -71,7 +71,7 @@ from `base` satisfying `ev`.
 refined receipt agrees with reading its underlying receipt from `base`.
 The inverse laws are explicit because the read-only base has no inverse.
 -/
-class Lesser {VK} {V2 : Sort v} {base : UIdView VK}
+class Lesser {VK} (base : UIdView VK) {V2 : Sort v}
     (upcast : V2 → VK base.UId)
     extends UIdView.Lesser base upcast where
   inv (value : V2) : {uid // ev uid}
