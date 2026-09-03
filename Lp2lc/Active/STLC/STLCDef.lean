@@ -35,7 +35,7 @@ Function values carry their input type so the compiler can type-check HOAS bodie
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
 /-
-TODO: Prevent the lambda body from discarding its phase-specific receipt certification.
+FIXME: Switch to certified AST
 
 The callback's `arg.val` always has type `P.C`, but `.ref arg.val` stores only that
 raw receipt and erases `arg.property : ev arg.val`. Runtime and build contexts can
@@ -44,9 +44,12 @@ can compare receipt identities and produce phase-dependent syntax. The
 `binderIdentityCounterexample` demonstrates this mismatch: evaluation fails while
 inference yields `.primitive`.
 
-The callback/reference boundary must preserve the `ev` evidence or otherwise make
-raw receipt identity unobservable before this representation can support a
-soundness claim.
+Under the PHOAS limitation, the shortest way to enable this is to attach a short certificate to the application result of AST.lam body during AST.eval,
+indicating that all free variable (represented by AST.ref) in the AST have a value binding, this certificate is discarded during AST.infer,
+which can handle both Val and Trm in it's recursive execution. At this point, AST.lam can revert to the original PHOAS definition,
+and the predicate `{ev : P.C → Prop}` in AST.lam can be discarded.
+
+It should be noted that de Bruijn serial or explicit substitution/recarrier of AST should be avoided at all cost, as they tend to bloat soundness proof
 -/
 /--
 Binds a phase-certified receipt over the shared [P.C] carrier.
