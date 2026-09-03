@@ -5,61 +5,70 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
+private inductive RawAST : Parameters → Label → Type 2 where
+| primitive : RawAST P .typ
+| fn (tIn : RawAST P .typ) (tOut : RawAST P .typ) : RawAST P .typ
+| val (value : RawAST P .val) : RawAST P .trm
+| apply (fnTerm : RawAST P .trm) (arg : RawAST P .trm) : RawAST P .trm
+| ref (receipt : P.C) (tIn : RawAST P .typ) : RawAST P .trm
+| capture (value : RawAST P .val) : RawAST P .trm
+| lit (repr : P.D) : RawAST P .val
+| lam (body : P.C → RawAST P .trm)
+    (tIn : RawAST P .typ) (tOut : RawAST P .typ) : RawAST P .val
+
+private inductive RawValHasType {P : Parameters} :
+    RawAST P .val → RawAST P .typ → Prop where
+| lit (repr : P.D) : RawValHasType (.lit repr) .primitive
+| lam (body : P.C → RawAST P .trm)
+    (tIn : RawAST P .typ) (tOut : RawAST P .typ) :
+    RawValHasType (.lam body tIn tOut) (.fn tIn tOut)
+
+private inductive RawHasType {P : Parameters} :
+    RawAST P .trm → RawAST P .typ → Prop where
+| val (typed : RawValHasType value typ) : RawHasType (.val value) typ
+| apply (fnTyped : RawHasType fnTerm (.fn tIn tOut))
+    (argTyped : RawHasType arg tIn) : RawHasType (.apply fnTerm arg) tOut
+| ref (receipt : P.C) (tIn : RawAST P .typ) : RawHasType (.ref receipt tIn) tIn
+| capture (typed : RawValHasType value typ) : RawHasType (.capture value) typ
+
+private inductive RawCertified {P : Parameters} :
+    {label : Label} → RawAST P label → Prop where
+| primitive : RawCertified .primitive
+| fn (input : RawCertified tIn) (output : RawCertified tOut) :
+    RawCertified (.fn tIn tOut)
+| val (value : RawCertified rawValue) : RawCertified (.val rawValue)
+| apply (fnTerm : RawCertified rawFn) (arg : RawCertified rawArg) :
+    RawCertified (.apply rawFn rawArg)
+| ref (receipt : P.C) (input : RawCertified tIn) :
+    RawCertified (.ref receipt tIn)
+| capture (value : RawCertified rawValue) : RawCertified (.capture rawValue)
+| lit (repr : P.D) : RawCertified (.lit repr)
+| lam (input : RawCertified tIn) (output : RawCertified tOut)
+    (body : ∀ (arg : P.C), RawCertified (rawBody arg))
+    (typed : ∀ (arg : P.C), RawHasType (rawBody arg) tOut) :
+    RawCertified (.lam rawBody tIn tOut)
+
+/-- Source syntax whose recursive certificate is inaccessible to unchecked construction. -/
+structure AST (P : Parameters) (label : Label) : Type 2 where
+  private mk ::
+  private raw : RawAST P label
+  private certified : RawCertified raw
+
 /-- Source type syntax.
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
 -/
-inductive AST : Parameters → Label → Type 2 where
-| primitive : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
-| fn (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
-/--
-Source term syntax.
-
-Primitive value terms are self-typed, while function values carry their input
-type. Applications and references are unannotated.
-
-In HOAS there is no syntax-level context binding terms to types, so function
-input annotations are the extrinsic typing evidence available to the compiler.
-They are not intrinsic typing indices on terms.
--/
-| val (v : AST P .val) : AST P .trm -- AKA literal
-| apply (fn : AST P .trm) (arg : AST P .trm) : AST P .trm -- fn must be a function that can be applied on arg
-| ref (receipt : P.C) : AST P .trm -- reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
-/--
-Value syntax, containing neither references nor applications.
-
-Values are the successful result of evaluation and the atomic argument form
-used by function application after both sides have been evaluated.
-
-Function values carry their input type so the compiler can type-check HOAS bodies.
--/
-| lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
 /-
 FIXME: Switch to certified AST
 
-The callback's `arg.val` always has type `P.C`, but `.ref arg.val` stores only that
-raw receipt and erases `arg.property : ev arg.val`. Runtime and build contexts can
-mint different `P.C` receipts for corresponding binders, so an unchecked callback
-can compare receipt identities and produce phase-dependent syntax. The
-`binderIdentityCounterexample` demonstrates this mismatch: evaluation fails while
-inference yields `.primitive`.
+The representation revision is present: lambda bodies now carry one fixed output
+type and certificates for typing and executable bindings. Bound receipts are
+opaque, while captured values use an explicit node and never become raw receipts.
+Evaluation and inference inspect only [AST.View].
 
-Under the PHOAS limitation, the shortest way to enable this is to attach a short certificate to the application result of AST.lam body during AST.eval,
-indicating that all free variable (represented by AST.ref) in the AST have a value binding, this certificate is discarded during AST.infer,
-which can handle both Val and Trm in it's recursive execution. At this point, AST.lam can revert to the original PHOAS definition,
-and the predicate `{ev : P.C → Prop}` in AST.lam can be discarded.
-
-It should be noted that de Bruijn serial or explicit substitution/recarrier of AST should be avoided at all cost, as they tend to bloat soundness proof
+The dependent soundness, monotonicity, and Umbral proof discharge remains pending.
+De Bruijn serials and explicit substitution/recarrier operations remain excluded.
 -/
-/--
-Binds a phase-certified receipt over the shared [P.C] carrier.
-
-The carrier type is always [P.C]. The callback remains unchecked because it can
-inspect raw receipt identity and construct `.ref arg.val`, which discards the
-phase-specific `ev` evidence.
--/
-| lam (body : {ev : P.C → Prop} → (arg : {uid : P.C // ev uid}) → AST P .trm)
-    (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
 
 section variable {P : Parameters}
 
@@ -72,6 +81,94 @@ abbrev Val (P : Parameters) := AST P .val
 section variable (P : Parameters)
 
 end
+
+def primitive : AST P .typ := ⟨.primitive, .primitive⟩
+
+def fn (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ :=
+  ⟨.fn tIn.raw tOut.raw, .fn tIn.certified tOut.certified⟩
+
+/-- Source term containing a value. -/
+def val (value : AST P .val) : AST P .trm :=
+  ⟨.val value.raw, .val value.certified⟩
+
+/-- Untyped application; inference remains responsible for rejecting mismatched operands. -/
+def apply (fnTerm : AST P .trm) (arg : AST P .trm) : AST P .trm :=
+  ⟨.apply fnTerm.raw arg.raw, .apply fnTerm.certified arg.certified⟩
+
+/-- Embeds a certified captured value without manufacturing a reference receipt. -/
+def capture (value : AST P .val) : AST P .trm :=
+  ⟨.capture value.raw, .capture value.certified⟩
+
+def lit (repr : P.D) : AST P .val := ⟨.lit repr, .lit repr⟩
+
+/-- The intrinsic typing certificate carried by a term. -/
+def HasType (self : AST.Trm P) (typ : AST.Typ P) : Prop :=
+  RawHasType self.raw typ.raw
+
+/-- Evidence that every reference in a term originates from a lambda binding. -/
+def HasExecutableBindings (self : AST P label) : Prop :=
+  RawCertified self.raw
+
+/-- A term paired with its fixed source type. -/
+structure Typed (typ : AST.Typ P) where
+  private mk ::
+  trm : AST.Trm P
+  private typed : trm.HasType typ
+
+/-- An opaque lambda argument; its receipt can only be consumed by [AST.ref]. -/
+structure Bound (tIn : AST.Typ P) where
+  private mk ::
+  private receipt : P.C
+
+/-- Constructs a reference only from a lambda-bound argument. -/
+def ref {tIn : AST.Typ P} (self : Bound tIn) : AST.Trm P :=
+  ⟨.ref self.receipt tIn.raw, .ref self.receipt tIn.certified⟩
+
+namespace Bound
+
+/-- Recovers the input typing certificate attached to a bound argument. -/
+def asTyped {tIn : AST.Typ P} (self : Bound tIn) : Typed tIn :=
+  ⟨self.ref, .ref self.receipt tIn.raw⟩
+
+end Bound
+
+/--
+A PHOAS callback with one output type, its typing certificate, and executable
+binding evidence. The public constructor supplies an opaque bound argument, so
+the callback cannot inspect phase-specific receipt identity.
+-/
+structure LamBody (tIn tOut : AST.Typ P) where
+  private intro ::
+  body : P.C → AST.Trm P
+  typed : ∀ (arg : P.C), (body arg).HasType tOut
+  executable : ∀ (arg : P.C), (body arg).HasExecutableBindings
+
+namespace LamBody
+
+/-- Builds a certified body by erasing only the opaque argument wrapper. -/
+def mk {tIn tOut : AST.Typ P} (body : Bound tIn → Typed tOut) :
+    LamBody tIn tOut :=
+  .intro
+    (λ arg => (body ⟨arg⟩).trm)
+    (λ arg => (body ⟨arg⟩).typed)
+    (λ arg => (body ⟨arg⟩).trm.certified)
+
+end LamBody
+
+/-- Constructs a function value only from a fixed-output certified body. -/
+def lam {tIn tOut : AST.Typ P} (body : LamBody tIn tOut) : AST.Val P :=
+  ⟨.lam (λ arg => (body.body arg).raw) tIn.raw tOut.raw,
+    .lam tIn.certified tOut.certified
+      (λ arg => body.executable arg) (λ arg => body.typed arg)⟩
+
+namespace Typed
+
+/-- Builds a typed application while [AST.apply] itself remains untyped. -/
+def apply {tIn tOut : AST.Typ P} (fnTerm : Typed (.fn tIn tOut))
+    (arg : Typed tIn) : Typed tOut :=
+  ⟨AST.apply fnTerm.trm arg.trm, .apply fnTerm.typed arg.typed⟩
+
+end Typed
 
 -- TOOD: remove & don't use it, we don't need general upcast for AST.
 -- def map {B : UIdU} {PF QF : UIdU} {PD QD : DataU} {l : Label}
@@ -92,7 +189,81 @@ namespace Val
 
 def asTrm (self : AST.Val P) : AST.Trm P := .val self
 
+/-- Computes the type already certified by a value constructor. -/
+def typ (self : AST.Val P) : AST.Typ P :=
+  match self with
+  | ⟨.lit _, .lit _⟩ => .primitive
+  | ⟨.lam _ tIn tOut, .lam input output _ _⟩ =>
+    ⟨.fn tIn tOut, .fn input output⟩
+
+/-- Views a value term together with its constructor-determined type. -/
+def asTyped (self : AST.Val P) : Typed self.typ :=
+  match self with
+  | ⟨.lit repr, .lit _⟩ => ⟨self.asTrm, .val (.lit repr)⟩
+  | ⟨.lam body tIn tOut, .lam _ _ _ _⟩ =>
+    ⟨self.asTrm, .val (.lam body tIn tOut)⟩
+
+/-- Views a captured value term together with its constructor-determined type. -/
+def asCaptured (self : AST.Val P) : Typed self.typ :=
+  match self with
+  | ⟨.lit repr, .lit _⟩ => ⟨AST.capture self, .capture (.lit repr)⟩
+  | ⟨.lam body tIn tOut, .lam _ _ _ _⟩ =>
+    ⟨AST.capture self, .capture (.lam body tIn tOut)⟩
+
 end Val
+
+/-- One certified layer exposed without an unchecked constructor or raw projection. -/
+inductive View (P : Parameters) : Label → Type 2 where
+| primitive : View P .typ
+| fn (tIn : AST.Typ P) (tOut : AST.Typ P) : View P .typ
+| val (value : AST.Val P) : View P .trm
+| apply (fnTerm : AST.Trm P) (arg : AST.Trm P) : View P .trm
+| ref (receipt : P.C) (tIn : AST.Typ P) : View P .trm
+| capture (value : AST.Val P) : View P .trm
+| lit (repr : P.D) : View P .val
+| lam (tIn : AST.Typ P) (tOut : AST.Typ P)
+    (body : LamBody tIn tOut) : View P .val
+
+/-- Exposes one certified AST layer while retaining all recursive certificates. -/
+def view {label : Label} (self : AST P label) : View P label :=
+  match self with
+  | ⟨.primitive, .primitive⟩ => .primitive
+  | ⟨.fn tIn tOut, .fn input output⟩ =>
+    .fn ⟨tIn, input⟩ ⟨tOut, output⟩
+  | ⟨.val value, .val certified⟩ => .val ⟨value, certified⟩
+  | ⟨.apply fnTerm arg, .apply fnCertified argCertified⟩ =>
+    .apply ⟨fnTerm, fnCertified⟩ ⟨arg, argCertified⟩
+  | ⟨.ref receipt tIn, .ref _ input⟩ => .ref receipt ⟨tIn, input⟩
+  | ⟨.capture value, .capture certified⟩ => .capture ⟨value, certified⟩
+  | ⟨.lit repr, .lit _⟩ => .lit repr
+  | ⟨.lam rawBody tIn tOut, .lam input output body typed⟩ =>
+    let tInAst : AST.Typ P := ⟨tIn, input⟩
+    let tOutAst : AST.Typ P := ⟨tOut, output⟩
+    .lam tInAst tOutAst
+      (.intro (λ arg => ⟨rawBody arg, body arg⟩)
+        (λ arg => typed arg) (λ arg => body arg))
+
+private theorem extRaw {left right : AST P label}
+    (raw : left.raw = right.raw) : left = right := by
+  cases left
+  cases right
+  cases raw
+  rfl
+
+private def rawTypDecidableEq (left right : RawAST P .typ) :
+    Decidable (left = right) :=
+  match left, right with
+  | .primitive, .primitive => isTrue rfl
+  | .primitive, .fn _ _
+  | .fn _ _, .primitive => isFalse (λ equality => nomatch equality)
+  | .fn leftIn leftOut, .fn rightIn rightOut =>
+    match rawTypDecidableEq leftIn rightIn, rawTypDecidableEq leftOut rightOut with
+    | isTrue inputEqual, isTrue outputEqual =>
+      isTrue (inputEqual ▸ outputEqual ▸ rfl)
+    | isFalse notEqual, _ =>
+      isFalse (λ equality => notEqual (RawAST.fn.inj equality).1)
+    | _, isFalse notEqual =>
+      isFalse (λ equality => notEqual (RawAST.fn.inj equality).2)
 
 end AST
 
@@ -103,15 +274,11 @@ instance typLE : LE (AST.Typ P) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
-instance typDecidableLE : DecidableLE (AST.Typ P)
-  | .primitive, .primitive => isTrue rfl
-  | .primitive, .fn _ _
-  | .fn _ _, .primitive => isFalse (λ equality => nomatch equality)
-  | .fn leftIn leftOut, .fn rightIn rightOut =>
-    match typDecidableLE leftIn rightIn, typDecidableLE leftOut rightOut with
-    | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
-    | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
-    | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
+instance typDecidableLE : DecidableLE (AST.Typ P) := λ left right =>
+  match AST.rawTypDecidableEq left.raw right.raw with
+  | isTrue equality => isTrue (AST.extRaw equality)
+  | isFalse notEqual =>
+    isFalse (λ equality => notEqual (congrArg (λ typ => typ.raw) equality))
 
 
 
