@@ -35,21 +35,19 @@ Function values carry their input type so the compiler can type-check HOAS bodie
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
 /-
-FIXME: Switch to certified AST
+FIXME: Switch to idiomatic PHOAS
 
-The callback's `arg.val` always has type `P.C`, but `.ref arg.val` stores only that
-raw receipt and erases `arg.property : ev arg.val`. Runtime and build contexts can
-mint different `P.C` receipts for corresponding binders, so an unchecked callback
-can compare receipt identities and produce phase-dependent syntax. The
-`binderIdentityCounterexample` demonstrates this mismatch: evaluation fails while
+Previous AST.lam has a vulnerability that is exploited by
+`binderIdentityCounterexample` example: evaluation fails while
 inference yields `.primitive`.
 
-Under the PHOAS limitation, the shortest way to enable this is to attach a short certificate to the application result of AST.lam body during AST.eval,
-indicating that all free variable (represented by AST.ref) in the AST have a value binding, this certificate is discarded during AST.infer,
-which can handle both Val and Trm in it's recursive execution. At this point, AST.lam can revert to the original PHOAS definition,
-and the predicate `{ev : P.C → Prop}` in AST.lam can be discarded.
+The fix is to revert to the most simple & idiomatic AST.lam definition (as demonstrated in the partially fixed `lam (arg : P.C) → AST P .trm)`):
+- .lam and .ref always use P.C
+- AST.eval will fail to resolve .ref if it's value in the context is not a value
 
-It should be noted that de Bruijn serial or explicit substitution/recarrier of AST should be avoided at all cost, as they tend to bloat soundness proof
+Caution:
+- de Bruijn serial or explicit substitution/recarrier of AST should be avoided at all cost, as they tend to bloat soundness proof
+- do not introduce new definition or duplicated case
 -/
 /--
 Binds a phase-certified receipt over the shared [P.C] carrier.
@@ -58,7 +56,7 @@ The carrier type is always [P.C]. The callback remains unchecked because it can
 inspect raw receipt identity and construct `.ref arg.val`, which discards the
 phase-specific `ev` evidence.
 -/
-| lam (body : {ev : P.C → Prop} → (arg : {uid : P.C // ev uid}) → AST P .trm)
+| lam (arg : P.C) → AST P .trm)
     (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
 
 section variable {P : Parameters}
