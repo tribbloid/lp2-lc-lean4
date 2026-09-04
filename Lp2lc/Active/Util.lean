@@ -123,7 +123,7 @@ It is deliberately left abstract to ward off unlawful construction:
 -/
 class Parameters extends HasData where
   C : UIdU -- shared PHOAS/carrier UIdRefs/receipt
-  /-
+  /--
   AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
   AST of more specific domain can be used to constract AST of more general domain.
   - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)

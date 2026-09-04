@@ -149,6 +149,17 @@ def eval [refs : EverythingRefs] [env : ExeEnv refs]
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref receipt =>
+    /-
+    FIXME: enable Parameters.dom in AST
+
+    Specifically, the AST used here should be confined to the domain of `ExeEnv.uid2valCtx.Ev`
+
+    such AST can:
+    - be directly used in `AST.infer`, because "AST of more specific domain can be used to constract AST of more general domain"
+    - directly refer to `Val` in `uid2valCtx`, eliminating the possibility of failure due to non-comforming reference
+
+    Do not add new definition or make code longer
+    -/
       match refs.uid2any.get receipt with
       | .inl value => .yield (some value)
       | .inr _typ => .yield none
