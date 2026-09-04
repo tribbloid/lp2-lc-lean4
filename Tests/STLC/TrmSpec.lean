@@ -100,7 +100,7 @@ example [build : BuildEnv refs] :
   constructor
   · refine ⟨1, ?_⟩
     have hLookup :
-        refs.uid2either.get (build.uid2typCtx.inv (.primitive)).val = .inr .primitive :=
+        refs.uid2any.get (build.uid2typCtx.inv (.primitive)).val = .inr .primitive :=
       (build.uid2typCtx.equivariance (build.uid2typCtx.inv .primitive)).symm.trans
         (congrArg Sum.inr (build.uid2typCtx.rightInv .primitive))
     simp [AST.eval, hLookup]
@@ -114,7 +114,7 @@ variable [refs : EverythingRefs] [build : BuildEnv refs]
 
 example : True := by
   fail_if_success
-    have _receipt := refs.uid2either.inv
+    have _receipt := refs.uid2any.inv
   trivial
 
 example : True := by

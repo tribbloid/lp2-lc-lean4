@@ -13,7 +13,7 @@ structure TypeWithSafey {refs} [build : BuildEnv refs]
 
 class ProvingEnv (refs : EverythingRefs) extends BuildEnv refs where
   --TODO: this impl should be final, move into namespace
-  uid2typWithSafetyCtx : UIdEquiv.Lesser (base := refs.uid2either)
+  uid2typWithSafetyCtx : UIdEquiv.Lesser (base := refs.uid2any)
     (λ value : PSigma (λ trm : AST.Trm refs.Parameters => TypeWithSafey trm) =>
       Sum.inr value.snd.t2)
 

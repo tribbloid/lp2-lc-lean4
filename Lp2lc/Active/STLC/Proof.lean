@@ -60,7 +60,7 @@ theorem termEvalMonotone [refs : EverythingRefs] [env : ExeEnv refs]
                       simpa [AST.eval, hFn, hArg, hFnTop, hArgTop,
                         hBody, hBodyTop] using hEval
         | ref receipt =>
-          cases hRef : refs.uid2either.get receipt with
+          cases hRef : refs.uid2any.get receipt with
           | inl value => simpa [AST.eval, hRef] using hEval
           | inr typ => simpa [AST.eval, hRef] using hEval
 
@@ -105,7 +105,7 @@ theorem termInferMonotone [refs : EverythingRefs] [env : BuildEnv refs]
                 arg toFuel argResult hFuelTail hArg
               simpa [infer, hFn, hArg, hFnTop, hArgTop] using hInfer
         | ref receipt =>
-          cases hRef : refs.uid2either.get receipt with
+          cases hRef : refs.uid2any.get receipt with
           | inl value =>
             have hValue : value.asTrm.infer fuel = .yield result := by
               simpa [infer, hRef] using hInfer

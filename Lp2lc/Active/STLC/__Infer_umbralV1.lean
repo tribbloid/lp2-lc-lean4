@@ -75,7 +75,7 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
         cases (AST.apply fnTerm arg).infer (fuel + 1) <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
     | .ref receipt => by
-      cases h : refs.uid2either.get receipt with
+      cases h : refs.uid2any.get receipt with
       | inl value =>
         let original := value.asTrm
         let result := infer_prove original fuel

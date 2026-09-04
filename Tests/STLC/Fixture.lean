@@ -18,12 +18,12 @@ class TestEnv where
 variable [testEnv : TestEnv]
 
 @[reducible] instance refs : EverythingRefs :=
-  { D := String, uid2either := testEnv.trm2either }
+  { D := String, uid2any := testEnv.trm2either }
 
 @[simp]
 theorem trm2valLookup
     (receipt : {uid // testEnv.trm2valExeCtx.ev uid}) :
-    refs.uid2either.get receipt.val = .inl (testEnv.trm2valExeCtx.get receipt) :=
+    refs.uid2any.get receipt.val = .inl (testEnv.trm2valExeCtx.get receipt) :=
   (testEnv.trm2valExeCtx.equivariance receipt).symm
 
 end Tests.STLC.Sanity

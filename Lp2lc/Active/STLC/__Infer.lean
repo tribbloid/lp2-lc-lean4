@@ -9,7 +9,7 @@ Adds the compile-time typing context; the shared value-or-type view permits
 only lookups, so compile-time code cannot mint receipts from new values.
 -/
 class BuildEnv (refs : EverythingRefs) where
-  uid2typCtx : UIdEquiv.Lesser (base := refs.uid2either)
+  uid2typCtx : UIdEquiv.Lesser (base := refs.uid2any)
     (Sum.inr : AST.Typ refs.Parameters →
       AST.Val refs.Parameters ⊕ AST.Typ refs.Parameters)
 
@@ -48,7 +48,7 @@ def infer {refs} [env : BuildEnv refs]
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
     | .ref receipt =>
-      match refs.uid2either.get receipt with
+      match refs.uid2any.get receipt with
       | .inl value => value.asTrm.infer fuel
       | .inr typ => .yield (some typ)
 

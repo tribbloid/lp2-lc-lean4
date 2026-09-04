@@ -17,7 +17,7 @@ abbrev Typ := AST.Typ refs.Parameters
 @[local simp]
 theorem trm2typLookup
     (receipt : {uid // build.uid2typCtx.ev uid}) :
-    refs.uid2either.get receipt.val = .inr (build.uid2typCtx.get receipt) :=
+    refs.uid2any.get receipt.val = .inr (build.uid2typCtx.get receipt) :=
   (build.uid2typCtx.equivariance receipt).symm
 
 example :
