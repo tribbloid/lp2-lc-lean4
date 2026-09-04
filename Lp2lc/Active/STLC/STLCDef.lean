@@ -97,6 +97,8 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
+end
+
 /--
 Shares one receipt carrier between executable values and build-time types.
 
@@ -152,7 +154,5 @@ def eval [refs : EverythingRefs] [env : ExeEnv refs]
       | .inr _typ => .yield none
 
 end AST
-
-end
 
 end Lp2lc.Active.STLC
