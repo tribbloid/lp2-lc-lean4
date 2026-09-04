@@ -109,7 +109,7 @@ receipt, so this infrastructure alone does not prevent phase-dependent lambda
 bodies.
 -/
 class EverythingRefs extends HasData where
-  uid2any : UIdView (λ T =>
+  uid2any : UIdRefs (λ T =>
     let P : Parameters := { C := T, D := D }
 
     AST.Val P ⊕ AST.Typ P

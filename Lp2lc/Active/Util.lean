@@ -21,32 +21,32 @@ carriers can retain the receipt required by `get`.
 
 type VK is deliberately a type constructor of V, without it V may be impossible to define due to cyclic references
 -/
-class UIdView (VK : UIdU → Sort u) where
+class UIdRefs (VK : UIdU → Sort u) where
   UId : UIdU
   get : (uid : UId) → VK UId
 
-namespace UIdView
+namespace UIdRefs
 
 class HasEv (UId : UIdU) where
   ev : UId → Prop -- a subtype of UId with extra contract
 
 /-- Read-only access to refined receipts compatible with a base view. -/
-class Lesser {VK} {V2 : Sort v} (base : UIdView VK)
+class Lesser {VK} {V2 : Sort v} (base : UIdRefs VK)
     (upcast : V2 → VK base.UId) extends HasEv base.UId where
   get (receipt : {uid // ev uid}) : V2
   equivariance : ∀ (receipt : {uid // ev uid}), upcast (get receipt) = base.get receipt.val
 
-end UIdView
+end UIdRefs
 
 /--
-Full receipt-indexed bridge, extending [UIdView] with the reverse direction.
+Full receipt-indexed bridge, extending [UIdRefs] with the reverse direction.
 
 `inv` is the only way to obtain a UId: it requires a value, so a view alone
 cannot mint receipts from new values.
 
 Not extendable, if you need to use the hypothetical `mkLesser`, use [UIdEquiv].
 -/
-private class _UIdEquivProto {VK} (base : UIdView VK) where
+private class _UIdEquivProto {VK} (base : UIdRefs VK) where
   inv (value : VK base.UId) : base.UId
   rightInv : ∀ (value : VK base.UId), base.get (inv value) = value
   leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
@@ -67,9 +67,9 @@ from `base` satisfying `ev`.
 refined receipt agrees with reading its underlying receipt from `base`.
 The inverse laws are explicit because the read-only base has no inverse.
 -/
-class Lesser {VK} (base : UIdView VK) {V2 : Sort v}
+class Lesser {VK} (base : UIdRefs VK) {V2 : Sort v}
     (upcast : V2 → VK base.UId)
-    extends UIdView.Lesser base upcast where
+    extends UIdRefs.Lesser base upcast where
   inv (value : V2) : {uid // ev uid}
   -- TODO: prove if possible
   rightInv : ∀ (value : V2), get (inv value) = value
@@ -84,14 +84,14 @@ are indexed by it.
 Extends the inverse-only proto `_UIdEquivProto` with `mkLesser`, which mints
 refined [UIdEquiv.Lesser] views for arbitrary upcasts.
 -/
-class UIdEquiv {VK} (base : UIdView VK) extends _UIdEquivProto base where
+class UIdEquiv {VK} (base : UIdRefs VK) extends _UIdEquivProto base where
   mkLesser (V2 : Sort u) (upcast : V2 → VK base.UId) :
     UIdEquiv.Lesser (base := base) upcast
 
 namespace UIdEquiv
 
 /-- Coerces a full bridge to the read-only view that it completes. -/
-instance {VK} {base : UIdView VK} : CoeOut (UIdEquiv base) (UIdView VK) where
+instance {VK} {base : UIdRefs VK} : CoeOut (UIdEquiv base) (UIdRefs VK) where
   coe _self := base
 
 end UIdEquiv
@@ -122,7 +122,11 @@ It is deliberately left abstract to ward off unlawful construction:
 - the only way to construct `D` is to parse a primitive literal in AST
 -/
 class Parameters extends HasData where
-  C : UIdU -- shared PHOAS receipt carrier
+  C : UIdU -- shared PHOAS/carrier UIdRefs/receipt
+  /-
+  AST domain:
+  -/
+  dom : C -> Prop := λ _ => true
 
 section variable {T : Sort u}
 

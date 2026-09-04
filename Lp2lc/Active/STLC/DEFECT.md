@@ -18,11 +18,11 @@
 
 - ExeEnv & BuildEnv should not be a depend type of each other
   - doing so will allow each Env to construct each other using from `match`, enabling a cheater compiler (e.g. eval in compile-time)
-- UIdView and UIdEquiv should never share their UId types
-  - doing so will allow forged construction, as UIdView\.get is a total function
+- UIdRefs and UIdEquiv should never share their UId types
+  - doing so will allow forged construction, as UIdRefs\.get is a total function
 
 ### Doctrine of an optimal design:
 
-- UIdEquiv type should depend on UIdView, `x: UIDEquiv V` and `v : V` always share the same UId (But don't drop the subtyping/coercion)
+- UIdEquiv type should depend on UIdRefs, `x: UIDEquiv V` and `v : V` always share the same UId (But don't drop the subtyping/coercion)
 - ExeEnv and BuildEnv should both depends on an `ExeRefs`, such that consistency of `D` and `UIDView` is enforced by its member, but both Env cannot construct each other
   - `ExeParameter` and `BuildParameters` can be members of `ExeRefs` directly.
