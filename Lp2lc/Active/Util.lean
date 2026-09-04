@@ -79,7 +79,7 @@ class Lesser {VK} (base : UIdView VK) {V2 : Sort v}
   rightInv : ∀ (value : V2), get (inv value) = value
   leftInv : ∀ (receipt : {uid // ev uid}), inv (get receipt) = receipt
 
-
+-- FIXME: This should be the real `UIdEquiv`, the old `UIdEquiv` should be renamed `_UIdEquivProto` and be private
 /-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
 class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
   mkLesser (V2 : Sort u) (upcast : V2 → VK base.UId) :
