@@ -83,7 +83,7 @@ end AST
 open AST
 
 /-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE : LE (AST.Typ P) := ⟨Eq⟩
+instance typLE : LE (AST.Typ P) := ⟨Eq⟩ -- FIXME: Why is it needed? do we already have DecidableLE?
 
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
