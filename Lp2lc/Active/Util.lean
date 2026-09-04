@@ -135,7 +135,10 @@ section variable (Self : Parameters)
 
 def CC := {x // Self.dom x} -- certified carrier
 
-def Lesser : Parameters := sorry -- FIXME: create a new Parameters with more specific (narrower) domain
+/-- Builds a `Parameters` whose certified domain further restricts `Self.dom`,
+so the refinement of `CC Self` holds by construction. -/
+def Lesser (narrower : Self.C → Prop) : Parameters :=
+  { D := Self.D, C := Self.C, dom := λ r => Self.dom r ∧ narrower r }
 
 end
 end Parameters
