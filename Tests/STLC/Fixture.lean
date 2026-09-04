@@ -17,7 +17,7 @@ class TestEnv where
 
 variable [testEnv : TestEnv]
 
-@[reducible] instance refs : TypOrValRefs :=
+@[reducible] instance refs : EverythingRefs :=
   { D := String, uid2either := testEnv.trm2either }
 
 @[simp]

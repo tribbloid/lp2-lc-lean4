@@ -106,24 +106,24 @@ proof certifies which payload is available, but [AST.ref] stores only the raw
 receipt, so this infrastructure alone does not prevent phase-dependent lambda
 bodies.
 -/
-class TypOrValRefs extends HasData where --FIXME: rename to ValOrTypRefs
+class EverythingRefs extends HasData where --FIXME: rename to "EverythingRefs"
   uid2either : UIdView (λ T =>
     let P : Parameters := { C := T, D := D }
 
     AST.Val P ⊕ AST.Typ P
   )
 
-namespace TypOrValRefs
-section variable (self : TypOrValRefs)
+namespace EverythingRefs
+section variable (self : EverythingRefs)
 
 /-- The shared syntax parameters are fixed by the mixed receipt view. -/
 abbrev Parameters : Parameters := { C := self.uid2either.UId, D := self.D }
 
 end
-end TypOrValRefs
+end EverythingRefs
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv (refs : TypOrValRefs) where
+class ExeEnv (refs : EverythingRefs) where
   uid2valCtx : UIdEquiv.Lesser (base := refs.uid2either)
     (Sum.inl : AST.Val refs.Parameters →
       AST.Val refs.Parameters ⊕ AST.Typ refs.Parameters)
@@ -131,7 +131,7 @@ class ExeEnv (refs : TypOrValRefs) where
 namespace AST
 
 /-- Evaluates executable terms whose references carry receipts from the runtime context. -/
-def eval [refs : TypOrValRefs] [env : ExeEnv refs]
+def eval [refs : EverythingRefs] [env : ExeEnv refs]
     (self : Trm refs.Parameters) : RecOpt (Val refs.Parameters)
   | 0 => .outOfFuel
   | fuel + 1 =>

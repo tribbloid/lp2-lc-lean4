@@ -11,7 +11,7 @@ structure TypeWithSafey {refs} [build : BuildEnv refs]
   t2 : AST.Typ refs.Parameters
   safety : [_exe : ExeEnv refs] -> Safety trm t2
 
-class ProvingEnv (refs : TypOrValRefs) extends BuildEnv refs where
+class ProvingEnv (refs : EverythingRefs) extends BuildEnv refs where
   --TODO: this impl should be final, move into namespace
   uid2typWithSafetyCtx : UIdEquiv.Lesser (base := refs.uid2either)
     (λ value : PSigma (λ trm : AST.Trm refs.Parameters => TypeWithSafey trm) =>
@@ -38,7 +38,7 @@ TODO: discharge this function.
 - You are allowed to add more context into ProvingEnv namespace to meet proving demand
 -/
 /-- Infers build types for executable terms. -/
-def infer [refs : TypOrValRefs] [proving : ProvingEnv refs] [env : ExeEnv refs]
+def infer [refs : EverythingRefs] [proving : ProvingEnv refs] [env : ExeEnv refs]
     (trm : AST.Trm refs.Parameters) :
     RecOpt (TypeWithSafey trm) := sorry
 
