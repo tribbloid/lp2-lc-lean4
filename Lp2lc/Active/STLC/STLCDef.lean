@@ -34,29 +34,15 @@ used by function application after both sides have been evaluated.
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
-/-
-FIXME: Switch to idiomatic PHOAS
-
-Previous AST.lam has a vulnerability that is exploited by
-`binderIdentityCounterexample` example: evaluation fails while
-inference yields `.primitive`.
-
-The fix is to revert to the most simple & idiomatic AST.lam definition (as demonstrated in the partially fixed `lam (arg : P.C) → AST P .trm)`):
-- .lam and .ref always use P.C
-- AST.eval will fail to resolve .ref if it's value in the context is not a value
-
-Caution:
-- de Bruijn serial or explicit substitution/recarrier of AST should be avoided at all cost, as they tend to bloat soundness proof
-- do not introduce new definition or duplicated case
--/
 /--
-Binds a phase-certified receipt over the shared [P.C] carrier.
+Binds a fresh receipt over the shared [P.C] carrier for its body.
 
-The carrier type is always [P.C]. The callback remains unchecked because it can
-inspect raw receipt identity and construct `.ref arg.val`, which discards the
-phase-specific `ev` evidence.
+The body is an idiomatic PHOAS function from the raw receipt carrier [P.C] to
+the source term syntax, and [AST.ref] stores that same raw receipt. Evaluation
+and inference substitute their own minted receipts into the body, and [AST.eval]
+fails to resolve an [AST.ref] whose receipt does not map to a value.
 -/
-| lam (arg : P.C) → AST P .trm)
+| lam (body : P.C → AST P .trm)
     (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
 
 section variable {P : Parameters}
@@ -111,16 +97,14 @@ instance typDecidableLE : DecidableLE (AST.Typ P)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
     | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
 
-
-
 /--
 Shares one receipt carrier between executable values and build-time types.
 
 The underlying view stores a tagged value-or-type payload. Runtime and build
 contexts refine that view independently through [UIdEquiv.Lesser]. The subtype
 proof certifies which payload is available, but [AST.ref] stores only the raw
-receipt. Projecting a lambda argument to `.val` therefore discards that proof, so
-this infrastructure alone does not prevent phase-dependent lambda bodies.
+receipt, so this infrastructure alone does not prevent phase-dependent lambda
+bodies.
 -/
 class TypOrValRefs extends HasData where --FIXME: rename to ValOrTypRefs
   uid2either : UIdView (λ T =>
@@ -158,7 +142,7 @@ def eval [refs : TypOrValRefs] [env : ExeEnv refs]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some input)) =>
         let receipt := env.uid2valCtx.inv input
-        eval (body receipt) fuel
+        eval (body receipt.val) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
