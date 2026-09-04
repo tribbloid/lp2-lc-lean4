@@ -16,7 +16,7 @@ def vTrue : Trm :=
   .val (.lit "true")
 
 def primitiveIdFn : Trm :=
-  .val (.lam (λ x => .ref x.val) .primitive)
+  .val (.lam (λ x => .ref x) .primitive)
 
 def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
@@ -25,14 +25,14 @@ def get1st : Trm :=
   .val
     (.lam (λ x =>
       .val
-        (.lam (λ _y => .ref x.val) .primitive))
+        (.lam (λ _y => .ref x) .primitive))
       .primitive)
 
 def get2nd : Trm :=
   .val
     (.lam (λ _x =>
       .val
-        (.lam (λ y => .ref y.val) .primitive))
+        (.lam (λ y => .ref y) .primitive))
       .primitive)
 
 def get1stOnTuple : Trm :=
@@ -81,7 +81,7 @@ def hintedFalse : Trm :=
   .val (.lit "false")
 
 def hintedIdFn : Trm :=
-  .val (.lam (λ x => .ref x.val) .primitive)
+  .val (.lam (λ x => .ref x) .primitive)
 
 def hintedIdFnOnFalse : Trm :=
   .apply hintedIdFn hintedFalse
@@ -115,8 +115,8 @@ def binderIdentityCounterexample
               (.lam
                 (λ inner =>
                   let _ := decEq refs.Parameters.C
-                  if inner.val = outer.val then
-                    .ref inner.val
+                  if inner = outer then
+                    .ref inner
                   else
                     .apply vFalse vTrue)
                 .primitive))

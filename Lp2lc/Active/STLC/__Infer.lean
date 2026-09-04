@@ -38,7 +38,7 @@ def infer {refs} [env : BuildEnv refs]
     | .val (.lit _) => .yield (some .primitive)
     | .val (.lam body tIn) =>
       let receipt := env.uid2typCtx.inv tIn
-      ((body receipt).infer fuel).map
+      ((body receipt.val).infer fuel).map
         (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
       match infer fnTerm fuel, infer arg fuel with
