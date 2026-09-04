@@ -44,18 +44,14 @@ Full receipt-indexed bridge, extending [UIdView] with the reverse direction.
 `inv` is the only way to obtain a UId: it requires a value, so a view alone
 cannot mint receipts from new values.
 
-By default it is not extendable, if you need to use the hypothetical `mkLesser`, use [UIdEquiv.Extendable]
+Not extendable, if you need to use the hypothetical `mkLesser`, use [UIdEquiv].
 -/
-class UIdEquiv {VK} (base: UIdView VK) where
+private class _UIdEquivProto {VK} (base : UIdView VK) where
   inv (value : VK base.UId) : base.UId
   rightInv : ∀ (value : VK base.UId), base.get (inv value) = value
   leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
 
 namespace UIdEquiv
-
-/-- Coerces a full bridge to the read-only view that it completes. -/
-instance {VK} {base : UIdView VK} : CoeOut (UIdEquiv base) (UIdView VK) where
-  coe _self := base
 
 /-
 DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`Greater`
@@ -79,21 +75,34 @@ class Lesser {VK} (base : UIdView VK) {V2 : Sort v}
   rightInv : ∀ (value : V2), get (inv value) = value
   leftInv : ∀ (receipt : {uid // ev uid}), inv (get receipt) = receipt
 
--- FIXME: This should be the real `UIdEquiv`, the old `UIdEquiv` should be renamed `_UIdEquivProto` and be private
-/-- Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values are indexed by it. -/
-class Extendable {VK} (base : UIdView VK) extends UIdEquiv base where
+end UIdEquiv
+
+/--
+Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values
+are indexed by it.
+
+Extends the inverse-only proto `_UIdEquivProto` with `mkLesser`, which mints
+refined [UIdEquiv.Lesser] views for arbitrary upcasts.
+-/
+class UIdEquiv {VK} (base : UIdView VK) extends _UIdEquivProto base where
   mkLesser (V2 : Sort u) (upcast : V2 → VK base.UId) :
-    Lesser (base := base) upcast
+    UIdEquiv.Lesser (base := base) upcast
+
+namespace UIdEquiv
+
+/-- Coerces a full bridge to the read-only view that it completes. -/
+instance {VK} {base : UIdView VK} : CoeOut (UIdEquiv base) (UIdView VK) where
+  coe _self := base
 
 end UIdEquiv
 
--- /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/ TOOD: delete, superseded by Extendable
+-- /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/ TOOD: delete, superseded by UIdEquiv
 -- class CanGetUIdFor (VK : UIdU -> Sort u) where
 --   mkEquiv  : UIdEquiv VK
 --   mkLesser (outer : UIdEquiv VK) {MK : VK outer.UId → Sort u} : UIdEquiv.Lesser outer MK
 
 
-attribute [simp] UIdEquiv.rightInv UIdEquiv.leftInv
+attribute [simp] _UIdEquivProto.rightInv _UIdEquivProto.leftInv
   UIdEquiv.Lesser.rightInv UIdEquiv.Lesser.leftInv
 
 /--

@@ -9,33 +9,9 @@ open UIdEquiv
   UId := PSigma (λ _id : Nat => True)
   get := λ receipt => receipt.fst
 
-@[reducible] def group : UIdEquiv groupView where
-  inv := λ value => ⟨value, True.intro⟩
-  rightInv := by
-    intro value
-    rfl
-  leftInv := by
-    intro receipt
-    cases receipt with
-    | mk _id evidence =>
-      cases evidence
-      rfl
-
 @[reducible] def equalityView : UIdView.{1} (λ _evidence => Nat) where
   UId := PSigma (λ _id : Nat => 0 = 0)
   get := λ receipt => receipt.fst
-
-@[reducible] def equalityGroup : UIdEquiv equalityView where
-  inv := λ value => ⟨value, rfl⟩
-  rightInv := by
-    intro value
-    rfl
-  leftInv := by
-    intro receipt
-    cases receipt with
-    | mk _id evidence =>
-      cases evidence
-      rfl
 
 abbrev EqOneValue := {value : Nat // value = 1}
 
@@ -50,14 +26,17 @@ abbrev EqOneValue := {value : Nat // value = 1}
 @[reducible] def eqOneMetadata :
     Lesser (V2 := EqOneValue) (base := groupView) Subtype.val where
   toLesser := eqOneMetadataView
-  inv := λ value => ⟨group.inv value.val, value.property⟩
+  inv := λ value => ⟨⟨value.val, True.intro⟩, value.property⟩
   rightInv := by
     intro value
     rfl
   leftInv := by
     intro receipt
     apply Subtype.ext
-    exact group.leftInv receipt.val
+    cases receipt.val with
+    | mk _id evidence =>
+      cases evidence
+      rfl
 
 @[reducible] def unitMetadataView :
     UIdView.Lesser (V2 := Nat × Unit) groupView Prod.fst where
@@ -70,7 +49,7 @@ abbrev EqOneValue := {value : Nat // value = 1}
 @[reducible] def unitMetadata :
     Lesser (V2 := Nat × Unit) (base := groupView) Prod.fst where
   toLesser := unitMetadataView
-  inv := λ value => ⟨group.inv value.fst, True.intro⟩
+  inv := λ value => ⟨⟨value.fst, True.intro⟩, True.intro⟩
   rightInv := by
     intro value
     cases value with
@@ -80,37 +59,30 @@ abbrev EqOneValue := {value : Nat // value = 1}
   leftInv := by
     intro receipt
     apply Subtype.ext
-    exact group.leftInv receipt.val
+    cases receipt.val with
+    | mk _id evidence =>
+      cases evidence
+      rfl
 
 section receipt
 
-example : UIdView (λ _evidence => Nat) := group
-
 example :
-    (group : UIdView (λ _evidence => Nat)).get (group.inv 1) = 1 := by
-  exact group.rightInv 1
-
-example :
-    group.inv ((group : UIdView (λ _evidence => Nat)).get (group.inv 1)) = group.inv 1 := by
-  exact group.leftInv (group.inv 1)
-
-example :
-    eqOneMetadata.ev (group.inv 1) :=
+    eqOneMetadata.ev ⟨1, True.intro⟩ :=
   (eqOneMetadata.inv ⟨1, rfl⟩).property
 
 example :
-    eqOneMetadata.ev (group.inv 1) ∧
-      unitMetadata.ev (group.inv 1) :=
+    eqOneMetadata.ev ⟨1, True.intro⟩ ∧
+      unitMetadata.ev ⟨1, True.intro⟩ :=
   ⟨(eqOneMetadata.inv ⟨1, rfl⟩).property,
     (unitMetadata.inv (1, ())).property⟩
 
 example :
-    eqOneMetadata.ev (group.inv 1) → EqOneValue :=
-  λ evidence => eqOneMetadata.get ⟨group.inv 1, evidence⟩
+    eqOneMetadata.ev ⟨1, True.intro⟩ → EqOneValue :=
+  λ evidence => eqOneMetadata.get ⟨⟨1, True.intro⟩, evidence⟩
 
 example :
-    unitMetadata.ev (group.inv 1) → Nat × Unit :=
-  λ evidence => unitMetadata.get ⟨group.inv 1, evidence⟩
+    unitMetadata.ev ⟨1, True.intro⟩ → Nat × Unit :=
+  λ evidence => unitMetadata.get ⟨⟨1, True.intro⟩, evidence⟩
 
 example (receipt : {uid // eqOneMetadata.ev uid}) :
     (eqOneMetadata.get receipt).val = groupView.get receipt.val := by
@@ -160,8 +132,7 @@ example : True := by
 
 example : True := by
   fail_if_success
-    have _value : Nat :=
-      (equalityGroup : UIdView (λ _evidence => Nat)).get (group.inv 1)
+    have _value : Nat := equalityView.get ⟨1, True.intro⟩
   trivial
 
 end rejection
