@@ -124,9 +124,21 @@ It is deliberately left abstract to ward off unlawful construction:
 class Parameters extends HasData where
   C : UIdU -- shared PHOAS/carrier UIdRefs/receipt
   /-
-  AST domain:
+  AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
+  AST of more specific domain can be used to constract AST of more general domain.
+  - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
   -/
   dom : C -> Prop := λ _ => true
+
+namespace Parameters
+section variable (Self : Parameters)
+
+def CC := {x // Self.dom x} -- certified carrier
+
+def Lesser : Parameters := sorry -- FIXME: create a new Parameters with more specific (narrower) domain
+
+end
+end Parameters
 
 section variable {T : Sort u}
 

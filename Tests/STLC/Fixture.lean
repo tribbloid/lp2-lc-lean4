@@ -7,7 +7,7 @@ open Lp2lc.Active.STLC
 
 /-- Supplies the shared reference view and runtime value context used by STLC tests. -/
 class TestEnv where
-  trm2either : UIdView (λ C =>
+  trm2either : UIdRefs (λ C =>
     let P : Parameters := { C := C, D := String }
     AST.Val P ⊕ AST.Typ P)
   trm2valExeCtx : UIdEquiv.Lesser (base := trm2either)

@@ -5,18 +5,18 @@ namespace Tests.UIdEquivSpec
 open Lp2lc.Active.Util
 open UIdEquiv
 
-@[reducible] def groupView : UIdView.{1} (λ _evidence => Nat) where
+@[reducible] def groupView : UIdRefs.{1} (λ _evidence => Nat) where
   UId := PSigma (λ _id : Nat => True)
   get := λ receipt => receipt.fst
 
-@[reducible] def equalityView : UIdView.{1} (λ _evidence => Nat) where
+@[reducible] def equalityView : UIdRefs.{1} (λ _evidence => Nat) where
   UId := PSigma (λ _id : Nat => 0 = 0)
   get := λ receipt => receipt.fst
 
 abbrev EqOneValue := {value : Nat // value = 1}
 
 @[reducible] def eqOneMetadataView :
-    UIdView.Lesser (V2 := EqOneValue) groupView Subtype.val where
+    UIdRefs.Lesser (V2 := EqOneValue) groupView Subtype.val where
   ev := λ receipt => receipt.fst = 1
   get := λ receipt => ⟨receipt.val.fst, receipt.property⟩
   equivariance := by
@@ -39,7 +39,7 @@ abbrev EqOneValue := {value : Nat // value = 1}
       rfl
 
 @[reducible] def unitMetadataView :
-    UIdView.Lesser (V2 := Nat × Unit) groupView Prod.fst where
+    UIdRefs.Lesser (V2 := Nat × Unit) groupView Prod.fst where
   ev := λ _receipt => True
   get := λ receipt => (groupView.get receipt.val, ())
   equivariance := by
