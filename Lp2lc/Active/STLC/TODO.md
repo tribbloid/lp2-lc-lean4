@@ -1,5 +1,23 @@
 # High Priority
 
+## Parallel Structural Induction? Does it eliminate the need for parametricity axiom?
+
+- both eval & infer use AST that can refer to everything
+- a single function to produce a bundle of both results:
+
+```
+structure Parallel
+  typ: AST.Typ
+  val: AST.Val
+  inferValThunk: Unit -> AST.Typ -- function that yields val.infer
+  safety: inferValThunk unit <= typ 
+```
+
+The vulnerability of forging Val from Typ UId is thwarted not by using different UId types (UIdEquiv can get/inv Parallel directly), but by **tracking lineage/dependency of construction**
+
+- when constructing val, typ is invisable ()
+- when constructing typ, val is invisible (cannot see result of execution iin compiletime)
+
 ## Certified AST
 
 PHOAS definition have many contradicting traits that makes it difficult to be used in proof:

@@ -34,6 +34,10 @@ used by function application after both sides have been evaluated.
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
+/-
+FIXME: I'd like to remove `(tIn : AST P .typ)` from AST, it makes extension to more advanced type system (e.g. dependent type) harder
+This won't have any impact on AST.eval, but AST.infer can't bind input variable until much later (during function application)
+-/
 /--
 Binds a fresh receipt over the shared [P.C] carrier for its body.
 
