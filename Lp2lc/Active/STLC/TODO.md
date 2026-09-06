@@ -4,18 +4,22 @@
 
 - both eval & infer use AST that can refer to everything
 - a single function to produce a bundle of both results:
+- since DOT has (mutual) recursion, there is no guarantee that their execution are identical at low level, but they must be related, e.g.:
 
-```
+```lean
 structure Parallel
   typ: AST.Typ
-  val: AST.Val
-  inferValThunk: Unit -> AST.Typ -- function that yields val.infer
-  safety: inferValThunk unit <= typ 
+  inferVal: AST.Val -> AST.Typ -- lambda `val => val.infer`
+  relatedSafeVals UIdRefs {x // inferVal x <= typ } -- 1 type can have many values so this has to be a refs
+  
+  safety: (c : relatedResult.UId) -> (inferResult (relatedResult.get c) <= typ) 
 ```
+
+- the last member is multiple values related to a type, with their safety proof
 
 The vulnerability of forging Val from Typ UId is thwarted not by using different UId types (UIdEquiv can get/inv Parallel directly), but by **tracking lineage/dependency of construction**
 
-- when constructing val, typ is invisable ()
+- when constructing val, typ is invisible ()
 - when constructing typ, val is invisible (cannot see result of execution iin compiletime)
 
 ## Certified AST
