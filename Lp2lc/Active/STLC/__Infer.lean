@@ -35,18 +35,21 @@ def infer {refs} [env : BuildEnv refs]
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val (.lit _) => .yield (some .primitive)
-    | .val (.lam body tIn) =>
-      let receipt := env.uid2typCtx.inv tIn
-      ((body receipt.val).infer fuel).map
-        (λ out => out.map (λ tOut => .fn tIn tOut))
+    | .val value =>
+      match value with
+      | .lit _ => .yield (some .primitive)
+      | .lam body tIn =>
+        let receipt := env.uid2typCtx.inv tIn
+        ((body receipt.val).infer fuel).map
+          (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
-      match infer fnTerm fuel, infer arg fuel with
-      | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
+      let anf := (infer fnTerm fuel, infer arg fuel)
+      match anf with
+      | (.yield (some (.fn tIn tOut)), .yield (some argTyp)) =>
         if argTyp ≤ tIn then .yield (some tOut) else .yield none
-      | .outOfFuel, _ => .outOfFuel
-      | _, .outOfFuel => .outOfFuel
-      | _, _ => .yield none
+      | (.outOfFuel, _) => .outOfFuel
+      | (_, .outOfFuel) => .outOfFuel
+      | _ => .yield none
     | .ref receipt =>
       match refs.uid2any.get receipt with
       | .inl value => value.asTrm.infer fuel
