@@ -13,7 +13,7 @@ The project depends on Aesop through Lake.
 - Build after every revision. Do not proceed while compiler/LSP errors remain; final Lean changes must pass `lake build` without errors. Existing `sorry`-backed scaffolds may remain only when the current task is not discharging them; do not introduce new production `sorry` unless the task is explicitly Conjecture Scaffolding.
 - Only create new permanent core file if required by `.agent/CodeStructure.md`.
   - Agent tool scripts not part of the core project should be under `<project-dir>/.agent/script` directory.
-  - Other new files should be under any "__TEMP" subdirectory.
+  - Other new files should be under any "\__TEMP" subdirectory.
 
 #### Don't
 
@@ -25,7 +25,7 @@ The project depends on Aesop through Lake.
 
 ### Structure
 
-See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest nested `AGENTS.md`; examples such as [Tests/AGENTS.md](Tests/AGENTS.md) are not exhaustive.
+See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest nested `AGENTS.md`; examples such as Tests/AGENTS.md are not exhaustive.
 
 ### Lean Code Convention
 
@@ -67,13 +67,10 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 #### Task-specific Guardrails
 
 When working on a issue that contains multiple subtasks:
-- If one requested change would otherwise combine a **Conjecture Revision** with
-  **Proving/Discharge**, always split it into two ordered subtasks and commits:
-  1. First, make a **Conjecture Revision** commit containing only the proposition/type
-     definitions and required statement-signature revisions. This scaffolding commit
-     may temporarily fail to compile solely because its dependent proofs are stale.
-  2. Second, make a **Proving/Discharge** commit containing the dependent proof
-     revisions and restore a successful build.
+
+- If one requested change would otherwise combine a **Conjecture Revision** with **Proving/Discharge**, always split it into two ordered subtasks and commits:
+  1. First, make a **Conjecture Revision** commit containing only the proposition/type definitions and required statement-signature revisions. This scaffolding commit may temporarily fail to compile solely because its dependent proofs are stale.
+  2. Second, make a **Proving/Discharge** commit containing the dependent proof revisions and restore a successful build.
 - Each subtask should have its own independent git commit. When you complete one, commit immediately.
 - Each subtask should be classified into one of the following Categories:
   - **Refactoring/Cleanup** is for enforcing code format & compliance without introduce meaningful change. DO NOT introduce or update type signature, definition, or proof (even if it is missing or `sorry`). Existing code structure should be preserved at all cost.
@@ -115,6 +112,17 @@ When working on a issue that contains multiple subtasks:
 - `Dep` prefix : dependent, related to dependent type
 - `Rec` : recursive, guarded recursion
 - `__` : experimental, self-contained code, non-experimental code should not import from it
+
+## Git (Version Control)
+
+- Commit message always have the following format:
+
+```
+[{{LLM MODEL}}] {{Task Info}} {{Optional Subtask Category & Info}}
+```
+
+- If a task contains multiple subtasks. Each subtask should have it's own commit
+- If HEAD is DETACHED, create a temporary branch and commit into it
 
 ## Key Commands
 
