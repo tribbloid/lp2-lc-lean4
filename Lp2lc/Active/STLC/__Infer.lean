@@ -10,7 +10,7 @@ only lookups, so compile-time code cannot mint receipts from new values.
 -/
 class BuildEnv (refs : EverythingRefs) where
   uid2typCtx : UIdEquiv.Lesser (base := refs.uid2any)
-    ⟨Sum.inr, _⟩
+    ⟨Sum.inr, λ _left _right => Sum.inr.inj⟩
 
 namespace BuildEnv
 section variable {refs : EverythingRefs} (self : BuildEnv refs)

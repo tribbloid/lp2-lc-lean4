@@ -11,7 +11,7 @@ class TestEnv where
     let P : Parameters := { C := C, D := String }
     AST.Val P ⊕ AST.Typ P)
   trm2valExeCtx : UIdEquiv.Lesser (base := trm2either)
-    ⟨Sum.inl, _⟩
+    ⟨Sum.inl, λ _left _right => Sum.inl.inj⟩
 
 variable [testEnv : TestEnv]
 

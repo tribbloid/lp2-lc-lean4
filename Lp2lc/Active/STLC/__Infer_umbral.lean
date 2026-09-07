@@ -15,7 +15,12 @@ class ProvingEnv (refs : EverythingRefs) extends BuildEnv refs where
   --TODO: this impl should be final, move into namespace
   uid2typWithSafetyCtx (trm : AST.Trm refs.Parameters) :
     UIdEquiv.Lesser (base := refs.uid2any)
-      ⟨λ value : TypeWithSafey trm => Sum.inr value.t2, _⟩
+      ⟨λ value : TypeWithSafey trm => Sum.inr value.t2, by
+        intro left right h
+        cases left
+        cases right
+        cases Sum.inr.inj h
+        rfl⟩
 
 namespace ProvingEnv
 
