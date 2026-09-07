@@ -137,7 +137,7 @@ class ExeEnv (refs : EverythingRefs) where
 namespace AST
 
 /-- Evaluates executable terms whose references carry receipts from the runtime context. -/
-def eval [refs : EverythingRefs] [env : ExeEnv refs]
+def eval {refs} [env : ExeEnv refs]
     (self : Trm refs.Parameters) : RecOpt (Val refs.Parameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -146,13 +146,16 @@ def eval [refs : EverythingRefs] [env : ExeEnv refs]
     | .apply fnTerm arg =>
       let anf := (eval fnTerm fuel, eval arg fuel)
       match anf with
-      | (.yield (some (.lam body _tIn)), .yield (some input)) =>
-        let receipt := env.uid2valCtx.inv input
+      | (.yield (some (.lam body _tIn)), .yield (some arg)) =>
+        let receipt := env.uid2valCtx.inv arg
         eval (body receipt.val) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref receipt =>
+      match refs.uid2any.get receipt with
+      | .inl value => .yield (some value)
+      | .inr _typ => .yield none
     /-
     FIXME: enable Parameters.dom in AST
 
@@ -164,9 +167,6 @@ def eval [refs : EverythingRefs] [env : ExeEnv refs]
 
     Do not add new definition or make code longer
     -/
-      match refs.uid2any.get receipt with
-      | .inl value => .yield (some value)
-      | .inr _typ => .yield none
 
 end AST
 
