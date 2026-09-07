@@ -105,7 +105,7 @@ def apply1 : Trm :=
     vTrue
 
 def binderIdentityCounterexample
-    (decEq : (C : UIdU) → DecidableEq C) : Trm :=
+    (decEq : (C : KU) → DecidableEq C) : Trm :=
   .apply
     (.apply
       (.val

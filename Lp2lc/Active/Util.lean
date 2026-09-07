@@ -3,7 +3,7 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Util
 
-abbrev UIdU := Type -- the `U` suffix signifies this symbol as denoting a universe level
+abbrev KU := Type -- the `U` suffix signifies this symbol as denoting a universe level
 abbrev DataU := Type
 
 -- universe u v TODO: can remove
@@ -13,6 +13,12 @@ inductive Label
 | trm
 | val
 
+class KVsBase (K : KU) (V_ : KU -> Sort u) where
+  get : (k : K) → V_ K
+
+class HasUId where
+  UId : KU
+
 /--
 Receipt-indexed bridge between values and identifiers. Read-only.
 
@@ -21,24 +27,23 @@ carriers can retain the receipt required by `get`.
 
 type `V_` is deliberately a type constructor of `V`, without it V may be impossible to define due to cyclic references
 -/
-class UIdRefs (V_ : UIdU → Sort u) where
-  UId : UIdU
-  get : (uid : UId) → V_ UId
+class UIdRefs (V_ : KU → Sort u) extends HasUId, KVsBase UId V_
 
 namespace UIdRefs
 
-class HasEv (UId : UIdU) where
+class HasEv (UId : KU) where
   ev : UId → Prop -- a subtype of UId with extra contract
 
+ -- FIXME: both UIdRefs.Lesser and UIdEquiv.Lesser can be simplified by making them subclasses of KVsBase
 /-- Read-only access to refined receipts compatible with a base view. -/
 class Lesser {V_} {V2} (base : UIdRefs V_)
     (upcastV : V2 → V_ base.UId) extends HasEv base.UId where
   get (receipt : {uid // ev uid}) : V2
   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
 
-class Greater {V_} {K2 V2} (base : UIdRefs V_)
-  (upcastK: base.UId -> K2) (upcastV : V_ base.UId -> V2) where
-  -- FIXME: impl this
+class Greater {V_} {V2} (base : UIdRefs V_)
+  (upcastV : V_ base.UId -> V2) where
+  -- TODO: impl this, `Greater` should construct a new
 
 end UIdRefs
 
@@ -79,9 +84,9 @@ class Lesser {V_} {V2} (base : UIdRefs V_)
   rightInv : ∀ (value : V2), get (inv value) = value
   leftInv : ∀ (receipt : {uid // ev uid}), inv (get receipt) = receipt
 
-class Greater {V_} {K2 V2} (base : UIdRefs V_)
-  (upcastK: base.UId -> K2) (upcastV : V_ base.UId -> V2) where
-  -- FIXME: impl this
+class Greater {V_} {V2} (base : UIdRefs V_)
+  (upcastV : V_ base.UId -> V2) where
+  -- TODO: impl this
 
 end UIdEquiv
 
@@ -130,7 +135,7 @@ It is deliberately left abstract to ward off unlawful construction:
 - the only way to construct `D` is to parse a primitive literal in AST
 -/
 class Parameters extends HasData where
-  C : UIdU -- shared PHOAS/carrier UIdRefs/receipt
+  C : KU -- shared PHOAS/carrier UIdRefs/receipt
   /--
   AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
   AST of more specific domain can be used to constract AST of more general domain.
