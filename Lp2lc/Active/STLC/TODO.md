@@ -4,7 +4,7 @@
 
 - both eval & infer use AST that can refer to everything
 - a single function to produce a bundle of both results:
-- since DOT has (mutual) recursion, there is no guarantee that their execution are identical at low level, but they must be related, e.g.:
+- since DOT has (mutual) recursion, there is no guarantee that their execution are identical at low level, but they must be related. (this is also a reason that fn type should always carry types of both input & output)
 
 ```lean
 structure Parallel
@@ -62,4 +62,4 @@ P : Parameters
 
 ast: AST P L -- floating
 
-\`\`\`
+## Breakpoint compilation is too hard? Start with only closed terms
