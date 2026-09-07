@@ -51,8 +51,12 @@ class Lesser {V_} {V2} (base : UIdRefs V_) -- TODO: V2 should be a ctor from bas
     extends HasEv base.UId, KVsBase {uid // ev uid} (λ _ => V2) where
   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
 
+/-- Read-only access to a larger carrier, preserving the base receipt mapping. -/
 class Greater {V_} {V2} (base : UIdRefs V_)
-  (upcastV : V_ base.UId ↪ V2) where
+    (upcastV : V_ base.UId ↪ V2)
+    extends HasUId, KVsBase UId (λ _ => V2) where
+  upcastUId : base.UId ↪ UId
+  equivariance : ∀ (receipt : base.UId), get (upcastUId receipt) = upcastV (base.get receipt)
   -- FIXME: impl this and `UIdEquiv.Greater`, both should extend a KVsBase that map UId to V2, while including the old mapping in `base`
 
 end UIdRefs
@@ -94,8 +98,13 @@ class Lesser {V_} {V2} (base : UIdRefs V_)
   rightInv : ∀ (value : V2), get (inv value) = value
   leftInv : ∀ (receipt : {uid // ev uid}), inv (get receipt) = receipt
 
+/-- Equivalence for a larger carrier whose receipt mapping includes the base view. -/
 class Greater {V_} {V2} (base : UIdRefs V_)
-  (upcastV : V_ base.UId -> V2) where
+    (upcastV : V_ base.UId ↪ V2)
+    extends UIdRefs.Greater base upcastV where
+  inv (value : V2) : UId
+  rightInv : ∀ (value : V2), get (inv value) = value
+  leftInv : ∀ (receipt : UId), inv (get receipt) = receipt
 
 end UIdEquiv
 
