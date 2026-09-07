@@ -6,7 +6,7 @@ namespace Lp2lc.Active.Util
 abbrev UIdU := Type -- the `U` suffix signifies this symbol as denoting a universe level
 abbrev DataU := Type
 
-universe u v
+-- universe u v TODO: can remove
 
 inductive Label
 | typ
@@ -19,11 +19,11 @@ Receipt-indexed bridge between values and identifiers. Read-only.
 The value family is indexed by this bridge's evidence so recursive PHOAS
 carriers can retain the receipt required by `get`.
 
-type VK is deliberately a type constructor of V, without it V may be impossible to define due to cyclic references
+type `V_` is deliberately a type constructor of `V`, without it V may be impossible to define due to cyclic references
 -/
-class UIdRefs (VK : UIdU → Sort u) where
+class UIdRefs (V_ : UIdU → Sort u) where
   UId : UIdU
-  get : (uid : UId) → VK UId
+  get : (uid : UId) → V_ UId
 
 namespace UIdRefs
 
@@ -31,10 +31,14 @@ class HasEv (UId : UIdU) where
   ev : UId → Prop -- a subtype of UId with extra contract
 
 /-- Read-only access to refined receipts compatible with a base view. -/
-class Lesser {VK} {V2 : Sort v} (base : UIdRefs VK)
-    (upcast : V2 → VK base.UId) extends HasEv base.UId where
+class Lesser {V_} {V2} (base : UIdRefs V_)
+    (upcastV : V2 → V_ base.UId) extends HasEv base.UId where
   get (receipt : {uid // ev uid}) : V2
-  equivariance : ∀ (receipt : {uid // ev uid}), upcast (get receipt) = base.get receipt.val
+  equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
+
+class Greater {V_} {K2 V2} (base : UIdRefs V_)
+  (upcastK: base.UId -> K2) (upcastV : V_ base.UId -> V2) where
+  -- FIXME: impl this
 
 end UIdRefs
 
@@ -46,9 +50,9 @@ cannot mint receipts from new values.
 
 Not extendable, if you need to use the hypothetical `mkLesser`, use [UIdEquiv].
 -/
-private class _UIdEquivProto {VK} (base : UIdRefs VK) where
-  inv (value : VK base.UId) : base.UId
-  rightInv : ∀ (value : VK base.UId), base.get (inv value) = value
+private class _UIdEquivProto {V_} (base : UIdRefs V_) where
+  inv (value : V_ base.UId) : base.UId
+  rightInv : ∀ (value : V_ base.UId), base.get (inv value) = value
   leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
 
 namespace UIdEquiv
@@ -67,13 +71,17 @@ from `base` satisfying `ev`.
 refined receipt agrees with reading its underlying receipt from `base`.
 The inverse laws are explicit because the read-only base has no inverse.
 -/
-class Lesser {VK} (base : UIdRefs VK) {V2 : Sort v}
-    (upcast : V2 → VK base.UId)
+class Lesser {V_} {V2} (base : UIdRefs V_)
+    (upcast : V2 → V_ base.UId)
     extends UIdRefs.Lesser base upcast where
   inv (value : V2) : {uid // ev uid}
   -- TODO: prove if possible
   rightInv : ∀ (value : V2), get (inv value) = value
   leftInv : ∀ (receipt : {uid // ev uid}), inv (get receipt) = receipt
+
+class Greater {V_} {K2 V2} (base : UIdRefs V_)
+  (upcastK: base.UId -> K2) (upcastV : V_ base.UId -> V2) where
+  -- FIXME: impl this
 
 end UIdEquiv
 
@@ -84,22 +92,22 @@ are indexed by it.
 Extends the inverse-only proto `_UIdEquivProto` with `mkLesser`, which mints
 refined [UIdEquiv.Lesser] views for arbitrary upcasts.
 -/
-class UIdEquiv {VK} (base : UIdRefs VK) extends _UIdEquivProto base where
-  mkLesser (V2 : Sort u) (upcast : V2 → VK base.UId) :
+class UIdEquiv {V_} (base : UIdRefs V_) extends _UIdEquivProto base where
+  shrink (V2 : Sort u) (upcast : V2 → V_ base.UId) :
     UIdEquiv.Lesser (base := base) upcast
 
 namespace UIdEquiv
 
 /-- Coerces a full bridge to the read-only view that it completes. -/
-instance {VK} {base : UIdRefs VK} : CoeOut (UIdEquiv base) (UIdRefs VK) where
+instance {V_} {base : UIdRefs V_} : CoeOut (UIdEquiv base) (UIdRefs V_) where
   coe _self := base
 
 end UIdEquiv
 
 -- /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/ TOOD: delete, superseded by UIdEquiv
--- class CanGetUIdFor (VK : UIdU -> Sort u) where
---   mkEquiv  : UIdEquiv VK
---   mkLesser (outer : UIdEquiv VK) {MK : VK outer.UId → Sort u} : UIdEquiv.Lesser outer MK
+-- class CanGetUIdFor (V_ : UIdU -> Sort u) where
+--   mkEquiv  : UIdEquiv V_
+--   mkLesser (outer : UIdEquiv V_) {MK : V_ outer.UId → Sort u} : UIdEquiv.Lesser outer MK
 
 
 attribute [simp] _UIdEquivProto.rightInv _UIdEquivProto.leftInv

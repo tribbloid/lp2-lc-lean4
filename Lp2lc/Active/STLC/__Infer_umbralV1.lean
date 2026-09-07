@@ -70,7 +70,7 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
                 unfold AST.infer
                 simp only
               dsimp only [applyResult]
-              split <;> simp_all
+              split <;> split <;> simp_all
         rw [hResult]
         cases (AST.apply fnTerm arg).infer (fuel + 1) <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
