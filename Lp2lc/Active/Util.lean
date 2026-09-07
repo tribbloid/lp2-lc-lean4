@@ -8,7 +8,7 @@ structure Embedding (α : Sort u) (β : Sort v) where
   toFun (value : α) : β
   inj' : Function.Injective toFun
 
-infixr:25 " ↪ " => Embedding
+infixr:25 " ↪ " => Embedding -- stolen from Mathlib
 
 instance {α : Sort u} {β : Sort v} : CoeFun (α ↪ β) (λ _ => α → β) where
   coe self := self.toFun
@@ -46,14 +46,14 @@ class HasEv (UId : KU) where
 
  -- DONE: both UIdRefs.Lesser and UIdEquiv.Lesser can be simplified by making them subclasses of KVsBase
 /-- Read-only access to refined receipts compatible with a base view. -/
-class Lesser {V_} {V2} (base : UIdRefs V_)
+class Lesser {V_} {V2} (base : UIdRefs V_) -- TODO: V2 should be a ctor from base.UId
     (upcastV : V2 ↪ V_ base.UId)
     extends HasEv base.UId, KVsBase {uid // ev uid} (λ _ => V2) where
   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
 
 class Greater {V_} {V2} (base : UIdRefs V_)
-  (upcastV : V_ base.UId -> V2) where
-  -- TODO: impl this, `Greater` should construct a new
+  (upcastV : V_ base.UId ↪ V2) where
+  -- FIXME: impl this and `UIdEquiv.Greater`, both should extend a KVsBase that map UId to V2, while including the old mapping in `base`
 
 end UIdRefs
 
@@ -96,7 +96,6 @@ class Lesser {V_} {V2} (base : UIdRefs V_)
 
 class Greater {V_} {V2} (base : UIdRefs V_)
   (upcastV : V_ base.UId -> V2) where
-  -- TODO: impl this
 
 end UIdEquiv
 
