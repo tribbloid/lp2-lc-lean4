@@ -34,11 +34,11 @@ namespace UIdRefs
 class HasEv (UId : KU) where
   ev : UId → Prop -- a subtype of UId with extra contract
 
- -- FIXME: both UIdRefs.Lesser and UIdEquiv.Lesser can be simplified by making them subclasses of KVsBase
+ -- DONE: both UIdRefs.Lesser and UIdEquiv.Lesser can be simplified by making them subclasses of KVsBase
 /-- Read-only access to refined receipts compatible with a base view. -/
 class Lesser {V_} {V2} (base : UIdRefs V_)
-    (upcastV : V2 → V_ base.UId) extends HasEv base.UId where
-  get (receipt : {uid // ev uid}) : V2
+    (upcastV : V2 → V_ base.UId)
+    extends HasEv base.UId, KVsBase {uid // ev uid} (λ _ => V2) where
   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
 
 class Greater {V_} {V2} (base : UIdRefs V_)
