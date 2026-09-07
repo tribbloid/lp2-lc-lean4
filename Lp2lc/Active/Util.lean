@@ -3,6 +3,16 @@ import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Util
 
+/-- Bundles an upcast with injectivity so refined values cannot collapse. -/
+structure Embedding (α : Sort u) (β : Sort v) where
+  toFun (value : α) : β
+  inj' : Function.Injective toFun
+
+infixr:25 " ↪ " => Embedding
+
+instance {α : Sort u} {β : Sort v} : CoeFun (α ↪ β) (λ _ => α → β) where
+  coe self := self.toFun
+
 abbrev KU := Type -- the `U` suffix signifies this symbol as denoting a universe level
 abbrev DataU := Type
 
@@ -37,7 +47,7 @@ class HasEv (UId : KU) where
  -- DONE: both UIdRefs.Lesser and UIdEquiv.Lesser can be simplified by making them subclasses of KVsBase
 /-- Read-only access to refined receipts compatible with a base view. -/
 class Lesser {V_} {V2} (base : UIdRefs V_)
-    (upcastV : V2 → V_ base.UId)
+    (upcastV : V2 ↪ V_ base.UId)
     extends HasEv base.UId, KVsBase {uid // ev uid} (λ _ => V2) where
   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
 
@@ -77,7 +87,7 @@ refined receipt agrees with reading its underlying receipt from `base`.
 The inverse laws are explicit because the read-only base has no inverse.
 -/
 class Lesser {V_} {V2} (base : UIdRefs V_)
-    (upcast : V2 → V_ base.UId)
+    (upcast : V2 ↪ V_ base.UId)
     extends UIdRefs.Lesser base upcast where
   inv (value : V2) : {uid // ev uid}
   -- TODO: prove if possible
@@ -98,7 +108,7 @@ Extends the inverse-only proto `_UIdEquivProto` with `mkLesser`, which mints
 refined [UIdEquiv.Lesser] views for arbitrary upcasts.
 -/
 class UIdEquiv {V_} (base : UIdRefs V_) extends _UIdEquivProto base where
-  shrink (V2 : Sort u) (upcast : V2 → V_ base.UId) :
+  shrink (V2 : Sort u) (upcast : V2 ↪ V_ base.UId) :
     UIdEquiv.Lesser (base := base) upcast
 
 namespace UIdEquiv

@@ -16,7 +16,7 @@ open UIdEquiv
 abbrev EqOneValue := {value : Nat // value = 1}
 
 @[reducible] def eqOneMetadataView :
-    UIdRefs.Lesser (V2 := EqOneValue) groupView Subtype.val where
+    UIdRefs.Lesser (V2 := EqOneValue) groupView ⟨Subtype.val, _⟩ where
   ev := λ receipt => receipt.fst = 1
   get := λ receipt => ⟨receipt.val.fst, receipt.property⟩
   equivariance := by
@@ -24,7 +24,7 @@ abbrev EqOneValue := {value : Nat // value = 1}
     rfl
 
 @[reducible] def eqOneMetadata :
-    Lesser (V2 := EqOneValue) (base := groupView) Subtype.val where
+    Lesser (V2 := EqOneValue) (base := groupView) ⟨Subtype.val, _⟩ where
   toLesser := eqOneMetadataView
   inv := λ value => ⟨⟨value.val, True.intro⟩, value.property⟩
   rightInv := by
@@ -39,7 +39,7 @@ abbrev EqOneValue := {value : Nat // value = 1}
       rfl
 
 @[reducible] def unitMetadataView :
-    UIdRefs.Lesser (V2 := Nat × Unit) groupView Prod.fst where
+    UIdRefs.Lesser (V2 := Nat × Unit) groupView ⟨Prod.fst, _⟩ where
   ev := λ _receipt => True
   get := λ receipt => (groupView.get receipt.val, ())
   equivariance := by
@@ -47,7 +47,7 @@ abbrev EqOneValue := {value : Nat // value = 1}
     rfl
 
 @[reducible] def unitMetadata :
-    Lesser (V2 := Nat × Unit) (base := groupView) Prod.fst where
+    Lesser (V2 := Nat × Unit) (base := groupView) ⟨Prod.fst, _⟩ where
   toLesser := unitMetadataView
   inv := λ value => ⟨⟨value.fst, True.intro⟩, True.intro⟩
   rightInv := by

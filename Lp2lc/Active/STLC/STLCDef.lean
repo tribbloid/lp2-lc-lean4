@@ -131,8 +131,7 @@ end EverythingRefs
 /-- Owns the runtime receipt bridge for executable STLC values. -/
 class ExeEnv (refs : EverythingRefs) where
   uid2valCtx : UIdEquiv.Lesser (base := refs.uid2any)
-    (Sum.inl : AST.Val refs.Parameters →
-      AST.Val refs.Parameters ⊕ AST.Typ refs.Parameters)
+    ⟨Sum.inl, _⟩
 
 namespace AST
 

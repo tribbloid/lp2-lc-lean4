@@ -10,8 +10,7 @@ only lookups, so compile-time code cannot mint receipts from new values.
 -/
 class BuildEnv (refs : EverythingRefs) where
   uid2typCtx : UIdEquiv.Lesser (base := refs.uid2any)
-    (Sum.inr : AST.Typ refs.Parameters →
-      AST.Val refs.Parameters ⊕ AST.Typ refs.Parameters)
+    ⟨Sum.inr, _⟩
 
 namespace BuildEnv
 section variable {refs : EverythingRefs} (self : BuildEnv refs)
