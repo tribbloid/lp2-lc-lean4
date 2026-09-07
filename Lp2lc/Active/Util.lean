@@ -56,7 +56,6 @@ class Greater {V_} {V2} (base : UIdRefs V_)
     (upcastV : V_ base.UId ↪ V2)
     extends KVsBase base.UId (λ _ => V2) where
   equivariance : ∀ (receipt : base.UId), get receipt = upcastV (base.get receipt)
-  -- FIXME: impl this and `UIdEquiv.Greater`, both should extend a KVsBase that map UId to V2, while including the old mapping in `base`
 
 end UIdRefs
 
@@ -102,6 +101,7 @@ class Greater {V_} {V2} (base : UIdRefs V_)
     (upcastV : V_ base.UId ↪ V2)
     extends UIdRefs.Greater base upcastV where
   inv (value : V2) : base.UId
+  -- TODO: prove if possible
   rightInv : ∀ (value : V2), get (inv value) = value
   leftInv : ∀ (receipt : base.UId), inv (get receipt) = receipt
 
@@ -115,8 +115,10 @@ Extends the inverse-only proto `_UIdEquivProto` with `mkLesser`, which mints
 refined [UIdEquiv.Lesser] views for arbitrary upcasts.
 -/
 class UIdEquiv {V_} (base : UIdRefs V_) extends _UIdEquivProto base where
-  shrink (V2 : Sort u) (upcast : V2 ↪ V_ base.UId) :
-    UIdEquiv.Lesser (base := base) upcast
+  shrink (V2 : Sort u) (upcastV : V2 ↪ V_ base.UId) :
+    UIdEquiv.Lesser (base := base) upcastV
+  expand (V2 : Sort u) (upcastV : V_ base.UId ↪ V2) :
+    UIdEquiv.Greater (base := base) upcastV
 
 namespace UIdEquiv
 
@@ -125,12 +127,6 @@ instance {V_} {base : UIdRefs V_} : CoeOut (UIdEquiv base) (UIdRefs V_) where
   coe _self := base
 
 end UIdEquiv
-
--- /-- Extends known receipt-indexed fixpoint bridges with new metadata views. -/ TOOD: delete, superseded by UIdEquiv
--- class CanGetUIdFor (V_ : UIdU -> Sort u) where
---   mkEquiv  : UIdEquiv V_
---   mkLesser (outer : UIdEquiv V_) {MK : V_ outer.UId → Sort u} : UIdEquiv.Lesser outer MK
-
 
 attribute [simp] _UIdEquivProto.rightInv _UIdEquivProto.leftInv
   UIdEquiv.Lesser.rightInv UIdEquiv.Lesser.leftInv
@@ -167,8 +163,8 @@ def CC := {x // Self.dom x} -- certified carrier
 
 /-- Builds a `Parameters` whose certified domain further restricts `Self.dom`,
 so the refinement of `CC Self` holds by construction. -/
-def Lesser (narrower : Self.C → Prop) : Parameters :=
-  { D := Self.D, C := Self.C, dom := λ r => Self.dom r ∧ narrower r }
+abbrev Lesser (ev : Self.C → Prop) : Parameters :=
+  { D := Self.D, C := Self.C, dom := λ r => Self.dom r ∧ ev r }
 
 end
 end Parameters
