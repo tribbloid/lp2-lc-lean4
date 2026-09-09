@@ -18,7 +18,7 @@ inductive Src_ (P : Parameters) : (label : Label) → {V : Type} → (kvRefs : K
 /--
 free var exist but devoid of information, `V := Unit`. (It's a special case of `assuming`)
 -/
-| void (ast : AST P label) : Src_ P label (KVRefs.ToUnit P.C)
+| void (ast : AST P label) : Src_ P label (KVRefs.unit P.C)
 /--
 in PHOAS convention `ast_` must be closed because `_P` can only be from the binder, TODO: unfortunately `ast_` won't have parametricity by default, attach predicate?
 -/
@@ -33,7 +33,7 @@ Given an input Src_, a binder and a KVEquiv, applying the binder on the input ca
 The binder's input type `tIn` and the expanded domain `kvRefs2` are recorded so the underlying source term can be reassembled.
 -/
 | expansion {V1 V2 : Type} (tIn : AST P .typ) (arg : Src_ P .trm kvRefs1)
-    (body : P.C → AST P .trm) (upcast : V1 ↪ V2) (kvRefs2 : KVRefs P.C V2) : Src_ P .trm kvRefs2
+    (body : P.C → AST P .trm) (upcast : V1 ↪ V2) (kvRefs2 : KVRefs P.C V2) : Src_ P .trm kvRefs1
 
 namespace Src_
 

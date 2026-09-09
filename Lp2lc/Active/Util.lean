@@ -36,16 +36,16 @@ class KVRefs (K : KU) (V : Sort u) where
 
 namespace KVRefs
 
-def ToUnit (K : KU) : KVRefs K Unit where
+def unit (K : KU) : KVRefs K Unit where
   get := λ _ => .unit
+
+class HasEv (UId : KU) where
+  ev : UId → Prop -- a subtype of UId with extra contract
 
 /-- Read-only access to a larger carrier, preserving the base receipt mapping. -/
 class Greater {K V V2} (base : KVRefs K V) (upcastV : V ↪ V2)
     extends KVRefs K V2 where
   equivariance : ∀ (receipt : K), get receipt = upcastV (base.get receipt)
-
-class HasEv (UId : KU) where
-  ev : UId → Prop -- a subtype of UId with extra contract
 
 /-- Read-only access to refined receipts compatible with a base view. -/
 class Lesser {K V V2} (base : KVRefs K V) (upcastV : V2 ↪ V)
