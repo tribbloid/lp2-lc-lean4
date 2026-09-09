@@ -49,7 +49,7 @@ section variable {P : Parameters}
 
 class Labelled (Ctor : Label -> Type)
 
-namespace Labelled
+namespace Labelled -- TODO: this should contains shared abbrev for both AST and Src_, but we don't know how to do this
 section variable {Ctor} (this: Labelled Ctor)
 
 abbrev Typ := Ctor .typ
