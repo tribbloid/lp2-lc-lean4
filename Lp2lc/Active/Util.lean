@@ -86,9 +86,9 @@ namespace KVEquiv
 instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
   coe _self := base
 
-class CanAdapt {_base} (base : KVRefs.CanAdapt _base) where
-  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : KVEquiv (base.shrink upcastV)
-  expand {V2 : Sort u} (upcastV : V ↪ V2) : KVEquiv (base.expand upcastV)
+class CanAdapt {K V} {_base : KVRefs K V} (base : KVRefs.CanAdapt _base) where
+  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : KVEquiv (base.shrink upcastV).toKVRefs
+  expand {V2 : Sort u} (upcastV : V ↪ V2) : KVEquiv (base.expand upcastV).toKVRefs
 
 end KVEquiv
 

@@ -11,7 +11,7 @@ class TestEnv where
     let P : Parameters := { C := C, D := String }
     AST.Val P ⊕ AST.Typ P)
   trm2valExe : trm2either.Lesser ⟨Sum.inl, λ _left _right => Sum.inl.inj⟩
-  trm2valExeCtx : KVEquiv.{3} trm2valExe.toKVRefs
+  trm2valExeCtx : KVEquiv trm2valExe.toKVRefs
 
 variable [testEnv : TestEnv]
 

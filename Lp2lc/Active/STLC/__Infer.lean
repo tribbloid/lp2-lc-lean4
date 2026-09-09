@@ -10,7 +10,7 @@ only lookups, so compile-time code cannot mint receipts from new values.
 -/
 class BuildEnv (refs : HasUId2Any) where
   uid2typ : refs.uid2any.Lesser ⟨Sum.inr, λ _left _right => Sum.inr.inj⟩
-  uid2typCtx : KVEquiv.{3} (uid2typ).toKVRefs
+  uid2typCtx : KVEquiv (uid2typ).toKVRefs
 
 namespace BuildEnv
 section variable {refs : HasUId2Any} (self : BuildEnv refs)
@@ -29,7 +29,7 @@ receipts through [BuildEnv.uid2typCtx].
 
 WARNING: this function should have no access to ExeEnv! Executing in compile time is strictly prohibited
 -/
-def infer {refs} [env : BuildEnv refs]
+def infer {refs : HasUId2Any} [env : BuildEnv refs]
     (self : Trm refs.Parameters) : RecOpt (Typ refs.Parameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -55,7 +55,7 @@ def infer {refs} [env : BuildEnv refs]
       | .inr typ => .yield (some typ)
 
 -- TODO: remove, not useful
-def CanInhabit {refs} [env : BuildEnv refs]
+def CanInhabit {refs : HasUId2Any} [env : BuildEnv refs]
     (trm : Trm refs.Parameters) (t2 : Typ refs.Parameters) : Prop :=
   trm.infer.isDecidable (λ t1 => t1 ≤ t2)
 

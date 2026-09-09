@@ -20,7 +20,7 @@ class ProvingEnv (refs : HasUId2Any) extends BuildEnv refs where
   uid2typWithSafety (trm : AST.Trm refs.Parameters) :
     refs.uid2any.Lesser (typeWithSafetyUpcastV trm)
   uid2typWithSafetyCtx (trm : AST.Trm refs.Parameters) :
-    KVEquiv.{3} (uid2typWithSafety trm).toKVRefs
+    KVEquiv (uid2typWithSafety trm).toKVRefs
 
 namespace ProvingEnv
 
