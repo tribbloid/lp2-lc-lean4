@@ -81,7 +81,7 @@ Extends the inverse-only proto `_KVEquivProto` with `mkLesser`, which mints
 refined [KVEquiv.Lesser] views for arbitrary upcasts.
 -/
 class KVEquiv {K V} (base : KVRefs K V) extends _KVEquivProto base where
-  shrink {V2 : Sort u} (upcastV : V2 ↪ V) :
+  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : -- FIXME: this must construct a `KVEquiv base.Lesser` directly
     PSigma (λ lesser : base.Lesser upcastV => _KVEquivProto lesser.toKVRefs)
   expand {V2 : Sort u} (upcastV : V ↪ V2) :
     PSigma (λ greater : base.Greater upcastV => _KVEquivProto greater.toKVRefs)
