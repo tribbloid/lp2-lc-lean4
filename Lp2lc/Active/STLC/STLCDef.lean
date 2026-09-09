@@ -103,7 +103,7 @@ end
 Shares one receipt carrier between executable values and build-time types.
 
 The underlying view stores a tagged value-or-type payload. Runtime and build
-contexts refine that view independently through [RefEquiv.Lesser]. The subtype
+contexts refine that view independently through [KVEquiv.Lesser]. The subtype
 proof certifies which payload is available, but [AST.ref] stores only the raw
 receipt, so this infrastructure alone does not prevent phase-dependent lambda
 bodies.
@@ -127,7 +127,7 @@ end HasUId2Any
 /-- Owns the runtime receipt bridge for executable STLC values. -/
 class ExeEnv (refs : HasUId2Any) where
   uid2val : refs.uid2any.Lesser ⟨Sum.inl, λ _left _right => Sum.inl.inj⟩
-  uid2valCtx : RefEquiv.{3} uid2val.toKVRefs
+  uid2valCtx : KVEquiv.{3} uid2val.toKVRefs
 
 namespace AST
 

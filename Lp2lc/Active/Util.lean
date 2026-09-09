@@ -65,9 +65,9 @@ Full receipt-indexed bridge, extending [UIdRefs] with the reverse direction.
 `inv` is the only way to obtain a UId: it requires a value, so a view alone
 cannot mint receipts from new values.
 
-Not extendable, if you need to use the hypothetical `mkLesser`, use [RefEquiv].
+Not extendable, if you need to use the hypothetical `mkLesser`, use [KVEquiv].
 -/
-class _RefEquivProto {K V} (base : KVRefs K V) where
+class _KVEquivProto {K V} (base : KVRefs K V) where
   private mk ::
   inv (value : V) : K
   rightInv : ∀ (value : V), base.get (inv value) = value
@@ -77,24 +77,24 @@ class _RefEquivProto {K V} (base : KVRefs K V) where
 Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values
 are indexed by it.
 
-Extends the inverse-only proto `_RefEquivProto` with `mkLesser`, which mints
-refined [RefEquiv.Lesser] views for arbitrary upcasts.
+Extends the inverse-only proto `_KVEquivProto` with `mkLesser`, which mints
+refined [KVEquiv.Lesser] views for arbitrary upcasts.
 -/
-class RefEquiv {K V} (base : KVRefs K V) extends _RefEquivProto base where
+class KVEquiv {K V} (base : KVRefs K V) extends _KVEquivProto base where
   shrink {V2 : Sort u} (upcastV : V2 ↪ V) :
-    PSigma (λ lesser : base.Lesser upcastV => _RefEquivProto lesser.toKVRefs)
+    PSigma (λ lesser : base.Lesser upcastV => _KVEquivProto lesser.toKVRefs)
   expand {V2 : Sort u} (upcastV : V ↪ V2) :
-    PSigma (λ greater : base.Greater upcastV => _RefEquivProto greater.toKVRefs)
+    PSigma (λ greater : base.Greater upcastV => _KVEquivProto greater.toKVRefs)
 
-namespace RefEquiv
+namespace KVEquiv
 
 /-- Coerces a full bridge to the read-only view that it completes. -/
-instance {K V} (base : KVRefs K V) : CoeOut (RefEquiv base) (KVRefs K V) where
+instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where
   coe _self := base
 
-end RefEquiv
+end KVEquiv
 
-attribute [simp] _RefEquivProto.rightInv _RefEquivProto.leftInv
+attribute [simp] _KVEquivProto.rightInv _KVEquivProto.leftInv
 
 /--
 Owns the data representation `D`, the binary data type of primitive literals.
@@ -109,7 +109,7 @@ the meaning of P in PHOAS, the shared carrier used in PHOAS bindings
 
 It is deliberately left abstract to ward off unlawful construction:
 
-- certified `C` receipts are obtained only through the runtime or build [RefEquiv.Lesser]
+- certified `C` receipts are obtained only through the runtime or build [KVEquiv.Lesser]
 - the only way to construct `D` is to parse a primitive literal in AST
 -/
 class Parameters extends HasData where

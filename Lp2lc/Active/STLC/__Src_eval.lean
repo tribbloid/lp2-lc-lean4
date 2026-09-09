@@ -27,9 +27,9 @@ in PHOAS convention `ast_` must be closed because `_P` can only be from the bind
 -- -/
 -- | assuming (V : Sort u) (ast : AST P label) : Src_ label V
 /--
-Given an input Src_, a binder and a RefEquiv, applying the binder on the input can lead to an Src_ with expanded domain
+Given an input Src_, a binder and a KVEquiv, applying the binder on the input can lead to an Src_ with expanded domain
 -/
-| expansion {V1 V2} (arg: Src_ label V1) (body : P.C → AST P .trm) [equiv: RefEquiv P.C refs] (upcast : V1 ↪ V2) : Src_ label V2
+| expansion {V1 V2} (arg: Src_ label V1) (body : P.C → AST P .trm) [equiv: KVEquiv P.C refs] (upcast : V1 ↪ V2) : Src_ label V2
 with
   ast : AST P label := sorry
   refs : KVRefs P.C V := sorry

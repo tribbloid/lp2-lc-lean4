@@ -10,7 +10,7 @@ only lookups, so compile-time code cannot mint receipts from new values.
 -/
 class BuildEnv (refs : HasUId2Any) where
   uid2typ : refs.uid2any.Lesser ⟨Sum.inr, λ _left _right => Sum.inr.inj⟩
-  uid2typCtx : RefEquiv.{3} (uid2typ).toKVRefs
+  uid2typCtx : KVEquiv.{3} (uid2typ).toKVRefs
 
 namespace BuildEnv
 section variable {refs : HasUId2Any} (self : BuildEnv refs)
