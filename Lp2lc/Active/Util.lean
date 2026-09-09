@@ -23,6 +23,14 @@ inductive Label
 | trm
 | val
 
+/--
+Receipt-indexed bridge between values and PHOAS carriers. Read-only.
+
+The value family is indexed by this bridge's evidence so recursive PHOAS
+carriers can retain the receipt required by `get`.
+
+type class `CanAdapt` shoudld be attached all the time
+-/
 class KVRefs (K : KU) (V : Sort u) where
   get : (k : K) → V
 
@@ -44,57 +52,48 @@ class Lesser {K V V2} (base : KVRefs K V) (upcastV : V2 ↪ V)
     extends HasEv K, KVRefs {uid // ev uid} V2 where
   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
 
+class CanAdapt {K V} (base : KVRefs K V) where
+  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : Lesser base upcastV
+  expand {V2 : Sort u} (upcastV : V ↪ V2) : Greater base upcastV
+
 end KVRefs
 
 class HasUId where
   UId : KU
 
 /--
-Receipt-indexed bridge between values and identifiers. Read-only.
-
-The value family is indexed by this bridge's evidence so recursive PHOAS
-carriers can retain the receipt required by `get`.
+Unlike [KVRefs], the key type `UId` is not shared with any other value type, so `get` cannot be abused to non-existing value.
 
 type `V_` is deliberately a type constructor of `V`, without it V may be impossible to define due to cyclic references
 -/
 class UIdRefs (V_ : KU → Sort u) extends HasUId, KVRefs UId (V_ UId)
 
 /--
-Full receipt-indexed bridge, extending [UIdRefs] with the reverse direction.
+Full receipt-indexed bridge, extending [KVRefs] with the reverse direction.
 
-`inv` is the only way to obtain a UId: it requires a value, so a view alone
-cannot mint receipts from new values.
+`inv` is the only way to obtain a `K`: it requires a value, a view alone cannot mint receipts from new values.
 
-Not extendable, if you need to use the hypothetical `mkLesser`, use [KVEquiv].
+type class `CanAdapt` shoudld be attached all the time
 -/
-class _KVEquivProto {K V} (base : KVRefs K V) where
+class KVEquiv {K V} (base : KVRefs K V) where
   private mk ::
   inv (value : V) : K
   rightInv : ∀ (value : V), base.get (inv value) = value
   leftInv : ∀ (receipt : K), inv (base.get receipt) = receipt
 
-/--
-Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values
-are indexed by it.
-
-Extends the inverse-only proto `_KVEquivProto` with `mkLesser`, which mints
-refined [KVEquiv.Lesser] views for arbitrary upcasts.
--/
-class KVEquiv {K V} (base : KVRefs K V) extends _KVEquivProto base where
-  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : -- FIXME: this must construct a `KVEquiv base.Lesser` directly
-    PSigma (λ lesser : base.Lesser upcastV => _KVEquivProto lesser.toKVRefs)
-  expand {V2 : Sort u} (upcastV : V ↪ V2) :
-    PSigma (λ greater : base.Greater upcastV => _KVEquivProto greater.toKVRefs)
-
 namespace KVEquiv
 
 /-- Coerces a full bridge to the read-only view that it completes. -/
-instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where
+instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
   coe _self := base
+
+class CanAdapt {_base} (base : KVEquiv _base) where
+  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : KVEquiv (Lesser _base upcastV)
+  expand {V2 : Sort u} (upcastV : V ↪ V2) : KVEquiv (Greater _base upcastV)
 
 end KVEquiv
 
-attribute [simp] _KVEquivProto.rightInv _KVEquivProto.leftInv
+attribute [simp] KVEquiv.rightInv KVEquiv.leftInv
 
 /--
 Owns the data representation `D`, the binary data type of primitive literals.

@@ -34,8 +34,8 @@ abbrev EqOneValue := {value : Nat // value = 1}
 
 section receipt
 
-variable [eqOneMetadataCtx : _KVEquivProto eqOneMetadataView.toKVRefs]
-variable [unitMetadataCtx : _KVEquivProto unitMetadataView.toKVRefs]
+variable [eqOneMetadataCtx : KVEquiv eqOneMetadataView.toKVRefs]
+variable [unitMetadataCtx : KVEquiv unitMetadataView.toKVRefs]
 
 example :
     eqOneMetadataView.ev ⟨1, True.intro⟩ :=
