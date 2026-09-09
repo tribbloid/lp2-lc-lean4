@@ -47,6 +47,18 @@ fails to resolve an [AST.ref] whose receipt does not map to a value.
 
 section variable {P : Parameters}
 
+class Labelled (Ctor : Label -> Type)
+
+namespace Labelled
+section variable {Ctor} (this: Labelled Ctor)
+
+abbrev Typ := Ctor .typ
+abbrev Trm := Ctor .trm
+abbrev Val := Ctor .val
+
+end
+end Labelled
+
 namespace AST
 
 abbrev Typ (P : Parameters) := AST P .typ
