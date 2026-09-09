@@ -30,7 +30,7 @@ in PHOAS convention `ast_` must be closed because `_P` can only be from the bind
 /--
 Given an input Src_, a binder and a KVEquiv, applying the binder on the input can lead to an Src_ with expanded domain
 -/
-| expansion {V1 V2} (arg: Src_ label r1) (body : P.C → AST P .trm) (upcast : V1 ↪ V2) : Src_ label (arg.kvRefs.expand upcast)
+| expansion {V1 V2} (arg: Src_ label r1) (body : P.C → AST P .trm) (upcast : V1 ↪ V2) : Src_ label (arg.kvEquiv.expand upcast)
 with
   ast : AST P label V := sorry
   kvEquiv : KVEquiv P.C kvRefs := sorry
