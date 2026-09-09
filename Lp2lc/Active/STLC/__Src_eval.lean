@@ -7,9 +7,10 @@ open Lp2lc.Active.Util
 section variable (P : Parameters)
 
 /--
-Certified AST/KVRefs bundle with every free variable guaranteed to be mapped to `V`.
+Certified AST/KVEquiv bundle with every free variable guaranteed to be mapped to `V` (and vice versa)
 
-The carrier type `P.C` never changes, but the domain type `V` can be expanded easily to include more data in KVRefs
+The carrier type `P.C` never changes, but the domain type `V` can be expanded easily to include more data in `KVEquiv`.
+A typical use case is to expand domain from `Val` only to `Val ⊕ Typ`, when compiling a term with free variables.
 
 Critica component of our abstract rewriting system with reference binding.
 -/
@@ -31,8 +32,9 @@ Given an input Src_, a binder and a KVEquiv, applying the binder on the input ca
 -/
 | expansion {V1 V2} (arg: Src_ label V1) (body : P.C → AST P .trm) [equiv: KVEquiv P.C refs] (upcast : V1 ↪ V2) : Src_ label V2
 with
-  ast : AST P label := sorry
-  refs : KVRefs P.C V := sorry
+  ast : AST P label V := sorry
+  kvRefs : KVRefs P.C V := sorry
+  kvEquiv : KVEquiv P.C kvRefs := sorry
 
 namespace Src_
 section variable {V label} (this: Src_ P V label)
