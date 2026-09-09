@@ -7,13 +7,15 @@ open Lp2lc.Active.Util
 section variable (P : Parameters)
 
 /--
-Certified AST with every free variable guaranteed to be mapped to `V`. Serving as the input/output of most abstract rewrite with reference binding.
+Certified AST/KVRefs bundle with every free variable guaranteed to be mapped to `V`.
 
-Cannot be constructed freely from arbitrary AST, but expanding the domain of `V` from input is fairly easy
+The carrier type `P.C` never changes, but the domain type `V` can be expanded easily to include more data in KVRefs
+
+Critica component of our abstract rewriting system with reference binding.
 -/
 inductive Src_ (label : Label) : (V : Sort u) -> Type
 /--
-free var exist but devoid of information, `V := Unit`. (It's actually a special case of `assuming`)
+free var exist but devoid of information, `V := Unit`. (It's a special case of `assuming`)
 -/
 | void (ast: AST P label) : Src_ label PUnit
 /--
@@ -27,7 +29,7 @@ in PHOAS convention `ast_` must be closed because `_P` can only be from the bind
 /--
 Given an input Src_, a binder and a RefEquiv, applying the binder on the input can lead to an Src_ with expanded domain
 -/
-| expansion {V1 V2} (arg: Src_ label V1) (body : P.C → AST P .trm) (equiv: RefEquiv P.C V2) (upcast : V1 ↪ V2) : Src_ label V2
+| expansion {V1 V2} (arg: Src_ label V1) (body : P.C → AST P .trm) [equiv: RefEquiv P.C refs] (upcast : V1 ↪ V2) : Src_ label V2
 with
   ast : AST P label := sorry
   refs : KVRefs P.C V := sorry
