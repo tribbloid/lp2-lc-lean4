@@ -23,28 +23,28 @@ inductive Label
 | trm
 | val
 
-class Refs (K : KU) (V : Sort u) where
+class KVRefs (K : KU) (V : Sort u) where
   get : (k : K) → V
 
-namespace Refs
+namespace KVRefs
 
-def ToUnit (K : KU) : Refs K Unit where
+def ToUnit (K : KU) : KVRefs K Unit where
   get := λ _ => .unit
 
 /-- Read-only access to a larger carrier, preserving the base receipt mapping. -/
-class Greater {K V V2} (base : Refs K V) (upcastV : V ↪ V2)
-    extends Refs K V2 where
+class Greater {K V V2} (base : KVRefs K V) (upcastV : V ↪ V2)
+    extends KVRefs K V2 where
   equivariance : ∀ (receipt : K), get receipt = upcastV (base.get receipt)
 
 class HasEv (UId : KU) where
   ev : UId → Prop -- a subtype of UId with extra contract
 
 /-- Read-only access to refined receipts compatible with a base view. -/
-class Lesser {K V V2} (base : Refs K V) (upcastV : V2 ↪ V)
-    extends HasEv K, Refs {uid // ev uid} V2 where
+class Lesser {K V V2} (base : KVRefs K V) (upcastV : V2 ↪ V)
+    extends HasEv K, KVRefs {uid // ev uid} V2 where
   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
 
-end Refs
+end KVRefs
 
 class HasUId where
   UId : KU
@@ -57,7 +57,7 @@ carriers can retain the receipt required by `get`.
 
 type `V_` is deliberately a type constructor of `V`, without it V may be impossible to define due to cyclic references
 -/
-class UIdRefs (V_ : KU → Sort u) extends HasUId, Refs UId (V_ UId)
+class UIdRefs (V_ : KU → Sort u) extends HasUId, KVRefs UId (V_ UId)
 
 /--
 Full receipt-indexed bridge, extending [UIdRefs] with the reverse direction.
@@ -67,7 +67,7 @@ cannot mint receipts from new values.
 
 Not extendable, if you need to use the hypothetical `mkLesser`, use [RefEquiv].
 -/
-class _RefEquivProto {K V} (base : Refs K V) where
+class _RefEquivProto {K V} (base : KVRefs K V) where
   private mk ::
   inv (value : V) : K
   rightInv : ∀ (value : V), base.get (inv value) = value
@@ -80,16 +80,16 @@ are indexed by it.
 Extends the inverse-only proto `_RefEquivProto` with `mkLesser`, which mints
 refined [RefEquiv.Lesser] views for arbitrary upcasts.
 -/
-class RefEquiv {K V} (base : Refs K V) extends _RefEquivProto base where
+class RefEquiv {K V} (base : KVRefs K V) extends _RefEquivProto base where
   shrink {V2 : Sort u} (upcastV : V2 ↪ V) :
-    PSigma (λ lesser : base.Lesser upcastV => _RefEquivProto lesser.toRefs)
+    PSigma (λ lesser : base.Lesser upcastV => _RefEquivProto lesser.toKVRefs)
   expand {V2 : Sort u} (upcastV : V ↪ V2) :
-    PSigma (λ greater : base.Greater upcastV => _RefEquivProto greater.toRefs)
+    PSigma (λ greater : base.Greater upcastV => _RefEquivProto greater.toKVRefs)
 
 namespace RefEquiv
 
 /-- Coerces a full bridge to the read-only view that it completes. -/
-instance {K V} (base : Refs K V) : CoeOut (RefEquiv base) (Refs K V) where
+instance {K V} (base : KVRefs K V) : CoeOut (RefEquiv base) (KVRefs K V) where
   coe _self := base
 
 end RefEquiv

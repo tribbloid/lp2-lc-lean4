@@ -14,7 +14,7 @@ open Lp2lc.Active.Util
 abbrev EqOneValue := {value : Nat // value = 1}
 
 @[reducible] def eqOneMetadataView :
-    groupView.toRefs.Lesser
+    groupView.toKVRefs.Lesser
       (⟨Subtype.val, λ _left _right => Subtype.ext⟩ : EqOneValue ↪ Nat) where
   ev := λ receipt => receipt.fst = 1
   get := λ receipt => ⟨receipt.val.fst, receipt.property⟩
@@ -23,7 +23,7 @@ abbrev EqOneValue := {value : Nat // value = 1}
     rfl
 
 @[reducible] def unitMetadataView :
-    groupView.toRefs.Lesser
+    groupView.toKVRefs.Lesser
       (⟨Prod.fst, λ _left _right h => Prod.ext h (Subsingleton.elim _ _)⟩ :
         Nat × Unit ↪ Nat) where
   ev := λ _receipt => True
@@ -34,8 +34,8 @@ abbrev EqOneValue := {value : Nat // value = 1}
 
 section receipt
 
-variable [eqOneMetadataCtx : _RefEquivProto eqOneMetadataView.toRefs]
-variable [unitMetadataCtx : _RefEquivProto unitMetadataView.toRefs]
+variable [eqOneMetadataCtx : _RefEquivProto eqOneMetadataView.toKVRefs]
+variable [unitMetadataCtx : _RefEquivProto unitMetadataView.toKVRefs]
 
 example :
     eqOneMetadataView.ev ⟨1, True.intro⟩ :=

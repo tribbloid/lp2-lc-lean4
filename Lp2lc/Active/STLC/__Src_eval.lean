@@ -30,7 +30,7 @@ Given an input Src_, a binder and a RefEquiv, applying the binder on the input c
 | expansion {V1 V2} (arg: Src_ label V1) (body : P.C → AST P .trm) (equiv: RefEquiv P.C V2) (upcast : V1 ↪ V2) : Src_ label V2
 with
   ast : AST P label := sorry
-  refs : Refs P.C V := sorry
+  refs : KVRefs P.C V := sorry
 
 namespace Src_
 section variable {V label} (this: Src_ P V label)

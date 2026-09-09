@@ -127,7 +127,7 @@ end HasUId2Any
 /-- Owns the runtime receipt bridge for executable STLC values. -/
 class ExeEnv (refs : HasUId2Any) where
   uid2val : refs.uid2any.Lesser ⟨Sum.inl, λ _left _right => Sum.inl.inj⟩
-  uid2valCtx : RefEquiv.{3} uid2val.toRefs
+  uid2valCtx : RefEquiv.{3} uid2val.toKVRefs
 
 namespace AST
 
