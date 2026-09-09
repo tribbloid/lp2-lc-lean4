@@ -10,7 +10,7 @@ open Lp2lc.Active.Util.Rec
 namespace AST
 
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
-theorem termEvalMonotone [refs : EverythingRefs] [env : ExeEnv refs]
+theorem termEvalMonotone [refs : HasUId2Any] [env : ExeEnv refs]
     (trm : Trm refs.Parameters) :
     trm.eval.Monotone := by
   intro less more result hFuel hEval

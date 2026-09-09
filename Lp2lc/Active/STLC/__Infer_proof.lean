@@ -9,7 +9,7 @@ open Lp2lc.Active.Util.Rec
 namespace AST
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
-theorem termInferMonotone [refs : EverythingRefs] [env : BuildEnv refs]
+theorem termInferMonotone [refs : HasUId2Any] [env : BuildEnv refs]
     (trm : Trm refs.Parameters) :
     trm.infer.Monotone := by
   intro less more result hFuel hInfer
@@ -59,7 +59,7 @@ theorem termInferMonotone [refs : EverythingRefs] [env : BuildEnv refs]
           | inr typ => simpa [infer, hRef] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
-theorem valueInferMonotone [refs : EverythingRefs] [env : BuildEnv refs]
+theorem valueInferMonotone [refs : HasUId2Any] [env : BuildEnv refs]
     (value : Val refs.Parameters) :
     value.asTrm.infer.Monotone :=
   termInferMonotone value.asTrm

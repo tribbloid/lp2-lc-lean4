@@ -9,7 +9,7 @@ open Lp2lc.Active.Util
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
 -/
-inductive AST : Parameters → Label → Type 2 where
+inductive AST : Parameters → Label → Type where
 | primitive : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
 | fn (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
 /--
@@ -34,10 +34,6 @@ used by function application after both sides have been evaluated.
 Function values carry their input type so the compiler can type-check HOAS bodies.
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
-/-
-FIXME: I'd like to remove `(tIn : AST P .typ)` from AST, it makes extension to more advanced type system (e.g. dependent type) harder
-This won't have any impact on AST.eval, but AST.infer can't bind input variable until much later (during function application)
--/
 /--
 Binds a fresh receipt over the shared [P.C] carrier for its body.
 
@@ -107,31 +103,31 @@ end
 Shares one receipt carrier between executable values and build-time types.
 
 The underlying view stores a tagged value-or-type payload. Runtime and build
-contexts refine that view independently through [UIdEquiv.Lesser]. The subtype
+contexts refine that view independently through [RefEquiv.Lesser]. The subtype
 proof certifies which payload is available, but [AST.ref] stores only the raw
 receipt, so this infrastructure alone does not prevent phase-dependent lambda
 bodies.
 -/
-class EverythingRefs extends HasData where
+class HasUId2Any extends HasData where
   uid2any : UIdRefs (λ T =>
     let P : Parameters := { C := T, D := D }
 
     AST.Val P ⊕ AST.Typ P
   )
 
-namespace EverythingRefs
-section variable (self : EverythingRefs)
+namespace HasUId2Any
+section variable (self : HasUId2Any)
 
 /-- The shared syntax parameters are fixed by the mixed receipt view. -/
 abbrev Parameters : Parameters := { C := self.uid2any.UId, D := self.D }
 
 end
-end EverythingRefs
+end HasUId2Any
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv (refs : EverythingRefs) where
-  uid2valCtx : UIdEquiv.Lesser (base := refs.uid2any)
-    ⟨Sum.inl, λ _left _right => Sum.inl.inj⟩
+class ExeEnv (refs : HasUId2Any) where
+  uid2val : refs.uid2any.Lesser ⟨Sum.inl, λ _left _right => Sum.inl.inj⟩
+  uid2valCtx : RefEquiv.{3} uid2val.toRefs
 
 namespace AST
 
@@ -155,17 +151,6 @@ def eval {refs} [env : ExeEnv refs]
       match refs.uid2any.get receipt with
       | .inl value => .yield (some value)
       | .inr _typ => .yield none
-    /-
-    FIXME: enable Parameters.dom in AST
-
-    Specifically, the AST used here should be confined to the domain of `ExeEnv.uid2valCtx.Ev`
-
-    such AST can:
-    - be directly used in `AST.infer`, because "AST of more specific domain can be used to constract AST of more general domain"
-    - directly refer to `Val` in `uid2valCtx`, eliminating the possibility of failure due to non-comforming reference
-
-    Do not add new definition or make code longer
-    -/
 
 end AST
 

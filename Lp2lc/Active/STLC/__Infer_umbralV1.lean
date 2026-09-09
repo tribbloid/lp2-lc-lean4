@@ -8,7 +8,7 @@ open Lp2lc.Active.Util.Rec
 
 namespace UmbralV1
 
-section variable [refs : EverythingRefs] [env : BuildEnv refs]
+section variable [refs : HasUId2Any] [env : BuildEnv refs]
 
 structure SafetyOf (trm : AST.Trm refs.Parameters) where
   typ : AST.Typ refs.Parameters

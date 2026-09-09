@@ -10,18 +10,18 @@ class TestEnv where
   trm2either : UIdRefs (λ C =>
     let P : Parameters := { C := C, D := String }
     AST.Val P ⊕ AST.Typ P)
-  trm2valExeCtx : UIdEquiv.Lesser (base := trm2either)
-    ⟨Sum.inl, λ _left _right => Sum.inl.inj⟩
+  trm2valExe : trm2either.Lesser ⟨Sum.inl, λ _left _right => Sum.inl.inj⟩
+  trm2valExeCtx : RefEquiv.{3} trm2valExe.toRefs
 
 variable [testEnv : TestEnv]
 
-@[reducible] instance refs : EverythingRefs :=
+@[reducible] instance refs : HasUId2Any :=
   { D := String, uid2any := testEnv.trm2either }
 
 @[simp]
 theorem trm2valLookup
-    (receipt : {uid // testEnv.trm2valExeCtx.ev uid}) :
-    refs.uid2any.get receipt.val = .inl (testEnv.trm2valExeCtx.get receipt) :=
-  (testEnv.trm2valExeCtx.equivariance receipt).symm
+    (receipt : {uid // testEnv.trm2valExe.ev uid}) :
+    refs.uid2any.get receipt.val = .inl (testEnv.trm2valExe.get receipt) :=
+  (testEnv.trm2valExe.equivariance receipt).symm
 
 end Tests.STLC.Sanity

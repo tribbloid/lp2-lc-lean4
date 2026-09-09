@@ -12,7 +12,9 @@ open Tests.STLC.Sanity.Symbolic
 section eval
 variable [testEnv : TestEnv]
 
-@[reducible] instance env : ExeEnv refs := { uid2valCtx := testEnv.trm2valExeCtx }
+@[reducible] instance env : ExeEnv refs where
+  uid2val := testEnv.trm2valExe
+  uid2valCtx := testEnv.trm2valExeCtx
 
 attribute [local simp] AST.eval
 attribute [local simp] Trm.vFalse Trm.vTrue Trm.primitiveIdFn Trm.primitiveIdFnOnFalse
@@ -72,10 +74,10 @@ example :
         (testEnv.trm2valExeCtx.inv (.lit "true")).val ≠
           (testEnv.trm2valExeCtx.inv (.lit "false")).val := by
       intro h
-      have hValue := congrArg testEnv.trm2valExeCtx.get (Subtype.ext h)
+      have hValue := congrArg testEnv.trm2valExe.get (Subtype.ext h)
       have hLiteral :
           (AST.lit "true" : AST.Val refs.Parameters) = .lit "false" := by
-        simpa only [UIdEquiv.Lesser.rightInv] using hValue
+        simpa using hValue
       exact (by decide : ("true" : String) ≠ "false") (AST.lit.inj hLiteral)
     simp [Trm.Malformed.binderIdentityCounterexample, hReceipt]
   · rfl
@@ -101,7 +103,7 @@ example [build : BuildEnv refs] :
   · refine ⟨1, ?_⟩
     have hLookup :
         refs.uid2any.get (build.uid2typCtx.inv (.primitive)).val = .inr .primitive :=
-      (build.uid2typCtx.equivariance (build.uid2typCtx.inv .primitive)).symm.trans
+      (build.uid2typ.equivariance (build.uid2typCtx.inv .primitive)).symm.trans
         (congrArg Sum.inr (build.uid2typCtx.rightInv .primitive))
     simp [AST.eval, hLookup]
   · rfl
@@ -110,7 +112,7 @@ end eval
 
 section compilerCapability
 
-variable [refs : EverythingRefs] [build : BuildEnv refs]
+variable [refs : HasUId2Any] [build : BuildEnv refs]
 
 example : True := by
   fail_if_success

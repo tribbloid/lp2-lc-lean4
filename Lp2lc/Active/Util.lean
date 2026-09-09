@@ -23,8 +23,28 @@ inductive Label
 | trm
 | val
 
-class KVsBase (K : KU) (V_ : KU -> Sort u) where
-  get : (k : K) → V_ K
+class Refs (K : KU) (V : Sort u) where
+  get : (k : K) → V
+
+namespace Refs
+
+def ToUnit (K : KU) : Refs K Unit where
+  get := λ _ => .unit
+
+/-- Read-only access to a larger carrier, preserving the base receipt mapping. -/
+class Greater {K V V2} (base : Refs K V) (upcastV : V ↪ V2)
+    extends Refs K V2 where
+  equivariance : ∀ (receipt : K), get receipt = upcastV (base.get receipt)
+
+class HasEv (UId : KU) where
+  ev : UId → Prop -- a subtype of UId with extra contract
+
+/-- Read-only access to refined receipts compatible with a base view. -/
+class Lesser {K V V2} (base : Refs K V) (upcastV : V2 ↪ V)
+    extends HasEv K, Refs {uid // ev uid} V2 where
+  equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
+
+end Refs
 
 class HasUId where
   UId : KU
@@ -37,27 +57,7 @@ carriers can retain the receipt required by `get`.
 
 type `V_` is deliberately a type constructor of `V`, without it V may be impossible to define due to cyclic references
 -/
-class UIdRefs (V_ : KU → Sort u) extends HasUId, KVsBase UId V_
-
-namespace UIdRefs
-
-class HasEv (UId : KU) where
-  ev : UId → Prop -- a subtype of UId with extra contract
-
- -- DONE: both UIdRefs.Lesser and UIdEquiv.Lesser can be simplified by making them subclasses of KVsBase
-/-- Read-only access to refined receipts compatible with a base view. -/
-class Lesser {V_} {V2} (base : UIdRefs V_) -- TODO: V2 should be a ctor from base.UId
-    (upcastV : V2 ↪ V_ base.UId)
-    extends HasEv base.UId, KVsBase {uid // ev uid} (λ _ => V2) where
-  equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
-
-/-- Read-only access to a larger carrier, preserving the base receipt mapping. -/
-class Greater {V_} {V2} (base : UIdRefs V_)
-    (upcastV : V_ base.UId ↪ V2)
-    extends KVsBase base.UId (λ _ => V2) where
-  equivariance : ∀ (receipt : base.UId), get receipt = upcastV (base.get receipt)
-
-end UIdRefs
+class UIdRefs (V_ : KU → Sort u) extends HasUId, Refs UId (V_ UId)
 
 /--
 Full receipt-indexed bridge, extending [UIdRefs] with the reverse direction.
@@ -65,71 +65,36 @@ Full receipt-indexed bridge, extending [UIdRefs] with the reverse direction.
 `inv` is the only way to obtain a UId: it requires a value, so a view alone
 cannot mint receipts from new values.
 
-Not extendable, if you need to use the hypothetical `mkLesser`, use [UIdEquiv].
+Not extendable, if you need to use the hypothetical `mkLesser`, use [RefEquiv].
 -/
-private class _UIdEquivProto {V_} (base : UIdRefs V_) where
-  inv (value : V_ base.UId) : base.UId
-  rightInv : ∀ (value : V_ base.UId), base.get (inv value) = value
-  leftInv : ∀ (receipt : base.UId), inv (base.get receipt) = receipt
-
-namespace UIdEquiv
-
-/-
-DEFER: I don't think subtyping/`Lesser` is general enough, we need supertyping/`Greater`
-
-Math discovery relies on continuous supertyping (e.g. N -> Q), not subtyping. The design of UIdEquiv should be compatible to both directions
--/
-
-/--
-An auxiliary equivalence between a refined value carrier `V2` and the receipts
-from `base` satisfying `ev`.
-
-`upcast` forgets the refinement, while `equivariance` ensures that reading a
-refined receipt agrees with reading its underlying receipt from `base`.
-The inverse laws are explicit because the read-only base has no inverse.
--/
-class Lesser {V_} {V2} (base : UIdRefs V_)
-    (upcast : V2 ↪ V_ base.UId)
-    extends UIdRefs.Lesser base upcast where
-  inv (value : V2) : {uid // ev uid}
-  -- TODO: prove if possible
-  rightInv : ∀ (value : V2), get (inv value) = value
-  leftInv : ∀ (receipt : {uid // ev uid}), inv (get receipt) = receipt
-
-/-- Equivalence for a larger carrier whose receipt mapping includes the base view. -/
-class Greater {V_} {V2} (base : UIdRefs V_)
-    (upcastV : V_ base.UId ↪ V2)
-    extends UIdRefs.Greater base upcastV where
-  inv (value : V2) : base.UId
-  -- TODO: prove if possible
-  rightInv : ∀ (value : V2), get (inv value) = value
-  leftInv : ∀ (receipt : base.UId), inv (get receipt) = receipt
-
-end UIdEquiv
+class _RefEquivProto {K V} (base : Refs K V) where
+  private mk ::
+  inv (value : V) : K
+  rightInv : ∀ (value : V), base.get (inv value) = value
+  leftInv : ∀ (receipt : K), inv (base.get receipt) = receipt
 
 /--
 Receipt-indexed fixpoint bridge: its `UId` type is the receipt carrier, values
 are indexed by it.
 
-Extends the inverse-only proto `_UIdEquivProto` with `mkLesser`, which mints
-refined [UIdEquiv.Lesser] views for arbitrary upcasts.
+Extends the inverse-only proto `_RefEquivProto` with `mkLesser`, which mints
+refined [RefEquiv.Lesser] views for arbitrary upcasts.
 -/
-class UIdEquiv {V_} (base : UIdRefs V_) extends _UIdEquivProto base where
-  shrink (V2 : Sort u) (upcastV : V2 ↪ V_ base.UId) :
-    UIdEquiv.Lesser (base := base) upcastV
-  expand (V2 : Sort u) (upcastV : V_ base.UId ↪ V2) :
-    UIdEquiv.Greater (base := base) upcastV
+class RefEquiv {K V} (base : Refs K V) extends _RefEquivProto base where
+  shrink {V2 : Sort u} (upcastV : V2 ↪ V) :
+    PSigma (λ lesser : base.Lesser upcastV => _RefEquivProto lesser.toRefs)
+  expand {V2 : Sort u} (upcastV : V ↪ V2) :
+    PSigma (λ greater : base.Greater upcastV => _RefEquivProto greater.toRefs)
 
-namespace UIdEquiv
+namespace RefEquiv
 
 /-- Coerces a full bridge to the read-only view that it completes. -/
-instance {V_} {base : UIdRefs V_} : CoeOut (UIdEquiv base) (UIdRefs V_) where
+instance {K V} (base : Refs K V) : CoeOut (RefEquiv base) (Refs K V) where
   coe _self := base
 
-end UIdEquiv
+end RefEquiv
 
-attribute [simp] _UIdEquivProto.rightInv _UIdEquivProto.leftInv
-  UIdEquiv.Lesser.rightInv UIdEquiv.Lesser.leftInv
+attribute [simp] _RefEquivProto.rightInv _RefEquivProto.leftInv
 
 /--
 Owns the data representation `D`, the binary data type of primitive literals.
@@ -144,7 +109,7 @@ the meaning of P in PHOAS, the shared carrier used in PHOAS bindings
 
 It is deliberately left abstract to ward off unlawful construction:
 
-- certified `C` receipts are obtained only through the runtime or build [UIdEquiv.Lesser]
+- certified `C` receipts are obtained only through the runtime or build [RefEquiv.Lesser]
 - the only way to construct `D` is to parse a primitive literal in AST
 -/
 class Parameters extends HasData where
@@ -154,7 +119,7 @@ class Parameters extends HasData where
   AST of more specific domain can be used to constract AST of more general domain.
   - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
   -/
-  dom : C -> Prop := λ _ => true
+  dom : C -> Prop := λ _ => true --TODO: remove, useless now
 
 namespace Parameters
 section variable (Self : Parameters)

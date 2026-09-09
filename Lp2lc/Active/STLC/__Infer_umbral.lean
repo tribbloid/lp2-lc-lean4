@@ -11,16 +11,16 @@ structure TypeWithSafey {refs} [build : BuildEnv refs]
   t2 : AST.Typ refs.Parameters
   safety : [_exe : ExeEnv refs] -> Safety trm t2
 
-class ProvingEnv (refs : EverythingRefs) extends BuildEnv refs where
+private def typeWithSafetyUpcastV {refs} [build : BuildEnv refs] (trm : AST.Trm refs.Parameters) :
+    TypeWithSafey trm ↪ (AST.Val refs.Parameters ⊕ AST.Typ refs.Parameters) :=
+  ⟨λ value => .inr value.t2, λ ⟨_, _⟩ ⟨_, _⟩ equality => by cases Sum.inr.inj equality; rfl⟩
+
+class ProvingEnv (refs : HasUId2Any) extends BuildEnv refs where
   --TODO: this impl should be final, move into namespace
+  uid2typWithSafety (trm : AST.Trm refs.Parameters) :
+    refs.uid2any.Lesser (typeWithSafetyUpcastV trm)
   uid2typWithSafetyCtx (trm : AST.Trm refs.Parameters) :
-    UIdEquiv.Lesser (base := refs.uid2any)
-      ⟨λ value : TypeWithSafey trm => Sum.inr value.t2, by
-        intro left right h
-        cases left
-        cases right
-        cases Sum.inr.inj h
-        rfl⟩
+    RefEquiv.{3} (uid2typWithSafety trm).toRefs
 
 namespace ProvingEnv
 
@@ -43,7 +43,7 @@ TODO: discharge this function.
 - You are allowed to add more context into ProvingEnv namespace to meet proving demand
 -/
 /-- Infers build types for executable terms. -/
-def infer [refs : EverythingRefs] [proving : ProvingEnv refs] [env : ExeEnv refs]
+def infer [refs : HasUId2Any] [proving : ProvingEnv refs] [env : ExeEnv refs]
     (trm : AST.Trm refs.Parameters) :
     RecOpt (TypeWithSafey trm) := sorry
 

@@ -3,8 +3,6 @@ import «Lp2lc».Active.Util
 namespace Tests.UIdEquivSpec
 
 open Lp2lc.Active.Util
-open UIdEquiv
-
 @[reducible] def groupView : UIdRefs.{1} (λ _evidence => Nat) where
   UId := PSigma (λ _id : Nat => True)
   get := λ receipt => receipt.fst
@@ -16,104 +14,68 @@ open UIdEquiv
 abbrev EqOneValue := {value : Nat // value = 1}
 
 @[reducible] def eqOneMetadataView :
-    UIdRefs.Lesser (V2 := EqOneValue) groupView ⟨Subtype.val, λ _left _right => Subtype.ext⟩ where
+    groupView.toRefs.Lesser
+      (⟨Subtype.val, λ _left _right => Subtype.ext⟩ : EqOneValue ↪ Nat) where
   ev := λ receipt => receipt.fst = 1
   get := λ receipt => ⟨receipt.val.fst, receipt.property⟩
   equivariance := by
     intro receipt
     rfl
 
-@[reducible] def eqOneMetadata :
-    Lesser (V2 := EqOneValue) (base := groupView) ⟨Subtype.val, λ _left _right => Subtype.ext⟩ where
-  toLesser := eqOneMetadataView
-  inv := λ value => ⟨⟨value.val, True.intro⟩, value.property⟩
-  rightInv := by
-    intro value
-    rfl
-  leftInv := by
-    intro receipt
-    apply Subtype.ext
-    cases receipt.val with
-    | mk _id evidence =>
-      cases evidence
-      rfl
-
 @[reducible] def unitMetadataView :
-    UIdRefs.Lesser (V2 := Nat × Unit) groupView ⟨Prod.fst, λ _left _right h => Prod.ext h (Subsingleton.elim _ _)⟩ where
+    groupView.toRefs.Lesser
+      (⟨Prod.fst, λ _left _right h => Prod.ext h (Subsingleton.elim _ _)⟩ :
+        Nat × Unit ↪ Nat) where
   ev := λ _receipt => True
   get := λ receipt => (groupView.get receipt.val, ())
   equivariance := by
     intro receipt
     rfl
 
-@[reducible] def unitMetadata :
-    Lesser (V2 := Nat × Unit) (base := groupView) ⟨Prod.fst, λ _left _right h => Prod.ext h (Subsingleton.elim _ _)⟩ where
-  toLesser := unitMetadataView
-  inv := λ value => ⟨⟨value.fst, True.intro⟩, True.intro⟩
-  rightInv := by
-    intro value
-    cases value with
-    | mk value metadata =>
-      cases metadata
-      rfl
-  leftInv := by
-    intro receipt
-    apply Subtype.ext
-    cases receipt.val with
-    | mk _id evidence =>
-      cases evidence
-      rfl
-
 section receipt
 
-example :
-    eqOneMetadata.ev ⟨1, True.intro⟩ :=
-  (eqOneMetadata.inv ⟨1, rfl⟩).property
+variable [eqOneMetadataCtx : _RefEquivProto eqOneMetadataView.toRefs]
+variable [unitMetadataCtx : _RefEquivProto unitMetadataView.toRefs]
 
 example :
-    eqOneMetadata.ev ⟨1, True.intro⟩ ∧
-      unitMetadata.ev ⟨1, True.intro⟩ :=
-  ⟨(eqOneMetadata.inv ⟨1, rfl⟩).property,
-    (unitMetadata.inv (1, ())).property⟩
+    eqOneMetadataView.ev ⟨1, True.intro⟩ :=
+  rfl
 
 example :
-    eqOneMetadata.ev ⟨1, True.intro⟩ → EqOneValue :=
-  λ evidence => eqOneMetadata.get ⟨⟨1, True.intro⟩, evidence⟩
+    eqOneMetadataView.ev ⟨1, True.intro⟩ ∧
+      unitMetadataView.ev ⟨1, True.intro⟩ :=
+  ⟨rfl, True.intro⟩
 
 example :
-    unitMetadata.ev ⟨1, True.intro⟩ → Nat × Unit :=
-  λ evidence => unitMetadata.get ⟨⟨1, True.intro⟩, evidence⟩
+    eqOneMetadataView.ev ⟨1, True.intro⟩ → EqOneValue :=
+  λ evidence => eqOneMetadataView.get ⟨⟨1, True.intro⟩, evidence⟩
 
-example (receipt : {uid // eqOneMetadata.ev uid}) :
-    (eqOneMetadata.get receipt).val = groupView.get receipt.val := by
-  exact eqOneMetadata.equivariance receipt
+example :
+    unitMetadataView.ev ⟨1, True.intro⟩ → Nat × Unit :=
+  λ evidence => unitMetadataView.get ⟨⟨1, True.intro⟩, evidence⟩
 
 example (receipt : {uid // eqOneMetadataView.ev uid}) :
     (eqOneMetadataView.get receipt).val = groupView.get receipt.val := by
   exact eqOneMetadataView.equivariance receipt
-
-example (receipt : {uid // unitMetadata.ev uid}) :
-    (unitMetadata.get receipt).fst = groupView.get receipt.val := by
-  exact unitMetadata.equivariance receipt
 
 example (receipt : {uid // unitMetadataView.ev uid}) :
     (unitMetadataView.get receipt).fst = groupView.get receipt.val := by
   exact unitMetadataView.equivariance receipt
 
 example (value : EqOneValue) :
-    eqOneMetadata.get (eqOneMetadata.inv value) = value := by
+    eqOneMetadataView.get (eqOneMetadataCtx.inv value) = value := by
   simp
 
-example (receipt : {uid // eqOneMetadata.ev uid}) :
-    eqOneMetadata.inv (eqOneMetadata.get receipt) = receipt := by
+example (receipt : {uid // eqOneMetadataView.ev uid}) :
+    eqOneMetadataCtx.inv (eqOneMetadataView.get receipt) = receipt := by
   simp
 
 example (value : Nat × Unit) :
-    unitMetadata.get (unitMetadata.inv value) = value := by
+    unitMetadataView.get (unitMetadataCtx.inv value) = value := by
   simp
 
-example (receipt : {uid // unitMetadata.ev uid}) :
-    unitMetadata.inv (unitMetadata.get receipt) = receipt := by
+example (receipt : {uid // unitMetadataView.ev uid}) :
+    unitMetadataCtx.inv (unitMetadataView.get receipt) = receipt := by
   simp
 
 end receipt

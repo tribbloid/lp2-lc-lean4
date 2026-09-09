@@ -8,12 +8,12 @@ open Lp2lc.Active.Util
 Adds the compile-time typing context; the shared value-or-type view permits
 only lookups, so compile-time code cannot mint receipts from new values.
 -/
-class BuildEnv (refs : EverythingRefs) where
-  uid2typCtx : UIdEquiv.Lesser (base := refs.uid2any)
-    ⟨Sum.inr, λ _left _right => Sum.inr.inj⟩
+class BuildEnv (refs : HasUId2Any) where
+  uid2typ : refs.uid2any.Lesser ⟨Sum.inr, λ _left _right => Sum.inr.inj⟩
+  uid2typCtx : RefEquiv.{3} (uid2typ).toRefs
 
 namespace BuildEnv
-section variable {refs : EverythingRefs} (self : BuildEnv refs)
+section variable {refs : HasUId2Any} (self : BuildEnv refs)
 
 end
 end BuildEnv
@@ -61,7 +61,7 @@ def CanInhabit {refs} [env : BuildEnv refs]
 
 end AST
 
-def Safety {refs : EverythingRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
+def Safety {refs : HasUId2Any} [build : BuildEnv refs] [exe : ExeEnv refs]
     (trm : AST.Trm refs.Parameters) (t2 : AST.Typ refs.Parameters) : Prop :=
   trm.eval.isSemiDecidable
     (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
