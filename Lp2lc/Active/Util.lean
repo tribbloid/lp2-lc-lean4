@@ -76,7 +76,6 @@ Full receipt-indexed bridge, extending [KVRefs] with the reverse direction.
 type class `CanAdapt` shoudld be attached all the time
 -/
 class KVEquiv {K V} (base : KVRefs K V) where
-  private mk ::
   inv (value : V) : K
   rightInv : ∀ (value : V), base.get (inv value) = value
   leftInv : ∀ (receipt : K), inv (base.get receipt) = receipt
@@ -87,9 +86,9 @@ namespace KVEquiv
 instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
   coe _self := base
 
-class CanAdapt {_base} (base : KVEquiv _base) where
-  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : KVEquiv (Lesser _base upcastV)
-  expand {V2 : Sort u} (upcastV : V ↪ V2) : KVEquiv (Greater _base upcastV)
+class CanAdapt {_base} (base : KVRefs.CanAdapt _base) where
+  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : KVEquiv (base.shrink upcastV)
+  expand {V2 : Sort u} (upcastV : V ↪ V2) : KVEquiv (base.expand upcastV)
 
 end KVEquiv
 
