@@ -40,7 +40,7 @@ namespace Src_
 /--
 Reassembles the plain source term from a certified spine, applying each binder back onto its input.
 -/
-def ast {label : Label} {V : Type} {kvRefs : KVRefs P.C V} : (self : Src_ P label kvRefs) → AST P label
+def ast {label} {kvRefs : KVRefs P.C V} : (self : Src_ P label kvRefs) → AST P label
   | .void ast => ast
   | .closed _ast_ _kvRefs => _ast_ P
   | .expansion tIn arg body _upcast _kvRefs2 => .apply (.val (.lam body tIn)) arg.ast
