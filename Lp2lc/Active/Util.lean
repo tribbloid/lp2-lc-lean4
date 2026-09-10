@@ -140,9 +140,6 @@ class Parameters extends HasData where
   -- - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
   -- -/
   -- dom : C -> Prop := λ _ => true --TODO: remove, useless now
-  adaptKVRefs {K V} (refs : KVRefs K (V : Sort u)) : refs.Adapter V
-  adaptKVEquiv {K V refs} (equiv : KVEquiv (refs : KVRefs K (V : Sort u))) :
-    equiv.Adapter (adaptKVRefs refs)
 
 namespace Parameters
 section variable (Self : Parameters)

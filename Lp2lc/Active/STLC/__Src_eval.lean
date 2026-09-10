@@ -4,6 +4,13 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
+structure Domain
+  P : Parameters
+  V : Type
+  adaptKVRefs {K V} (refs : KVRefs K (V : Sort u)) : refs.Adapter V
+  adaptKVEquiv {K V refs} (equiv : KVEquiv (refs : KVRefs K (V : Sort u))) :
+    equiv.Adapter (adaptKVRefs refs)
+
 section variable (P : Parameters)
 
 /--
