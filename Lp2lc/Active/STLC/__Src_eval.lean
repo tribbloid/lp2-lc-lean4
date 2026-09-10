@@ -33,7 +33,7 @@ Given an input Src_, a binder and a KVEquiv, applying the binder on the input ca
 The binder's input type `tIn` and the expanded domain `kvRefs2` are recorded so the underlying source term can be reassembled.
 -/
 | expansion {V1 V2 : Type} (tIn : AST P .typ) (arg : Src_ P .trm kvRefs1)
-    (body : P.C → AST P .trm) (upcast : V1 ↪ V2) (kvRefs2 : KVRefs P.C V2) : Src_ P .trm kvRefs1
+    (body : P.C → AST P .trm) (upcast : V1 ↪ V2) (kvRefs2 : KVRefs P.C V2) : Src_ P .trm kvRefs1 --FIXME: remember kvRefs2 is an expansin of kvRef, it can be comoputed from Parameters, remove it
 
 namespace Src_
 
