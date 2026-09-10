@@ -112,12 +112,14 @@ It is deliberately left abstract to ward off unlawful construction:
 -/
 class Parameters extends HasData where
   C : KU -- shared PHOAS/carrier UIdRefs/receipt
-  /--
-  AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
-  AST of more specific domain can be used to constract AST of more general domain.
-  - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
-  -/
-  dom : C -> Prop := λ _ => true --TODO: remove, useless now
+  -- /--
+  -- AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
+  -- AST of more specific domain can be used to constract AST of more general domain.
+  -- - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
+  -- -/
+  -- dom : C -> Prop := λ _ => true --TODO: remove, useless now
+  adaptKVRefs : (m : KVRefs K V) -> KVRefs.CanAdapt m
+  adaptKVEquiv : (m : KVEquiv base) -> KVEquiv.CanAdapt m
 
 namespace Parameters
 section variable (Self : Parameters)
