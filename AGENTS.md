@@ -63,6 +63,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
   - `fun` (use `λ`)
   - `show` (use simple type annotation)
   - `suffices` (use `have`)
+- Do not put argument type after colon unless absolutely necessary
 
 #### Task-specific Guardrails
 
