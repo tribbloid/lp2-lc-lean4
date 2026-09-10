@@ -92,8 +92,11 @@ When working on a issue that contains multiple subtasks:
 
 ##### Modules
 
-- Use quoted module names, e.g. `import «Lp2lc».xxx`.
 - Group imports logically (Lean core, external deps, local modules).
+
+##### File Name
+
+- `__` prefix in file name indicates experimental, self-contained code, non-experimental code should not import from it
 
 ##### Definitions
 
@@ -101,18 +104,21 @@ When working on a issue that contains multiple subtasks:
 - Use camelCase for inductive cases/constructors
 - Use PascalCase for types, propositions, properties, type constructors and predicates that yield `Type`/`Type u`/`Prop`/`Sort u`, first letter capitalized.
 
-##### References
+##### Omission
 
-- Inductive constructor at call-site should omit type name if possible, in this case, the constructor should always be preceded by `.`
+Some Lean symbols can be inferred by the compiler automatically and should be better left implicit:
+
+- Full prefix of inductive case/constructor at call-site (a prefix of `.` is often enough)
+- Type annotation of implicit argument at define-site (the argument variable however should never be omitted, even if it can be inferred)
+- shared argument that is already defined in section variable header
 
 ##### Glossary/Abbreviations
 
 - `T` prefix: type/sort argument (as in C#)
 - `Ref` : reference
-- `Gen` suffix : generator
+- `Gen`/`_` suffix : generator
 - `Dep` prefix : dependent, related to dependent type
 - `Rec` : recursive, guarded recursion
-- `__` : experimental, self-contained code, non-experimental code should not import from it
 
 ## Git (Version Control)
 
