@@ -31,7 +31,7 @@ carriers can retain the receipt required by `get`.
 
 type class `CanAdapt` shoudld be attached all the time
 -/
-class KVRefs (K : KU) (V : Sort u) where
+structure KVRefs (K : KU) (V : Sort u) where
   get : (k : K) → V
 
 namespace KVRefs
@@ -39,22 +39,22 @@ namespace KVRefs
 def unit (K : KU) : KVRefs K Unit where
   get := λ _ => .unit
 
-class HasEv (UId : KU) where
+structure HasEv (UId : KU) where
   ev : UId → Prop -- a subtype of UId with extra contract
 
 /-- Read-only access to a larger carrier, preserving the base receipt mapping. -/
-class Greater {K V V2} (base : KVRefs K V) (upcastV : V ↪ V2)
+structure Greater {K V V2} (base : KVRefs K V) (upcastV : V ↪ V2)
     extends KVRefs K V2 where
   equivariance : ∀ (receipt : K), get receipt = upcastV (base.get receipt)
 
 /-- Read-only access to refined receipts compatible with a base view. -/
-class Lesser {K V V2} (base : KVRefs K V) (upcastV : V2 ↪ V)
+structure Lesser {K V V2} (base : KVRefs K V) (upcastV : V2 ↪ V)
     extends HasEv K, KVRefs {uid // ev uid} V2 where
   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
 
-class CanAdapt {K V} (base : KVRefs K V) where
-  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : Lesser base upcastV
-  expand {V2 : Sort u} (upcastV : V ↪ V2) : Greater base upcastV
+structure Adapter {K V}
+  shrink {V2} (base : KVRefs K V) (upcastV : V2 ↪ V) : base.Lesser upcastV -- converting a KVRefs to it's Lesser
+  expand {V2} (base : KVRefs K V) (upcastV : V ↪ V2) : base.Greater upcastV -- converting a KVRefs to it's Greater
 
 end KVRefs
 
@@ -75,7 +75,7 @@ Full receipt-indexed bridge, extending [KVRefs] with the reverse direction.
 
 type class `CanAdapt` shoudld be attached all the time
 -/
-class KVEquiv {K V} (base : KVRefs K V) where
+structure KVEquiv {K V} (base : KVRefs K V) where
   inv (value : V) : K
   rightInv : ∀ (value : V), base.get (inv value) = value
   leftInv : ∀ (receipt : K), inv (base.get receipt) = receipt
@@ -86,9 +86,9 @@ namespace KVEquiv
 instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
   coe _self := base
 
-class CanAdapt {K V} {kv1 : KVRefs K V} (kv2: KVEquiv kv1) where
-  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : KVEquiv (KVRefs.Lesser kv1 upcastV).toKVRefs
-  expand {V2 : Sort u} (upcastV : V ↪ V2) : KVEquiv (KVRefs.Greater kv1 upcastV).toKVRefs
+structure Adapter {K V}
+  shrink {b} (base : KVEquiv b) (upcastV : V2 ↪ V) : KVEquiv (b.Lesser upcastV)
+  expand {b} (base : KVEquiv b) (upcastV : V ↪ V2) : KVEquiv (b.Greater upcastV)
 
 end KVEquiv
 
@@ -118,19 +118,11 @@ class Parameters extends HasData where
   -- - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
   -- -/
   -- dom : C -> Prop := λ _ => true --TODO: remove, useless now
-  adaptKVRefs : {K : KU} → {V : Sort u} → (m : KVRefs K V) → KVRefs.CanAdapt m
-  adaptKVEquiv : {K : KU} → {V : Sort u} → {base : KVRefs K V} →
-    (m : KVRefs.CanAdapt base) → KVEquiv.CanAdapt m
+  adaptKVRefs : KVRefs.Adapter K V
+  adaptKVEquiv : KVEquiv.Adapter K V
 
 namespace Parameters
 section variable (Self : Parameters)
-
-def CC := {x // Self.dom x} -- certified carrier
-
-/-- Builds a `Parameters` whose certified domain further restricts `Self.dom`,
-so the refinement of `CC Self` holds by construction. -/
-abbrev Lesser (ev : Self.C → Prop) : Parameters :=
-  { D := Self.D, C := Self.C, dom := λ r => Self.dom r ∧ ev r }
 
 end
 end Parameters
