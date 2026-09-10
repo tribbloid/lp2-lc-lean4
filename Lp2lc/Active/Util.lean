@@ -86,9 +86,9 @@ namespace KVEquiv
 instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
   coe _self := base
 
-class CanAdapt {K V} {_base : KVRefs K V} (base : KVRefs.CanAdapt _base) where
-  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : KVEquiv (base.shrink upcastV).toKVRefs
-  expand {V2 : Sort u} (upcastV : V ↪ V2) : KVEquiv (base.expand upcastV).toKVRefs
+class CanAdapt {K V} {kv1 : KVRefs K V} (kv2: KVEquiv kv1) where
+  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : KVEquiv (Lesser kv1 upcastV).toKVRefs
+  expand {V2 : Sort u} (upcastV : V ↪ V2) : KVEquiv (Greater kv1 upcastV).toKVRefs
 
 end KVEquiv
 
@@ -118,8 +118,9 @@ class Parameters extends HasData where
   -- - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
   -- -/
   -- dom : C -> Prop := λ _ => true --TODO: remove, useless now
-  adaptKVRefs : (m : KVRefs K V) -> KVRefs.CanAdapt m
-  adaptKVEquiv : (m : KVEquiv base) -> KVEquiv.CanAdapt m
+  adaptKVRefs : {K : KU} → {V : Sort u} → (m : KVRefs K V) → KVRefs.CanAdapt m
+  adaptKVEquiv : {K : KU} → {V : Sort u} → {base : KVRefs K V} →
+    (m : KVRefs.CanAdapt base) → KVEquiv.CanAdapt m
 
 namespace Parameters
 section variable (Self : Parameters)
