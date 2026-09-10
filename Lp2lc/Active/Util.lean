@@ -87,8 +87,8 @@ instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where --
   coe _self := base
 
 class CanAdapt {K V} {kv1 : KVRefs K V} (kv2: KVEquiv kv1) where
-  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : KVEquiv (Lesser kv1 upcastV).toKVRefs
-  expand {V2 : Sort u} (upcastV : V ↪ V2) : KVEquiv (Greater kv1 upcastV).toKVRefs
+  shrink {V2 : Sort u} (upcastV : V2 ↪ V) : KVEquiv (KVRefs.Lesser kv1 upcastV).toKVRefs
+  expand {V2 : Sort u} (upcastV : V ↪ V2) : KVEquiv (KVRefs.Greater kv1 upcastV).toKVRefs
 
 end KVEquiv
 
