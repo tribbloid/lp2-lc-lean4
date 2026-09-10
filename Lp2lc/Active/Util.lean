@@ -24,14 +24,14 @@ inductive Label
 | val
 
 
-/--
-contract that relates `KVRefs` to its Lesser/Greater versions
+-- /--
+-- contract that relates `KVRefs` to its Lesser/Greater versions
 
-they must all use the same Key type, and given any 2 value types, the upcast function must be globally unique
--/
-structure Schema where
-  K : KU
-  upcastV (V1 : Sort u) (V2 : Sort v) : Embedding V1 V2
+-- they must all use the same Key type, and given any 2 value types, the upcast function must be globally unique
+-- -/
+-- structure Schema where
+--   K : KU
+--   upcastV (V1 : Sort u) (V2 : Sort v) : Embedding V1 V2
 
 /--
 Receipt-indexed bridge between values and PHOAS carriers. Read-only.
@@ -39,34 +39,39 @@ Receipt-indexed bridge between values and PHOAS carriers. Read-only.
 The value family is indexed by this bridge's evidence so recursive PHOAS
 carriers can retain the receipt required by `get`.
 -/
-structure KVRefs (S : Schema) (V : Sort u) where
-  get : (k : S.K) → V
+structure KVRefs (K : KU) (V : Sort u) where
+  get : K → V
+
 
 namespace KVRefs
+section variable {K V} (this : KVRefs K V)
 
-def unit (S) : KVRefs S Unit where
-  get := λ _ => .unit
 
-structure HasEv (UId : KU) where
-  ev : UId → Prop -- a subtype of UId with extra contract
+def Unit (K) := KVRefs K PUnit
 
 --FIXME: rewrite the following definition using the new "Schema" contract: due to the uniqueness of upcastV, all the following types only need to depend on V2, not V ↪ V2
 
 /-- Read-only access to a larger carrier, preserving the base receipt mapping. -/
-structure Greater {K V V2} (base : KVRefs K V) (upcastV : V ↪ V2)
+structure Greater (V2)
     extends KVRefs K V2 where
-  equivariance : ∀ (receipt : K), get receipt = upcastV (base.get receipt)
+  upcastV : Embedding V V2 -- this is not important, but it also means (g1 : base.Greater X) != (g2 : base.Greater X) unless the same expression is used to generate them
+  equivariance : ∀ (receipt : K), get receipt = upcastV (this.get receipt)
+
+structure HasEv (UId : KU) where
+  ev : UId → Prop -- a subtype of UId with extra contract
 
 /-- Read-only access to refined receipts compatible with a base view. -/
-structure Lesser {K V V2} (base : KVRefs K V) (upcastV : V2 ↪ V)
+structure Lesser (V2)
     extends HasEv K, KVRefs {uid // ev uid} V2 where
-  equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
+  upcastV : Embedding V2 V
+  equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = this.get receipt.val
 
 -- TODO: rename to "Widen" and "Specify"
-structure Adapter (K V) where
-  shrink {V2 : Sort u} (v : KVRefs K V) (upcastV : V2 ↪ V) : v.Lesser upcastV -- converting a KVRefs to it's Lesser
-  expand {V2 : Sort u} (v : KVRefs K V) (upcastV : V ↪ V2) : v.Greater upcastV -- converting a KVRefs to it's Greater
+structure Adapter (V2 : Sort u) where
+  shrink : this.Lesser V2 -- converting a KVRefs to it's Lesser
+  expand : this.Greater V2 -- converting a KVRefs to it's Greater
 
+end
 end KVRefs
 
 structure HasUId where
@@ -90,19 +95,23 @@ structure KVEquiv {K V} (base : KVRefs K V) where
   leftInv : ∀ (receipt : K), inv (base.get receipt) = receipt
 
 namespace KVEquiv
+section variable {K V} {refs : KVRefs K V} (this: KVEquiv refs)
 
+-- TODO: shorten using section variable, no need to be CoeOut
 /-- Coerces a full bridge to the read-only view that it completes. -/
 instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
   coe _self := base
 
-structure Adapter (K V) (forRefs: KVRefs.Adapter K V) where
-  shrink {V2 : Sort u} {b} (v : KVEquiv b) (upcastV : V2 ↪ V) :
-    let refs2 := forRefs.shrink b upcastV
+structure Adapter {V2} (forRefs: refs.Adapter V2) where
+  shrink :
+    let refs2 := forRefs.shrink
     KVEquiv refs2.toKVRefs
-  expand {V2 : Sort u} {b} (v : KVEquiv b) (upcastV : V ↪ V2) :
-    let refs2 := forRefs.expand b upcastV
+  expand :
+    let refs2 := forRefs.expand
     KVEquiv refs2.toKVRefs
 
+
+end
 end KVEquiv
 
 attribute [simp] KVEquiv.rightInv KVEquiv.leftInv
@@ -131,8 +140,8 @@ class Parameters extends HasData where
   -- - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
   -- -/
   -- dom : C -> Prop := λ _ => true --TODO: remove, useless now
-  adaptKVRefs : KVRefs.Adapter K V
-  adaptKVEquiv : KVEquiv.Adapter K V adaptKVRefs
+  adaptKVRefs (refs : KVRefs K V) : refs.Adapter  V
+  adaptKVEquiv (equiv : KVEquiv refs) : equiv.Adapter (adaptKVRefs refs V)
 
 namespace Parameters
 section variable (Self : Parameters)
