@@ -23,22 +23,34 @@ inductive Label
 | trm
 | val
 
+
+/--
+contract that relates `KVRefs` to its Lesser/Greater versions
+
+they must all use the same Key type, and given any 2 value types, the upcast function must be globally unique
+-/
+structure Schema where
+  K : KU
+  upcastV (V1 : Sort u) (V2 : Sort v) : Embedding V1 V2
+
 /--
 Receipt-indexed bridge between values and PHOAS carriers. Read-only.
 
 The value family is indexed by this bridge's evidence so recursive PHOAS
 carriers can retain the receipt required by `get`.
 -/
-structure KVRefs (K : KU) (V : Sort u) where
-  get : (k : K) → V
+structure KVRefs (S : Schema) (V : Sort u) where
+  get : (k : S.K) → V
 
 namespace KVRefs
 
-def unit (K : KU) : KVRefs K Unit where
+def unit (S) : KVRefs S Unit where
   get := λ _ => .unit
 
 structure HasEv (UId : KU) where
   ev : UId → Prop -- a subtype of UId with extra contract
+
+--FIXME: rewrite the following definition using the new "Schema" contract: due to the uniqueness of upcastV, all the following types only need to depend on V2, not V ↪ V2
 
 /-- Read-only access to a larger carrier, preserving the base receipt mapping. -/
 structure Greater {K V V2} (base : KVRefs K V) (upcastV : V ↪ V2)
@@ -50,7 +62,8 @@ structure Lesser {K V V2} (base : KVRefs K V) (upcastV : V2 ↪ V)
     extends HasEv K, KVRefs {uid // ev uid} V2 where
   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
 
-structure Adapter {K V} where
+-- TODO: rename to "Widen" and "Specify"
+structure Adapter (K V) where
   shrink {V2 : Sort u} (v : KVRefs K V) (upcastV : V2 ↪ V) : v.Lesser upcastV -- converting a KVRefs to it's Lesser
   expand {V2 : Sort u} (v : KVRefs K V) (upcastV : V ↪ V2) : v.Greater upcastV -- converting a KVRefs to it's Greater
 
@@ -82,9 +95,13 @@ namespace KVEquiv
 instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
   coe _self := base
 
-structure Adapter {K V} where
-  shrink {b} (v : KVEquiv b) (upcastV : V2 ↪ V) : KVEquiv (b.Lesser upcastV)
-  expand {b} (v : KVEquiv b) (upcastV : V ↪ V2) : KVEquiv (b.Greater upcastV)
+structure Adapter (K V) (forRefs: KVRefs.Adapter K V) where
+  shrink {V2 : Sort u} {b} (v : KVEquiv b) (upcastV : V2 ↪ V) :
+    let refs2 := forRefs.shrink b upcastV
+    KVEquiv refs2.toKVRefs
+  expand {V2 : Sort u} {b} (v : KVEquiv b) (upcastV : V ↪ V2) :
+    let refs2 := forRefs.expand b upcastV
+    KVEquiv refs2.toKVRefs
 
 end KVEquiv
 
@@ -115,7 +132,7 @@ class Parameters extends HasData where
   -- -/
   -- dom : C -> Prop := λ _ => true --TODO: remove, useless now
   adaptKVRefs : KVRefs.Adapter K V
-  adaptKVEquiv : KVEquiv.Adapter K V
+  adaptKVEquiv : KVEquiv.Adapter K V adaptKVRefs
 
 namespace Parameters
 section variable (Self : Parameters)
