@@ -50,9 +50,9 @@ structure Lesser {K V V2} (base : KVRefs K V) (upcastV : V2 ↪ V)
     extends HasEv K, KVRefs {uid // ev uid} V2 where
   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = base.get receipt.val
 
-structure Adapter {K V}
-  shrink {V2} (base : KVRefs K V) (upcastV : V2 ↪ V) : base.Lesser upcastV -- converting a KVRefs to it's Lesser
-  expand {V2} (base : KVRefs K V) (upcastV : V ↪ V2) : base.Greater upcastV -- converting a KVRefs to it's Greater
+structure Adapter {K V} where
+  shrink {V2 : Sort u} (v : KVRefs K V) (upcastV : V2 ↪ V) : v.Lesser upcastV -- converting a KVRefs to it's Lesser
+  expand {V2 : Sort u} (v : KVRefs K V) (upcastV : V ↪ V2) : v.Greater upcastV -- converting a KVRefs to it's Greater
 
 end KVRefs
 
@@ -82,9 +82,9 @@ namespace KVEquiv
 instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
   coe _self := base
 
-structure Adapter {K V}
-  shrink {b} (base : KVEquiv b) (upcastV : V2 ↪ V) : KVEquiv (b.Lesser upcastV)
-  expand {b} (base : KVEquiv b) (upcastV : V ↪ V2) : KVEquiv (b.Greater upcastV)
+structure Adapter {K V} where
+  shrink {b} (v : KVEquiv b) (upcastV : V2 ↪ V) : KVEquiv (b.Lesser upcastV)
+  expand {b} (v : KVEquiv b) (upcastV : V ↪ V2) : KVEquiv (b.Greater upcastV)
 
 end KVEquiv
 
