@@ -21,6 +21,7 @@ The project depends on Aesop through Lake.
 - DO NOT repeat code! Avoid duplicated implementation and names; import namespaces/packages used multiple times.
 - DO NOT change Lake/build config or toolchain files (`lakefile.lean`, `lake-manifest.json`, `lean-toolchain`) unless asked to.
 - DO NOT revert any part of the code to a previous state in git history - every git commit is there for a reason
+- DO NOT modify any code that is modified in the previous few commits and can compile successfully - they are the effective changes you need to adapt to
 
 ### Structure
 
