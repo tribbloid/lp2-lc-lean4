@@ -17,11 +17,10 @@ The project depends on Aesop through Lake.
 
 #### Don't
 
-- Do not ask questions like "what to do next".
-- Avoid duplicated implementation and repeated fully qualified names; import namespaces/packages used multiple times.
-- Do not create new branch in git.
-- Preserve existing comments. Do not add explanatory comments unless required by Lean docString policy.
-- Do not change Lake/build config or toolchain files (`lakefile.lean`, `lake-manifest.json`, `lean-toolchain`) unless asked to.
+- DO NOT ask questions like "what to do next".
+- DO NOT repeat code! Avoid duplicated implementation and names; import namespaces/packages used multiple times.
+- DO NOT change Lake/build config or toolchain files (`lakefile.lean`, `lake-manifest.json`, `lean-toolchain`) unless asked to.
+- DO NOT revert any part of the code to a previous state in git history - every git commit is there for a reason
 
 ### Structure
 
