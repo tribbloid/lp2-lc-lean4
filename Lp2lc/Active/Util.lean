@@ -95,14 +95,14 @@ structure KVEquiv {K V} (base : KVRefs K V) where
   leftInv : ∀ (receipt : K), inv (base.get receipt) = receipt
 
 namespace KVEquiv
-section variable {K V} {refs : KVRefs K V} (this: KVEquiv refs)
+section variable {K V} {refs : KVRefs K V}
 
 -- TODO: shorten using section variable, no need to be CoeOut
 /-- Coerces a full bridge to the read-only view that it completes. -/
 instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
   coe _self := base
 
-structure Adapter {V2} (forRefs: refs.Adapter V2) where
+structure Adapter (this : KVEquiv refs) {V2} (forRefs: refs.Adapter V2) where
   shrink :
     let refs2 := forRefs.shrink
     KVEquiv refs2.toKVRefs
@@ -140,8 +140,9 @@ class Parameters extends HasData where
   -- - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
   -- -/
   -- dom : C -> Prop := λ _ => true --TODO: remove, useless now
-  adaptKVRefs (refs : KVRefs K V) : refs.Adapter  V
-  adaptKVEquiv (equiv : KVEquiv refs) : equiv.Adapter (adaptKVRefs refs V)
+  adaptKVRefs {K V} (refs : KVRefs K (V : Sort u)) : refs.Adapter V
+  adaptKVEquiv {K V refs} (equiv : KVEquiv (refs : KVRefs K (V : Sort u))) :
+    equiv.Adapter (adaptKVRefs refs)
 
 namespace Parameters
 section variable (Self : Parameters)
