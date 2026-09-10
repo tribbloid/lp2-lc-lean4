@@ -28,8 +28,6 @@ Receipt-indexed bridge between values and PHOAS carriers. Read-only.
 
 The value family is indexed by this bridge's evidence so recursive PHOAS
 carriers can retain the receipt required by `get`.
-
-type class `CanAdapt` shoudld be attached all the time
 -/
 structure KVRefs (K : KU) (V : Sort u) where
   get : (k : K) → V
@@ -58,7 +56,7 @@ structure Adapter {K V}
 
 end KVRefs
 
-class HasUId where
+structure HasUId where
   UId : KU
 
 /--
@@ -66,14 +64,12 @@ Unlike [KVRefs], the key type `UId` is not shared with any other value type, so 
 
 type `V_` is deliberately a type constructor of `V`, without it V may be impossible to define due to cyclic references
 -/
-class UIdRefs (V_ : KU → Sort u) extends HasUId, KVRefs UId (V_ UId)
+structure UIdRefs (V_ : KU → Sort u) extends HasUId, KVRefs UId (V_ UId)
 
 /--
 Full receipt-indexed bridge, extending [KVRefs] with the reverse direction.
 
 `inv` is the only way to obtain a `K`: it requires a value, a view alone cannot mint receipts from new values.
-
-type class `CanAdapt` shoudld be attached all the time
 -/
 structure KVEquiv {K V} (base : KVRefs K V) where
   inv (value : V) : K
@@ -99,7 +95,7 @@ Owns the data representation `D`, the binary data type of primitive literals.
 
 The only way to construct `D` is to parse a primitive literal in AST.
 -/
-class HasData where
+structure HasData where
   D : DataU -- Binary Data type
 
 /--
