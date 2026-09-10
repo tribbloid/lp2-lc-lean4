@@ -11,16 +11,12 @@ structure TypeWithSafey {refs} [build : BuildEnv refs]
   t2 : AST.Typ refs.Parameters
   safety : [_exe : ExeEnv refs] -> Safety trm t2
 
-private def typeWithSafetyUpcastV {refs} [build : BuildEnv refs] (trm : AST.Trm refs.Parameters) :
-    TypeWithSafey trm ↪ (AST.Val refs.Parameters ⊕ AST.Typ refs.Parameters) :=
-  ⟨λ value => .inr value.t2, λ ⟨_, _⟩ ⟨_, _⟩ equality => by cases Sum.inr.inj equality; rfl⟩
-
 class ProvingEnv (refs : HasUId2Any) extends BuildEnv refs where
   --TODO: this impl should be final, move into namespace
   uid2typWithSafety (trm : AST.Trm refs.Parameters) :
-    refs.uid2any.Lesser (typeWithSafetyUpcastV trm)
+    {v : refs.uid2any.Lesser (TypeWithSafey trm) // v.upcastV.toFun = λ t => .inr t.t2}
   uid2typWithSafetyCtx (trm : AST.Trm refs.Parameters) :
-    KVEquiv (uid2typWithSafety trm).toKVRefs
+    KVEquiv (uid2typWithSafety trm).val.toKVRefs
 
 namespace ProvingEnv
 

@@ -25,7 +25,7 @@ inductive Src_ (P : Parameters) : (label : Label) → {V : Type} → (kvRefs : K
 /--
 free var exist but devoid of information, `V := Unit`. (It's a special case of `assuming`)
 -/
-| void (ast : AST P label) : Src_ P label (KVRefs.unit P.C)
+| void (ast : AST P label) : Src_ P label ⟨λ _ => PUnit.unit⟩
 /--
 in PHOAS convention `ast_` must be closed because `_P` can only be from the binder, TODO: unfortunately `ast_` won't have parametricity by default, attach predicate?
 -/

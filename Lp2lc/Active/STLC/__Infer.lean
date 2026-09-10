@@ -9,8 +9,8 @@ Adds the compile-time typing context; the shared value-or-type view permits
 only lookups, so compile-time code cannot mint receipts from new values.
 -/
 class BuildEnv (refs : HasUId2Any) where
-  uid2typ : refs.uid2any.Lesser ⟨Sum.inr, λ _left _right => Sum.inr.inj⟩
-  uid2typCtx : KVEquiv (uid2typ).toKVRefs
+  uid2typ : {v : refs.uid2any.Lesser _ // v.upcastV.toFun = Sum.inr}
+  uid2typCtx : KVEquiv uid2typ.val.toKVRefs
 
 namespace BuildEnv
 section variable {refs : HasUId2Any} (self : BuildEnv refs)

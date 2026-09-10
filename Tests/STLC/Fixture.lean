@@ -10,8 +10,8 @@ class TestEnv where
   trm2either : UIdRefs (λ C =>
     let P : Parameters := { C := C, D := String }
     AST.Val P ⊕ AST.Typ P)
-  trm2valExe : trm2either.Lesser ⟨Sum.inl, λ _left _right => Sum.inl.inj⟩
-  trm2valExeCtx : KVEquiv trm2valExe.toKVRefs
+  trm2valExe : {v : trm2either.Lesser _ // v.upcastV.toFun = Sum.inl}
+  trm2valExeCtx : KVEquiv trm2valExe.val.toKVRefs
 
 variable [testEnv : TestEnv]
 
@@ -20,8 +20,8 @@ variable [testEnv : TestEnv]
 
 @[simp]
 theorem trm2valLookup
-    (receipt : {uid // testEnv.trm2valExe.ev uid}) :
-    refs.uid2any.get receipt.val = .inl (testEnv.trm2valExe.get receipt) :=
+    (receipt : {uid // testEnv.trm2valExe.val.ev uid}) :
+    refs.uid2any.get receipt.val = .inl (testEnv.trm2valExe.val.get receipt) :=
   (testEnv.trm2valExe.equivariance receipt).symm
 
 end Tests.STLC.Sanity
