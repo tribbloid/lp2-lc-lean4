@@ -21,7 +21,7 @@ include upcast
 theorem trm2typLookup
     (receipt : {uid // build.uid2typ.ev uid}) :
     refs.uid2any.get receipt.val = .inr (build.uid2typ.get receipt) :=
-  (build.uid2typ.equivariance receipt).symm
+  (build.uid2typ.equivariance receipt).symm.trans (congrFun upcast _)
 
 example :
     (vFalse.infer).shouldYields .primitive := by
@@ -38,7 +38,7 @@ example :
 example :
     (primitiveIdFn.infer).shouldYields (.fn .primitive .primitive) := by
   constructor
-  · exact ⟨2, by simp [AST.infer, Outcome.map, primitiveIdFn]⟩
+  · exact ⟨2, by simp_all [AST.infer, Outcome.map, primitiveIdFn]⟩
   · rfl
 
 example :
@@ -47,20 +47,20 @@ example :
   · refine ⟨3, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, Outcome.map,
-      primitiveIdFnOnFalse, primitiveIdFn, vFalse, hPrimitive]
+    simp_all [AST.infer, Outcome.map,
+      primitiveIdFnOnFalse, primitiveIdFn, vFalse]
   · rfl
 
 example :
     (get1st.infer).shouldYields (.fn .primitive (.fn .primitive .primitive)) := by
   constructor
-  · exact ⟨3, by simp [AST.infer, Outcome.map, get1st]⟩
+  · exact ⟨3, by simp_all [AST.infer, Outcome.map, get1st]⟩
   · rfl
 
 example :
     (get2nd.infer).shouldYields (.fn .primitive (.fn .primitive .primitive)) := by
   constructor
-  · exact ⟨3, by simp [AST.infer, Outcome.map, get2nd]⟩
+  · exact ⟨3, by simp_all [AST.infer, Outcome.map, get2nd]⟩
   · rfl
 
 example :
@@ -69,8 +69,8 @@ example :
   · refine ⟨5, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, Outcome.map,
-      get1stOnTuple, get1st, vFalse, vTrue, hPrimitive]
+    simp_all [AST.infer, Outcome.map,
+      get1stOnTuple, get1st, vFalse, vTrue]
   · rfl
 
 example :
@@ -79,14 +79,14 @@ example :
   · refine ⟨5, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, Outcome.map,
-      get2ndOnTuple, get2nd, vFalse, vTrue, hPrimitive]
+    simp_all [AST.infer, Outcome.map,
+      get2ndOnTuple, get2nd, vFalse, vTrue]
   · rfl
 
 example :
     (primitiveTrueFn.infer).shouldYields (.fn .primitive .primitive) := by
   constructor
-  · exact ⟨2, by simp [AST.infer, Outcome.map, primitiveTrueFn]⟩
+  · exact ⟨2, by simp_all [AST.infer, Outcome.map, primitiveTrueFn]⟩
   · rfl
 
 example :
@@ -95,8 +95,8 @@ example :
   · refine ⟨3, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, Outcome.map,
-      primitiveTrueFnOnFalse, primitiveTrueFn, vFalse, hPrimitive]
+    simp_all [AST.infer, Outcome.map,
+      primitiveTrueFnOnFalse, primitiveTrueFn, vFalse]
   · rfl
 
 example :
@@ -108,7 +108,7 @@ example :
 example :
     (TypeHinted.hintedIdFn.infer).shouldYields (.fn .primitive .primitive) := by
   constructor
-  · exact ⟨2, by simp [AST.infer, Outcome.map,
+  · exact ⟨2, by simp_all [AST.infer, Outcome.map,
       TypeHinted.hintedIdFn]⟩
   · rfl
 
@@ -118,15 +118,15 @@ example :
   · refine ⟨3, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, Outcome.map,
+    simp_all [AST.infer, Outcome.map,
       TypeHinted.hintedIdFnOnFalse, TypeHinted.hintedIdFn,
-      TypeHinted.hintedFalse, hPrimitive]
+      TypeHinted.hintedFalse]
   · rfl
 
 example :
     (FreeCapture.directRef.infer).shouldYields .primitive := by
   constructor
-  · exact ⟨2, by simp [AST.infer, AST.Val.asTrm, FreeCapture.directRef,
+  · exact ⟨2, by simp_all [AST.infer, AST.Val.asTrm, FreeCapture.directRef,
       FreeCapture.receipt, FreeCapture.value]⟩
   · rfl
 
@@ -134,7 +134,7 @@ example :
     (AST.ref (build.uid2typCtx.inv (.primitive : Typ)).val : Trm).infer.shouldYields
       .primitive := by
   constructor
-  · exact ⟨1, by simp [AST.infer]⟩
+  · exact ⟨1, by simp_all [AST.infer]⟩
   · rfl
 
 example :
@@ -145,8 +145,8 @@ example :
         ¬ ((AST.fn .primitive .primitive : Typ) ≤ .primitive) := by
       intro h
       cases h
-    simp [AST.infer, Outcome.map,
-      Malformed.applyIdFnOnItself, primitiveIdFn, hFnNotPrimitive]
+    simp_all [AST.infer, Outcome.map,
+      Malformed.applyIdFnOnItself, primitiveIdFn]
   · rfl
 
 example :
@@ -157,9 +157,9 @@ example :
         ¬ ((AST.fn .primitive .primitive : Typ) ≤ .primitive) := by
       intro h
       cases h
-    simp [AST.infer, Outcome.map,
+    simp_all [AST.infer, Outcome.map,
       Malformed.idFnOnFalse2, Malformed.applyIdFnOnItself,
-      primitiveIdFn, vFalse, hFnNotPrimitive]
+      primitiveIdFn, vFalse]
   · rfl
 
 example :
@@ -168,8 +168,8 @@ example :
   · refine ⟨4, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, Outcome.map,
-      Malformed.apply1, primitiveIdFn, vFalse, vTrue, hPrimitive]
+    simp_all [AST.infer, Outcome.map,
+      Malformed.apply1, primitiveIdFn, vFalse, vTrue]
   · rfl
 
 example :
@@ -185,8 +185,8 @@ example :
   · refine ⟨5, ?_⟩
     have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
       rfl
-    simp [AST.infer, Outcome.map, Malformed.binderIdentityCounterexample,
-      vFalse, vTrue, hPrimitive]
+    simp_all [AST.infer, Outcome.map, Malformed.binderIdentityCounterexample,
+      vFalse, vTrue]
   · rfl
 
 end infer

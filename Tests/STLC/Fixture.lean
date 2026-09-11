@@ -22,6 +22,7 @@ variable [testEnv : TestEnv]
 theorem trm2valLookup
     (receipt : {uid // testEnv.trm2valExe.val.ev uid}) :
     refs.uid2any.get receipt.val = .inl (testEnv.trm2valExe.val.get receipt) :=
-  (testEnv.trm2valExe.equivariance receipt).symm
+  (testEnv.trm2valExe.val.equivariance receipt).symm.trans
+    (congrFun testEnv.trm2valExe.property _)
 
 end Tests.STLC.Sanity

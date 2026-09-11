@@ -13,7 +13,7 @@ section eval
 variable [testEnv : TestEnv]
 
 @[reducible] instance env : ExeEnv refs where
-  uid2val := testEnv.trm2valExe
+  uid2val := testEnv.trm2valExe.val
   uid2valCtx := testEnv.trm2valExeCtx
 
 attribute [local simp] AST.eval
@@ -71,10 +71,10 @@ example :
   constructor
   · refine ⟨5, ?_⟩
     have hReceipt :
-        (testEnv.trm2valExeCtx.inv (.lit "true")).val ≠
-          (testEnv.trm2valExeCtx.inv (.lit "false")).val := by
+        (env.uid2valCtx.inv (.lit "true")).val ≠
+          (env.uid2valCtx.inv (.lit "false")).val := by
       intro h
-      have hValue := congrArg testEnv.trm2valExe.get (Subtype.ext h)
+      have hValue := congrArg testEnv.trm2valExe.val.get (Subtype.ext h)
       have hLiteral :
           (AST.lit "true" : AST.Val refs.Parameters) = .lit "false" := by
         simpa using hValue
@@ -101,11 +101,8 @@ example [build : BuildEnv refs] (upcast : build.uid2typ.upcastV.toFun = Sum.inr)
     (AST.ref (build.uid2typCtx.inv (.primitive : AST.Typ refs.Parameters)).val : Trm).eval.shouldFail := by
   constructor
   · refine ⟨1, ?_⟩
-    have hLookup :
-        refs.uid2any.get (build.uid2typCtx.inv (.primitive)).val = .inr .primitive :=
-      (build.uid2typ.equivariance (build.uid2typCtx.inv .primitive)).symm.trans
-        (congrArg Sum.inr (build.uid2typCtx.rightInv .primitive))
-    simp [AST.eval, hLookup]
+    have hLookup := (build.uid2typ.equivariance (build.uid2typCtx.inv .primitive)).symm
+    simp [AST.eval, hLookup, upcast]
   · rfl
 
 end eval
