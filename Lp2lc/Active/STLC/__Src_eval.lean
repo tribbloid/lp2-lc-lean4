@@ -14,6 +14,26 @@ structure Domain where
 
 section variable (P : Parameters)
 
+/-
+FIXME: repair Src_, then migrate Trm.eval and Trm.infer into this file.
+
+Requirements for the replacement:
+- Certify a bundle of AST and KVEquiv P.C V: every AST.ref must be backed by
+  an already-created or explicitly registered value, including captured references.
+- Keep the same AST and PHOAS carrier P.C while expanding V as bindings require.
+  kvEquiv.inv must remain total on each domain; Src_ must justify that domain.
+- Evaluation uses Val: resolving an AST.ref must never fail with none.
+- Inference expands the domain to Val ⊕ Typ: Val for free variables, Typ for
+  bound variables whose values are not yet available.
+- Keep all implementation in this file. Avoid duplicate syntax inductives and
+  repeated traversal cases; aim for a simple compile-time/runtime logical relation.
+- The migrated code, INCLUDING ALL new support, must NOT be longer than the
+  original eval/infer implementation. Compressed formatting does not satisfy this.
+- Commit the Src_ repair first, then evaluation and inference in separate commits.
+
+Known WIP error: Src_.ast's expansion pattern currently has an extra argument.
+-/
+
 /--
 Certified AST/KVEquiv bundle with every free variable guaranteed to be mapped to `V` (and vice versa)
 
