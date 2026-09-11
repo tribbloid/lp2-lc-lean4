@@ -7,7 +7,8 @@ open Lp2lc.Active.Util
 structure Domain where
   P : Parameters
   V : Type
-  adaptKVRefs {K V} (refs : KVRefs K (V : Sort u)) : refs.Adapter V
+  adaptKVRefs {K V} (refs : KVRefs K (V : Sort u)) :
+    refs.Adapter V
   adaptKVEquiv {K V refs} (equiv : KVEquiv (refs : KVRefs K (V : Sort u))) :
     equiv.Adapter (adaptKVRefs refs)
 
@@ -40,7 +41,7 @@ Given an input Src_, a binder and a KVEquiv, applying the binder on the input ca
 The binder's input type `tIn` and the expanded domain `kvRefs2` are recorded so the underlying source term can be reassembled.
 -/
 | expansion {V1 V2 : Type} (tIn : AST P .typ) (arg : Src_ P .trm kvRefs1)
-    (body : P.C → AST P .trm) (upcast : V1 ↪ V2) (kvRefs2 : KVRefs P.C V2) : Src_ P .trm kvRefs1 --FIXME: remember kvRefs2 is an expansin of kvRef, it can be comoputed from Parameters, remove it
+    (body : P.C → AST P .trm) (kvRefs2 : KVRefs P.C V2) : Src_ P .trm kvRefs2 --FIXME: remember kvRefs2 is an expansin of kvRef, it can be computed from adaptKVRefs, remove it
 
 namespace Src_
 
