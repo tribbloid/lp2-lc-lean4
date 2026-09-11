@@ -14,9 +14,9 @@ structure TypeWithSafey {refs} [build : BuildEnv refs]
 class ProvingEnv (refs : HasUId2Any) extends BuildEnv refs where
   --TODO: this impl should be final, move into namespace
   uid2typWithSafety (trm : AST.Trm refs.Parameters) :
-    {v : refs.uid2any.Lesser (TypeWithSafey trm) // v.upcastV.toFun = λ t => .inr t.t2}
+    refs.uid2any.Lesser (TypeWithSafey trm)
   uid2typWithSafetyCtx (trm : AST.Trm refs.Parameters) :
-    KVEquiv (uid2typWithSafety trm).val.toKVRefs
+    KVEquiv (uid2typWithSafety trm).toKVRefs
 
 namespace ProvingEnv
 

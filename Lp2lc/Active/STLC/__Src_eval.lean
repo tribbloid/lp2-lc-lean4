@@ -4,7 +4,7 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-structure Domain
+structure Domain where
   P : Parameters
   V : Type
   adaptKVRefs {K V} (refs : KVRefs K (V : Sort u)) : refs.Adapter V

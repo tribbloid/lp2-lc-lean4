@@ -14,10 +14,13 @@ section infer
 variable [testEnv : TestEnv] [build : BuildEnv refs]
 abbrev Typ := AST.Typ refs.Parameters
 
+variable [upcast : Fact (build.uid2typ.upcastV.toFun = Sum.inr)]
+
+include upcast in
 @[local simp]
 theorem trm2typLookup
-    (receipt : {uid // build.uid2typ.val.ev uid}) :
-    refs.uid2any.get receipt.val = .inr (build.uid2typ.val.get receipt) :=
+    (receipt : {uid // build.uid2typ.ev uid}) :
+    refs.uid2any.get receipt.val = .inr (build.uid2typ.get receipt) :=
   (build.uid2typ.equivariance receipt).symm
 
 example :

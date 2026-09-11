@@ -97,7 +97,7 @@ example : Trm.FreeCapture.capturedRefOnFalse.eval.shouldYields Trm.FreeCapture.v
   · exact ⟨2, by simp⟩
   · rfl
 
-example [build : BuildEnv refs] :
+example [build : BuildEnv refs] (upcast : build.uid2typ.upcastV.toFun = Sum.inr) :
     (AST.ref (build.uid2typCtx.inv (.primitive : AST.Typ refs.Parameters)).val : Trm).eval.shouldFail := by
   constructor
   · refine ⟨1, ?_⟩
