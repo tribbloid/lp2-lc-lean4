@@ -14,9 +14,9 @@ section infer
 variable [testEnv : TestEnv] [build : BuildEnv refs]
 abbrev Typ := AST.Typ refs.Parameters
 
-variable [upcast : Fact (build.uid2typ.upcastV.toFun = Sum.inr)]
+variable (upcast : build.uid2typ.upcastV.toFun = Sum.inr)
 
-include upcast in
+include upcast
 @[local simp]
 theorem trm2typLookup
     (receipt : {uid // build.uid2typ.ev uid}) :
