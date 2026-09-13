@@ -11,7 +11,7 @@ mutual
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
 -/
-inductive AST (P : Parameters) : Label → Type where
+inductive AST : Parameters → Label → Type 2 where
 | primitive : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
 | fn (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
 /--
@@ -44,12 +44,12 @@ the source term syntax, and [AST.ref] stores that same raw receipt. Evaluation
 and inference substitute their own minted receipts into the body, and [AST.eval]
 fails to resolve an [AST.ref] whose receipt does not map to a value.
 -/
-| lam (body : Binder P)
+| lam (body : Binder P .trm)
     (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
 
-/-- Binds one fresh structural slot, after the outer [P.B] binder carrier. It is equivalent to a poly function with parametricity -/
-structure Binder (P : Parameters) (l: Label) where
-  body  : AST { P with C := P.C ⊕ U } l
+/-- First-order syntax with one distinguished newest reference slot. -/
+inductive Binder : Parameters → Label → Type 2 where
+| mk (body : AST { P with C := P.C ⊕ Unit } l) : Binder P l
 
 end
 
@@ -72,7 +72,7 @@ end Binder
 
 section variable {P : Parameters}
 
-class Labelled (Ctor : Label -> Type)
+class Labelled (Ctor : Label → Type 2)
 
 namespace Labelled -- TODO: this should contains shared abbrev for both AST and Src_, but we don't know how to do this
 section variable {Ctor} (this: Labelled Ctor)
