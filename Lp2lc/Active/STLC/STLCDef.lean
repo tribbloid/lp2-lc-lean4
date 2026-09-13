@@ -5,6 +5,8 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
+mutual
+
 /-- Source type syntax.
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
@@ -42,8 +44,31 @@ the source term syntax, and [AST.ref] stores that same raw receipt. Evaluation
 and inference substitute their own minted receipts into the body, and [AST.eval]
 fails to resolve an [AST.ref] whose receipt does not map to a value.
 -/
-| lam (body : P.C → AST P .trm)
+| lam (body : Binder P)
     (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
+
+/-- Binds one fresh structural slot, after the outer [P.B] binder carrier. -/
+structure Binder (P : Parameters) (l: Label) where
+  body  : AST { P with C := P.C ⊕ U } l
+
+end
+
+namespace Binder
+-- All theorems about Binder should be here, e.g. parametricity, lift relation
+
+/-- Replaces the newest structural lambda slot while preserving outer binders. -/
+@[simp]
+def apply {P l}
+    (self : Binder P) (arg : P.B) : AST P l :=
+  self.recarrier
+    (id : P.F → P.F)
+    (λ bound =>
+      match bound with
+      | .inl outer => .inr outer
+      | .inr () => .inr arg)
+    (id : P.D → P.D)
+
+end Binder
 
 section variable {P : Parameters}
 
