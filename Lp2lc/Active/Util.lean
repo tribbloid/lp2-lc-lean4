@@ -132,8 +132,8 @@ It is deliberately left abstract to ward off unlawful construction:
 - certified `C` receipts are obtained only through the runtime or build [KVEquiv.Lesser]
 - the only way to construct `D` is to parse a primitive literal in AST
 -/
-class Parameters extends HasData where
-  C : KU -- shared PHOAS/carrier UIdRefs/receipt
+structure Parameters extends HasData where
+  C : KU -- shared PHOAS/carrier/receipt
   -- /--
   -- AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
   -- AST of more specific domain can be used to constract AST of more general domain.

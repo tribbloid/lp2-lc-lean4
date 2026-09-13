@@ -9,7 +9,7 @@ open Lp2lc.Active.Util
 
 `primitive` classifies primitive bytecode values and `fn` classifies functions.
 -/
-inductive AST : Parameters → Label → Type where
+inductive AST (P : Parameters) : Label → Type where
 | primitive : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
 | fn (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
 /--
