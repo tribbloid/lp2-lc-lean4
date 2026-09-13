@@ -125,7 +125,7 @@ structure HasData where
   D : DataU -- Binary Data type
 
 /--
-the meaning of P in PHOAS, the shared carrier used in PHOAS bindings
+The syntax parameters, including the shared carrier used for free references.
 
 It is deliberately left abstract to ward off unlawful construction:
 
@@ -133,7 +133,7 @@ It is deliberately left abstract to ward off unlawful construction:
 - the only way to construct `D` is to parse a primitive literal in AST
 -/
 structure Parameters extends HasData where
-  C : KU -- shared PHOAS/carrier/receipt
+  C : KU -- shared carrier/receipt
   -- /--
   -- AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
   -- AST of more specific domain can be used to constract AST of more general domain.

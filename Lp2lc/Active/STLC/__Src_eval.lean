@@ -18,7 +18,7 @@ FIXME: repair SrcBundle according to its description , then migrate Trm.eval.
 if possible, also migrate Trm.infer
 
 Requirements for the replacement:
-- Keep the same AST and PHOAS carrier P.C while expanding V as bindings require.
+- Keep the same top-level AST carrier P.C while expanding V as bindings require.
   kvEquiv.inv/get must remain total on each domain, thus if a kvEquiv.inv is used for reduction, it's `V` must be included in the result.
 - Evaluation uses Val: resolving an AST.ref must never fail with none.
 - Inference expands the domain to Val ⊕ Typ: Val for free variables, Typ for
@@ -37,7 +37,8 @@ reducing an AST binder (e.g. AST.lam body) requires a new `KVEquiv`, which can b
 - of the same domain (`KVEquiv refs`)
 - OR, of an expanded domain (with `adaptKVEquiv`): this expand the `KVEquiv` to be compatible with a supertype of `V` while keep all existing equivalence between old `V` and `P.C`
 
-It should be noted that the type `P.C` never changes, as mapping AST to a new carrier is expensive.
+The bundle's exposed `P.C` stays fixed; [Binder.apply] substitutes each minted
+receipt through the structurally extended body.
 -/
 structure SrcBundle (S : Sandbox) (V : Type) (label: Label) where
   ast: AST S.P label
@@ -57,7 +58,7 @@ structure SrcBundle (S : Sandbox) (V : Type) (label: Label) where
 -- -/
 -- | void (ast : AST P label) : Src_ P label ⟨λ _ => PUnit.unit⟩
 -- /--
--- in PHOAS convention `ast_` must be closed because `_P` can only be from the binder, TODO: unfortunately `ast_` won't have parametricity by default, attach predicate?
+-- A parameter-polymorphic `ast_` must be closed because `_P` can only come from the binder; TODO: attach the required naturality contract?
 -- -/
 -- | closed (ast_ : (_P : Parameters) → AST _P label) (kvRefs : KVRefs P.C V) : Src_ P label kvRefs
 -- -- /--
@@ -70,7 +71,7 @@ structure SrcBundle (S : Sandbox) (V : Type) (label: Label) where
 -- The binder's input type `tIn` and the expanded domain `kvRefs2` are recorded so the underlying source term can be reassembled.
 -- -/
 -- | expansion {V1 V2 : Type} (tIn : AST P .typ) (arg : Src_ P .trm kvRefs1)
---     (body : P.C → AST P .trm) (kvRefs2 : KVRefs P.C V2) : Src_ P .trm kvRefs2 --TODO: remember kvRefs2 is an expansin of kvRef, it can be computed from adaptKVRefs, remove it
+--     (body : Binder P .trm) (kvRefs2 : KVRefs P.C V2) : Src_ P .trm kvRefs2 --TODO: remember kvRefs2 is an expansin of kvRef, it can be computed from adaptKVRefs, remove it
 
 -- namespace Src_
 
