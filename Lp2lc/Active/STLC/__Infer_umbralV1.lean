@@ -31,10 +31,10 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
       let receipt := env.uid2typCtx.inv tIn
-      let result := infer_prove (body receipt.val) fuel
+      let result := infer_prove (body.apply receipt.val) fuel
       ⟨result.compilation.map
           (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
-        change _ = ((body receipt.val).infer fuel).map (Option.map (AST.fn tIn))
+        change _ = ((body.apply receipt.val).infer fuel).map (Option.map (AST.fn tIn))
         rw [← result.sameInfer]
         cases result.compilation <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
@@ -68,9 +68,19 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
               conv =>
                 rhs
                 unfold AST.infer
-                simp only
               dsimp only [applyResult]
-              split <;> split <;> simp_all
+              cases fnTerm.infer fuel with
+              | outOfFuel => rfl
+              | yield fnType =>
+                cases arg.infer fuel with
+                | outOfFuel =>
+                  cases fnType with
+                  | none => rfl
+                  | some fnType => cases fnType <;> rfl
+                | yield argType =>
+                  cases fnType with
+                  | none => rfl
+                  | some fnType => cases fnType <;> cases argType <;> rfl
         rw [hResult]
         cases (AST.apply fnTerm arg).infer (fuel + 1) <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩

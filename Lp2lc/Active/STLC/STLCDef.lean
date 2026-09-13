@@ -33,16 +33,15 @@ Value syntax, containing neither references nor applications.
 Values are the successful result of evaluation and the atomic argument form
 used by function application after both sides have been evaluated.
 
-Function values carry their input type so the compiler can type-check HOAS bodies.
+Function values carry their input type so the compiler can type-check structural bodies.
 -/
 | lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
 /--
-Binds a fresh receipt over the shared [P.C] carrier for its body.
+Binds one fresh structural reference after the outer [P.C] carrier.
 
-The body is an idiomatic PHOAS function from the raw receipt carrier [P.C] to
-the source term syntax, and [AST.ref] stores that same raw receipt. Evaluation
-and inference substitute their own minted receipts into the body, and [AST.eval]
-fails to resolve an [AST.ref] whose receipt does not map to a value.
+The body stores first-order syntax whose newest reference is represented by
+the right summand. Evaluation and inference replace that slot with their own
+minted receipt, so lambda construction cannot inspect those receipts.
 -/
 | lam (body : Binder P .trm)
     (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
@@ -53,20 +52,53 @@ inductive Binder : Parameters → Label → Type 2 where
 
 end
 
+mutual
+
+  /-- Rebuilds syntax after mapping its reference and data carriers. -/
+  @[simp]
+  def AST.recarrier {P Q : Parameters} {l : Label} (self : AST P l)
+      (mapC : P.C → Q.C) (mapD : P.D → Q.D) : AST Q l :=
+    match self with
+    | .primitive => .primitive
+    | .fn tIn tOut =>
+      .fn (tIn.recarrier mapC mapD) (tOut.recarrier mapC mapD)
+    | .val value => .val (value.recarrier mapC mapD)
+    | .apply fnTerm arg =>
+      .apply (fnTerm.recarrier mapC mapD) (arg.recarrier mapC mapD)
+    | .ref receipt => .ref (mapC receipt)
+    | .lit repr => .lit (mapD repr)
+    | .lam body tIn =>
+      .lam (body.recarrier mapC mapD) (tIn.recarrier mapC mapD)
+
+  /-- Maps the outer carriers of a binder while preserving its newest slot. -/
+  @[simp]
+  def Binder.recarrier {P Q : Parameters} {l : Label} (self : Binder P l)
+      (mapC : P.C → Q.C) (mapD : P.D → Q.D) : Binder Q l :=
+    match self with
+    | .mk body =>
+      .mk (body.recarrier
+        (λ receipt =>
+          match receipt with
+          | .inl outer => .inl (mapC outer)
+          | .inr () => .inr ())
+        mapD)
+
+end
+
 namespace Binder
 -- All theorems about Binder should be here, e.g. parametricity, lift relation
 
 /-- Replaces the newest structural lambda slot while preserving outer binders. -/
-@[simp]
-def apply {P l}
-    (self : Binder P) (arg : P.B) : AST P l :=
-  self.recarrier
-    (id : P.F → P.F)
-    (λ bound =>
-      match bound with
-      | .inl outer => .inr outer
-      | .inr () => .inr arg)
-    (id : P.D → P.D)
+def apply {P : Parameters} {l : Label}
+    (self : Binder P l) (arg : P.C) : AST P l :=
+  match self with
+  | .mk body =>
+    body.recarrier
+      (λ receipt =>
+        match receipt with
+        | .inl outer => outer
+        | .inr () => arg)
+      id
 
 end Binder
 
@@ -141,9 +173,9 @@ Shares one receipt carrier between executable values and build-time types.
 
 The underlying view stores a tagged value-or-type payload. Runtime and build
 contexts refine that view independently through [KVEquiv.Lesser]. The subtype
-proof certifies which payload is available, but [AST.ref] stores only the raw
-receipt, so this infrastructure alone does not prevent phase-dependent lambda
-bodies.
+proof certifies which payload is available, while [Binder] distinguishes bound
+slots structurally so lambda construction cannot inspect phase-specific minted
+receipts.
 -/
 class HasUId2Any extends HasData where
   uid2any : UIdRefs (λ T =>
@@ -180,7 +212,7 @@ def eval {refs : HasUId2Any} [env : ExeEnv refs]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some arg)) =>
         let receipt := env.uid2valCtx.inv arg
-        eval (body receipt.val) fuel
+        eval (body.apply receipt.val) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
