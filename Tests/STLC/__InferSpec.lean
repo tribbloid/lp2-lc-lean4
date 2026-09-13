@@ -14,6 +14,8 @@ section infer
 variable [testEnv : TestEnv] [build : BuildEnv refs]
 abbrev Typ := AST.Typ refs.Parameters
 
+attribute [local simp] Binder.apply
+
 variable (upcast : build.uid2typ.upcastV.toFun = Sum.inr)
 
 include upcast
@@ -176,17 +178,6 @@ example :
     (Malformed.primitiveApply.infer).shouldFail := by
   constructor
   · exact ⟨2, rfl⟩
-  · rfl
-
-example :
-    (Malformed.binderIdentityCounterexample
-      (λ B => Classical.typeDecidableEq B)).infer.shouldYields .primitive := by
-  constructor
-  · refine ⟨5, ?_⟩
-    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
-      rfl
-    simp_all [AST.infer, Outcome.map, Malformed.binderIdentityCounterexample,
-      vFalse, vTrue]
   · rfl
 
 end infer

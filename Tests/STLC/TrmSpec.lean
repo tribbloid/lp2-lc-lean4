@@ -17,6 +17,7 @@ variable [testEnv : TestEnv]
   uid2valCtx := testEnv.trm2valExeCtx
 
 attribute [local simp] AST.eval
+attribute [local simp] Binder.apply
 attribute [local simp] Trm.vFalse Trm.vTrue Trm.primitiveIdFn Trm.primitiveIdFnOnFalse
 attribute [local simp] Trm.get1st Trm.get2nd Trm.get1stOnTuple Trm.get2ndOnTuple
 attribute [local simp] Trm.primitiveTrueFn Trm.primitiveTrueFnOnFalse
@@ -65,22 +66,11 @@ example : Trm.Malformed.primitiveApply.eval.shouldFail := by
   · exact ⟨2, by simp⟩
   · rfl
 
-example :
-    (Trm.Malformed.binderIdentityCounterexample
-      (λ B => Classical.typeDecidableEq B)).eval.shouldFail := by
-  constructor
-  · refine ⟨5, ?_⟩
-    have hReceipt :
-        (env.uid2valCtx.inv (.lit "true")).val ≠
-          (env.uid2valCtx.inv (.lit "false")).val := by
-      intro h
-      have hValue := congrArg testEnv.trm2valExe.val.get (Subtype.ext h)
-      have hLiteral :
-          (AST.lit "true" : AST.Val refs.Parameters) = .lit "false" := by
-        simpa using hValue
-      exact (by decide : ("true" : String) ≠ "false") (AST.lit.inj hLiteral)
-    simp [Trm.Malformed.binderIdentityCounterexample, hReceipt]
-  · rfl
+example : True := by
+  fail_if_success
+    have _body : Binder refs.Parameters .trm :=
+      λ receipt => .ref receipt
+  trivial
 
 example : Trm.primitiveTrueFnOnFalse.eval.shouldYields (.lit "true") := by
   constructor

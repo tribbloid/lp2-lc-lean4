@@ -16,23 +16,25 @@ def vTrue : Trm :=
   .val (.lit "true")
 
 def primitiveIdFn : Trm :=
-  .val (.lam (λ x => .ref x) .primitive)
+  .val (.lam (.mk (.ref (.inr ()))) .primitive)
 
 def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
 
 def get1st : Trm :=
   .val
-    (.lam (λ x =>
-      .val
-        (.lam (λ _y => .ref x) .primitive))
+    (.lam
+      (.mk
+        (.val
+          (.lam (.mk (.ref (.inl (.inr ())))) .primitive)))
       .primitive)
 
 def get2nd : Trm :=
   .val
-    (.lam (λ _x =>
-      .val
-        (.lam (λ y => .ref y) .primitive))
+    (.lam
+      (.mk
+        (.val
+          (.lam (.mk (.ref (.inr ()))) .primitive)))
       .primitive)
 
 def get1stOnTuple : Trm :=
@@ -47,8 +49,8 @@ def get2ndOnTuple : Trm :=
 
 def primitiveTrueFn : Trm :=
   .val
-    (.lam (λ _x =>
-      .val (.lit "true"))
+    (.lam
+      (.mk (.val (.lit "true")))
       .primitive)
 
 def primitiveTrueFnOnFalse : Trm :=
@@ -68,7 +70,7 @@ def directRef : Trm :=
 
 def capturedRef : Trm :=
   .val
-    (.lam (λ _x => .ref receipt) .primitive)
+    (.lam (.mk (.ref (.inl receipt))) .primitive)
 
 def capturedRefOnFalse : Trm :=
   .apply capturedRef vFalse
@@ -81,7 +83,7 @@ def hintedFalse : Trm :=
   .val (.lit "false")
 
 def hintedIdFn : Trm :=
-  .val (.lam (λ x => .ref x) .primitive)
+  .val (.lam (.mk (.ref (.inr ()))) .primitive)
 
 def hintedIdFnOnFalse : Trm :=
   .apply hintedIdFn hintedFalse
@@ -102,26 +104,6 @@ def primitiveApply : Trm :=
 def apply1 : Trm :=
   .apply
     (.apply primitiveIdFn vFalse)
-    vTrue
-
-def binderIdentityCounterexample
-    (decEq : (C : KU) → DecidableEq C) : Trm :=
-  .apply
-    (.apply
-      (.val
-        (.lam
-          (λ outer =>
-            .val
-              (.lam
-                (λ inner =>
-                  let _ := decEq refs.Parameters.C
-                  if inner = outer then
-                    .ref inner
-                  else
-                    .apply vFalse vTrue)
-                .primitive))
-          .primitive))
-      vFalse)
     vTrue
 
 end Malformed
