@@ -47,7 +47,7 @@ fails to resolve an [AST.ref] whose receipt does not map to a value.
 | lam (body : Binder P)
     (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
 
-/-- Binds one fresh structural slot, after the outer [P.B] binder carrier. -/
+/-- Binds one fresh structural slot, after the outer [P.B] binder carrier. It is equivalent to a poly function with parametricity -/
 structure Binder (P : Parameters) (l: Label) where
   body  : AST { P with C := P.C ⊕ U } l
 
