@@ -126,21 +126,6 @@ section variable (P : Parameters)
 
 end
 
--- TOOD: remove & don't use it, we don't need general upcast for AST.
--- def map {B : UIdU} {PF QF : UIdU} {PD QD : DataU} {l : Label}
---     (self : AST { F := PF, B := B, D := PD } l)
---     (mF : PF → QF) (mD : PD → QD) :
---     AST { F := QF, B := B, D := QD } l :=
---   match self with
---   | .primitive => .primitive
---   | .fn tIn tOut => .fn (tIn.map mF mD) (tOut.map mF mD)
---   | .val v => .val (v.map mF mD)
---   | .apply fnTerm arg => .apply (fnTerm.map mF mD) (arg.map mF mD)
---   | .ref (.inl f) => .ref (.inl (mF f))
---   | .ref (.inr b) => .ref (.inr b)
---   | .lit repr => .lit (mD repr)
---   | .lam body tIn => .lam (λ arg => (body arg).map mF mD) (tIn.map mF mD)
-
 namespace Val
 
 def asTrm (self : AST.Val P) : AST.Trm P := .val self
@@ -149,7 +134,7 @@ end Val
 
 end AST
 
-open AST
+open AST -- FIXME: get rid of this, all AST should be at the beginning of the file
 
 /-- Current STLC subtyping coincides with structural type equality. -/
 instance typLE : LE (AST.Typ P) := ⟨Eq⟩
@@ -185,10 +170,10 @@ class HasUId2Any extends HasData where
   )
 
 namespace HasUId2Any
-section variable (self : HasUId2Any)
+section variable (this : HasUId2Any)
 
 /-- The shared syntax parameters are fixed by the mixed receipt view. -/
-abbrev Parameters : Parameters := { C := self.uid2any.UId, D := self.D }
+abbrev Parameters : Parameters := { C := this.uid2any.UId, D := this.D }
 
 end
 end HasUId2Any
@@ -197,6 +182,14 @@ end HasUId2Any
 class ExeEnv (refs : HasUId2Any) where
   uid2val : refs.uid2any.Lesser (AST.Val refs.Parameters)
   uid2valCtx : KVEquiv uid2val.toKVRefs
+
+namespace ExeEnv
+section variable {refs} (this: ExeEnv refs)
+
+abbrev Parameters : Parameters := { C := this.uid2val.UId, D := refs.D }
+
+end
+end ExeEnv
 
 namespace AST
 

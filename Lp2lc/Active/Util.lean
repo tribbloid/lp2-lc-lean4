@@ -57,8 +57,16 @@ structure Greater (V2)
   upcastV : Embedding V V2 -- this is not important, but it also means (g1 : base.Greater X) != (g2 : base.Greater X) unless the same expression is used to generate them
   equivariance : ∀ (receipt : K), get receipt = upcastV (this.get receipt)
 
-structure HasEv (UId : KU) where
-  ev : UId → Prop -- a subtype of UId with extra contract
+structure HasEv (K : KU) where
+  ev : K → Prop -- a subtype of UId with extra contract
+
+namespace HasEv
+section variable (this: HasEv K)
+
+def UId := {x : K // this.ev x}
+
+end
+end HasEv
 
 /-- Read-only access to refined receipts compatible with a base view. -/
 structure Lesser (V2)
