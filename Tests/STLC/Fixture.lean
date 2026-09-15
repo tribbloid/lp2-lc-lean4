@@ -5,6 +5,13 @@ namespace Tests.STLC.Sanity
 open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
 
+
+/-
+FIXME: this class can have a concrete, opaque implementation, which index each AST by its hash
+
+once the implementation is ready, all the assertion in `TrmSpec` can be replaced by a single line of #guard
+-/
+
 /-- Supplies the shared reference view and runtime value context used by STLC tests. -/
 class TestEnv where
   trm2either : UIdRefs (λ C =>
