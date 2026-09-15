@@ -174,6 +174,7 @@ proof certifies which payload is available, while [Binder] distinguishes bound
 slots structurally so lambda construction cannot inspect phase-specific minted
 receipts.
 -/
+
 class HasUId2Any extends HasData where
   uid2any : UIdRefs (λ T =>
     let P : Parameters := { C := T, D := D }
@@ -206,7 +207,7 @@ end ExeEnv
 namespace AST
 
 /-- Evaluates executable terms whose references carry receipts from the runtime context. -/
-def eval {refs : HasUId2Any} [env : ExeEnv refs]
+def eval {refs} [env : ExeEnv refs]
     (self : Trm refs.Parameters) : RecOpt (Val refs.Parameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
