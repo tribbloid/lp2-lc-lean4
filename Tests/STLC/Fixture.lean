@@ -1,4 +1,5 @@
 import «Lp2lc».Active.STLC.STLCDef
+import «Lp2lc».Active.STLC.Hash
 
 namespace Tests.STLC.Sanity
 
@@ -49,37 +50,6 @@ abbrev TestUId := TestHash × Unit
 /-- The fixed STLC parameters shared by the concrete fixture. -/
 abbrev TestParameters : Parameters := { C := TestUId, D := String }
 
-mutual
-  /-- Structural hash over [AST], passing the receipt/data hashers down to subterms. -/
-  def astHash {P : Parameters} {l : Label} (self : AST P l)
-      (hashC : P.C → UInt64) (hashD : P.D → UInt64) : UInt64 :=
-    match self with
-    | .primitive => 1
-    | .fn tIn tOut => mixHash 2 (mixHash (astHash tIn hashC hashD) (astHash tOut hashC hashD))
-    | .lit repr => mixHash 3 (hashD repr)
-    | .lam body tIn => mixHash 4 (mixHash (binderHash body hashC hashD) (astHash tIn hashC hashD))
-    | .val v => mixHash 5 (astHash v hashC hashD)
-    | .apply fnTerm arg => mixHash 6 (mixHash (astHash fnTerm hashC hashD) (astHash arg hashC hashD))
-    | .ref receipt => mixHash 7 (hashC receipt)
-
-  /-- Structural hash over [Binder], rebuilding the receipt hasher for the shifted slot. -/
-  def binderHash {P : Parameters} {l : Label} (self : Binder P l)
-      (hashC : P.C → UInt64) (hashD : P.D → UInt64) : UInt64 :=
-    match self with
-    | .mk body =>
-      astHash body
-        (λ receipt =>
-          match receipt with
-          | .inl outer => hashC outer
-          | .inr () => 8)
-        hashD
-end
-
-/-- Content hash of the mixed value-or-type payload stored in the fixture. -/
-def hashSum : AST.Val TestParameters ⊕ AST.Typ TestParameters → TestHash
-  | .inl v => astHash v (λ receipt => receipt.1) (λ repr => hash repr)
-  | .inr t => astHash t (λ receipt => receipt.1) (λ repr => hash repr)
-
 /-- Boxes a `Type 2` payload into a `Type` value so it can be stored in a receipt. -/
 unsafe def boxPayload (payload : AST.Val TestParameters ⊕ AST.Typ TestParameters) : Unit :=
   unsafeCast payload
@@ -113,7 +83,7 @@ unsafe def _testEnvImpl : TestEnv :=
       }, rfl⟩
   let trm2valExeCtx : KVEquiv trm2valExe.val.toKVRefs :=
     {
-      inv := λ value => ⟨(hashSum (.inl value), boxPayload (.inl value)), True.intro⟩
+      inv := λ value => ⟨(hashSum (.inl value) (λ receipt => receipt.1) (λ repr => hash repr), boxPayload (.inl value)), True.intro⟩
       rightInv := unsafeCast True.intro
       leftInv := unsafeCast True.intro
     }

@@ -1,0 +1,40 @@
+import «Lp2lc».Active.STLC.STLCDef
+
+namespace Lp2lc.Active.STLC
+
+open Lp2lc.Active.Util
+
+mutual
+  /-- Structural hash over [AST], passing the receipt/data hashers down to subterms. -/
+  def astHash {P : Parameters} {l : Label} (self : AST P l)
+      (hashC : P.C → UInt64) (hashD : P.D → UInt64) : UInt64 :=
+    match self with
+    | .primitive => 1
+    | .fn tIn tOut => mixHash 2 (mixHash (astHash tIn hashC hashD) (astHash tOut hashC hashD))
+    | .lit repr => mixHash 3 (hashD repr)
+    | .lam body tIn => mixHash 4 (mixHash (binderHash body hashC hashD) (astHash tIn hashC hashD))
+    | .val v => mixHash 5 (astHash v hashC hashD)
+    | .apply fnTerm arg => mixHash 6 (mixHash (astHash fnTerm hashC hashD) (astHash arg hashC hashD))
+    | .ref receipt => mixHash 7 (hashC receipt)
+
+  /-- Structural hash over [Binder], rebuilding the receipt hasher for the shifted slot. -/
+  def binderHash {P : Parameters} {l : Label} (self : Binder P l)
+      (hashC : P.C → UInt64) (hashD : P.D → UInt64) : UInt64 :=
+    match self with
+    | .mk body =>
+      astHash body
+        (λ receipt =>
+          match receipt with
+          | .inl outer => hashC outer
+          | .inr () => 8)
+        hashD
+end
+
+/-- Content hash of the mixed value-or-type payload carried by an indexed AST. -/
+def hashSum {P : Parameters} (payload : AST.Val P ⊕ AST.Typ P)
+    (hashC : P.C → UInt64) (hashD : P.D → UInt64) : UInt64 :=
+  match payload with
+  | .inl v => astHash v hashC hashD
+  | .inr t => astHash t hashC hashD
+
+end Lp2lc.Active.STLC
