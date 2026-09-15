@@ -251,6 +251,34 @@ def shouldFail : Prop :=
   let noFuel := self 0 = .outOfFuel
   hasFuel /\ noFuel
 
+/--
+Whether `self` needs exactly `fuelBudget` fuel to evaluate to `expectedV`.
+
+It requires both that `fuelBudget` fuel yields `expectedV`, and that one less
+fuel runs out, pinning the exact fuel cost of the evaluation.
+-/
+def shouldYieldsBool (fuelBudget : Nat) (expectedV : T) [BEq T] : Bool :=
+  (match self fuelBudget with
+    | .yield (some value) => value == expectedV
+    | _ => false) &&
+  (match self (fuelBudget - 1) with
+    | .outOfFuel => true
+    | _ => false)
+
+/--
+Whether `self` needs exactly `fuelBudget` fuel to deterministically fail.
+
+It requires both that `fuelBudget` fuel reaches `.yield none`, and that one less
+fuel runs out, pinning the exact fuel cost of the failure.
+-/
+def shouldFailBool (fuelBudget : Nat) : Bool :=
+  (match self fuelBudget with
+    | .yield none => true
+    | _ => false) &&
+  (match self (fuelBudget - 1) with
+    | .outOfFuel => true
+    | _ => false)
+
 end
 end RecOpt
 

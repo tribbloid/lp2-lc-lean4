@@ -35,34 +35,6 @@ mutual
         beqD
 end
 
-/-- Decidable structural equality used to check evaluation results. -/
-class EvalBEq (α : Type u) where
-  beq : α → α → Bool
-
-namespace Lp2lc.Active.Util.RecOpt
-
-/-- Whether `self` evaluates (within the fuel bound) to `expected`, as a `Bool`. -/
-def shouldYieldsBool {T : Type u} (self : RecOpt T) (expectedV : T) [EvalBEq T] : Bool :=
-  (match self 0 with
-    | .outOfFuel => true
-    | _ => false) &&
-  (List.range 17).any (λ fuel =>
-    match self fuel with
-    | .yield (some value) => EvalBEq.beq value expectedV
-    | _ => false)
-
-/-- Whether `self` evaluation fails (within the fuel bound), as a `Bool`. -/
-def shouldFailBool {T : Type u} (self : RecOpt T) : Bool :=
-  (match self 0 with
-    | .outOfFuel => true
-    | _ => false) &&
-  (List.range 17).any (λ fuel =>
-    match self fuel with
-    | .yield none => true
-    | _ => false)
-
-end Lp2lc.Active.Util.RecOpt
-
 namespace Tests.STLC.Sanity
 
 namespace Trm
@@ -87,23 +59,23 @@ attribute [local simp] Trm.FreeCapture.receipt Trm.FreeCapture.directRef Trm.Fre
 attribute [local simp] Trm.FreeCapture.capturedRefOnFalse
 
 /-- Structural equality on the fixture's values; opaque receipts are always considered equal. -/
-instance : EvalBEq Val := ⟨λ a b => astBEq a b (λ _ _ => true) litEq⟩
+instance : BEq Val := ⟨λ a b => astBEq a b (λ _ _ => true) litEq⟩
 
-#guard Trm.vFalse.eval.shouldYieldsBool (.lit "false")
+#guard Trm.vFalse.eval.shouldYieldsBool 1 (.lit "false")
 
-#guard Trm.primitiveIdFnOnFalse.eval.shouldYieldsBool (.lit "false")
+#guard Trm.primitiveIdFnOnFalse.eval.shouldYieldsBool 2 (.lit "false")
 
-#guard Trm.get1stOnTuple.eval.shouldYieldsBool (.lit "false")
+#guard Trm.get1stOnTuple.eval.shouldYieldsBool 3 (.lit "false")
 
-#guard Trm.get2ndOnTuple.eval.shouldYieldsBool (.lit "true")
+#guard Trm.get2ndOnTuple.eval.shouldYieldsBool 3 (.lit "true")
 
-#guard Trm.Malformed.applyIdFnOnItself.eval.shouldYieldsBool Val.idFn
+#guard Trm.Malformed.applyIdFnOnItself.eval.shouldYieldsBool 2 Val.idFn
 
-#guard Trm.Malformed.idFnOnFalse2.eval.shouldYieldsBool (.lit "false")
+#guard Trm.Malformed.idFnOnFalse2.eval.shouldYieldsBool 3 (.lit "false")
 
-#guard Trm.Malformed.apply1.eval.shouldFailBool
+#guard Trm.Malformed.apply1.eval.shouldFailBool 3
 
-#guard Trm.Malformed.primitiveApply.eval.shouldFailBool
+#guard Trm.Malformed.primitiveApply.eval.shouldFailBool 2
 
 example : True := by
   fail_if_success
@@ -111,11 +83,11 @@ example : True := by
       λ receipt => .ref receipt
   trivial
 
-#guard Trm.primitiveTrueFnOnFalse.eval.shouldYieldsBool (.lit "true")
+#guard Trm.primitiveTrueFnOnFalse.eval.shouldYieldsBool 2 (.lit "true")
 
-#guard Trm.FreeCapture.directRef.eval.shouldYieldsBool Trm.FreeCapture.value
+#guard Trm.FreeCapture.directRef.eval.shouldYieldsBool 1 Trm.FreeCapture.value
 
-#guard Trm.FreeCapture.capturedRefOnFalse.eval.shouldYieldsBool Trm.FreeCapture.value
+#guard Trm.FreeCapture.capturedRefOnFalse.eval.shouldYieldsBool 2 Trm.FreeCapture.value
 
 example [build : BuildEnv refs] (upcast : build.uid2typ.upcastV.toFun = Sum.inr) :
     (AST.ref (build.uid2typCtx.inv (.primitive : AST.Typ refs.Parameters)).val : Trm).eval.shouldFail := by
