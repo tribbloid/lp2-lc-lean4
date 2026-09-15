@@ -9,6 +9,9 @@ open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
+/-- Compares two string literals without relying on the reducibility of the fixture's `D`. -/
+def litEq (repr expected : String) : Bool := repr == expected
+
 section eval
 variable [testEnv : TestEnv]
 
@@ -26,45 +29,39 @@ attribute [local simp] Trm.Malformed.apply1 Trm.Malformed.primitiveApply Val.idF
 attribute [local simp] Trm.FreeCapture.receipt Trm.FreeCapture.directRef Trm.FreeCapture.capturedRef
 attribute [local simp] Trm.FreeCapture.capturedRefOnFalse
 
-example : Trm.vFalse.eval.shouldYields (.lit "false") := by
-  constructor
-  · exact ⟨1, by simp⟩
-  · rfl
+/-- Whether `t` evaluates to the string literal `expected` within `fuel`. -/
+def evalYieldsLit (t : Trm) (fuel : Nat) (expected : String) : Bool :=
+  match t.eval fuel with
+  | .yield (some (.lit repr)) => litEq repr expected
+  | _ => false
 
-example : Trm.primitiveIdFnOnFalse.eval.shouldYields (.lit "false") := by
-  constructor
-  · exact ⟨2, by simp⟩
-  · rfl
+/-- Whether `t` evaluation fails within `fuel`. -/
+def evalFails (t : Trm) (fuel : Nat) : Bool :=
+  match t.eval fuel with
+  | .yield none => true
+  | _ => false
 
-example : Trm.get1stOnTuple.eval.shouldYields (.lit "false") := by
-  constructor
-  · exact ⟨3, by simp⟩
-  · rfl
+/-- Whether `t` evaluates to the identity function value within `fuel`. -/
+def evalYieldsIdFn (t : Trm) (fuel : Nat) : Bool :=
+  match t.eval fuel with
+  | .yield (some (.lam (.mk (.ref (.inr ()))) .primitive)) => true
+  | _ => false
 
-example : Trm.get2ndOnTuple.eval.shouldYields (.lit "true") := by
-  constructor
-  · exact ⟨3, by simp⟩
-  · rfl
+#guard evalYieldsLit Trm.vFalse 1 "false"
 
-example : Trm.Malformed.applyIdFnOnItself.eval.shouldYields Val.idFn := by
-  constructor
-  · exact ⟨2, by simp <;> rfl⟩
-  · rfl
+#guard evalYieldsLit Trm.primitiveIdFnOnFalse 2 "false"
 
-example : Trm.Malformed.idFnOnFalse2.eval.shouldYields (.lit "false") := by
-  constructor
-  · exact ⟨3, by simp⟩
-  · rfl
+#guard evalYieldsLit Trm.get1stOnTuple 3 "false"
 
-example : Trm.Malformed.apply1.eval.shouldFail := by
-  constructor
-  · exact ⟨4, by simp⟩
-  · rfl
+#guard evalYieldsLit Trm.get2ndOnTuple 3 "true"
 
-example : Trm.Malformed.primitiveApply.eval.shouldFail := by
-  constructor
-  · exact ⟨2, by simp⟩
-  · rfl
+#guard evalYieldsIdFn Trm.Malformed.applyIdFnOnItself 2
+
+#guard evalYieldsLit Trm.Malformed.idFnOnFalse2 3 "false"
+
+#guard evalFails Trm.Malformed.apply1 4
+
+#guard evalFails Trm.Malformed.primitiveApply 2
 
 example : True := by
   fail_if_success
@@ -72,20 +69,11 @@ example : True := by
       λ receipt => .ref receipt
   trivial
 
-example : Trm.primitiveTrueFnOnFalse.eval.shouldYields (.lit "true") := by
-  constructor
-  · exact ⟨2, by simp⟩
-  · rfl
+#guard evalYieldsLit Trm.primitiveTrueFnOnFalse 2 "true"
 
-example : Trm.FreeCapture.directRef.eval.shouldYields Trm.FreeCapture.value := by
-  constructor
-  · exact ⟨1, by simp⟩
-  · rfl
+#guard evalYieldsLit Trm.FreeCapture.directRef 1 "false"
 
-example : Trm.FreeCapture.capturedRefOnFalse.eval.shouldYields Trm.FreeCapture.value := by
-  constructor
-  · exact ⟨2, by simp⟩
-  · rfl
+#guard evalYieldsLit Trm.FreeCapture.capturedRefOnFalse 2 "false"
 
 example [build : BuildEnv refs] (upcast : build.uid2typ.upcastV.toFun = Sum.inr) :
     (AST.ref (build.uid2typCtx.inv (.primitive : AST.Typ refs.Parameters)).val : Trm).eval.shouldFail := by
