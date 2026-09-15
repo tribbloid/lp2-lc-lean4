@@ -141,16 +141,18 @@ It is deliberately left abstract to ward off unlawful construction:
 - the only way to construct `D` is to parse a primitive literal in AST
 -/
 structure Parameters extends HasData where
-  C : KU -- shared carrier/receipt
-  -- /--
-  -- AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
-  -- AST of more specific domain can be used to constract AST of more general domain.
-  -- - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
-  -- -/
-  -- dom : C -> Prop := λ _ => true --TODO: remove, useless now
+  CB : KU -- carrier base type
+  /--
+  AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
+  AST of more specific domain can be used to constract AST of more general domain.
+  - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
+  -/
+  dom : CB -> Prop := λ _ => true -- domain Set
 
 namespace Parameters
-section variable (Self : Parameters)
+section variable (This : Parameters)
+
+def C := {x // This.dom x}
 
 end
 end Parameters
