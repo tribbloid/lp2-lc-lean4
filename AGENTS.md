@@ -73,17 +73,13 @@ When working on a issue that contains multiple subtasks:
   - **Refactoring/Cleanup** is for enforcing code format & compliance without introduce meaningful change. DO NOT introduce or update type signature, definition, or proof (even if it is missing or `sorry`). Existing code structure should be preserved at all cost.
   - **Conjecturing** is for defining or revising proposition/type definitions (including those required to state the proposition).
     - Only add proof with "sorry" as placeholder
-    - Keep your work minimal and local.
-    - Commit 1 file at a time, make sure that the file compile cleanly.
-    - You must strive to write short abstraction, if your revision make the code longer, STOP IMMEDIATELY and ask for approval
+    - You must strive to write short abstraction, if your revision make the code longer, STOP IMMEDIATELY, commit your work, and ask for approval.
     - DO NOT add definitions that repeats implementations or cases, they should be in shared abstractions.
-    - You MUST use a subagent to review compliance to the above rule(s).
   - **Proving/Discharging/Refuting** is for proving existing proposition.
     - DO NOT remove or modify any type/proposition.
     - introducing new lemma is permitted if & only if they help proving the main theorem, but they have to be proven.
     - If a lemma or theorem is false/refutable, it should be recorded in DEFECTS.md with a counterexample in Tests directory.
     - In the end, no new `sorry` should be introduced.
-    - You MUST use a subagent to review compliance to the above rule(s).
   - **Example/Demo/Test/Benchmark** is for writing example & test case for existing definition in the Tests directory.
     - DO NOT write or update production code (unless it is a demo allowed by the Guardrails above).
     - Theorem//lemma are self-contained and erased at runtime, they require no example or test case.
@@ -132,9 +128,17 @@ Some Lean symbols can be inferred by the compiler automatically and should be be
 [{{LLM MODEL}}] {{Task Info}} {{Optional Subtask Category & Info}}
 ```
 
-- If a task contains multiple subtasks. Each subtask should have its own commit(s)
+- If a task contains multiple subtasks:
+  - each subtask should have its own commit.
+  - after each commit:
+    - launch a subagent to review it for guardrail compliance.
 - If HEAD is DETACHED, create a temporary branch and commit into it
-- non-compilable state should have [WIP] in its commit message
+- If the commit can't compile cleanly, it should have [WIP] in its commit message
+
+## Planning
+
+- Any inconsistency or contradiction discovered during the planning stage must be immediately raised and highlighted in the plan
+- no plan shall be executed until the inconsistency or contradiction is full addressed
 
 ## Key Commands
 
