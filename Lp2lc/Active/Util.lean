@@ -68,29 +68,34 @@ def UId := {x : K // this.ev x}
 end
 end HasEv
 
-/-- Read-only access to refined receipts compatible with a base view. -/
-structure Lesser (V2)
-    extends HasEv K, KVRefs {uid // ev uid} V2 where
+structure Lesser (K2 V2) extends KVRefs K2 V2 where
+  upcastK : Embedding K2 K
   upcastV : Embedding V2 V
-  equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = this.get receipt.val
+  equivariance : ∀ (receipt : K2), upcastV (get receipt) = this.get (upcastK receipt)
+
+-- /-- Read-only access to refined receipts compatible with a base view. -/
+-- structure Lesser (V2)
+--     extends HasEv K, KVRefs {uid // ev uid} V2 where
+--   upcastV : Embedding V2 V
+--   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = this.get receipt.val
 
 -- TODO: rename to "Widen" and "Specify"
-structure Adapter (V2 : Sort u) where
-  shrink : this.Lesser V2 -- converting a KVRefs to it's Lesser
+structure Adapter (K2 V2) where
+  shrink : this.Lesser K2 V2 -- converting a KVRefs to it's Lesser
   expand : this.Greater V2 -- converting a KVRefs to it's Greater
 
 end
 end KVRefs
 
-structure HasUId where
+structure HasUId where --> SharedUID
   UId : KU
 
-/--
-Unlike [KVRefs], the key type `UId` is not shared with any other value type, so `get` cannot be abused to non-existing value.
+-- /--
+-- Unlike [KVRefs], the key type `UId` is not shared with any other value type, so `get` cannot be abused to non-existing value.
 
-type `V_` is deliberately a type constructor of `V`, without it V may be impossible to define due to cyclic references
--/
-structure UIdRefs (V_ : KU → Sort u) extends HasUId, KVRefs UId (V_ UId)
+-- type `V_` is deliberately a type constructor of `V`, without it V may be impossible to define due to cyclic references
+-- -/
+-- structure UIdRefs (V_ : KU → Sort u) extends HasUId, KVRefs UId (V_ UId)
 
 /--
 Full receipt-indexed bridge, extending [KVRefs] with the reverse direction.
@@ -110,7 +115,7 @@ section variable {K V} {refs : KVRefs K V}
 instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
   coe _self := base
 
-structure Adapter (this : KVEquiv refs) {V2} (forRefs: refs.Adapter V2) where
+structure Adapter (this : KVEquiv refs) {K2 V2} (forRefs: refs.Adapter K2 V2) where
   shrink :
     let refs2 := forRefs.shrink
     KVEquiv refs2.toKVRefs

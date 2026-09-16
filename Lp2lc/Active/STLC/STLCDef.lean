@@ -175,9 +175,9 @@ slots structurally so lambda construction cannot inspect phase-specific minted
 receipts.
 -/
 
-class HasUId2Any extends HasData where
-  uid2any : UIdRefs (λ T =>
-    let P : Parameters := { C := T, D := D }
+class HasUId2Any extends HasData, HasUId where
+  uid2any : KVRefs UId (
+    let P : Parameters := { C := UId, D := D }
 
     AST.Val P ⊕ AST.Typ P
   )
@@ -186,20 +186,20 @@ namespace HasUId2Any
 section variable (this : HasUId2Any)
 
 /-- The shared syntax parameters are fixed by the mixed receipt view. -/
-abbrev Parameters : Parameters := { C := this.uid2any.UId, D := this.D }
+abbrev Parameters : Parameters := { C := this.UId, D := this.D }
 
 end
 end HasUId2Any
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv (refs : HasUId2Any) where
-  uid2val : refs.uid2any.Lesser (AST.Val refs.Parameters)
+class ExeEnv (refs : HasUId2Any) extends HasEv refs.UId where
+  uid2val : refs.uid2any.Lesser {x // ev x} (AST.Val {refs.Parameters with C := {x // ev x}})
   uid2valCtx : KVEquiv uid2val.toKVRefs
 
 namespace ExeEnv
 section variable {refs} (this: ExeEnv refs)
 
-abbrev Parameters : Parameters := { C := this.uid2val.UId, D := refs.D }
+abbrev Parameters : Parameters := {this.refs.Parameters with C := {x // this.ev x}}
 
 end
 end ExeEnv
@@ -207,7 +207,7 @@ end ExeEnv
 namespace AST
 
 /-- Evaluates executable terms whose references carry receipts from the runtime context. -/
-def eval {refs} [env : ExeEnv refs]
+def eval {refs} [exe : ExeEnv refs]
     (self : Trm exe.Parameters) : RecOpt (Val exe.Parameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -217,13 +217,13 @@ def eval {refs} [env : ExeEnv refs]
       let anf := (eval fnTerm fuel, eval arg fuel)
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some arg)) =>
-        let receipt := env.uid2valCtx.inv arg
+        let receipt := exe.uid2valCtx.inv arg
         eval (body.apply receipt.val) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
     | .ref receipt =>
-      match refs.uid2any.get receipt with
+      match exe.uid2any.get receipt with
       | .inl value => .yield (some value)
       | .inr _typ => .yield none
 
