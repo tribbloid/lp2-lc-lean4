@@ -4,11 +4,9 @@ import «Lp2lc».Active.STLC.__Infer
 
 namespace Tests.STLC.Sanity
 
+open Lean (toJson)
 open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
-
-/-- Compares two string literals without relying on the reducibility of the fixture's `D`. -/
-def litEq (repr expected : String) : Bool := repr == expected
 
 /-- Supplies the shared reference view and runtime value context used by STLC tests.
 
@@ -56,17 +54,16 @@ instance : CoeTail (testEnv.refs.D) String :=
 instance : CoeTail String (testEnv.refs.D) :=
   ⟨testEnv.dEq.mpr⟩
 
-/-- Compares the fixture's data values through the case files' String view. -/
-def dEqLitEq (a b : testEnv.refs.D) : Bool :=
-  litEq a b
+/-- Signs a string literal without relying on the reducibility of the fixture's `D`. -/
+def litSig (repr : String) : Lean.Json := toJson repr
 
 /-- Structural equality on the fixture's values; opaque receipts are always considered equal. -/
 instance : BEq (AST.Val refs.Parameters) :=
-  ⟨λ a b => astBEq a b (λ _ _ => true) dEqLitEq⟩
+  ⟨λ a b => astBEq a b (λ _ => .null) (λ repr => litSig repr)⟩
 
 /-- Structural equality on the fixture's types. -/
 instance : BEq (AST.Typ refs.Parameters) :=
-  ⟨λ a b => astBEq a b (λ _ _ => true) dEqLitEq⟩
+  ⟨λ a b => astBEq a b (λ _ => .null) (λ repr => litSig repr)⟩
 
 @[simp]
 theorem trm2valLookup
@@ -123,7 +120,7 @@ unsafe def _testEnvImpl : TestEnv :=
   let trm2valExeCtx : KVEquiv trm2valExe.toKVRefs :=
     {
       inv := λ value =>
-        (hashSum (.inl value) (λ receipt => receipt.1) (λ repr => hash repr),
+        (hashSum (.inl value) (λ receipt => toJson receipt.1) toJson,
           boxPayload (.inl value))
       rightInv := unsafeCast True.intro
       leftInv := unsafeCast True.intro
@@ -144,7 +141,8 @@ unsafe def _testEnvImpl : TestEnv :=
   let trm2typExeCtx : KVEquiv trm2typExe.toKVRefs :=
     {
       inv := λ typ =>
-        (hashSum (.inr typ) (λ receipt => receipt.1) (λ repr => hash repr), boxPayload (.inr typ))
+        (hashSum (.inr typ) (λ receipt => toJson receipt.1) toJson,
+          boxPayload (.inr typ))
       rightInv := unsafeCast True.intro
       leftInv := unsafeCast True.intro
     }
