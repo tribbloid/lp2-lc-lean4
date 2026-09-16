@@ -79,10 +79,9 @@ structure Lesser (K2 V2) extends KVRefs K2 V2 where
 --   upcastV : Embedding V2 V
 --   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = this.get receipt.val
 
--- FIXME: In KVRefs.Adapter & KVEquiv.Adapter, the following functions should be renamed to "Widen" and "Specify"
 structure Adapter (K2 V2) where
-  shrink : this.Lesser K2 V2 -- converting a KVRefs to it's Lesser
-  expand : this.Greater K2 V2 -- converting a KVRefs to it's Greater
+  specify : this.Lesser K2 V2 -- converting a KVRefs to it's Lesser
+  widen : this.Greater K2 V2 -- converting a KVRefs to it's Greater
 
 end
 end KVRefs
@@ -116,11 +115,11 @@ instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where --
   coe _self := base
 
 structure Adapter (this : KVEquiv refs) {K2 V2} (forRefs: refs.Adapter K2 V2) where
-  shrink :
-    let refs2 := forRefs.shrink
+  specify :
+    let refs2 := forRefs.specify
     KVEquiv refs2.toKVRefs
-  expand :
-    let refs2 := forRefs.expand
+  widen :
+    let refs2 := forRefs.widen
     KVEquiv refs2.toKVRefs
 
 
