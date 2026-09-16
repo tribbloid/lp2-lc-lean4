@@ -13,9 +13,11 @@ inductive Symbol where
 
 namespace Symbolic
 
-variable [testEnv : TestEnv]
+variable [testEnv : TestEnv] [testEnvString : TestEnv.StringData testEnv]
 
-abbrev I : Parameters := refs.Parameters
+/-- The case files' symbolic parameters: the fixture's runtime carrier with
+`String` data, so case terms are evaluable directly by the runtime view. -/
+abbrev I : Parameters := ExeEnv.Parameters testEnv.exe
 
 abbrev Typ := AST.Typ I
 abbrev Val := AST.Val I
@@ -25,7 +27,7 @@ end Symbolic
 
 open Tests.STLC.Sanity.Symbolic
 
-variable [testEnv : TestEnv]
+variable [testEnv : TestEnv] [testEnvString : TestEnv.StringData testEnv]
 
 namespace Val
 

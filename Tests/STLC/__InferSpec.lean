@@ -10,47 +10,52 @@ open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
 section infer
-variable [testEnv : TestEnv]
+variable [testEnv : TestEnv] [testEnvString : TestEnv.StringData testEnv]
 
 abbrev Typ := AST.Typ refs.Parameters
 
-#guard vFalse.infer.shouldYieldsBool 1 .primitive
+/-- The case terms live on the runtime carrier; compile-time inference reads
+them through the honest carrier upcast, so no receipt can be forged. -/
+abbrev atCompileTime (trm : Trm) : AST.Trm refs.Parameters :=
+  trm.recarrier Subtype.val id
 
-#guard vTrue.infer.shouldYieldsBool 1 .primitive
+#guard (atCompileTime vFalse).infer.shouldYieldsBool 1 .primitive
 
-#guard primitiveIdFn.infer.shouldYieldsBool 2 (.fn .primitive .primitive)
+#guard (atCompileTime vTrue).infer.shouldYieldsBool 1 .primitive
 
-#guard primitiveIdFnOnFalse.infer.shouldYieldsBool 3 .primitive
+#guard (atCompileTime primitiveIdFn).infer.shouldYieldsBool 2 (.fn .primitive .primitive)
 
-#guard get1st.infer.shouldYieldsBool 3 (.fn .primitive (.fn .primitive .primitive))
+#guard (atCompileTime primitiveIdFnOnFalse).infer.shouldYieldsBool 3 .primitive
 
-#guard get2nd.infer.shouldYieldsBool 3 (.fn .primitive (.fn .primitive .primitive))
+#guard (atCompileTime get1st).infer.shouldYieldsBool 3 (.fn .primitive (.fn .primitive .primitive))
 
-#guard get1stOnTuple.infer.shouldYieldsBool 5 .primitive
+#guard (atCompileTime get2nd).infer.shouldYieldsBool 3 (.fn .primitive (.fn .primitive .primitive))
 
-#guard get2ndOnTuple.infer.shouldYieldsBool 5 .primitive
+#guard (atCompileTime get1stOnTuple).infer.shouldYieldsBool 5 .primitive
 
-#guard primitiveTrueFn.infer.shouldYieldsBool 2 (.fn .primitive .primitive)
+#guard (atCompileTime get2ndOnTuple).infer.shouldYieldsBool 5 .primitive
 
-#guard primitiveTrueFnOnFalse.infer.shouldYieldsBool 3 .primitive
+#guard (atCompileTime primitiveTrueFn).infer.shouldYieldsBool 2 (.fn .primitive .primitive)
 
-#guard TypeHinted.hintedFalse.infer.shouldYieldsBool 1 .primitive
+#guard (atCompileTime primitiveTrueFnOnFalse).infer.shouldYieldsBool 3 .primitive
 
-#guard TypeHinted.hintedIdFn.infer.shouldYieldsBool 2 (.fn .primitive .primitive)
+#guard (atCompileTime TypeHinted.hintedFalse).infer.shouldYieldsBool 1 .primitive
 
-#guard TypeHinted.hintedIdFnOnFalse.infer.shouldYieldsBool 3 .primitive
+#guard (atCompileTime TypeHinted.hintedIdFn).infer.shouldYieldsBool 2 (.fn .primitive .primitive)
 
-#guard FreeCapture.directRef.infer.shouldYieldsBool 2 .primitive
+#guard (atCompileTime TypeHinted.hintedIdFnOnFalse).infer.shouldYieldsBool 3 .primitive
 
-#guard (AST.ref ((inferInstance : BuildEnv refs).uid2typCtx.inv (.primitive : Typ)) : Trm).infer.shouldYieldsBool 1 .primitive
+#guard (atCompileTime FreeCapture.directRef).infer.shouldYieldsBool 2 .primitive
 
-#guard Malformed.applyIdFnOnItself.infer.shouldFailBool 3
+#guard (AST.ref ((inferInstance : BuildEnv refs).uid2typCtx.inv (.primitive : Typ)).val : AST.Trm refs.Parameters).infer.shouldYieldsBool 1 .primitive
 
-#guard Malformed.idFnOnFalse2.infer.shouldFailBool 4
+#guard (atCompileTime Malformed.applyIdFnOnItself).infer.shouldFailBool 3
 
-#guard Malformed.apply1.infer.shouldFailBool 4
+#guard (atCompileTime Malformed.idFnOnFalse2).infer.shouldFailBool 4
 
-#guard Malformed.primitiveApply.infer.shouldFailBool 2
+#guard (atCompileTime Malformed.apply1).infer.shouldFailBool 4
+
+#guard (atCompileTime Malformed.primitiveApply).infer.shouldFailBool 2
 
 end infer
 

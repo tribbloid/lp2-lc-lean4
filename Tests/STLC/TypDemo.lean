@@ -4,7 +4,7 @@ namespace Tests.STLC.Sanity
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
-variable [testEnv : TestEnv]
+variable [testEnv : TestEnv] [testEnvString : TestEnv.StringData testEnv]
 
 namespace Typ
 

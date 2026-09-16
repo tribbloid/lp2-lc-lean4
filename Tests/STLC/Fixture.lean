@@ -47,7 +47,7 @@ abbrev TestEnv.trm2typExeCtx (self : TestEnv) := self.build.uid2typCtx
 /-- The case files' shared reference view is the fixture's own mixed view. -/
 @[reducible] instance refs : HasUId2Any := testEnv.refs
 
-/-- Compile-time typing context derived from the fixture's mixed reference view. -/
+/-- Compile-time typing context is the fixture's own build context. -/
 instance build : BuildEnv refs := testEnv.build
 
 variable [testEnvString : TestEnv.StringData testEnv]

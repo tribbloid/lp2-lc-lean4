@@ -5,15 +5,21 @@ open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
-variable [testEnv : TestEnv]
+variable [testEnv : TestEnv] [testEnvString : TestEnv.StringData testEnv]
+
+/-- The case files' demo data: the String literals cast into the fixture's data
+carrier through the case files' [TestEnv.StringData] assumption. -/
+def dFalse : refs.Parameters.D := ofRepr "false"
+
+def dTrue : refs.Parameters.D := ofRepr "true"
 
 namespace Trm
 
 def vFalse : Trm :=
-  .val (.lit "false")
+  .val (.lit dFalse)
 
 def vTrue : Trm :=
-  .val (.lit "true")
+  .val (.lit dTrue)
 
 def primitiveIdFn : Trm :=
   .val (.lam (.mk (.ref (.inr ()))) .primitive)
@@ -50,7 +56,7 @@ def get2ndOnTuple : Trm :=
 def primitiveTrueFn : Trm :=
   .val
     (.lam
-      (.mk (.val (.lit "true")))
+      (.mk (.val (.lit dTrue)))
       .primitive)
 
 def primitiveTrueFnOnFalse : Trm :=
@@ -59,13 +65,11 @@ def primitiveTrueFnOnFalse : Trm :=
 namespace FreeCapture
 
 def value : Val :=
-  .lit "false"
+  .lit dFalse
 
 /-- Runtime receipt for [value], minted through the fixture's executable bridge. -/
-def receipt : refs.Parameters.C :=
-  (testEnv.adapter.trm2valExeCtx.inv
-    (value.recarrier (Q := {refs.Parameters with C := {_x : refs.Parameters.C // True}})
-      (λ receipt => ⟨receipt, True.intro⟩) id)).val
+def receipt : I.C :=
+  testEnv.trm2valExeCtx.inv value
 
 def directRef : Trm :=
   .ref receipt
@@ -82,7 +86,7 @@ end FreeCapture
 namespace TypeHinted
 
 def hintedFalse : Trm :=
-  .val (.lit "false")
+  .val (.lit dFalse)
 
 def hintedIdFn : Trm :=
   .val (.lam (.mk (.ref (.inr ()))) .primitive)
