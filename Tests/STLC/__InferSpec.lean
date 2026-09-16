@@ -6,179 +6,51 @@ namespace Tests.STLC.Sanity
 namespace Trm
 
 open Lp2lc.Active.Util
-open Lp2lc.Active.Util.Rec
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
 section infer
-variable [testEnv : TestEnv] [build : BuildEnv refs]
+variable [testEnv : TestEnv]
+
 abbrev Typ := AST.Typ refs.Parameters
 
-attribute [local simp] Binder.apply
+#guard vFalse.infer.shouldYieldsBool 1 .primitive
 
-variable (upcast : build.uid2typ.upcastV.toFun = Sum.inr)
+#guard vTrue.infer.shouldYieldsBool 1 .primitive
 
-include upcast
-@[local simp]
-theorem trm2typLookup
-    (receipt : {uid // build.uid2typ.ev uid}) :
-    refs.uid2any.get receipt.val = .inr (build.uid2typ.get receipt) :=
-  (build.uid2typ.equivariance receipt).symm.trans (congrFun upcast _)
+#guard primitiveIdFn.infer.shouldYieldsBool 2 (.fn .primitive .primitive)
 
-example :
-    (vFalse.infer).shouldYields .primitive := by
-  constructor
-  · exact ⟨1, rfl⟩
-  · rfl
+#guard primitiveIdFnOnFalse.infer.shouldYieldsBool 3 .primitive
 
-example :
-    (vTrue.infer).shouldYields .primitive := by
-  constructor
-  · exact ⟨1, rfl⟩
-  · rfl
+#guard get1st.infer.shouldYieldsBool 3 (.fn .primitive (.fn .primitive .primitive))
 
-example :
-    (primitiveIdFn.infer).shouldYields (.fn .primitive .primitive) := by
-  constructor
-  · exact ⟨2, by simp_all [AST.infer, Outcome.map, primitiveIdFn]⟩
-  · rfl
+#guard get2nd.infer.shouldYieldsBool 3 (.fn .primitive (.fn .primitive .primitive))
 
-example :
-    (primitiveIdFnOnFalse.infer).shouldYields .primitive := by
-  constructor
-  · refine ⟨3, ?_⟩
-    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
-      rfl
-    simp_all [AST.infer, Outcome.map,
-      primitiveIdFnOnFalse, primitiveIdFn, vFalse]
-  · rfl
+#guard get1stOnTuple.infer.shouldYieldsBool 5 .primitive
 
-example :
-    (get1st.infer).shouldYields (.fn .primitive (.fn .primitive .primitive)) := by
-  constructor
-  · exact ⟨3, by simp_all [AST.infer, Outcome.map, get1st]⟩
-  · rfl
+#guard get2ndOnTuple.infer.shouldYieldsBool 5 .primitive
 
-example :
-    (get2nd.infer).shouldYields (.fn .primitive (.fn .primitive .primitive)) := by
-  constructor
-  · exact ⟨3, by simp_all [AST.infer, Outcome.map, get2nd]⟩
-  · rfl
+#guard primitiveTrueFn.infer.shouldYieldsBool 2 (.fn .primitive .primitive)
 
-example :
-    (get1stOnTuple.infer).shouldYields .primitive := by
-  constructor
-  · refine ⟨5, ?_⟩
-    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
-      rfl
-    simp_all [AST.infer, Outcome.map,
-      get1stOnTuple, get1st, vFalse, vTrue]
-  · rfl
+#guard primitiveTrueFnOnFalse.infer.shouldYieldsBool 3 .primitive
 
-example :
-    (get2ndOnTuple.infer).shouldYields .primitive := by
-  constructor
-  · refine ⟨5, ?_⟩
-    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
-      rfl
-    simp_all [AST.infer, Outcome.map,
-      get2ndOnTuple, get2nd, vFalse, vTrue]
-  · rfl
+#guard TypeHinted.hintedFalse.infer.shouldYieldsBool 1 .primitive
 
-example :
-    (primitiveTrueFn.infer).shouldYields (.fn .primitive .primitive) := by
-  constructor
-  · exact ⟨2, by simp_all [AST.infer, Outcome.map, primitiveTrueFn]⟩
-  · rfl
+#guard TypeHinted.hintedIdFn.infer.shouldYieldsBool 2 (.fn .primitive .primitive)
 
-example :
-    (primitiveTrueFnOnFalse.infer).shouldYields .primitive := by
-  constructor
-  · refine ⟨3, ?_⟩
-    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
-      rfl
-    simp_all [AST.infer, Outcome.map,
-      primitiveTrueFnOnFalse, primitiveTrueFn, vFalse]
-  · rfl
+#guard TypeHinted.hintedIdFnOnFalse.infer.shouldYieldsBool 3 .primitive
 
-example :
-    (TypeHinted.hintedFalse.infer).shouldYields .primitive := by
-  constructor
-  · exact ⟨1, rfl⟩
-  · rfl
+#guard FreeCapture.directRef.infer.shouldYieldsBool 2 .primitive
 
-example :
-    (TypeHinted.hintedIdFn.infer).shouldYields (.fn .primitive .primitive) := by
-  constructor
-  · exact ⟨2, by simp_all [AST.infer, Outcome.map,
-      TypeHinted.hintedIdFn]⟩
-  · rfl
+#guard (AST.ref ((inferInstance : BuildEnv refs).uid2typCtx.inv (.primitive : Typ)).val : Trm).infer.shouldYieldsBool 1 .primitive
 
-example :
-    (TypeHinted.hintedIdFnOnFalse.infer).shouldYields .primitive := by
-  constructor
-  · refine ⟨3, ?_⟩
-    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
-      rfl
-    simp_all [AST.infer, Outcome.map,
-      TypeHinted.hintedIdFnOnFalse, TypeHinted.hintedIdFn,
-      TypeHinted.hintedFalse]
-  · rfl
+#guard Malformed.applyIdFnOnItself.infer.shouldFailBool 3
 
-example :
-    (FreeCapture.directRef.infer).shouldYields .primitive := by
-  constructor
-  · exact ⟨2, by simp_all [AST.infer, AST.Val.asTrm, FreeCapture.directRef,
-      FreeCapture.receipt, FreeCapture.value]⟩
-  · rfl
+#guard Malformed.idFnOnFalse2.infer.shouldFailBool 4
 
-example :
-    (AST.ref (build.uid2typCtx.inv (.primitive : Typ)).val : Trm).infer.shouldYields
-      .primitive := by
-  constructor
-  · exact ⟨1, by simp_all [AST.infer]⟩
-  · rfl
+#guard Malformed.apply1.infer.shouldFailBool 4
 
-example :
-    (Malformed.applyIdFnOnItself.infer).shouldFail := by
-  constructor
-  · refine ⟨3, ?_⟩
-    have hFnNotPrimitive :
-        ¬ ((AST.fn .primitive .primitive : Typ) ≤ .primitive) := by
-      intro h
-      cases h
-    simp_all [AST.infer, Outcome.map,
-      Malformed.applyIdFnOnItself, primitiveIdFn]
-  · rfl
-
-example :
-    (Malformed.idFnOnFalse2.infer).shouldFail := by
-  constructor
-  · refine ⟨4, ?_⟩
-    have hFnNotPrimitive :
-        ¬ ((AST.fn .primitive .primitive : Typ) ≤ .primitive) := by
-      intro h
-      cases h
-    simp_all [AST.infer, Outcome.map,
-      Malformed.idFnOnFalse2, Malformed.applyIdFnOnItself,
-      primitiveIdFn, vFalse]
-  · rfl
-
-example :
-    (Malformed.apply1.infer).shouldFail := by
-  constructor
-  · refine ⟨4, ?_⟩
-    have hPrimitive : (AST.primitive : Typ) ≤ .primitive := by
-      rfl
-    simp_all [AST.infer, Outcome.map,
-      Malformed.apply1, primitiveIdFn, vFalse, vTrue]
-  · rfl
-
-example :
-    (Malformed.primitiveApply.infer).shouldFail := by
-  constructor
-  · exact ⟨2, rfl⟩
-  · rfl
+#guard Malformed.primitiveApply.infer.shouldFailBool 2
 
 end infer
 
