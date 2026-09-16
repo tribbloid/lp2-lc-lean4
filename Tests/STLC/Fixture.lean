@@ -58,7 +58,7 @@ def toRepr (repr : testEnv.refs.D) : String :=
 
 /-- Casts the case files' String literals into the fixture's data view. -/
 def ofRepr (repr : String) : testEnv.refs.D :=
-  Eq.mpr testEnvString.dEq repr
+  testEnvString.dEq.mpr repr
 
 /-- Compares the fixture's data values through the case files' String view. -/
 def dEqLitEq (a b : testEnv.refs.D) : Bool :=

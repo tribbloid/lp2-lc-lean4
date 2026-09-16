@@ -17,7 +17,7 @@ variable [testEnv : TestEnv] [testEnvString : TestEnv.StringData testEnv]
 decides which receipts may fetch values, so no fake value can be forged. -/
 @[reducible] instance env : ExeEnv refs := testEnv.exe
 
-instance : BEq (AST.Val (ExeEnv.Parameters env)) :=
+instance : BEq (AST.Val env.Parameters) :=
   ⟨λ a b => astBEq a b (λ _ _ => true) dEqLitEq⟩
 
 attribute [local simp] AST.eval

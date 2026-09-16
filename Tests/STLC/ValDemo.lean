@@ -17,7 +17,7 @@ variable [testEnv : TestEnv] [testEnvString : TestEnv.StringData testEnv]
 
 /-- The case files' symbolic parameters: the fixture's runtime carrier with
 `String` data, so case terms are evaluable directly by the runtime view. -/
-abbrev I : Parameters := ExeEnv.Parameters testEnv.exe
+abbrev I : Parameters := testEnv.exe.Parameters
 
 abbrev Typ := AST.Typ I
 abbrev Val := AST.Val I
