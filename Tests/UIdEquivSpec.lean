@@ -3,12 +3,10 @@ import «Lp2lc».Active.Util
 namespace Tests.UIdEquivSpec
 
 open Lp2lc.Active.Util
-@[reducible] def groupView : UIdRefs.{1} (λ _evidence => Nat) where
-  UId := PSigma (λ _id : Nat => True)
+@[reducible] def groupView : KVRefs (PSigma (λ _id : Nat => True)) Nat where
   get := λ receipt => receipt.fst
 
-@[reducible] def equalityView : UIdRefs.{1} (λ _evidence => Nat) where
-  UId := PSigma (λ _id : Nat => 0 = 0)
+@[reducible] def equalityView : KVRefs (PSigma (λ _id : Nat => 0 = 0)) Nat where
   get := λ receipt => receipt.fst
 
 abbrev EqOneValue := {value : Nat // value = 1}
@@ -27,7 +25,7 @@ example : True := by
 
 example : True := by
   fail_if_success
-    have _value : Nat := equalityView.get ⟨1, True.intro⟩
+    have _value : Nat := equalityView.get 1
   trivial
 
 end rejection

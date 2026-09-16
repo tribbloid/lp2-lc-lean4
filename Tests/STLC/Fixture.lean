@@ -16,23 +16,24 @@ once the implementation is ready, all the assertion in `TrmSpec` can be replaced
 -/
 
 /-- Supplies the shared reference view and runtime value context used by STLC tests. -/
-class TestEnv where
-  trm2either : UIdRefs (λ C =>
-    let P : Parameters := { C := C, D := String }
+class TestEnv extends HasUId where
+  trm2either : KVRefs UId (
+    let P : Parameters := { C := UId, D := String }
     AST.Val P ⊕ AST.Typ P)
-  trm2valExe : {v : trm2either.Lesser _ // v.upcastV.toFun = Sum.inl}
-  trm2valExeCtx : KVEquiv trm2valExe.val.toKVRefs
-  trm2typExe : {v : trm2either.Lesser _ // v.upcastV.toFun = Sum.inr}
-  trm2typExeCtx : KVEquiv trm2typExe.val.toKVRefs
+  trm2valExe : trm2either.Lesser {_x : UId // True}
+    (AST.Val { C := {_x : UId // True}, D := String })
+  trm2valExeCtx : KVEquiv trm2valExe.toKVRefs
+  trm2typExe : trm2either.Lesser UId (AST.Typ { C := UId, D := String })
+  trm2typExeCtx : KVEquiv trm2typExe.toKVRefs
 
 variable [testEnv : TestEnv]
 
 @[reducible] instance refs : HasUId2Any :=
-  { D := String, uid2any := testEnv.trm2either }
+  { D := String, UId := testEnv.UId, uid2any := testEnv.trm2either }
 
 /-- Compile-time typing context derived from the fixture's mixed reference view. -/
 instance build : BuildEnv refs where
-  uid2typ := testEnv.trm2typExe.val
+  uid2typ := testEnv.trm2typExe
   uid2typCtx := testEnv.trm2typExeCtx
 
 /-- Structural equality on the fixture's values; opaque receipts are always considered equal. -/
@@ -45,10 +46,10 @@ instance : BEq (AST.Typ refs.Parameters) :=
 
 @[simp]
 theorem trm2valLookup
-    (receipt : {uid // testEnv.trm2valExe.val.ev uid}) :
-    refs.uid2any.get receipt.val = .inl (testEnv.trm2valExe.val.get receipt) :=
-  (testEnv.trm2valExe.val.equivariance receipt).symm.trans
-    (congrFun testEnv.trm2valExe.property _)
+    (receipt : {_uid : testEnv.UId // True}) :
+    refs.uid2any.get (testEnv.trm2valExe.upcastK receipt) =
+      testEnv.trm2valExe.upcastV (testEnv.trm2valExe.get receipt) :=
+  (testEnv.trm2valExe.equivariance receipt).symm
 
 /- Concrete, opaque [TestEnv] implementation whose receipts are content hashes. -/
 namespace Fixture
@@ -78,52 +79,57 @@ unsafe def unboxPayload (box : Unit) : AST.Val TestParameters ⊕ AST.Typ TestPa
 set_option warn.classDefReducibility false in
 /-- The concrete fixture: receipts carry their content hash and a boxed payload. -/
 unsafe def _testEnvImpl : TestEnv :=
-  let trm2either : UIdRefs (λ C =>
-      let P : Parameters := { C := C, D := String }
-      AST.Val P ⊕ AST.Typ P) :=
+  let trm2either : KVRefs TestUId (AST.Val TestParameters ⊕ AST.Typ TestParameters) :=
     {
-      UId := TestUId
       get := λ receipt => unboxPayload receipt.2
     }
-  let trm2valExe : {v : trm2either.Lesser _ // v.upcastV.toFun = Sum.inl} :=
-    ⟨{
-        ev := λ _ => True
-        get := λ receipt =>
-          match unboxPayload receipt.val.2 with
-          | .inl value => value
-          | .inr _ => unsafeCast ()
-        upcastV := ⟨Sum.inl, by
-          intro a b h
-          cases h
-          rfl⟩
-        equivariance := unsafeCast True.intro
-      }, rfl⟩
-  let trm2valExeCtx : KVEquiv trm2valExe.val.toKVRefs :=
+  let trm2valExe : trm2either.Lesser {x : TestUId // True}
+      (AST.Val { C := {x : TestUId // True}, D := String }) :=
     {
-      inv := λ value => ⟨(hashSum (.inl value) (λ receipt => receipt.1) (λ repr => hash repr), boxPayload (.inl value)), True.intro⟩
+      get := λ receipt =>
+        match unboxPayload receipt.val.2 with
+        | .inl value => value.recarrier (Q := { C := {x : TestUId // True}, D := String })
+            (λ uid => ⟨uid, True.intro⟩) id
+        | .inr _ => unsafeCast ()
+      upcastK := ⟨Subtype.val, by
+        intro a b h
+        exact Subtype.ext h⟩
+      upcastV := ⟨λ value =>
+        .inl (value.recarrier (Q := TestParameters) (λ receipt => receipt.val) id),
+        unsafeCast True.intro⟩
+      equivariance := unsafeCast True.intro
+    }
+  let trm2valExeCtx : KVEquiv trm2valExe.toKVRefs :=
+    {
+      inv := λ value => ⟨(hashSum (.inl (value.recarrier (Q := TestParameters)
+        (λ receipt => receipt.val) id)) (λ receipt => receipt.1) (λ repr => hash repr),
+        boxPayload (.inl (value.recarrier (Q := TestParameters) (λ receipt => receipt.val) id))), True.intro⟩
       rightInv := unsafeCast True.intro
       leftInv := unsafeCast True.intro
     }
-  let trm2typExe : {v : trm2either.Lesser _ // v.upcastV.toFun = Sum.inr} :=
-    ⟨{
-        ev := λ _ => True
-        get := λ receipt =>
-          match unboxPayload receipt.val.2 with
-          | .inr typ => typ
-          | .inl _ => unsafeCast ()
-        upcastV := ⟨Sum.inr, by
-          intro a b h
-          cases h
-          rfl⟩
-        equivariance := unsafeCast True.intro
-      }, rfl⟩
-  let trm2typExeCtx : KVEquiv trm2typExe.val.toKVRefs :=
+  let trm2typExe : trm2either.Lesser TestUId (AST.Typ TestParameters) :=
     {
-      inv := λ typ => ⟨(hashSum (.inr typ) (λ receipt => receipt.1) (λ repr => hash repr), boxPayload (.inr typ)), True.intro⟩
+      get := λ receipt =>
+        match unboxPayload receipt.2 with
+        | .inr typ => typ
+        | .inl _ => unsafeCast ()
+      upcastK := ⟨λ receipt => receipt, by
+        intro a b h
+        exact h⟩
+      upcastV := ⟨Sum.inr, by
+        intro a b h
+        cases h
+        rfl⟩
+      equivariance := unsafeCast True.intro
+    }
+  let trm2typExeCtx : KVEquiv trm2typExe.toKVRefs :=
+    {
+      inv := λ typ =>
+        (hashSum (.inr typ) (λ receipt => receipt.1) (λ repr => hash repr), boxPayload (.inr typ))
       rightInv := unsafeCast True.intro
       leftInv := unsafeCast True.intro
     }
-  { trm2either := trm2either, trm2valExe := trm2valExe, trm2valExeCtx := trm2valExeCtx,
+  { UId := TestUId, trm2either := trm2either, trm2valExe := trm2valExe, trm2valExeCtx := trm2valExeCtx,
     trm2typExe := trm2typExe, trm2typExeCtx := trm2typExeCtx }
 
 /-- The concrete [TestEnv] instance: an opaque fixture indexed by AST hash. -/

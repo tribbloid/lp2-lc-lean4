@@ -55,7 +55,7 @@ end
 mutual
 
 /-
-FIXME:
+TODO:
 very long "recarrier" will muddle the proof.
 
 In theory, it's fine for an AST with more general carrier to contain AST with more specific carrier

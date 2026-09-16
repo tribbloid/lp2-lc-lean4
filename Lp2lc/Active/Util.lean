@@ -52,8 +52,8 @@ def Unit (K) := KVRefs K PUnit
 --FIXME: rewrite the following definition using the new "Schema" contract: due to the uniqueness of upcastV, all the following types only need to depend on V2, not V ↪ V2
 
 /-- Read-only access to a larger carrier, preserving the base receipt mapping. -/
-structure Greater (V2)
-    extends KVRefs K V2 where
+structure Greater (K2 V2) extends KVRefs K V2 where
+  upcastK : Embedding K2 K
   upcastV : Embedding V V2 -- this is not important, but it also means (g1 : base.Greater X) != (g2 : base.Greater X) unless the same expression is used to generate them
   equivariance : ∀ (receipt : K), get receipt = upcastV (this.get receipt)
 
@@ -79,10 +79,10 @@ structure Lesser (K2 V2) extends KVRefs K2 V2 where
 --   upcastV : Embedding V2 V
 --   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = this.get receipt.val
 
--- TODO: rename to "Widen" and "Specify"
+-- FIXME: In KVRefs.Adapter & KVEquiv.Adapter, the following functions should be renamed to "Widen" and "Specify"
 structure Adapter (K2 V2) where
   shrink : this.Lesser K2 V2 -- converting a KVRefs to it's Lesser
-  expand : this.Greater V2 -- converting a KVRefs to it's Greater
+  expand : this.Greater K2 V2 -- converting a KVRefs to it's Greater
 
 end
 end KVRefs
@@ -110,7 +110,7 @@ structure KVEquiv {K V} (base : KVRefs K V) where
 namespace KVEquiv
 section variable {K V} {refs : KVRefs K V}
 
--- TODO: shorten using section variable, no need to be CoeOut
+-- FIXME: shorten using section variable, no need to be CoeOut
 /-- Coerces a full bridge to the read-only view that it completes. -/
 instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
   coe _self := base

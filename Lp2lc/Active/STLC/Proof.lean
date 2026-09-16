@@ -11,7 +11,7 @@ namespace AST
 
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
 theorem termEvalMonotone [refs : HasUId2Any] [env : ExeEnv refs]
-    (trm : Trm refs.Parameters) :
+    (trm : Trm (ExeEnv.Parameters env)) :
     trm.eval.Monotone := by
   intro less more result hFuel hEval
   induction less using Nat.strongRecOn generalizing trm more result with
@@ -50,19 +50,16 @@ theorem termEvalMonotone [refs : HasUId2Any] [env : ExeEnv refs]
                   | none =>
                     simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                   | some input =>
-                    cases hBody : (body.apply (env.uid2valCtx.inv input).val).eval fuel with
+                    cases hBody : (body.apply (env.uid2valCtx.inv input)).eval fuel with
                     | outOfFuel =>
                       simp [AST.eval, hFn, hArg, hBody] at hEval
                     | yield bodyResult =>
                       have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
-                        (body.apply (env.uid2valCtx.inv input).val)
+                        (body.apply (env.uid2valCtx.inv input))
                         toFuel bodyResult hFuelTail hBody
                       simpa [AST.eval, hFn, hArg, hFnTop, hArgTop,
                         hBody, hBodyTop] using hEval
-        | ref receipt =>
-          cases hRef : refs.uid2any.get receipt with
-          | inl value => simpa [AST.eval, hRef] using hEval
-          | inr typ => simpa [AST.eval, hRef] using hEval
+        | ref receipt => simpa [AST.eval] using hEval
 
 end AST
 

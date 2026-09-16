@@ -31,10 +31,10 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
     | .val (.lam body tIn) =>
       let receipt := env.uid2typCtx.inv tIn
-      let result := infer_prove (body.apply receipt.val) fuel
+      let result := infer_prove (body.apply receipt) fuel
       ⟨result.compilation.map
           (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
-        change _ = ((body.apply receipt.val).infer fuel).map (Option.map (AST.fn tIn))
+        change _ = ((body.apply receipt).infer fuel).map (Option.map (AST.fn tIn))
         rw [← result.sameInfer]
         cases result.compilation <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩

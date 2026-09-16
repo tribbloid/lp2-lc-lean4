@@ -42,7 +42,7 @@ abbrev Typ := AST.Typ refs.Parameters
 
 #guard FreeCapture.directRef.infer.shouldYieldsBool 2 .primitive
 
-#guard (AST.ref ((inferInstance : BuildEnv refs).uid2typCtx.inv (.primitive : Typ)).val : Trm).infer.shouldYieldsBool 1 .primitive
+#guard (AST.ref ((inferInstance : BuildEnv refs).uid2typCtx.inv (.primitive : Typ)) : Trm).infer.shouldYieldsBool 1 .primitive
 
 #guard Malformed.applyIdFnOnItself.infer.shouldFailBool 3
 

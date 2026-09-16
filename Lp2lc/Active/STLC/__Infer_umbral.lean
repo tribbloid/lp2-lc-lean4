@@ -6,16 +6,16 @@ open Lp2lc.Active.Util
 
 namespace Umbral
 
-structure TypeWithSafey {refs} [build : BuildEnv refs]
-    (trm : AST.Trm refs.Parameters) where
+structure TypeWithSafey {refs} [build : BuildEnv refs] [exe : ExeEnv refs]
+    (trm : AST.Trm (ExeEnv.Parameters exe)) where
   t2 : AST.Typ refs.Parameters
-  safety : [_exe : ExeEnv refs] -> Safety trm t2
+  safety : Safety trm t2
 
-class ProvingEnv (refs : HasUId2Any) extends BuildEnv refs where
+class ProvingEnv (refs : HasUId2Any) [exe : ExeEnv refs] extends BuildEnv refs where
   --TODO: this impl should be final, move into namespace
-  uid2typWithSafety (trm : AST.Trm refs.Parameters) :
-    refs.uid2any.Lesser (TypeWithSafey trm)
-  uid2typWithSafetyCtx (trm : AST.Trm refs.Parameters) :
+  uid2typWithSafety (trm : AST.Trm (ExeEnv.Parameters exe)) :
+    refs.uid2any.Lesser refs.UId (TypeWithSafey trm)
+  uid2typWithSafetyCtx (trm : AST.Trm (ExeEnv.Parameters exe)) :
     KVEquiv (uid2typWithSafety trm).toKVRefs
 
 namespace ProvingEnv
@@ -39,8 +39,8 @@ TODO: discharge this function.
 - You are allowed to add more context into ProvingEnv namespace to meet proving demand
 -/
 /-- Infers build types for executable terms. -/
-def infer [refs : HasUId2Any] [proving : ProvingEnv refs] [env : ExeEnv refs]
-    (trm : AST.Trm refs.Parameters) :
+def infer [refs : HasUId2Any] [env : ExeEnv refs] [proving : ProvingEnv refs]
+    (trm : AST.Trm (ExeEnv.Parameters env)) :
     RecOpt (TypeWithSafey trm) := sorry
 
 end Umbral

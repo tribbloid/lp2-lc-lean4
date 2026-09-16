@@ -8,9 +8,9 @@ open Lp2lc.Active.Util
 Adds the compile-time typing context; the shared value-or-type view permits
 only lookups, so compile-time code cannot mint receipts from new values.
 -/
-class BuildEnv (refs : HasUId2Any) where
-  uid2typ : refs.uid2any.Lesser (AST.Typ refs.Parameters)
-  uid2typCtx : KVEquiv uid2typ.toKVRefs
+class BuildEnv (refs : HasUId2Any) extends KVRefs.HasEv refs.UId where
+  uid2typ : refs.uid2any.Lesser {x // ev x} (AST.Typ refs.Parameters)
+  uid2typCtx : KVEquiv uid2typ.toKVRefs -- comparing to ExeEnv, it lose the ability to save value but gain the ability to save type
 
 namespace BuildEnv
 section variable {refs : HasUId2Any} (self : BuildEnv refs)
@@ -39,7 +39,7 @@ def infer {refs : HasUId2Any} [env : BuildEnv refs]
       | .lit _ => .yield (some .primitive)
       | .lam body tIn =>
         let receipt := env.uid2typCtx.inv tIn
-        ((body.apply receipt.val).infer fuel).map
+        ((body.apply receipt).infer fuel).map
           (λ out => out.map (λ tOut => .fn tIn tOut))
     | .apply fnTerm arg =>
       let anf := (infer fnTerm fuel, infer arg fuel)
@@ -62,8 +62,10 @@ def CanInhabit {refs : HasUId2Any} [env : BuildEnv refs]
 end AST
 
 def Safety {refs : HasUId2Any} [build : BuildEnv refs] [exe : ExeEnv refs]
-    (trm : AST.Trm refs.Parameters) (t2 : AST.Typ refs.Parameters) : Prop :=
+    (trm : AST.Trm (ExeEnv.Parameters exe)) (t2 : AST.Typ refs.Parameters) : Prop :=
   trm.eval.isSemiDecidable
-    (λ v => v.asTrm.infer.isDecidable (λ t1 => t1 ≤ t2))
+    (λ v =>
+      (AST.Val.asTrm (AST.recarrier (Q := refs.Parameters) v exe.uid2val.upcastK.toFun id)).infer.isDecidable
+        (λ t1 => t1 ≤ t2))
 
 end Lp2lc.Active.STLC
