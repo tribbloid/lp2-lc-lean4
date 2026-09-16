@@ -10,11 +10,6 @@ open Lp2lc.Active.STLC
 /-- Compares two string literals without relying on the reducibility of the fixture's `D`. -/
 def litEq (repr expected : String) : Bool := repr == expected
 
-/- FIXME: this class can have a concrete, opaque implementation, which index each AST by its hash
-
-once the implementation is ready, all the assertion in `TrmSpec` can be replaced by a single line of #guard
--/
-
 /-- Supplies the shared reference view and runtime value context used by STLC tests. -/
 class TestEnv extends HasUId where
   trm2either : KVRefs UId (
@@ -23,7 +18,7 @@ class TestEnv extends HasUId where
   trm2valExe : trm2either.Lesser {_x : UId // True}
     (AST.Val { C := {_x : UId // True}, D := String })
   trm2valExeCtx : KVEquiv trm2valExe.toKVRefs
-  trm2typExe : trm2either.Lesser UId (AST.Typ { C := UId, D := String })
+  trm2typExe : trm2either.Lesser {_x : UId // True} (AST.Typ { C := UId, D := String })
   trm2typExeCtx : KVEquiv trm2typExe.toKVRefs
 
 variable [testEnv : TestEnv]
@@ -33,6 +28,7 @@ variable [testEnv : TestEnv]
 
 /-- Compile-time typing context derived from the fixture's mixed reference view. -/
 instance build : BuildEnv refs where
+  ev := λ _ => True
   uid2typ := testEnv.trm2typExe
   uid2typCtx := testEnv.trm2typExeCtx
 
@@ -107,15 +103,15 @@ unsafe def _testEnvImpl : TestEnv :=
       rightInv := unsafeCast True.intro
       leftInv := unsafeCast True.intro
     }
-  let trm2typExe : trm2either.Lesser TestUId (AST.Typ TestParameters) :=
+  let trm2typExe : trm2either.Lesser {x : TestUId // True} (AST.Typ TestParameters) :=
     {
       get := λ receipt =>
-        match unboxPayload receipt.2 with
+        match unboxPayload receipt.val.2 with
         | .inr typ => typ
         | .inl _ => unsafeCast ()
-      upcastK := ⟨λ receipt => receipt, by
+      upcastK := ⟨Subtype.val, by
         intro a b h
-        exact h⟩
+        exact Subtype.ext h⟩
       upcastV := ⟨Sum.inr, by
         intro a b h
         cases h
@@ -125,7 +121,7 @@ unsafe def _testEnvImpl : TestEnv :=
   let trm2typExeCtx : KVEquiv trm2typExe.toKVRefs :=
     {
       inv := λ typ =>
-        (hashSum (.inr typ) (λ receipt => receipt.1) (λ repr => hash repr), boxPayload (.inr typ))
+        ⟨(hashSum (.inr typ) (λ receipt => receipt.1) (λ repr => hash repr), boxPayload (.inr typ)), True.intro⟩
       rightInv := unsafeCast True.intro
       leftInv := unsafeCast True.intro
     }

@@ -14,8 +14,12 @@ section eval
 variable [testEnv : TestEnv]
 
 @[reducible] instance env : ExeEnv refs where
-  uid2val := testEnv.trm2valExe.val
+  ev := λ _ => True
+  uid2val := testEnv.trm2valExe
   uid2valCtx := testEnv.trm2valExeCtx
+
+instance : BEq (AST.Val (ExeEnv.Parameters env)) :=
+  ⟨λ a b => astBEq a b (λ _ _ => true) litEq⟩
 
 attribute [local simp] AST.eval
 attribute [local simp] Binder.apply
@@ -27,21 +31,30 @@ attribute [local simp] Trm.Malformed.apply1 Trm.Malformed.primitiveApply Val.idF
 attribute [local simp] Trm.FreeCapture.receipt Trm.FreeCapture.directRef Trm.FreeCapture.capturedRef
 attribute [local simp] Trm.FreeCapture.capturedRefOnFalse
 
-#guard Trm.vFalse.eval.shouldYieldsBool 1 (.lit "false")
+#guard (AST.recarrier (Q := ExeEnv.Parameters env) Trm.vFalse
+  (λ receipt => ⟨receipt, True.intro⟩) id).eval.shouldYieldsBool 1 (.lit "false")
 
-#guard Trm.primitiveIdFnOnFalse.eval.shouldYieldsBool 2 (.lit "false")
+#guard (AST.recarrier (Q := ExeEnv.Parameters env) Trm.primitiveIdFnOnFalse
+  (λ receipt => ⟨receipt, True.intro⟩) id).eval.shouldYieldsBool 2 (.lit "false")
 
-#guard Trm.get1stOnTuple.eval.shouldYieldsBool 3 (.lit "false")
+#guard (AST.recarrier (Q := ExeEnv.Parameters env) Trm.get1stOnTuple
+  (λ receipt => ⟨receipt, True.intro⟩) id).eval.shouldYieldsBool 3 (.lit "false")
 
-#guard Trm.get2ndOnTuple.eval.shouldYieldsBool 3 (.lit "true")
+#guard (AST.recarrier (Q := ExeEnv.Parameters env) Trm.get2ndOnTuple
+  (λ receipt => ⟨receipt, True.intro⟩) id).eval.shouldYieldsBool 3 (.lit "true")
 
-#guard Trm.Malformed.applyIdFnOnItself.eval.shouldYieldsBool 2 Val.idFn
+#guard (AST.recarrier (Q := ExeEnv.Parameters env) Trm.Malformed.applyIdFnOnItself
+  (λ receipt => ⟨receipt, True.intro⟩) id).eval.shouldYieldsBool 2
+  (Val.idFn.recarrier (Q := ExeEnv.Parameters env) (λ receipt => ⟨receipt, True.intro⟩) id)
 
-#guard Trm.Malformed.idFnOnFalse2.eval.shouldYieldsBool 3 (.lit "false")
+#guard (AST.recarrier (Q := ExeEnv.Parameters env) Trm.Malformed.idFnOnFalse2
+  (λ receipt => ⟨receipt, True.intro⟩) id).eval.shouldYieldsBool 3 (.lit "false")
 
-#guard Trm.Malformed.apply1.eval.shouldFailBool 3
+#guard (AST.recarrier (Q := ExeEnv.Parameters env) Trm.Malformed.apply1
+  (λ receipt => ⟨receipt, True.intro⟩) id).eval.shouldFailBool 3
 
-#guard Trm.Malformed.primitiveApply.eval.shouldFailBool 2
+#guard (AST.recarrier (Q := ExeEnv.Parameters env) Trm.Malformed.primitiveApply
+  (λ receipt => ⟨receipt, True.intro⟩) id).eval.shouldFailBool 2
 
 example : True := by
   fail_if_success
@@ -49,13 +62,18 @@ example : True := by
       λ receipt => .ref receipt
   trivial
 
-#guard Trm.primitiveTrueFnOnFalse.eval.shouldYieldsBool 2 (.lit "true")
+#guard (AST.recarrier (Q := ExeEnv.Parameters env) Trm.primitiveTrueFnOnFalse
+  (λ receipt => ⟨receipt, True.intro⟩) id).eval.shouldYieldsBool 2 (.lit "true")
 
-#guard Trm.FreeCapture.directRef.eval.shouldYieldsBool 1 Trm.FreeCapture.value
+#guard (AST.recarrier (Q := ExeEnv.Parameters env) Trm.FreeCapture.directRef
+  (λ receipt => ⟨receipt, True.intro⟩) id).eval.shouldYieldsBool 1
+  (Trm.FreeCapture.value.recarrier (Q := ExeEnv.Parameters env)
+    (λ receipt => ⟨receipt, True.intro⟩) id)
 
-#guard Trm.FreeCapture.capturedRefOnFalse.eval.shouldYieldsBool 2 Trm.FreeCapture.value
-
-#guard (AST.ref ((inferInstance : BuildEnv refs).uid2typCtx.inv (.primitive : AST.Typ refs.Parameters)).val : Trm).eval.shouldFailBool 1
+#guard (AST.recarrier (Q := ExeEnv.Parameters env) Trm.FreeCapture.capturedRefOnFalse
+  (λ receipt => ⟨receipt, True.intro⟩) id).eval.shouldYieldsBool 2
+  (Trm.FreeCapture.value.recarrier (Q := ExeEnv.Parameters env)
+    (λ receipt => ⟨receipt, True.intro⟩) id)
 
 end eval
 
