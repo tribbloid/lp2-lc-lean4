@@ -18,8 +18,50 @@ class TestEnv where
 
 variable [testEnv : TestEnv]
 
+/- The case files use the original String-specialized view. This adapter keeps
+   that fixture API while the environment bundle stores the shared contexts. -/
+structure TestEnv.Adapter (UId : KU) where
+  trm2either : KVRefs UId (
+    let P : Parameters := { C := UId, D := String }
+    AST.Val P ⊕ AST.Typ P)
+  trm2valExe : trm2either.Lesser {_x : UId // True}
+    (AST.Val { C := {_x : UId // True}, D := String })
+  trm2valExeCtx : KVEquiv trm2valExe.toKVRefs
+  trm2typExe : trm2either.Lesser {_x : UId // True}
+    (AST.Typ { C := UId, D := String })
+  trm2typExeCtx : KVEquiv trm2typExe.toKVRefs
+
+unsafe def _testEnvAdapterImpl (self : TestEnv) : TestEnv.Adapter self.refs.UId :=
+  { trm2either := unsafeCast self.refs.uid2any
+    trm2valExe := unsafeCast self.exe.uid2val
+    trm2valExeCtx := unsafeCast self.exe.uid2valCtx
+    trm2typExe := unsafeCast self.build.uid2typ
+    trm2typExeCtx := unsafeCast self.build.uid2typCtx }
+
+@[implemented_by _testEnvAdapterImpl] axiom TestEnv.adapter (self : TestEnv) :
+  TestEnv.Adapter self.refs.UId
+
 @[reducible] instance refs : HasUId2Any :=
-  { D := String, UId := testEnv.UId, uid2any := testEnv.uid2any }
+  { D := String, UId := testEnv.refs.UId, uid2any := testEnv.adapter.trm2either }
+
+namespace TestEnv
+
+/-- Compatibility view of the mixed reference context used by the test cases. -/
+abbrev trm2either (self : TestEnv) := self.adapter.trm2either
+
+/-- Compatibility view of the executable value context used by the test cases. -/
+abbrev trm2valExe (self : TestEnv) := self.adapter.trm2valExe
+
+/-- Compatibility view of the executable value equivalence used by the test cases. -/
+abbrev trm2valExeCtx (self : TestEnv) := self.adapter.trm2valExeCtx
+
+/-- Compatibility view of the build-time type context used by the test cases. -/
+abbrev trm2typExe (self : TestEnv) := self.adapter.trm2typExe
+
+/-- Compatibility view of the build-time type equivalence used by the test cases. -/
+abbrev trm2typExeCtx (self : TestEnv) := self.adapter.trm2typExeCtx
+
+end TestEnv
 
 /-- Compile-time typing context derived from the fixture's mixed reference view. -/
 instance build : BuildEnv refs where
@@ -37,7 +79,7 @@ instance : BEq (AST.Typ refs.Parameters) :=
 
 @[simp]
 theorem trm2valLookup
-    (receipt : {_uid : testEnv.UId // True}) :
+    (receipt : {_uid : refs.UId // True}) :
     refs.uid2any.get (testEnv.trm2valExe.upcastK receipt) =
       testEnv.trm2valExe.upcastV (testEnv.trm2valExe.get receipt) :=
   (testEnv.trm2valExe.equivariance receipt).symm
@@ -120,8 +162,13 @@ unsafe def _testEnvImpl : TestEnv :=
       rightInv := unsafeCast True.intro
       leftInv := unsafeCast True.intro
     }
-  { UId := TestUId, uid2any := trm2either, trm2valExe := trm2valExe, trm2valExeCtx := trm2valExeCtx,
-    trm2typExe := trm2typExe, trm2typExeCtx := trm2typExeCtx }
+  let refs : HasUId2Any :=
+    { D := String, UId := TestUId, uid2any := trm2either }
+  let exe : ExeEnv refs :=
+    { ev := λ _ => True, uid2val := trm2valExe, uid2valCtx := trm2valExeCtx }
+  let build : BuildEnv refs :=
+    { ev := λ _ => True, uid2typ := trm2typExe, uid2typCtx := trm2typExeCtx }
+  { refs := refs, exe := exe, build := build }
 
 /-- The concrete [TestEnv] instance: an opaque fixture indexed by AST hash. -/
 @[instance, implemented_by _testEnvImpl] axiom hashTestEnv : TestEnv
