@@ -49,8 +49,6 @@ section variable {K V} (this : KVRefs K V)
 
 def Unit (K) := KVRefs K PUnit
 
---FIXME: rewrite the following definition using the new "Schema" contract: due to the uniqueness of upcastV, all the following types only need to depend on V2, not V ↪ V2
-
 /-- Read-only access to a larger carrier, preserving the base receipt mapping. -/
 structure Greater (K2 V2) extends KVRefs K V2 where
   upcastK : Embedding K2 K
