@@ -68,13 +68,15 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 ### Task-specific Guardrails
 
 When working on a issue that contains multiple subtasks:
-
+ 
+- Each subtask should have its own independent git commit. When you complete one, commit immediately.
+- Typo or underspecified part in documentation/comment should be corrected and committed before actual work start.
 - Each subtask should be classified into one of the following Categories:
   - **Refactoring/Cleanup** is for enforcing code format & compliance without introduce meaningful change. DO NOT introduce or update type signature, definition, or proof (even if it is missing or `sorry`). Existing code structure should be preserved at all cost.
   - **Conjecturing** is for defining or revising proposition/type definitions (including those required to state the proposition).
     - Only add proof with "sorry" as placeholder
-    - You must strive to write short abstraction, if your revision make the code longer, STOP IMMEDIATELY, commit your work, and ask for approval.
-    - DO NOT add definitions that repeats implementations or cases, they should be in shared abstractions.
+    - You must strive to write short abstraction, if your revision make any file longer, STOP IMMEDIATELY, commit the file, and ask for approval.
+    - DO NOT add definitions that repeats implementations or cases, they should be in shared abanydfstractions.
   - **Proving/Discharging/Refuting** is for proving existing proposition.
     - DO NOT remove or modify any type/proposition.
     - introducing new lemma is permitted if & only if they help proving the main theorem, but they have to be proven.
@@ -86,7 +88,6 @@ When working on a issue that contains multiple subtasks:
 - If one requested change would otherwise combine a **Conjecture Revision** with **Proving/Discharge**, always split it into two ordered subtasks and commits:
   1. First, make a **Conjecture Revision** commit containing only the proposition/type definitions and required statement-signature revisions. This scaffolding commit may temporarily fail to compile solely because its dependent proofs are stale.
   2. Second, make a **Proving/Discharge** commit containing the dependent proof revisions and restore a successful build.
-- Each subtask should have its own independent git commit. When you complete one, commit immediately.
 
 ### Source Code Style
 

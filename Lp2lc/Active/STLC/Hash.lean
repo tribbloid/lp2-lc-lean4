@@ -1,5 +1,9 @@
 import «Lp2lc».Active.STLC.STLCDef
 
+/-
+Warning: this is for runtime test, DO NOT use it in any proof!
+-/
+
 namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util

@@ -56,11 +56,11 @@ mutual
 
 /-
 FIXME:
-I don't like very long "recarrier" which muddle the proof.
+very long "recarrier" will muddle the proof.
 
-In theory, it's fine for an AST with more general carrier to contain AST with more specific ccarrier
+In theory, it's fine for an AST with more general carrier to contain AST with more specific carrier
 
-namely: it's fine for `AST P1 x` to contain `AST P2 y` as subnode, if `P2.C <:< P1.C` (both are subtype of Parameters.CB now, so this prior is easy)
+namely: it's fine for `AST P1 x` to contain `AST P2 y` as subnode, if `P2.C <:< P1.C` (with an upcast embedding)
 
 if this is authentically reflected in AST design, both recarrier function can be deleted, and partially-reduced AST can be used in inference directly
 
