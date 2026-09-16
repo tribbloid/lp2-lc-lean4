@@ -192,14 +192,14 @@ end
 end HasUId2Any
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv (refs : HasUId2Any) extends HasEv refs.UId where
+class ExeEnv (refs : HasUId2Any) extends KVRefs.HasEv refs.UId where
   uid2val : refs.uid2any.Lesser {x // ev x} (AST.Val {refs.Parameters with C := {x // ev x}})
   uid2valCtx : KVEquiv uid2val.toKVRefs
 
 namespace ExeEnv
 section variable {refs} (this: ExeEnv refs)
 
-abbrev Parameters : Parameters := {this.refs.Parameters with C := {x // this.ev x}}
+abbrev Parameters : Parameters := {refs.Parameters with C := {x // this.ev x}}
 
 end
 end ExeEnv
@@ -208,7 +208,7 @@ namespace AST
 
 /-- Evaluates executable terms whose references carry receipts from the runtime context. -/
 def eval {refs} [exe : ExeEnv refs]
-    (self : Trm exe.Parameters) : RecOpt (Val exe.Parameters)
+    (self : Trm (ExeEnv.Parameters exe)) : RecOpt (Val (ExeEnv.Parameters exe))
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -218,14 +218,11 @@ def eval {refs} [exe : ExeEnv refs]
       match anf with
       | (.yield (some (.lam body _tIn)), .yield (some arg)) =>
         let receipt := exe.uid2valCtx.inv arg
-        eval (body.apply receipt.val) fuel
+        eval (body.apply receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
-    | .ref receipt =>
-      match exe.uid2any.get receipt with
-      | .inl value => .yield (some value)
-      | .inr _typ => .yield none
+    | .ref receipt => .yield (some (exe.uid2val.get receipt))
 
 end AST
 
