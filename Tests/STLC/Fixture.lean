@@ -11,20 +11,15 @@ open Lp2lc.Active.STLC
 def litEq (repr expected : String) : Bool := repr == expected
 
 /-- Supplies the shared reference view and runtime value context used by STLC tests. -/
-class TestEnv extends HasUId where
-  trm2either : KVRefs UId (
-    let P : Parameters := { C := UId, D := String }
-    AST.Val P ⊕ AST.Typ P)
-  trm2valExe : trm2either.Lesser {_x : UId // True}
-    (AST.Val { C := {_x : UId // True}, D := String })
-  trm2valExeCtx : KVEquiv trm2valExe.toKVRefs
-  trm2typExe : trm2either.Lesser {_x : UId // True} (AST.Typ { C := UId, D := String })
-  trm2typExeCtx : KVEquiv trm2typExe.toKVRefs
+class TestEnv where
+  refs : HasUId2Any
+  exe : ExeEnv refs
+  build : BuildEnv refs
 
 variable [testEnv : TestEnv]
 
 @[reducible] instance refs : HasUId2Any :=
-  { D := String, UId := testEnv.UId, uid2any := testEnv.trm2either }
+  { D := String, UId := testEnv.UId, uid2any := testEnv.uid2any }
 
 /-- Compile-time typing context derived from the fixture's mixed reference view. -/
 instance build : BuildEnv refs where
@@ -125,7 +120,7 @@ unsafe def _testEnvImpl : TestEnv :=
       rightInv := unsafeCast True.intro
       leftInv := unsafeCast True.intro
     }
-  { UId := TestUId, trm2either := trm2either, trm2valExe := trm2valExe, trm2valExeCtx := trm2valExeCtx,
+  { UId := TestUId, uid2any := trm2either, trm2valExe := trm2valExe, trm2valExeCtx := trm2valExeCtx,
     trm2typExe := trm2typExe, trm2typExeCtx := trm2typExeCtx }
 
 /-- The concrete [TestEnv] instance: an opaque fixture indexed by AST hash. -/
