@@ -11,7 +11,7 @@ namespace Trm
 open Tests.STLC.Sanity.Symbolic
 
 section eval
-variable [testEnv : TestEnv] [testEnvString : TestEnv.StringData testEnv]
+variable [testEnv : TestEnv]
 
 /-- Runtime context is the fixture's own executable view; its evidence domain
 decides which receipts may fetch values, so no fake value can be forged. -/

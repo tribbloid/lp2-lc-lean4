@@ -10,7 +10,7 @@ open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
 section infer
-variable [testEnv : TestEnv] [testEnvString : TestEnv.StringData testEnv]
+variable [testEnv : TestEnv]
 
 abbrev Typ := AST.Typ refs.Parameters
 

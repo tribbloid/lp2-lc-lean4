@@ -5,10 +5,10 @@ open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
-variable [testEnv : TestEnv] [testEnvString : TestEnv.StringData testEnv]
+variable [testEnv : TestEnv]
 
 /-- The case files' demo data: the String literals cast into the fixture's data
-carrier through the case files' [TestEnv.StringData] assumption. -/
+carrier through the fixture's own [TestEnv.dEq] field. -/
 def dFalse : refs.Parameters.D := ofRepr "false"
 
 def dTrue : refs.Parameters.D := ofRepr "true"
