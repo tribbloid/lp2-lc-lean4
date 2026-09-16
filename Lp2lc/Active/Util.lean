@@ -109,11 +109,6 @@ structure KVEquiv {K V} (base : KVRefs K V) where
 namespace KVEquiv
 section variable {K V} {refs : KVRefs K V}
 
--- FIXME: shorten using section variable, no need to be CoeOut
-/-- Coerces a full bridge to the read-only view that it completes. -/
-instance {K V} (base : KVRefs K V) : CoeOut (KVEquiv base) (KVRefs K V) where -- TODO: why do I need this?
-  coe _self := base
-
 structure Adapter (this : KVEquiv refs) {K2 V2} (forRefs: refs.Adapter K2 V2) where
   specify :
     let refs2 := forRefs.specify
