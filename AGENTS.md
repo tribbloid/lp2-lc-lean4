@@ -37,11 +37,9 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 - Core proof and calculus modules should move executable checks to `Tests`. Tutorial/demo modules may contain `example`, `#eval`, `#check`, or `#rfl` commands when those commands are the point of the demonstration.
 - All function/constructor arguments must be named at define-site, call-site names are not necessary.
 - Do not repeated pattern-match conditions, they should be as short as possible
-- Field namespace/class (namespace/class supporting an existing type, where functions inside can be invoked with dot-notation) have special rules:
-  - If the namespace contain multiple functions, the namespace should be declared explicitly.
-  - All functions under the namespace/class should be compatible with dot-notation, namely their first argument should be consistent.
-  - All call-site should use dot-notation if possible (including test cases)
-  - Avoid repetitive declaration of namespace unless it is to avoid forward reference in Lean.
+- Multiple functions with the same namespace prefix should be grouped into as few explicit namespace block as possible
+- If multiple functions in a namespace block can be shorten with shared section variable, they sould be
+- If a function call can be shorten with dot-notation, it should be
 
 #### Don't
 
@@ -68,7 +66,7 @@ See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest 
 ### Task-specific Guardrails
 
 When working on a issue that contains multiple subtasks:
- 
+
 - Each subtask should have its own independent git commit. When you complete one, commit immediately.
 - Typo or underspecified part in documentation/comment should be corrected and committed before actual work start.
 - Each subtask should be classified into one of the following Categories:
