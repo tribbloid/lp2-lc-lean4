@@ -5,6 +5,34 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
 mutual
+  /-- Structural equality over [AST], passing the receipt/data comparators down to subterms. -/
+  def astBEq {P : Parameters} {l : Label} (a b : AST P l)
+      (beqC : P.C → P.C → Bool) (beqD : P.D → P.D → Bool) : Bool :=
+    match a, b with
+    | .primitive, .primitive => true
+    | .fn a1 a2, .fn b1 b2 => astBEq a1 b1 beqC beqD && astBEq a2 b2 beqC beqD
+    | .lit a, .lit b => beqD a b
+    | .lam a1 a2, .lam b1 b2 => binderBEq a1 b1 beqC beqD && astBEq a2 b2 beqC beqD
+    | .val a, .val b => astBEq a b beqC beqD
+    | .apply a1 a2, .apply b1 b2 => astBEq a1 b1 beqC beqD && astBEq a2 b2 beqC beqD
+    | .ref a, .ref b => beqC a b
+    | _, _ => false
+
+  /-- Structural equality over [Binder], rebuilding the receipt comparator for the shifted slot. -/
+  def binderBEq {P : Parameters} {l : Label} (a b : Binder P l)
+      (beqC : P.C → P.C → Bool) (beqD : P.D → P.D → Bool) : Bool :=
+    match a, b with
+    | .mk a, .mk b =>
+      astBEq a b
+        (λ x y =>
+          match x, y with
+          | .inl a, .inl b => beqC a b
+          | .inr (), .inr () => true
+          | _, _ => false)
+        beqD
+end
+
+mutual
   /-- Structural hash over [AST], passing the receipt/data hashers down to subterms. -/
   def astHash {P : Parameters} {l : Label} (self : AST P l)
       (hashC : P.C → UInt64) (hashD : P.D → UInt64) : UInt64 :=
