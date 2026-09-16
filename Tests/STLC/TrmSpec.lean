@@ -15,8 +15,8 @@ variable [testEnv : TestEnv]
 
 @[reducible] instance env : ExeEnv refs where
   ev := λ _ => True
-  uid2val := testEnv.trm2valExe
-  uid2valCtx := testEnv.trm2valExeCtx
+  uid2val := testEnv.adapter.trm2valExe
+  uid2valCtx := testEnv.adapter.trm2valExeCtx
 
 instance : BEq (AST.Val (ExeEnv.Parameters env)) :=
   ⟨λ a b => astBEq a b (λ _ _ => true) litEq⟩

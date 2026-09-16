@@ -63,7 +63,7 @@ def value : Val :=
 
 /-- Runtime receipt for [value], minted through the fixture's executable bridge. -/
 def receipt : refs.Parameters.C :=
-  (testEnv.trm2valExeCtx.inv
+  (testEnv.adapter.trm2valExeCtx.inv
     (value.recarrier (Q := {refs.Parameters with C := {_x : refs.Parameters.C // True}})
       (λ receipt => ⟨receipt, True.intro⟩) id)).val
 

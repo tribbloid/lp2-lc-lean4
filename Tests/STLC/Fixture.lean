@@ -44,30 +44,11 @@ unsafe def _testEnvAdapterImpl (self : TestEnv) : TestEnv.Adapter self.refs.UId 
 @[reducible] instance refs : HasUId2Any :=
   { D := String, UId := testEnv.refs.UId, uid2any := testEnv.adapter.trm2either }
 
-namespace TestEnv
-
-/-- Compatibility view of the mixed reference context used by the test cases. -/
-abbrev trm2either (self : TestEnv) := self.adapter.trm2either
-
-/-- Compatibility view of the executable value context used by the test cases. -/
-abbrev trm2valExe (self : TestEnv) := self.adapter.trm2valExe
-
-/-- Compatibility view of the executable value equivalence used by the test cases. -/
-abbrev trm2valExeCtx (self : TestEnv) := self.adapter.trm2valExeCtx
-
-/-- Compatibility view of the build-time type context used by the test cases. -/
-abbrev trm2typExe (self : TestEnv) := self.adapter.trm2typExe
-
-/-- Compatibility view of the build-time type equivalence used by the test cases. -/
-abbrev trm2typExeCtx (self : TestEnv) := self.adapter.trm2typExeCtx
-
-end TestEnv
-
 /-- Compile-time typing context derived from the fixture's mixed reference view. -/
 instance build : BuildEnv refs where
   ev := λ _ => True
-  uid2typ := testEnv.trm2typExe
-  uid2typCtx := testEnv.trm2typExeCtx
+  uid2typ := testEnv.adapter.trm2typExe
+  uid2typCtx := testEnv.adapter.trm2typExeCtx
 
 /-- Structural equality on the fixture's values; opaque receipts are always considered equal. -/
 instance : BEq (AST.Val refs.Parameters) :=
@@ -80,9 +61,9 @@ instance : BEq (AST.Typ refs.Parameters) :=
 @[simp]
 theorem trm2valLookup
     (receipt : {_uid : refs.UId // True}) :
-    refs.uid2any.get (testEnv.trm2valExe.upcastK receipt) =
-      testEnv.trm2valExe.upcastV (testEnv.trm2valExe.get receipt) :=
-  (testEnv.trm2valExe.equivariance receipt).symm
+    refs.uid2any.get (testEnv.adapter.trm2valExe.upcastK receipt) =
+      testEnv.adapter.trm2valExe.upcastV (testEnv.adapter.trm2valExe.get receipt) :=
+  (testEnv.adapter.trm2valExe.equivariance receipt).symm
 
 /- Concrete, opaque [TestEnv] implementation whose receipts are content hashes. -/
 namespace Fixture
