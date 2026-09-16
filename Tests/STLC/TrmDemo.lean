@@ -7,11 +7,11 @@ open Tests.STLC.Sanity.Symbolic
 
 variable [testEnv : TestEnv]
 
-/-- The case files' demo data: the String literals cast into the fixture's data
-carrier through the fixture's own [TestEnv.dEq] field. -/
-def dFalse : refs.Parameters.D := ofRepr "false"
+/-- The case files' demo data: the String literals coerce into the fixture's data
+carrier through the fixture's own [TestEnv.dEq] coercion instance. -/
+def dFalse : refs.Parameters.D := "false"
 
-def dTrue : refs.Parameters.D := ofRepr "true"
+def dTrue : refs.Parameters.D := "true"
 
 namespace Trm
 

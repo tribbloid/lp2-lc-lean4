@@ -48,17 +48,17 @@ variable [testEnv : TestEnv]
 /-- Compile-time typing context is the fixture's own build context. -/
 instance build : BuildEnv refs := testEnv.build
 
-/-- Casts the fixture's data into the case files' String view. -/
-def toRepr (repr : testEnv.refs.D) : String :=
-  testEnv.dEq.rec (motive := λ d _ => d) repr
+/-- Implicit coercion casting the fixture's data into the case files' String view. -/
+instance : CoeTail (testEnv.refs.D) String :=
+  ⟨λ repr => testEnv.dEq.rec (motive := λ d _ => d) repr⟩
 
-/-- Casts the case files' String literals into the fixture's data view. -/
-def ofRepr (repr : String) : testEnv.refs.D :=
-  testEnv.dEq.mpr repr
+/-- Implicit coercion casting the case files' String literals into the fixture's data view. -/
+instance : CoeTail String (testEnv.refs.D) :=
+  ⟨testEnv.dEq.mpr⟩
 
 /-- Compares the fixture's data values through the case files' String view. -/
 def dEqLitEq (a b : testEnv.refs.D) : Bool :=
-  litEq (toRepr a) (toRepr b)
+  litEq a b
 
 /-- Structural equality on the fixture's values; opaque receipts are always considered equal. -/
 instance : BEq (AST.Val refs.Parameters) :=
