@@ -208,7 +208,7 @@ namespace AST
 
 /-- Evaluates executable terms whose references carry receipts from the runtime context. -/
 def eval {refs} [env : ExeEnv refs]
-    (self : Trm refs.Parameters) : RecOpt (Val refs.Parameters)
+    (self : Trm exe.Parameters) : RecOpt (Val exe.Parameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
