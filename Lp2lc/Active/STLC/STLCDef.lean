@@ -146,8 +146,6 @@ end Val
 
 end AST
 
-open AST -- FIXME: get rid of this, all AST should be at the beginning of the file
-
 /-- Current STLC subtyping coincides with structural type equality. -/
 instance typLE : LE (AST.Typ P) := ⟨Eq⟩
 
