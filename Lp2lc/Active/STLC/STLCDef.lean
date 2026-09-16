@@ -55,16 +55,15 @@ end
 mutual
 
 /-
-TODO:
-very long "recarrier" will muddle the proof.
+FIXME: this "recarrier" is very long & unnecessary - proof using it will spend many tactics on trivial conversion.
 
-In theory, it's fine for an AST with more general carrier to contain AST with more specific carrier
+In theory, our AST definition is covariant: it's fine for an AST with more general carrier to contain AST with more specific carrier
 
 namely: it's fine for `AST P1 x` to contain `AST P2 y` as subnode, if `P2.C <:< P1.C` (with an upcast embedding)
 
-if this is authentically reflected in AST design, both recarrier function can be deleted, and partially-reduced AST can be used in inference directly
+If the AST definition is revised to enable this, the argument of AST.eval can be used by AST.infer directly, and "recarrier" will become useless in all tests
 
-This is a conjecture revision task, keep your change local, minimal & don't repeat yourself
+This is mostly a conjectuing task
 -/
   /-- Rebuilds syntax after mapping its reference and data carriers. -/
   @[simp]
