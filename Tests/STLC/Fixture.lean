@@ -10,21 +10,17 @@ open Lp2lc.Active.STLC
 /-- Compares two string literals without relying on the reducibility of the fixture's `D`. -/
 def litEq (repr expected : String) : Bool := repr == expected
 
-/-- Supplies the shared reference view and runtime value context used by STLC tests. -/
+/-- Supplies the shared reference view and runtime value context used by STLC tests.
+
+The case files write String literals, so the fixture environment must carry
+`String` as its data carrier. Stated as an explicit field instead of a
+hidden runtime cast, so no receipt can forge a payload of a foreign data type.
+-/
 class TestEnv where
   refs : HasUId2Any
   exe : ExeEnv refs
   build : BuildEnv refs
-
-variable [testEnv : TestEnv]
-
-/--
-The case files write String literals, so the fixture environment must carry
-`String` as its data carrier. Stated as an explicit assumption instead of a
-hidden runtime cast, so no receipt can forge a payload of a foreign data type.
--/
-class TestEnv.StringData (env : TestEnv) where
-  dEq : env.refs.D = _root_.String
+  dEq : refs.D = _root_.String
 
 /- The case files keep the original view names. Each view now aliases the
    environment bundle's own honest component, so no receipt outside a
@@ -44,21 +40,21 @@ abbrev TestEnv.trm2typExe (self : TestEnv) := self.build.uid2typ
 /-- Compatibility view of the build-time type equivalence used by the test cases. -/
 abbrev TestEnv.trm2typExeCtx (self : TestEnv) := self.build.uid2typCtx
 
+variable [testEnv : TestEnv]
+
 /-- The case files' shared reference view is the fixture's own mixed view. -/
 @[reducible] instance refs : HasUId2Any := testEnv.refs
 
 /-- Compile-time typing context is the fixture's own build context. -/
 instance build : BuildEnv refs := testEnv.build
 
-variable [testEnvString : TestEnv.StringData testEnv]
-
 /-- Casts the fixture's data into the case files' String view. -/
 def toRepr (repr : testEnv.refs.D) : String :=
-  testEnvString.dEq.rec (motive := λ d _ => d) repr
+  testEnv.dEq.rec (motive := λ d _ => d) repr
 
 /-- Casts the case files' String literals into the fixture's data view. -/
 def ofRepr (repr : String) : testEnv.refs.D :=
-  testEnvString.dEq.mpr repr
+  testEnv.dEq.mpr repr
 
 /-- Compares the fixture's data values through the case files' String view. -/
 def dEqLitEq (a b : testEnv.refs.D) : Bool :=
@@ -72,7 +68,6 @@ instance : BEq (AST.Val refs.Parameters) :=
 instance : BEq (AST.Typ refs.Parameters) :=
   ⟨λ a b => astBEq a b (λ _ _ => true) dEqLitEq⟩
 
-omit testEnvString in
 @[simp]
 theorem trm2valLookup
     (receipt : {_uid : refs.UId // testEnv.exe.ev _uid}) :
@@ -164,17 +159,10 @@ unsafe def _testEnvImpl : TestEnv :=
     { ev := λ _ => True, uid2val := trm2valExe, uid2valCtx := trm2valExeCtx }
   let build : BuildEnv refs :=
     { ev := λ _ => True, uid2typ := trm2typExe, uid2typCtx := trm2typExeCtx }
-  { refs := refs, exe := exe, build := build }
+  { refs := refs, exe := exe, build := build, dEq := rfl }
 
 /-- The concrete [TestEnv] instance: an opaque fixture indexed by AST hash. -/
 @[instance, implemented_by _testEnvImpl] axiom hashTestEnv : TestEnv
-
-/--
-The concrete fixture fixes `D := String` in its implementation. Assumed
-explicitly here so the case files can use [TestEnv.StringData] with it; the
-assumption is proposition-only and erased at runtime.
--/
-@[instance] axiom hashTestEnv.dString : TestEnv.StringData hashTestEnv
 
 end Fixture
 
