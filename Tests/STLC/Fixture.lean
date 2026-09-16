@@ -18,52 +18,67 @@ class TestEnv where
 
 variable [testEnv : TestEnv]
 
-/- The case files use the original String-specialized view. This adapter keeps
-   that fixture API while the environment bundle stores the shared contexts. -/
-structure TestEnv.Adapter (UId : KU) where
-  trm2either : KVRefs UId (
-    let P : Parameters := { C := UId, D := String }
-    AST.Val P ⊕ AST.Typ P)
-  trm2valExe : trm2either.Lesser {_x : UId // True}
-    (AST.Val { C := {_x : UId // True}, D := String })
-  trm2valExeCtx : KVEquiv trm2valExe.toKVRefs
-  trm2typExe : trm2either.Lesser {_x : UId // True}
-    (AST.Typ { C := UId, D := String })
-  trm2typExeCtx : KVEquiv trm2typExe.toKVRefs
+/--
+The case files write String literals, so the fixture environment must carry
+`String` as its data carrier. Stated as an explicit assumption instead of a
+hidden runtime cast, so no receipt can forge a payload of a foreign data type.
+-/
+class TestEnv.StringData (env : TestEnv) where
+  dEq : env.refs.D = _root_.String
 
-unsafe def _testEnvAdapterImpl (self : TestEnv) : TestEnv.Adapter self.refs.UId :=
-  { trm2either := unsafeCast self.refs.uid2any
-    trm2valExe := unsafeCast self.exe.uid2val
-    trm2valExeCtx := unsafeCast self.exe.uid2valCtx
-    trm2typExe := unsafeCast self.build.uid2typ
-    trm2typExeCtx := unsafeCast self.build.uid2typCtx }
+/- The case files keep the original view names. Each view now aliases the
+   environment bundle's own honest component, so no receipt outside a
+   context's own evidence domain can be forged. -/
+/-- Compatibility view of the shared mixed reference context used by the test cases. -/
+abbrev TestEnv.trm2either (self : TestEnv) := self.refs.uid2any
 
-@[implemented_by _testEnvAdapterImpl] axiom TestEnv.adapter (self : TestEnv) :
-  TestEnv.Adapter self.refs.UId
+/-- Compatibility view of the executable value context used by the test cases. -/
+abbrev TestEnv.trm2valExe (self : TestEnv) := self.exe.uid2val
 
-@[reducible] instance refs : HasUId2Any :=
-  { D := String, UId := testEnv.refs.UId, uid2any := testEnv.adapter.trm2either }
+/-- Compatibility view of the executable value equivalence used by the test cases. -/
+abbrev TestEnv.trm2valExeCtx (self : TestEnv) := self.exe.uid2valCtx
+
+/-- Compatibility view of the build-time type context used by the test cases. -/
+abbrev TestEnv.trm2typExe (self : TestEnv) := self.build.uid2typ
+
+/-- Compatibility view of the build-time type equivalence used by the test cases. -/
+abbrev TestEnv.trm2typExeCtx (self : TestEnv) := self.build.uid2typCtx
+
+/-- The case files' shared reference view is the fixture's own mixed view. -/
+@[reducible] instance refs : HasUId2Any := testEnv.refs
 
 /-- Compile-time typing context derived from the fixture's mixed reference view. -/
-instance build : BuildEnv refs where
-  ev := λ _ => True
-  uid2typ := testEnv.adapter.trm2typExe
-  uid2typCtx := testEnv.adapter.trm2typExeCtx
+instance build : BuildEnv refs := testEnv.build
+
+variable [testEnvString : TestEnv.StringData testEnv]
+
+/-- Casts the fixture's data into the case files' String view. -/
+def toRepr (repr : testEnv.refs.D) : String :=
+  testEnvString.dEq.rec (motive := λ d _ => d) repr
+
+/-- Casts the case files' String literals into the fixture's data view. -/
+def ofRepr (repr : String) : testEnv.refs.D :=
+  Eq.mpr testEnvString.dEq repr
+
+/-- Compares the fixture's data values through the case files' String view. -/
+def dEqLitEq (a b : testEnv.refs.D) : Bool :=
+  litEq (toRepr a) (toRepr b)
 
 /-- Structural equality on the fixture's values; opaque receipts are always considered equal. -/
 instance : BEq (AST.Val refs.Parameters) :=
-  ⟨λ a b => astBEq a b (λ _ _ => true) litEq⟩
+  ⟨λ a b => astBEq a b (λ _ _ => true) dEqLitEq⟩
 
 /-- Structural equality on the fixture's types. -/
 instance : BEq (AST.Typ refs.Parameters) :=
-  ⟨λ a b => astBEq a b (λ _ _ => true) litEq⟩
+  ⟨λ a b => astBEq a b (λ _ _ => true) dEqLitEq⟩
 
+omit testEnvString in
 @[simp]
 theorem trm2valLookup
-    (receipt : {_uid : refs.UId // True}) :
-    refs.uid2any.get (testEnv.adapter.trm2valExe.upcastK receipt) =
-      testEnv.adapter.trm2valExe.upcastV (testEnv.adapter.trm2valExe.get receipt) :=
-  (testEnv.adapter.trm2valExe.equivariance receipt).symm
+    (receipt : {_uid : refs.UId // testEnv.exe.ev _uid}) :
+    refs.uid2any.get (testEnv.trm2valExe.upcastK receipt) =
+      testEnv.trm2valExe.upcastV (testEnv.trm2valExe.get receipt) :=
+  (testEnv.trm2valExe.equivariance receipt).symm
 
 /- Concrete, opaque [TestEnv] implementation whose receipts are content hashes. -/
 namespace Fixture
@@ -153,6 +168,13 @@ unsafe def _testEnvImpl : TestEnv :=
 
 /-- The concrete [TestEnv] instance: an opaque fixture indexed by AST hash. -/
 @[instance, implemented_by _testEnvImpl] axiom hashTestEnv : TestEnv
+
+/--
+The concrete fixture fixes `D := String` in its implementation. Assumed
+explicitly here so the case files can use [TestEnv.StringData] with it; the
+assumption is proposition-only and erased at runtime.
+-/
+@[instance] axiom hashTestEnv.dString : TestEnv.StringData hashTestEnv
 
 end Fixture
 
