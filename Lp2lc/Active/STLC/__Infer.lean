@@ -8,8 +8,8 @@ open Lp2lc.Active.Util
 Adds the compile-time typing context; the shared value-or-type view permits
 only lookups, so compile-time code cannot mint receipts from new values.
 -/
-class BuildEnv (refs : HasUId2Any) extends KVRefs.HasEv refs.UId where
-  uid2typ : refs.uid2any.Lesser {x // ev x} (AST.Typ refs.Parameters)
+class BuildEnv (refs : HasUId2Any) where
+  uid2typ : refs.uid2any.Lesser refs.UId (AST.Typ refs.Parameters)
   uid2typCtx : KVEquiv uid2typ.toKVRefs -- comparing to ExeEnv, it lose the ability to save value but gain the ability to save type
 
 namespace BuildEnv

@@ -189,8 +189,8 @@ end
 end HasUId2Any
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv (refs : HasUId2Any) extends KVRefs.HasEv refs.UId where
-  uid2val : refs.uid2any.Lesser {x // ev x} (AST.Val {refs.Parameters with C := {x // ev x}})
+class ExeEnv (refs : HasUId2Any)  where
+  uid2val : refs.uid2any.Lesser refs.UId (AST.Val refs.Parameters)
   uid2valCtx : KVEquiv uid2val.toKVRefs
 
 namespace ExeEnv
