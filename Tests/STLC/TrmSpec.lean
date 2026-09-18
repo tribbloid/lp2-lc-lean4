@@ -18,7 +18,7 @@ mints receipts only from executable values. -/
 @[reducible] instance env : ExeEnv refs := testEnv.exe
 
 instance : BEq (AST.Val refs.Parameters) :=
-  ⟨λ a b => astBEq a b (λ _ _ => true) dEqLitEq⟩
+  ⟨λ a b => astBEq a b (λ _ => .null) (λ repr => litSig repr)⟩
 
 attribute [local simp] AST.eval
 attribute [local simp] Binder.apply
