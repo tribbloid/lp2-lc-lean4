@@ -15,9 +15,8 @@ namespace Symbolic
 
 variable [testEnv : TestEnv]
 
-/-- The case files' symbolic parameters: the fixture's runtime carrier with
-`String` data, so case terms are evaluable directly by the runtime view. -/
-abbrev I : Parameters := testEnv.exe.Parameters
+/-- The case files' symbolic parameters shared by runtime and compile time. -/
+abbrev I : Parameters := refs.Parameters
 
 abbrev Typ := AST.Typ I
 abbrev Val := AST.Val I

@@ -68,11 +68,9 @@ end AST
 
 /-- A successfully inferred type makes the executable term safe at that type. -/
 theorem fundamental {refs} [build : BuildEnv refs] [exe : ExeEnv refs]
-    (trm : AST.Trm (ExeEnv.Parameters exe)) (fuel : Nat)
+    (trm : AST.Trm refs.Parameters) (fuel : Nat)
     (typ : AST.Typ refs.Parameters)
-    (hInfer :
-      (AST.recarrier (Q := refs.Parameters) trm exe.uid2val.upcastK.toFun id).infer fuel =
-        .yield (some typ)) :
+    (hInfer : trm.infer fuel = .yield (some typ)) :
     Safety trm typ := sorry
 
 /--
@@ -81,8 +79,8 @@ if compiled a term and succeeded, the term must be safe
 TODO: this is the "Paranoid Fundamental theorem": compilation may fail even but term evaluation may succeed
 -/
 theorem paranoidFundamental {refs} [build : BuildEnv refs] [exe : ExeEnv refs]
-    (trm : AST.Trm (ExeEnv.Parameters exe)) :
-    (AST.recarrier (Q := refs.Parameters) trm exe.uid2val.upcastK.toFun id).infer.ifSucceedMustSatisfy (
+    (trm : AST.Trm refs.Parameters) :
+    trm.infer.ifSucceedMustSatisfy (
     λ t1 =>
       Safety trm t1
   ) := sorry

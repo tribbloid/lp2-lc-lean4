@@ -13,11 +13,11 @@ open Tests.STLC.Sanity.Symbolic
 section eval
 variable [testEnv : TestEnv]
 
-/-- Runtime context is the fixture's own executable view; its evidence domain
-decides which receipts may fetch values, so no fake value can be forged. -/
+/-- Runtime context is the fixture's own executable view, whose equivalence
+mints receipts only from executable values. -/
 @[reducible] instance env : ExeEnv refs := testEnv.exe
 
-instance : BEq (AST.Val env.Parameters) :=
+instance : BEq (AST.Val refs.Parameters) :=
   ⟨λ a b => astBEq a b (λ _ _ => true) dEqLitEq⟩
 
 attribute [local simp] AST.eval

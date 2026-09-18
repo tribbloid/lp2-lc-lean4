@@ -62,10 +62,10 @@ def CanInhabit {refs : HasUId2Any} [env : BuildEnv refs]
 end AST
 
 def Safety {refs : HasUId2Any} [build : BuildEnv refs] [exe : ExeEnv refs]
-    (trm : AST.Trm (ExeEnv.Parameters exe)) (t2 : AST.Typ refs.Parameters) : Prop :=
+    (trm : AST.Trm refs.Parameters) (t2 : AST.Typ refs.Parameters) : Prop :=
   trm.eval.isSemiDecidable
     (λ v =>
-      (AST.Val.asTrm (AST.recarrier (Q := refs.Parameters) v exe.uid2val.upcastK.toFun id)).infer.isDecidable
+      v.asTrm.infer.isDecidable
         (λ t1 => t1 ≤ t2))
 
 end Lp2lc.Active.STLC

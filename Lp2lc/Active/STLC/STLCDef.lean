@@ -166,10 +166,10 @@ end
 Shares one receipt carrier between executable values and build-time types.
 
 The underlying view stores a tagged value-or-type payload. Runtime and build
-contexts refine that view independently through [KVEquiv.Lesser]. The subtype
-proof certifies which payload is available, while [Binder] distinguishes bound
-slots structurally so lambda construction cannot inspect phase-specific minted
-receipts.
+contexts expose independently typed [KVRefs.Lesser] views over the same receipt
+carrier. Their equivalences mint receipts only from the matching payload, while
+[Binder] distinguishes bound slots structurally so lambda construction cannot
+inspect phase-specific minted receipts.
 -/
 
 class HasUId2Any extends HasData, HasUId where
@@ -189,23 +189,15 @@ end
 end HasUId2Any
 
 /-- Owns the runtime receipt bridge for executable STLC values. -/
-class ExeEnv (refs : HasUId2Any)  where
+class ExeEnv (refs : HasUId2Any) where
   uid2val : refs.uid2any.Lesser refs.UId (AST.Val refs.Parameters)
   uid2valCtx : KVEquiv uid2val.toKVRefs
-
-namespace ExeEnv
-section variable {refs} (this: ExeEnv refs)
-
-abbrev Parameters : Parameters := {refs.Parameters with C := {x // this.ev x}}
-
-end
-end ExeEnv
 
 namespace AST
 
 /-- Evaluates executable terms whose references carry receipts from the runtime context. -/
 def eval {refs} [exe : ExeEnv refs]
-    (self : Trm (ExeEnv.Parameters exe)) : RecOpt (Val (ExeEnv.Parameters exe))
+    (self : Trm refs.Parameters) : RecOpt (Val refs.Parameters)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
