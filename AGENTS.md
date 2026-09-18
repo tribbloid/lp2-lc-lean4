@@ -72,13 +72,15 @@ When working on a issue that contains multiple subtasks:
 - Each subtask should be classified into one of the following Categories:
   - **Refactoring/Cleanup** is for enforcing code format & compliance without introduce meaningful change. DO NOT introduce or update type signature, definition, or proof (even if it is missing or `sorry`). Existing code structure should be preserved at all cost.
   - **Conjecturing** is for defining or revising proposition/type definitions (including those required to state the proposition).
-    - Only add proof with "sorry" as placeholder
+    - Only add proof with "sorry" as placeholder.
     - You must strive to write short abstraction, if your revision make any file longer, STOP IMMEDIATELY, commit the file, and ask for approval.
     - DO NOT add definitions that repeats implementations or cases, they should be in shared abanydfstractions.
   - **Proving/Discharging/Refuting** is for proving existing proposition.
     - DO NOT remove or modify any type/proposition.
-    - introducing new lemma is permitted if & only if they help proving the main theorem, but they have to be proven.
-    - If a lemma or theorem is false/refutable, it should be recorded in DEFECTS.md with a counterexample in Tests directory.
+    - introducing new lemma is permitted if & only if they help proving the main theorem.
+    - before proving, launch subagent(s) to try to refute the theorem by writing a refutation in Tests directory & explain it in DEFECTS.md:
+      - that the set of axioms is inconsistent & can be used to construct `False.`
+      - that the theorem has a counterexample.
     - In the end, no new `sorry` should be introduced.
   - **Example/Demo/Test/Benchmark** is for writing example & test case for existing definition in the Tests directory.
     - DO NOT write or update production code (unless it is a demo allowed by the Guardrails above).
