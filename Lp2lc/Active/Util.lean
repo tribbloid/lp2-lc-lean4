@@ -13,8 +13,8 @@ infixr:25 " ↪ " => Embedding -- stolen from Mathlib
 instance {α : Sort u} {β : Sort v} : CoeFun (α ↪ β) (λ _ => α → β) where
   coe self := self.toFun
 
-abbrev KU := Type -- the `U` suffix signifies this symbol as denoting a universe level
-abbrev DataU := Type
+abbrev UCarrier := Type -- the `U` suffix signifies this symbol as denoting a universe level
+abbrev UData := Type
 
 -- universe u v TODO: can remove
 
@@ -39,7 +39,7 @@ Receipt-indexed bridge between values and PHOAS carriers. Read-only.
 The value family is indexed by this bridge's evidence so recursive PHOAS
 carriers can retain the receipt required by `get`.
 -/
-structure KVRefs (K : KU) (V : Sort u) where
+structure KVRefs (K : UCarrier) (V : Sort u) where
   get : K → V
 
 
@@ -55,7 +55,7 @@ structure Greater (K2 V2) extends KVRefs K V2 where
   upcastV : Embedding V V2 -- this is not important, but it also means (g1 : base.Greater X) != (g2 : base.Greater X) unless the same expression is used to generate them
   equivariance : ∀ (receipt : K), get receipt = upcastV (this.get receipt)
 
-structure HasEv (K : KU) where
+structure HasEv (K : UCarrier) where
   ev : K → Prop -- a subtype of UId with extra contract
 
 namespace HasEv
@@ -85,7 +85,7 @@ end
 end KVRefs
 
 structure HasUId where --> SharedUID
-  UId : KU
+  UId : UCarrier
 
 -- /--
 -- Unlike [KVRefs], the key type `UId` is not shared with any other value type, so `get` cannot be abused to non-existing value.
@@ -127,7 +127,7 @@ Owns the data representation `D`, the binary data type of primitive literals.
 The only way to construct `D` is to parse a primitive literal in AST.
 -/
 structure HasData where
-  D : DataU -- Binary Data type
+  D : UData -- Binary Data type
 
 /--
 The syntax parameters, including the shared carrier used for free references.
@@ -138,7 +138,7 @@ It is deliberately left abstract to ward off unlawful construction:
 - the only way to construct `D` is to parse a primitive literal in AST
 -/
 structure Parameters extends HasData where
-  C : KU -- shared carrier/receipt
+  C : UCarrier -- shared carrier/receipt
   -- /--
   -- AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
   -- AST of more specific domain can be used to constract AST of more general domain.
