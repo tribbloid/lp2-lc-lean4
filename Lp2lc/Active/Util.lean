@@ -18,11 +18,6 @@ abbrev UByteCode := Type
 
 -- universe u v TODO: can remove
 
-inductive Label
-| typ
-| trm
-| val
-
 
 -- /--
 -- contract that relates `KVRefs` to its Lesser/Greater versions
