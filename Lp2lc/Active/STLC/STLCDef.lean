@@ -43,12 +43,12 @@ The body stores first-order syntax whose newest reference is represented by
 the right summand. Evaluation and inference replace that slot with their own
 minted receipt, so lambda construction cannot inspect those receipts.
 -/
-| lam (body : Binder P .trm)
-    (tIn : AST P .typ) : AST P .val -- most specific type is always `.fn tIn _`
+| lam (tIn : AST P .typ) (body : Binder P .trm)
+     : AST P .val -- most specific type is always `.fn tIn _`
 
 /-- First-order syntax with one distinguished newest reference slot. -/
 inductive Binder : Parameters → Label → Type 2 where
-| mk (body : AST { P with C := P.C ⊕ Unit } l) : Binder P l
+| mk (body :  P.C ->AST { P with C := P.C ⊕ Unit } l) : Binder P l
 
 end
 
