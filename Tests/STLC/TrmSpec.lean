@@ -30,17 +30,17 @@ attribute [local simp] Trm.Malformed.apply1 Trm.Malformed.primitiveApply Val.idF
 attribute [local simp] Trm.FreeCapture.receipt Trm.FreeCapture.directRef Trm.FreeCapture.capturedRef
 attribute [local simp] Trm.FreeCapture.capturedRefOnFalse
 
-#guard Trm.vFalse.eval.shouldYieldsBool 1 (.lit dFalse)
+#guard Trm.vFalse.eval.shouldYieldsBool 1 (.lit bFalse)
 
-#guard Trm.primitiveIdFnOnFalse.eval.shouldYieldsBool 2 (.lit dFalse)
+#guard Trm.primitiveIdFnOnFalse.eval.shouldYieldsBool 2 (.lit bFalse)
 
-#guard Trm.get1stOnTuple.eval.shouldYieldsBool 3 (.lit dFalse)
+#guard Trm.get1stOnTuple.eval.shouldYieldsBool 3 (.lit bFalse)
 
-#guard Trm.get2ndOnTuple.eval.shouldYieldsBool 3 (.lit dTrue)
+#guard Trm.get2ndOnTuple.eval.shouldYieldsBool 3 (.lit bTrue)
 
 #guard Trm.Malformed.applyIdFnOnItself.eval.shouldYieldsBool 2 Val.idFn
 
-#guard Trm.Malformed.idFnOnFalse2.eval.shouldYieldsBool 3 (.lit dFalse)
+#guard Trm.Malformed.idFnOnFalse2.eval.shouldYieldsBool 3 (.lit bFalse)
 
 #guard Trm.Malformed.apply1.eval.shouldFailBool 3
 
@@ -52,7 +52,7 @@ example : True := by
       λ receipt => .ref receipt
   trivial
 
-#guard Trm.primitiveTrueFnOnFalse.eval.shouldYieldsBool 2 (.lit dTrue)
+#guard Trm.primitiveTrueFnOnFalse.eval.shouldYieldsBool 2 (.lit bTrue)
 
 #guard Trm.FreeCapture.directRef.eval.shouldYieldsBool 1 Trm.FreeCapture.value
 

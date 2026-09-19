@@ -7,19 +7,19 @@ open Tests.STLC.Sanity.Symbolic
 
 variable [testEnv : TestEnv]
 
-/-- The case files' demo data: the String literals coerce into the fixture's data
-carrier through the fixture's own [TestEnv.dEq] coercion instance. -/
-def dFalse : refs.Parameters.D := "false"
+/-- The case files' demo data: the String literals coerce into the fixture's bytecode
+carrier through the fixture's own [TestEnv.bEq] coercion instance. -/
+def bFalse : refs.Parameters.B := "false"
 
-def dTrue : refs.Parameters.D := "true"
+def bTrue : refs.Parameters.B := "true"
 
 namespace Trm
 
 def vFalse : Trm :=
-  .val (.lit dFalse)
+  .val (.lit bFalse)
 
 def vTrue : Trm :=
-  .val (.lit dTrue)
+  .val (.lit bTrue)
 
 def primitiveIdFn : Trm :=
   .val (.lam (.mk (.ref (.inr ()))) .primitive)
@@ -56,7 +56,7 @@ def get2ndOnTuple : Trm :=
 def primitiveTrueFn : Trm :=
   .val
     (.lam
-      (.mk (.val (.lit dTrue)))
+      (.mk (.val (.lit bTrue)))
       .primitive)
 
 def primitiveTrueFnOnFalse : Trm :=
@@ -65,7 +65,7 @@ def primitiveTrueFnOnFalse : Trm :=
 namespace FreeCapture
 
 def value : Val :=
-  .lit dFalse
+  .lit bFalse
 
 /-- Runtime receipt for [value], minted through the fixture's executable bridge. -/
 def receipt : I.C :=
@@ -86,7 +86,7 @@ end FreeCapture
 namespace TypeHinted
 
 def hintedFalse : Trm :=
-  .val (.lit dFalse)
+  .val (.lit bFalse)
 
 def hintedIdFn : Trm :=
   .val (.lam (.mk (.ref (.inr ()))) .primitive)

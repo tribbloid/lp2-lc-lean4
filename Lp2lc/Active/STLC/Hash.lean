@@ -13,27 +13,27 @@ open Lp2lc.Active.Util
 mutual
   /--
   Canonical JSON signature of an [AST]: a single tree traversal that both
-  structural equality and hashing delegate to. The receipt/data carriers are
+  structural equality and hashing delegate to. The receipt/bytecode carriers are
   injected through caller-supplied signature functions, so wildcard or
   content-based comparators are expressed by their canonical image.
   -/
   def astToJson {P : Parameters} {l : Label} (self : AST P l)
-      (sigC : P.C → Json) (sigD : P.D → Json) : Json :=
+      (sigC : P.C → Json) (sigB : P.B → Json) : Json :=
     match self with
     | .primitive => "primitive"
     | .fn tIn tOut =>
-      .arr #["fn", astToJson tIn sigC sigD, astToJson tOut sigC sigD]
-    | .lit repr => .arr #["lit", sigD repr]
+      .arr #["fn", astToJson tIn sigC sigB, astToJson tOut sigC sigB]
+    | .lit repr => .arr #["lit", sigB repr]
     | .lam body tIn =>
-      .arr #["lam", binderToJson body sigC sigD, astToJson tIn sigC sigD]
-    | .val v => .arr #["val", astToJson v sigC sigD]
+      .arr #["lam", binderToJson body sigC sigB, astToJson tIn sigC sigB]
+    | .val v => .arr #["val", astToJson v sigC sigB]
     | .apply fnTerm arg =>
-      .arr #["apply", astToJson fnTerm sigC sigD, astToJson arg sigC sigD]
+      .arr #["apply", astToJson fnTerm sigC sigB, astToJson arg sigC sigB]
     | .ref receipt => .arr #["ref", sigC receipt]
 
   /-- Canonical JSON signature of a [Binder], extending the receipt signature with the bound slot. -/
   def binderToJson {P : Parameters} {l : Label} (self : Binder P l)
-      (sigC : P.C → Json) (sigD : P.D → Json) : Json :=
+      (sigC : P.C → Json) (sigB : P.B → Json) : Json :=
     match self with
     | .mk body =>
       astToJson body
@@ -41,24 +41,24 @@ mutual
           match receipt with
           | .inl outer => sigC outer
           | .inr () => "bound")
-        sigD
+        sigB
 end
 
 /-- Structural equality over [AST], delegated to the canonical JSON signature. -/
 def astBEq {P : Parameters} {l : Label} (a b : AST P l)
-    (sigC : P.C → Json) (sigD : P.D → Json) : Bool :=
-  astToJson a sigC sigD == astToJson b sigC sigD
+    (sigC : P.C → Json) (sigB : P.B → Json) : Bool :=
+  astToJson a sigC sigB == astToJson b sigC sigB
 
 /-- Structural hash over [AST], delegated to the canonical JSON signature. -/
 def astHash {P : Parameters} {l : Label} (self : AST P l)
-    (sigC : P.C → Json) (sigD : P.D → Json) : UInt64 :=
-  hash (astToJson self sigC sigD)
+    (sigC : P.C → Json) (sigB : P.B → Json) : UInt64 :=
+  hash (astToJson self sigC sigB)
 
 /-- Content hash of the mixed value-or-type payload carried by an indexed AST. -/
 def hashSum {P : Parameters} (payload : AST.Val P ⊕ AST.Typ P)
-    (sigC : P.C → Json) (sigD : P.D → Json) : UInt64 :=
+    (sigC : P.C → Json) (sigB : P.B → Json) : UInt64 :=
   match payload with
-  | .inl v => astHash v sigC sigD
-  | .inr t => astHash t sigC sigD
+  | .inl v => astHash v sigC sigB
+  | .inr t => astHash t sigC sigB
 
 end Lp2lc.Active.STLC

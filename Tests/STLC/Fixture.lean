@@ -11,14 +11,14 @@ open Lp2lc.Active.STLC
 /-- Supplies the shared reference view and runtime value context used by STLC tests.
 
 The case files write String literals, so the fixture environment must carry
-`String` as its data carrier. Stated as an explicit field instead of a
-hidden runtime cast, so no receipt can forge a payload of a foreign data type.
+`String` as its bytecode carrier. Stated as an explicit field instead of a
+hidden runtime cast, so no receipt can forge a payload of a foreign bytecode type.
 -/
 class TestEnv where
   refs : HasUId2Any
   exe : ExeEnv refs
   build : BuildEnv refs
-  dEq : refs.D = _root_.String
+  bEq : refs.B = _root_.String
 
 /- The case files keep the original view names. Each view now aliases the
    environment bundle's own honest component, so receipts can be minted only
@@ -46,15 +46,15 @@ variable [testEnv : TestEnv]
 /-- Compile-time typing context is the fixture's own build context. -/
 instance build : BuildEnv refs := testEnv.build
 
-/-- Implicit coercion casting the fixture's data into the case files' String view. -/
-instance : CoeTail (testEnv.refs.D) String :=
-  ⟨λ repr => testEnv.dEq.rec (motive := λ d _ => d) repr⟩
+/-- Implicit coercion casting the fixture's bytecode into the case files' String view. -/
+instance : CoeTail (testEnv.refs.B) String :=
+  ⟨λ repr => testEnv.bEq.rec (motive := λ d _ => d) repr⟩
 
-/-- Implicit coercion casting the case files' String literals into the fixture's data view. -/
-instance : CoeTail String (testEnv.refs.D) :=
-  ⟨testEnv.dEq.mpr⟩
+/-- Implicit coercion casting the case files' String literals into the fixture's bytecode view. -/
+instance : CoeTail String (testEnv.refs.B) :=
+  ⟨testEnv.bEq.mpr⟩
 
-/-- Signs a string literal without relying on the reducibility of the fixture's `D`. -/
+/-- Signs a string literal without relying on the reducibility of the fixture's `B`. -/
 def litSig (repr : String) : Lean.Json := toJson repr
 
 /-- Structural equality on the fixture's values; opaque receipts are always considered equal. -/
@@ -87,7 +87,7 @@ hash losslessly recoverable without relying on mutable storage.
 abbrev TestUId := TestHash × Unit
 
 /-- The fixed STLC parameters shared by the concrete fixture. -/
-abbrev TestParameters : Parameters := { C := TestUId, D := String }
+abbrev TestParameters : Parameters := { C := TestUId, B := String }
 
 /-- Boxes a `Type 2` payload into a `Type` value so it can be stored in a receipt. -/
 unsafe def boxPayload (payload : AST.Val TestParameters ⊕ AST.Typ TestParameters) : Unit :=
@@ -147,12 +147,12 @@ unsafe def _testEnvImpl : TestEnv :=
       leftInv := unsafeCast True.intro
     }
   let refs : HasUId2Any :=
-    { D := String, UId := TestUId, uid2any := trm2either }
+    { B := String, UId := TestUId, uid2any := trm2either }
   let exe : ExeEnv refs :=
     { uid2val := trm2valExe, uid2valCtx := trm2valExeCtx }
   let build : BuildEnv refs :=
     { uid2typ := trm2typExe, uid2typCtx := trm2typExeCtx }
-  { refs := refs, exe := exe, build := build, dEq := rfl }
+  { refs := refs, exe := exe, build := build, bEq := rfl }
 
 /-- The concrete [TestEnv] instance: an opaque fixture indexed by AST hash. -/
 @[instance, implemented_by _testEnvImpl] axiom hashTestEnv : TestEnv

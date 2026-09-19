@@ -35,7 +35,7 @@ used by function application after both sides have been evaluated.
 
 Function values carry their input type so the compiler can type-check structural bodies.
 -/
-| lit (repr : P.D) : AST P .val -- most specific type is always `primitive`
+| lit (repr : P.B) : AST P .val -- most specific type is always `primitive`
 /--
 Binds one fresh structural reference after the outer [P.C] carrier.
 
@@ -65,26 +65,26 @@ If the AST definition is revised to enable this, the argument of AST.eval can be
 
 This is mostly a conjectuing task
 -/
-  /-- Rebuilds syntax after mapping its reference and data carriers. -/
+  /-- Rebuilds syntax after mapping its reference and bytecode carriers. -/
   @[simp]
   def AST.recarrier {P Q : Parameters} {l : Label} (self : AST P l)
-      (mapC : P.C → Q.C) (mapD : P.D → Q.D) : AST Q l :=
+      (mapC : P.C → Q.C) (mapB : P.B → Q.B) : AST Q l :=
     match self with
     | .primitive => .primitive
     | .fn tIn tOut =>
-      .fn (tIn.recarrier mapC mapD) (tOut.recarrier mapC mapD)
-    | .val value => .val (value.recarrier mapC mapD)
+      .fn (tIn.recarrier mapC mapB) (tOut.recarrier mapC mapB)
+    | .val value => .val (value.recarrier mapC mapB)
     | .apply fnTerm arg =>
-      .apply (fnTerm.recarrier mapC mapD) (arg.recarrier mapC mapD)
+      .apply (fnTerm.recarrier mapC mapB) (arg.recarrier mapC mapB)
     | .ref receipt => .ref (mapC receipt)
-    | .lit repr => .lit (mapD repr)
+    | .lit repr => .lit (mapB repr)
     | .lam body tIn =>
-      .lam (body.recarrier mapC mapD) (tIn.recarrier mapC mapD)
+      .lam (body.recarrier mapC mapB) (tIn.recarrier mapC mapB)
 
   /-- Maps the outer carriers of a binder while preserving its newest slot. -/
   @[simp]
   def Binder.recarrier {P Q : Parameters} {l : Label} (self : Binder P l)
-      (mapC : P.C → Q.C) (mapD : P.D → Q.D) : Binder Q l :=
+      (mapC : P.C → Q.C) (mapB : P.B → Q.B) : Binder Q l :=
     match self with
     | .mk body =>
       .mk (body.recarrier
@@ -92,7 +92,7 @@ This is mostly a conjectuing task
           match receipt with
           | .inl outer => .inl (mapC outer)
           | .inr () => .inr ())
-        mapD)
+        mapB)
 
 end
 
@@ -172,9 +172,9 @@ carrier. Their equivalences mint receipts only from the matching payload, while
 inspect phase-specific minted receipts.
 -/
 
-class HasUId2Any extends HasData, HasUId where
+class HasUId2Any extends HasByteCode, HasUId where
   uid2any : KVRefs UId (
-    let P : Parameters := { C := UId, D := D }
+    let P : Parameters := { C := UId, B := B }
 
     AST.Val P ⊕ AST.Typ P
   )
@@ -183,7 +183,7 @@ namespace HasUId2Any
 section variable (this : HasUId2Any)
 
 /-- The shared syntax parameters are fixed by the mixed receipt view. -/
-abbrev Parameters : Parameters := { C := this.UId, D := this.D }
+abbrev Parameters : Parameters := { C := this.UId, B := this.B }
 
 end
 end HasUId2Any

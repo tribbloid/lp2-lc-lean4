@@ -14,7 +14,7 @@ instance {α : Sort u} {β : Sort v} : CoeFun (α ↪ β) (λ _ => α → β) wh
   coe self := self.toFun
 
 abbrev UCarrier := Type -- the `U` suffix signifies this symbol as denoting a universe level
-abbrev UData := Type
+abbrev UByteCode := Type
 
 -- universe u v TODO: can remove
 
@@ -30,7 +30,7 @@ inductive Label
 -- they must all use the same Key type, and given any 2 value types, the upcast function must be globally unique
 -- -/
 -- structure Schema where
---   K : KU
+--   K : UCarrier
 --   upcastV (V1 : Sort u) (V2 : Sort v) : Embedding V1 V2
 
 /--
@@ -92,7 +92,7 @@ structure HasUId where --> SharedUID
 
 -- type `V_` is deliberately a type constructor of `V`, without it V may be impossible to define due to cyclic references
 -- -/
--- structure UIdRefs (V_ : KU → Sort u) extends HasUId, KVRefs UId (V_ UId)
+-- structure UIdRefs (V_ : UCarrier → Sort u) extends HasUId, KVRefs UId (V_ UId)
 
 /--
 Full receipt-indexed bridge, extending [KVRefs] with the reverse direction.
@@ -122,12 +122,12 @@ end KVEquiv
 attribute [simp] KVEquiv.rightInv KVEquiv.leftInv
 
 /--
-Owns the data representation `D`, the binary data type of primitive literals.
+Owns the bytecode representation `B`, the binary data type of primitive literals.
 
-The only way to construct `D` is to parse a primitive literal in AST.
+The only way to construct `B` is to parse a primitive literal in AST.
 -/
-structure HasData where
-  D : UData -- Binary Data type
+structure HasByteCode where
+  B : UByteCode -- Binary Data type
 
 /--
 The syntax parameters, including the shared carrier used for free references.
@@ -135,9 +135,9 @@ The syntax parameters, including the shared carrier used for free references.
 It is deliberately left abstract to ward off unlawful construction:
 
 - certified `C` receipts are obtained only through the runtime or build [KVEquiv.Lesser]
-- the only way to construct `D` is to parse a primitive literal in AST
+- the only way to construct `B` is to parse a primitive literal in AST
 -/
-structure Parameters extends HasData where
+structure Parameters extends HasByteCode where
   C : UCarrier -- shared carrier/receipt
   -- /--
   -- AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
