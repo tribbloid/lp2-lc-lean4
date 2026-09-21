@@ -134,6 +134,8 @@ It is deliberately left abstract to ward off unlawful construction:
 -/
 structure Parameters extends HasByteCode where
   C : UCarrier -- shared carrier/receipt
+  inc : C -> C
+  -- union: C -> C -> C
   -- /--
   -- AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
   -- AST of more specific domain can be used to constract AST of more general domain.
@@ -143,6 +145,9 @@ structure Parameters extends HasByteCode where
 
 namespace Parameters
 section variable (Self : Parameters)
+
+inductive Proxy : Self.C -> Type where
+| mk {C : Self.C} : Proxy C
 
 end
 end Parameters
