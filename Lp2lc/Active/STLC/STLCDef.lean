@@ -9,19 +9,19 @@ mutual
 
 /-- Source type syntax.
 
-`primitive` classifies primitive bytecode values and `fn` classifies functions.
+`TLit` classifies primitive bytecode values and `TFn` classifies functions.
 -/
 inductive AST : Parameters → Label → Type 2 where
-| primitive : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
-| fn (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
+| TLit : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
+| TFn (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
 
 | val (v : AST P .val) : AST P .trm -- AKA literal
 | apply (fn : AST P .trm) (arg : AST P .trm) : AST P .trm -- fn must be a function that can be applied on arg
 | ref (receipt : P.C) : AST P .trm -- reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
 
-| lit (repr : P.B) : AST P .val -- most specific type is always `primitive`
-| lam (tIn : AST P .typ) (body : Binder P .trm)
-     : AST P .val -- most specific type is always `.fn tIn _`
+| lit (repr : P.B) : AST P .val -- most specific type is always `TLit`
+| fn (body : Binder P .trm) (tIn : AST P .typ)
+     : AST P .val -- most specific type is always `.TFn tIn _`
 
 /-- First-order syntax with one distinguished newest reference slot. -/
 inductive Binder : Parameters → Label → Type 2 where
@@ -47,16 +47,16 @@ This is mostly a conjectuing task
   def AST.recarrier {P Q : Parameters} {l : Label} (self : AST P l)
       (mapC : P.C → Q.C) (mapB : P.B → Q.B) : AST Q l :=
     match self with
-    | .primitive => .primitive
-    | .fn tIn tOut =>
-      .fn (tIn.recarrier mapC mapB) (tOut.recarrier mapC mapB)
+    | .TLit => .TLit
+    | .TFn tIn tOut =>
+      .TFn (tIn.recarrier mapC mapB) (tOut.recarrier mapC mapB)
     | .val value => .val (value.recarrier mapC mapB)
     | .apply fnTerm arg =>
       .apply (fnTerm.recarrier mapC mapB) (arg.recarrier mapC mapB)
     | .ref receipt => .ref (mapC receipt)
     | .lit repr => .lit (mapB repr)
-    | .lam tIn body =>
-      .lam (tIn.recarrier mapC mapB) (body.recarrier mapC mapB)
+    | .fn body tIn =>
+      .fn (body.recarrier mapC mapB) (tIn.recarrier mapC mapB)
 
   /-- Maps the outer carriers of a binder while preserving its newest slot. -/
   @[simp]
@@ -128,14 +128,14 @@ instance typLE : LE (AST.Typ P) := ⟨Eq⟩
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
 instance typDecidableLE : DecidableLE (AST.Typ P)
-  | .primitive, .primitive => isTrue rfl
-  | .primitive, .fn _ _
-  | .fn _ _, .primitive => isFalse (λ equality => nomatch equality)
-  | .fn leftIn leftOut, .fn rightIn rightOut =>
+  | .TLit, .TLit => isTrue rfl
+  | .TLit, .TFn _ _
+  | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
+  | .TFn leftIn leftOut, .TFn rightIn rightOut =>
     match typDecidableLE leftIn rightIn, typDecidableLE leftOut rightOut with
     | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
-    | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.fn.inj equality).1)
-    | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.fn.inj equality).2)
+    | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.TFn.inj equality).1)
+    | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.TFn.inj equality).2)
 
 end
 
@@ -182,7 +182,7 @@ def eval {refs} [exe : ExeEnv refs]
     | .apply fnTerm arg =>
       let anf := (eval fnTerm fuel, eval arg fuel)
       match anf with
-      | (.yield (some (.lam _tIn body)), .yield (some arg)) =>
+      | (.yield (some (fn body _tIn)), .yield (some arg)) =>
         let receipt := exe.uid2valCtx.inv arg
         eval (body.apply receipt) fuel
       | (.outOfFuel, _) => .outOfFuel

@@ -45,7 +45,7 @@ theorem termEvalMonotone [refs : HasUId2Any] [env : ExeEnv refs]
                 cases fnValue with
                 | lit repr =>
                   simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
-                | lam tIn body =>
+                | fn body tIn =>
                   cases argResult with
                   | none =>
                     simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval

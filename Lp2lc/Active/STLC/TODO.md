@@ -24,7 +24,7 @@ The vulnerability of forging Val from Typ UId is thwarted not by using different
 
 ## Certified AST
 
-Update: `AST.lam` now stores first-order `Binder` syntax with a distinguished
+Update: `AST.fn` now stores first-order `Binder` syntax with a distinguished
 newest slot. This makes receipt-inspecting lambda bodies unrepresentable;
 `AST.recarrier` is retained as the structural operation used by binder
 specialization. The tradeoff notes below describe the earlier PHOAS encoding.
@@ -33,8 +33,8 @@ PHOAS definition have many contradicting traits that makes it difficult to be us
 
 - idiomatic form is always invariant: "recarrier" is impossible
 - contravariant form (where .ref is flexible) => AST {TrmOrTyp} <:< AST {Trm} is absurd: AST.ref {TrmOrTyp} can't reify to value
-- covariant form (where .lam is flexible) => AST {Trm} <:< AST {TrmOrTyp} works but demand parametricity of AST.lam body
-  - this parametricity is built-in if AST.lam body is generated from expression with de Bruijn variable, this again make "recarrier" & proof very long, negating all advantages
+- covariant form (where .fn is flexible) => AST {Trm} <:< AST {TrmOrTyp} works but demand parametricity of AST.fn body
+  - this parametricity is built-in if AST.fn body is generated from expression with de Bruijn variable, this again make "recarrier" & proof very long, negating all advantages
 
 ## Verdicts
 

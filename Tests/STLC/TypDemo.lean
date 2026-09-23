@@ -9,16 +9,16 @@ variable [testEnv : TestEnv]
 namespace Typ
 
 def tFalse : Typ :=
-  .primitive
+  .TLit
 
 def idFn : Typ :=
-  .fn .primitive .primitive
+  .TFn .TLit .TLit
 
 def get1st : Typ :=
-  .fn .primitive (.fn .primitive .primitive)
+  .TFn .TLit (.TFn .TLit .TLit)
 
 def apply1stOn2ndFn : Typ :=
-  .fn (.fn .primitive .primitive) (.fn .primitive .primitive)
+  .TFn (.TFn .TLit .TLit) (.TFn .TLit .TLit)
 
 end Typ
 

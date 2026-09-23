@@ -33,7 +33,7 @@ Requirements for the replacement:
 /--
 bundle of an AST and its associated KVRefs, in which every captured free variable can be found
 
-reducing an AST binder (e.g. AST.lam body) requires a new `KVEquiv`, which can be either:
+reducing an AST binder (e.g. AST.fn body tIn) requires a new `KVEquiv`, which can be either:
 - of the same domain (`KVEquiv refs`)
 - OR, of an expanded domain (with `adaptKVEquiv`): this expand the `KVEquiv` to be compatible with a supertype of `V` while keep all existing equivalence between old `V` and `P.C`
 
@@ -81,7 +81,7 @@ structure SrcBundle (S : Sandbox) (V : Type) (label: Label) where
 -- def ast {label} {kvRefs : KVRefs P.C V} : (self : Src_ P label kvRefs) → AST P label
 --   | .void ast => ast
 --   | .closed _ast_ _kvRefs => _ast_ P
---   | .expansion tIn arg body _upcast _kvRefs2 => .apply (.val (.lam body tIn)) arg.ast
+--   | .expansion tIn arg body _upcast _kvRefs2 => .apply (.val (.fn body tIn)) arg.ast
 
 -- end Src_
 

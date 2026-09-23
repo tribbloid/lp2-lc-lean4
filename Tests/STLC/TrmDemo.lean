@@ -22,18 +22,26 @@ def vTrue : Trm :=
   .val (.lit bTrue)
 
 def primitiveIdFn : Trm :=
-  .val (.lam .primitive (.mk (.ref (.inr ()))))
+  .val (.fn (.mk (.ref (.inr ()))) .TLit)
 
 def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
 
 def get1st : Trm :=
-  .val (.lam .primitive (.mk (.val (.lam .primitive
-    (.mk (.ref (.inl (.inr ()))))))))
+  .val
+    (.fn
+      (.mk
+        (.val
+          (.fn (.mk (.ref (.inl (.inr ())))) .TLit)))
+      .TLit)
 
 def get2nd : Trm :=
-  .val (.lam .primitive (.mk (.val (.lam .primitive
-    (.mk (.ref (.inr ())))))))
+  .val
+    (.fn
+      (.mk
+        (.val
+          (.fn (.mk (.ref (.inr ()))) .TLit)))
+      .TLit)
 
 def get1stOnTuple : Trm :=
   .apply
@@ -47,8 +55,7 @@ def get2ndOnTuple : Trm :=
 
 def primitiveTrueFn : Trm :=
   .val
-    (.lam .primitive
-      (.mk (.val (.lit bTrue))))
+    (.fn (.mk (.val (.lit bTrue))) .TLit)
 
 def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn vFalse
@@ -67,7 +74,7 @@ def directRef : Trm :=
 
 def capturedRef : Trm :=
   .val
-    (.lam .primitive (.mk (.ref (.inl receipt))))
+    (.fn (.mk (.ref (.inl receipt))) .TLit)
 
 def capturedRefOnFalse : Trm :=
   .apply capturedRef vFalse
@@ -80,7 +87,7 @@ def hintedFalse : Trm :=
   .val (.lit bFalse)
 
 def hintedIdFn : Trm :=
-  .val (.lam .primitive (.mk (.ref (.inr ()))))
+  .val (.fn (.mk (.ref (.inr ()))) .TLit)
 
 def hintedIdFnOnFalse : Trm :=
   .apply hintedIdFn hintedFalse

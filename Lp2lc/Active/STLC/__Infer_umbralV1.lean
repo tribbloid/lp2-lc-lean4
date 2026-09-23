@@ -28,13 +28,13 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
   | 0 => ⟨.outOfFuel, rfl⟩
   | fuel + 1 =>
     match trm with
-    | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
-    | .val (.lam tIn body) =>
+    | .val (.lit _) => ⟨.yield (some ⟨.TLit⟩), rfl⟩
+    | .val (fn body tIn) =>
       let receipt := env.uid2typCtx.inv tIn
       let result := infer_prove (body.apply receipt) fuel
       ⟨result.compilation.map
-          (Option.map (λ safety => ⟨.fn tIn safety.typ⟩)), by
-        change _ = ((body.apply receipt).infer fuel).map (Option.map (AST.fn tIn))
+          (Option.map (λ safety => ⟨.TFn tIn safety.typ⟩)), by
+        change _ = ((body.apply receipt).infer fuel).map (Option.map (AST.TFn tIn))
         rw [← result.sameInfer]
         cases result.compilation <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
@@ -44,7 +44,7 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
       let applyResult (fnType argType : Rec.Outcome (Option (AST.Typ refs.Parameters))) :
           Rec.Outcome (Option (AST.Typ refs.Parameters)) :=
         match fnType, argType with
-        | .yield (some (.fn tIn tOut)), .yield (some argTyp) =>
+        | .yield (some (.TFn tIn tOut)), .yield (some argTyp) =>
           if argTyp ≤ tIn then .yield (some tOut) else .yield none
         | .outOfFuel, _ => .outOfFuel
         | _, .outOfFuel => .outOfFuel
@@ -97,11 +97,11 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
             simp [Rec.Outcome.map, Function.comp_def]⟩
       | inr typ =>
         cases typ with
-        | primitive =>
-          exact ⟨.yield (some ⟨.primitive⟩), by
+        | TLit =>
+          exact ⟨.yield (some ⟨.TLit⟩), by
             simp [AST.infer, h, Rec.Outcome.map]⟩
-        | fn tIn tOut =>
-          exact ⟨.yield (some ⟨.fn tIn tOut⟩), by
+        | TFn tIn tOut =>
+          exact ⟨.yield (some ⟨.TFn tIn tOut⟩), by
             simp [AST.infer, h, Rec.Outcome.map]⟩
 
 end

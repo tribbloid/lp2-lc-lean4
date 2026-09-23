@@ -14,35 +14,35 @@ variable [testEnv : TestEnv]
 
 abbrev Typ := AST.Typ refs.Parameters
 
-#guard vFalse.infer.shouldYieldsBool 1 .primitive
+#guard vFalse.infer.shouldYieldsBool 1 .TLit
 
-#guard vTrue.infer.shouldYieldsBool 1 .primitive
+#guard vTrue.infer.shouldYieldsBool 1 .TLit
 
-#guard primitiveIdFn.infer.shouldYieldsBool 2 (.fn .primitive .primitive)
+#guard primitiveIdFn.infer.shouldYieldsBool 2 (.TFn .TLit .TLit)
 
-#guard primitiveIdFnOnFalse.infer.shouldYieldsBool 3 .primitive
+#guard primitiveIdFnOnFalse.infer.shouldYieldsBool 3 .TLit
 
-#guard get1st.infer.shouldYieldsBool 3 (.fn .primitive (.fn .primitive .primitive))
+#guard get1st.infer.shouldYieldsBool 3 (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard get2nd.infer.shouldYieldsBool 3 (.fn .primitive (.fn .primitive .primitive))
+#guard get2nd.infer.shouldYieldsBool 3 (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard get1stOnTuple.infer.shouldYieldsBool 5 .primitive
+#guard get1stOnTuple.infer.shouldYieldsBool 5 .TLit
 
-#guard get2ndOnTuple.infer.shouldYieldsBool 5 .primitive
+#guard get2ndOnTuple.infer.shouldYieldsBool 5 .TLit
 
-#guard primitiveTrueFn.infer.shouldYieldsBool 2 (.fn .primitive .primitive)
+#guard primitiveTrueFn.infer.shouldYieldsBool 2 (.TFn .TLit .TLit)
 
-#guard primitiveTrueFnOnFalse.infer.shouldYieldsBool 3 .primitive
+#guard primitiveTrueFnOnFalse.infer.shouldYieldsBool 3 .TLit
 
-#guard TypeHinted.hintedFalse.infer.shouldYieldsBool 1 .primitive
+#guard TypeHinted.hintedFalse.infer.shouldYieldsBool 1 .TLit
 
-#guard TypeHinted.hintedIdFn.infer.shouldYieldsBool 2 (.fn .primitive .primitive)
+#guard TypeHinted.hintedIdFn.infer.shouldYieldsBool 2 (.TFn .TLit .TLit)
 
-#guard TypeHinted.hintedIdFnOnFalse.infer.shouldYieldsBool 3 .primitive
+#guard TypeHinted.hintedIdFnOnFalse.infer.shouldYieldsBool 3 .TLit
 
-#guard FreeCapture.directRef.infer.shouldYieldsBool 2 .primitive
+#guard FreeCapture.directRef.infer.shouldYieldsBool 2 .TLit
 
-#guard (AST.ref ((inferInstance : BuildEnv refs).uid2typCtx.inv (.primitive : Typ)) : AST.Trm refs.Parameters).infer.shouldYieldsBool 1 .primitive
+#guard (AST.ref ((inferInstance : BuildEnv refs).uid2typCtx.inv (.TLit : Typ)) : AST.Trm refs.Parameters).infer.shouldYieldsBool 1 .TLit
 
 #guard Malformed.applyIdFnOnItself.infer.shouldFailBool 3
 

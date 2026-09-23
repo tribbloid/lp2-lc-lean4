@@ -20,11 +20,11 @@ mutual
   def astToJson {P : Parameters} {l : Label} (self : AST P l)
       (sigC : P.C → Json) (sigB : P.B → Json) : Json :=
     match self with
-    | .primitive => "primitive"
-    | .fn tIn tOut =>
+    | .TLit => "primitive"
+    | .TFn tIn tOut =>
       .arr #["fn", astToJson tIn sigC sigB, astToJson tOut sigC sigB]
     | .lit repr => .arr #["lit", sigB repr]
-    | .lam tIn body =>
+    | .fn body tIn =>
       .arr #["lam", binderToJson body sigC sigB, astToJson tIn sigC sigB]
     | .val v => .arr #["val", astToJson v sigC sigB]
     | .apply fnTerm arg =>

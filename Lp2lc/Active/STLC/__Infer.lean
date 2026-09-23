@@ -36,15 +36,15 @@ def infer {refs : HasUId2Any} [env : BuildEnv refs]
     match self with
     | .val value =>
       match value with
-      | .lit _ => .yield (some .primitive)
-      | .lam tIn body =>
+      | .lit _ => .yield (some .TLit)
+      | .fn body tIn =>
         let receipt := env.uid2typCtx.inv tIn
         ((body.apply receipt).infer fuel).map
-          (λ out => out.map (λ tOut => .fn tIn tOut))
+          (λ out => out.map (λ tOut => .TFn tIn tOut))
     | .apply fnTerm arg =>
       let anf := (infer fnTerm fuel, infer arg fuel)
       match anf with
-      | (.yield (some (.fn tIn tOut)), .yield (some argTyp)) =>
+      | (.yield (some (.TFn tIn tOut)), .yield (some argTyp)) =>
         if argTyp ≤ tIn then .yield (some tOut) else .yield none
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
