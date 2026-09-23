@@ -14,35 +14,12 @@ mutual
 inductive AST : Parameters → Label → Type 2 where
 | primitive : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
 | fn (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
-/--
-Source term syntax.
 
-Primitive value terms are self-typed, while function values carry their input
-type. Applications and references are unannotated.
-
-In HOAS there is no syntax-level context binding terms to types, so function
-input annotations are the extrinsic typing evidence available to the compiler.
-They are not intrinsic typing indices on terms.
--/
 | val (v : AST P .val) : AST P .trm -- AKA literal
 | apply (fn : AST P .trm) (arg : AST P .trm) : AST P .trm -- fn must be a function that can be applied on arg
 | ref (receipt : P.C) : AST P .trm -- reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
-/--
-Value syntax, containing neither references nor applications.
 
-Values are the successful result of evaluation and the atomic argument form
-used by function application after both sides have been evaluated.
-
-Function values carry their input type so the compiler can type-check structural bodies.
--/
 | lit (repr : P.B) : AST P .val -- most specific type is always `primitive`
-/--
-Binds one fresh structural reference after the outer [P.C] carrier.
-
-The body stores first-order syntax whose newest reference is represented by
-the right summand. Evaluation and inference replace that slot with their own
-minted receipt, so lambda construction cannot inspect those receipts.
--/
 | lam (tIn : AST P .typ) (body : Binder P .trm)
      : AST P .val -- most specific type is always `.fn tIn _`
 
