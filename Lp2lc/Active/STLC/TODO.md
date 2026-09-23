@@ -24,10 +24,8 @@ The vulnerability of forging Val from Typ UId is thwarted not by using different
 
 ## Certified AST
 
-Update: `AST.fn` now stores first-order `Binder` syntax with a distinguished
-newest slot. This makes receipt-inspecting lambda bodies unrepresentable;
-`AST.recarrier` is retained as the structural operation used by binder
-specialization. The tradeoff notes below describe the earlier PHOAS encoding.
+Update: `AST.fn` stores a host-language function over the reference carrier.
+The tradeoff notes below describe earlier binder representations.
 
 PHOAS definition have many contradicting traits that makes it difficult to be used in proof:
 

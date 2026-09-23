@@ -3,7 +3,8 @@
         "**/target/**": true
     },
     "search.exclude": {
-        "original/": true
+        "original/": true,
+        ".agent/.obsolete/": true
     },
     "java.compile.nullAnalysis.mode": "automatic"
 }

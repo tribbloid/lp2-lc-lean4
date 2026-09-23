@@ -7,70 +7,28 @@ open Lp2lc.Active.Util
 
 mutual
 
+/-- Function-valued syntax for one lambda body over the reference carrier. -/
+inductive Binder : Parameters → Label → Type 2 where
+| mk (body : P.C -> AST P l) : Binder P l -- with built-in domain expansion?
+
+
 /-- Source type syntax.
 
 `TLit` classifies primitive bytecode values and `TFn` classifies functions.
 -/
 inductive AST : Parameters → Label → Type 2 where
+/- Values are successful evaluation results and atomic application arguments. -/
 | TLit : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
+| lit (repr : P.B) : AST P .val -- most specific type is always `primitive`
+
+/- Function bodies receive the reference value supplied when the function runs. -/
 | TFn (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
+| fn (tIn : AST P .typ) (body : Binder P .trm) : AST P .val -- most specific type is always `.fn tIn _`
+/-- Terms contain values, applications, or references. -/
 
 | val (v : AST P .val) : AST P .trm -- AKA literal
 | apply (fn : AST P .trm) (arg : AST P .trm) : AST P .trm -- fn must be a function that can be applied on arg
 | ref (receipt : P.C) : AST P .trm -- reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
-
-| lit (repr : P.B) : AST P .val -- most specific type is always `TLit`
-| fn (body : Binder P .trm) (tIn : AST P .typ)
-     : AST P .val -- most specific type is always `.TFn tIn _`
-
-/-- First-order syntax with one distinguished newest reference slot. -/
-inductive Binder : Parameters → Label → Type 2 where
-| mk (body : AST { P with C := P.C ⊕ Unit } l) : Binder P l
-
-end
-
-mutual
-
-/-
-FIXME: this "recarrier" is very long & unnecessary - proof using it will spend many tactics on trivial conversion.
-
-In theory, our AST definition is covariant: it's fine for an AST with more general carrier to contain AST with more specific carrier
-
-namely: it's fine for `AST P1 x` to contain `AST P2 y` as subnode, if `P2.C <:< P1.C` (with an upcast embedding)
-
-If the AST definition is revised to enable this, the argument of AST.eval can be used by AST.infer directly, and "recarrier" will become useless in all tests
-
-This is mostly a conjectuing task
--/
-  /-- Rebuilds syntax after mapping its reference and bytecode carriers. -/
-  @[simp]
-  def AST.recarrier {P Q : Parameters} {l : Label} (self : AST P l)
-      (mapC : P.C → Q.C) (mapB : P.B → Q.B) : AST Q l :=
-    match self with
-    | .TLit => .TLit
-    | .TFn tIn tOut =>
-      .TFn (tIn.recarrier mapC mapB) (tOut.recarrier mapC mapB)
-    | .val value => .val (value.recarrier mapC mapB)
-    | .apply fnTerm arg =>
-      .apply (fnTerm.recarrier mapC mapB) (arg.recarrier mapC mapB)
-    | .ref receipt => .ref (mapC receipt)
-    | .lit repr => .lit (mapB repr)
-    | .fn body tIn =>
-      .fn (body.recarrier mapC mapB) (tIn.recarrier mapC mapB)
-
-  /-- Maps the outer carriers of a binder while preserving its newest slot. -/
-  @[simp]
-  def Binder.recarrier {P Q : Parameters} {l : Label} (self : Binder P l)
-      (mapC : P.C → Q.C) (mapB : P.B → Q.B) : Binder Q l :=
-    match self with
-    | .mk body =>
-      .mk (body.recarrier
-        (λ receipt =>
-          match receipt with
-          | .inl outer => .inl (mapC outer)
-          | .inr () => .inr ())
-        mapB)
-
 end
 
 namespace Binder
@@ -81,12 +39,7 @@ def apply {P : Parameters} {l : Label}
     (self : Binder P l) (arg : P.C) : AST P l :=
   match self with
   | .mk body =>
-    body.recarrier
-      (λ receipt =>
-        match receipt with
-        | .inl outer => outer
-        | .inr () => arg)
-      id
+    body arg
 
 end Binder
 
@@ -182,7 +135,7 @@ def eval {refs} [exe : ExeEnv refs]
     | .apply fnTerm arg =>
       let anf := (eval fnTerm fuel, eval arg fuel)
       match anf with
-      | (.yield (some (fn body _tIn)), .yield (some arg)) =>
+      | (.yield (some (fn _tIn body)), .yield (some arg)) =>
         let receipt := exe.uid2valCtx.inv arg
         eval (body.apply receipt) fuel
       | (.outOfFuel, _) => .outOfFuel
