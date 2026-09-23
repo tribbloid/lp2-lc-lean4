@@ -27,7 +27,7 @@ theorem termInferMonotone [refs : HasUId2Any] [env : BuildEnv refs]
         | val value =>
           cases value with
           | lit repr => simpa [infer] using hInfer
-          | lam body tIn =>
+          | lam tIn body =>
             simp only [infer, Outcome.map] at hInfer ⊢
             split at hInfer
             next _ bodyResult hBody =>

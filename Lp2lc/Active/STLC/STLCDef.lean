@@ -48,7 +48,7 @@ minted receipt, so lambda construction cannot inspect those receipts.
 
 /-- First-order syntax with one distinguished newest reference slot. -/
 inductive Binder : Parameters → Label → Type 2 where
-| mk (body :  P.C ->AST { P with C := P.C ⊕ Unit } l) : Binder P l
+| mk (body : AST { P with C := P.C ⊕ Unit } l) : Binder P l
 
 end
 
@@ -78,8 +78,8 @@ This is mostly a conjectuing task
       .apply (fnTerm.recarrier mapC mapB) (arg.recarrier mapC mapB)
     | .ref receipt => .ref (mapC receipt)
     | .lit repr => .lit (mapB repr)
-    | .lam body tIn =>
-      .lam (body.recarrier mapC mapB) (tIn.recarrier mapC mapB)
+    | .lam tIn body =>
+      .lam (tIn.recarrier mapC mapB) (body.recarrier mapC mapB)
 
   /-- Maps the outer carriers of a binder while preserving its newest slot. -/
   @[simp]
@@ -205,7 +205,7 @@ def eval {refs} [exe : ExeEnv refs]
     | .apply fnTerm arg =>
       let anf := (eval fnTerm fuel, eval arg fuel)
       match anf with
-      | (.yield (some (.lam body _tIn)), .yield (some arg)) =>
+      | (.yield (some (.lam _tIn body)), .yield (some arg)) =>
         let receipt := exe.uid2valCtx.inv arg
         eval (body.apply receipt) fuel
       | (.outOfFuel, _) => .outOfFuel

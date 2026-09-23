@@ -24,7 +24,7 @@ mutual
     | .fn tIn tOut =>
       .arr #["fn", astToJson tIn sigC sigB, astToJson tOut sigC sigB]
     | .lit repr => .arr #["lit", sigB repr]
-    | .lam body tIn =>
+    | .lam tIn body =>
       .arr #["lam", binderToJson body sigC sigB, astToJson tIn sigC sigB]
     | .val v => .arr #["val", astToJson v sigC sigB]
     | .apply fnTerm arg =>

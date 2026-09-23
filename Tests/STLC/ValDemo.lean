@@ -31,7 +31,7 @@ variable [testEnv : TestEnv]
 namespace Val
 
 def idFn : Val :=
-  .lam (.mk (.ref (.inr ()))) .primitive
+  .lam .primitive (.mk (.ref (.inr ())))
 
 end Val
 

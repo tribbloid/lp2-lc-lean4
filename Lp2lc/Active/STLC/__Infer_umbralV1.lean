@@ -29,7 +29,7 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
   | fuel + 1 =>
     match trm with
     | .val (.lit _) => ⟨.yield (some ⟨.primitive⟩), rfl⟩
-    | .val (.lam body tIn) =>
+    | .val (.lam tIn body) =>
       let receipt := env.uid2typCtx.inv tIn
       let result := infer_prove (body.apply receipt) fuel
       ⟨result.compilation.map
