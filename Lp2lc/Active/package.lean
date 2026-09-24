@@ -3,9 +3,9 @@ import «Lp2lc».Active.Shared
 import «Lp2lc».Active.Util
 import «Lp2lc».Active.PartialDefInheritance
 
--- STLC module exports STLCDef; scratch examples are imported from Tests.
+-- STLC module exports definitions and hashing; scratch examples are imported from Tests.
 import «Lp2lc».Active.STLC.STLCDef
--- import «Lp2lc».Active.STLC.Hash
+import «Lp2lc».Active.STLC.Hash
 -- import «Lp2lc».Active.STLC.Proof
 -- import «Lp2lc».Active.STLC.__Infer_umbralV1
 -- import «Lp2lc».Active.STLC.__Infer

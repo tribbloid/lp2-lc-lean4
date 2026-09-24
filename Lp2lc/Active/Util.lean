@@ -147,7 +147,7 @@ namespace Parameters
 section variable (Self : Parameters)
 
 inductive Proxy : Self.C -> Type where
-| mk {C : Self.C} : Proxy C
+| only {C : Self.C} : Proxy C
 
 end
 end Parameters

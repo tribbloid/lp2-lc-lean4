@@ -1,3 +1,5 @@
+import «Tests».STLC.HashSpec
+
 -- import «Tests».STLC.ValDemo
 -- import «Tests».STLC.TypDemo
 -- import «Tests».STLC.TrmDemo
