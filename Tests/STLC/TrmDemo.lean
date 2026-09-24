@@ -1,17 +1,13 @@
 import «Tests».STLC.ValDemo
 
 namespace Tests.STLC.Sanity
-open Lp2lc.Active.Util
+
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
-variable [testEnv : TestEnv]
+def bFalse : I.B := "false"
 
-/-- The case files' demo data: the String literals coerce into the fixture's bytecode
-carrier through the fixture's own [TestEnv.bEq] coercion instance. -/
-def bFalse : refs.Parameters.B := "false"
-
-def bTrue : refs.Parameters.B := "true"
+def bTrue : I.B := "true"
 
 namespace Trm
 
@@ -22,62 +18,48 @@ def vTrue : Trm :=
   .val (.lit bTrue)
 
 def primitiveIdFn : Trm :=
-  .val (.fn (.mk (.ref (.inr ()))) .TLit)
+  .val (.fn .TLit (.mk (λ proxy => .ref proxy)))
 
 def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
 
 def get1st : Trm :=
   .val
-    (.fn
-      (.mk
-        (.val
-          (.fn (.mk (.ref (.inl (.inr ())))) .TLit)))
-      .TLit)
+    (.fn .TLit
+      (.mk (λ first =>
+        .val (.fn .TLit (.mk (λ _ => AST.ref (P := I) (c := .root) first))))))
 
 def get2nd : Trm :=
   .val
-    (.fn
-      (.mk
-        (.val
-          (.fn (.mk (.ref (.inr ()))) .TLit)))
-      .TLit)
+    (.fn .TLit
+      (.mk (λ _ =>
+        .val (.fn .TLit (.mk (λ second => AST.ref (P := I) (c := .extended) second))))))
 
 def get1stOnTuple : Trm :=
-  .apply
-    (.apply get1st vFalse)
-    vTrue
+  .apply (.apply get1st vFalse) vTrue
 
 def get2ndOnTuple : Trm :=
-  .apply
-    (.apply get2nd vFalse)
-    vTrue
+  .apply (.apply get2nd vFalse) vTrue
 
 def primitiveTrueFn : Trm :=
-  .val
-    (.fn (.mk (.val (.lit bTrue))) .TLit)
+  .val (.fn .TLit (.mk (λ _ => .val (.lit bTrue))))
 
 def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn vFalse
 
 namespace FreeCapture
 
-def value : Val :=
-  .lit bFalse
+/-- A symbolic outer-context slot used by the syntax-only capture examples. -/
+def freeSlot : Lp2lc.Active.Util.Parameters.Proxy I .root := .only
 
-/-- Runtime receipt for [value], minted through the fixture's executable bridge. -/
-def receipt : I.C :=
-  testEnv.trm2valExeCtx.inv value
+def directRef : AST.Trm (P := I) .extended :=
+  AST.ref (P := I) (c := .root) freeSlot
 
-def directRef : Trm :=
-  .ref receipt
+def capturedRef : AST.Trm (P := I) .extended :=
+  .val (.fn .TLit (.mk (λ _ => AST.ref (P := I) (c := .root) freeSlot)))
 
-def capturedRef : Trm :=
-  .val
-    (.fn (.mk (.ref (.inl receipt))) .TLit)
-
-def capturedRefOnFalse : Trm :=
-  .apply capturedRef vFalse
+def capturedRefOnFalse : AST.Trm (P := I) .extended :=
+  .apply capturedRef (.val (.lit bFalse))
 
 end FreeCapture
 
@@ -87,7 +69,7 @@ def hintedFalse : Trm :=
   .val (.lit bFalse)
 
 def hintedIdFn : Trm :=
-  .val (.fn (.mk (.ref (.inr ()))) .TLit)
+  .val (.fn .TLit (.mk (λ proxy => .ref proxy)))
 
 def hintedIdFnOnFalse : Trm :=
   .apply hintedIdFn hintedFalse
@@ -106,12 +88,10 @@ def primitiveApply : Trm :=
   .apply vFalse vTrue
 
 def apply1 : Trm :=
-  .apply
-    (.apply primitiveIdFn vFalse)
-    vTrue
+  .apply (.apply primitiveIdFn vFalse) vTrue
 
 end Malformed
 
 end Trm
 
-end Sanity
+end Tests.STLC.Sanity

@@ -4,8 +4,6 @@ namespace Tests.STLC.Sanity
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
-variable [testEnv : TestEnv]
-
 namespace Typ
 
 def tFalse : Typ :=

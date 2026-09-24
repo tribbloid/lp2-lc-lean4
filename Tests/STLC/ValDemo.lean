@@ -1,38 +1,32 @@
-import «Tests».STLC.Fixture
+import «Lp2lc».Active.STLC.STLCDef
 
 namespace Tests.STLC.Sanity
-open Lp2lc.Active.Util
-open Lp2lc.Active.STLC
 
-/--
-it is deliberately unconstructable: a fixpoint can hypothetically make it but this is not deliberately provided anywhere
+open Lp2lc.Active.Util Lp2lc.Active.STLC
 
-test cases are expected to use the left inverse to demonstrate syntax rules
--/
-inductive Symbol where
+inductive DemoCarrier where
+| root
+| extended
 
 namespace Symbolic
 
-variable [testEnv : TestEnv]
+/-- The carrier advances to `extended` whenever a binder introduces a body. -/
+abbrev I : Parameters :=
+  { C := DemoCarrier, B := String, inc := λ _ => .extended }
 
-/-- The case files' symbolic parameters shared by runtime and compile time. -/
-abbrev I : Parameters := refs.Parameters
-
-abbrev Typ := AST.Typ I
-abbrev Val := AST.Val I
-abbrev Trm := AST.Trm I
+abbrev Typ := AST.Typ (P := I) .root
+abbrev Val := AST.Val (P := I) .root
+abbrev Trm := AST.Trm (P := I) .root
 
 end Symbolic
 
-open Tests.STLC.Sanity.Symbolic
-
-variable [testEnv : TestEnv]
+open Symbolic
 
 namespace Val
 
 def idFn : Val :=
-  .fn (.mk (.ref (.inr ()))) .TLit
+  .fn .TLit (.mk (λ proxy => .ref proxy))
 
 end Val
 
-end Sanity
+end Tests.STLC.Sanity
