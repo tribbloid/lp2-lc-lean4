@@ -7,11 +7,11 @@ open Lp2lc.Active.Util
 
 mutual
 
-/-- First-order syntax with one distinguished newest reference slot. -/
+/-- A binder introduces the next lexical context for its body. -/
 inductive Binder {P : Parameters} : P.C → Label → Type 2 where
-| mk (body : P.Proxy c → AST (P.inc c) l) : Binder c l -- with built-in domain expansion?
+| mk (body : P.Proxy c → AST (P.inc c) l) : Binder c l
 
-/-- Source type syntax.
+/-- Source type, value, and term syntax.
 
 `TLit` classifies primitive bytecode values and `TFn` classifies functions.
 -/
@@ -24,13 +24,14 @@ inductive AST {P : Parameters} : P.C → Label → Type 2 where
 
 | val (v : AST c .val) : AST c .trm -- AKA literal
 | apply (fn : AST c .trm) (arg : AST c .trm) : AST c .trm -- fn must be a function that can be applied on arg
-| ref (carrier : P.Proxy c) : AST (P.inc c) .trm -- reference, AKA variable/var (I don't like this name as it implies mutability in Scala)
+-- A lexical reference identifies a binder slot rather than a mutable variable.
+| ref (carrier : P.Proxy c) : AST (P.inc c) .trm
  end
 
 namespace Binder
 -- All theorems about Binder should be here, e.g. parametricity, lift relation
 
-/-- Replaces the newest structural lambda slot while preserving outer binders. -/
+/-- Opens a binder body at its declared reference slot. -/
 def apply {P : Parameters} {c : P.C} {l : Label}
     (self : Binder c l) (carrier : P.Proxy c) : AST (P.inc c) l :=
   match self with

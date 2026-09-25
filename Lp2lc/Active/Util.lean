@@ -28,12 +28,7 @@ abbrev UByteCode := Type
 --   K : UCarrier
 --   upcastV (V1 : Sort u) (V2 : Sort v) : Embedding V1 V2
 
-/--
-Receipt-indexed bridge between values and PHOAS carriers. Read-only.
-
-The value family is indexed by this bridge's evidence so recursive PHOAS
-carriers can retain the receipt required by `get`.
--/
+/-- Read-only lookup from receipt keys to values. -/
 structure KVRefs (K : UCarrier) (V : Sort u) where
   get : K → V
 
@@ -89,11 +84,7 @@ structure HasUId where --> SharedUID
 -- -/
 -- structure UIdRefs (V_ : UCarrier → Sort u) extends HasUId, KVRefs UId (V_ UId)
 
-/--
-Full receipt-indexed bridge, extending [KVRefs] with the reverse direction.
-
-`inv` is the only way to obtain a `K`: it requires a value, a view alone cannot mint receipts from new values.
--/
+/-- A bijective lookup: `inv` returns the canonical receipt for a value, with both inverse laws. -/
 structure KVEquiv {K V} (base : KVRefs K V) where
   inv (value : V) : K
   rightInv : ∀ (value : V), base.get (inv value) = value
@@ -126,24 +117,13 @@ end KVEquiv
 
 attribute [simp] KVEquiv.rightInv KVEquiv.leftInv
 
-/--
-Owns the bytecode representation `B`, the binary data type of primitive literals.
-
-The only way to construct `B` is to parse a primitive literal in AST.
--/
+/-- Supplies the bytecode representation of primitive literals. -/
 structure HasByteCode where
   B : UByteCode -- Binary Data type
 
-/--
-The syntax parameters, including the shared carrier used for free references.
-
-It is deliberately left abstract to ward off unlawful construction:
-
-- certified `C` receipts are obtained only through the runtime or build [KVEquiv.Lesser]
-- the only way to construct `B` is to parse a primitive literal in AST
--/
+/-- Syntax contexts and their increment operation; lexical indices are distinct from runtime value receipts. -/
 structure Parameters extends HasByteCode where
-  C : UCarrier -- shared carrier/receipt
+  C : UCarrier -- lexical context/index
   inc : C -> C
   -- union: C -> C -> C
   -- /--
