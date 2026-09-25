@@ -40,9 +40,6 @@ as [Tests/AGENTS.md](Tests/AGENTS.md) are not exhaustive.
 
 #### Do
 
-- All non-trivial definitions (longer than 3 lines) in syntax and semantic rules must have a short docstring
-      explaining their necessity. This rule doesn't apply to test code, abbreviations, or explicitly educational
-      tutorial/demo modules.
 - Core proof and calculus modules should move executable checks to `Tests`. Tutorial/demo modules may contain
       `example`, `#eval`, `#check`, or `#rfl` commands when those commands are the point of the demonstration.
 - Function definitions (including type and case constructors) should:
@@ -86,8 +83,8 @@ When working on an issue that contains multiple subtasks:
     - **Conjecturing** defines or revises proposition/type definitions, including those needed to state a
       proposition.
         - Only add proofs with `sorry` as a placeholder.
-        - Strive to write short abstractions. If a revision makes any file longer, STOP IMMEDIATELY, commit the
-          file, and ask for approval.
+        - Strive for shorter abstractions. If a revision makes code longer (not comment), STOP IMMEDIATELY, commit the
+          code, and ask for approval.
         - DO NOT add definitions that repeat implementations or cases; use shared abstractions.
     - **Proving/Discharging/Refuting** proves an existing proposition.
         - DO NOT remove or modify any type or proposition.

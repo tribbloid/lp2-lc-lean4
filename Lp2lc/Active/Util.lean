@@ -136,16 +136,10 @@ structure Parameters extends HasByteCode where
 namespace Parameters
 section variable (Self : Parameters)
 
-/-- A closed context has no predecessor, and incrementing preserves distinct contexts. -/
-class Rooted where
-  root : Self.C
-  incInjective : Function.Injective Self.inc
-  incNeRoot : ∀ (context : Self.C), Self.inc context ≠ root
-
 /-- An erased witness that a context is reachable by extending an earlier context. -/
-inductive Reaches (source : Self.C) : Self.C → Prop where
-| refl : Reaches source source
-| step {target} (prior : Reaches source target) : Reaches source (Self.inc target)
+inductive Lesser (source : Self.C) : Self.C → Prop where
+| refl : Lesser source source
+| step {target} (prior : Lesser source target) : Lesser source (Self.inc target)
 
 inductive Proxy : Self.C -> Type where
 | only {C : Self.C} : Proxy C
