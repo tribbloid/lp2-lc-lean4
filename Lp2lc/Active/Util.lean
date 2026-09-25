@@ -97,7 +97,7 @@ Full receipt-indexed bridge, extending [KVRefs] with the reverse direction.
 structure KVEquiv {K V} (base : KVRefs K V) where
   inv (value : V) : K
   rightInv : ∀ (value : V), base.get (inv value) = value
-  leftInv : ∀ (receipt : K), inv (base.get receipt) = receipt
+  leftInv : ∀ (k : K), inv (base.get k) = k
 
 namespace KVEquiv
 section variable {K V} {refs : KVRefs K V}
@@ -110,9 +110,19 @@ structure Adapter (this : KVEquiv refs) {K2 V2} (forRefs: refs.Adapter K2 V2) wh
     let refs2 := forRefs.widen
     KVEquiv refs2.toKVRefs
 
-
 end
 end KVEquiv
+
+-- /--
+-- has Dependent Unique ID
+-- -/
+-- structure HasDepUId (T: Type) where
+--   DepUId : T -> UCarrier
+
+-- structure KKVEquiv {K1 K2 V} (base : KVRefs (K1 × K2) V) where
+--   inv (k1 : K1) (value : V) : K2
+--   rightInv : ∀ (k1 value), base.get (k1, inv k1 value) = value
+--   leftInv : ∀ (k1 k2), inv k1 (base.get (k1, k2)) = k2
 
 attribute [simp] KVEquiv.rightInv KVEquiv.leftInv
 
