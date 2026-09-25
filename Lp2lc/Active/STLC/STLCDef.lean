@@ -25,7 +25,8 @@ inductive AST {P : Parameters} : P.C → Label → Type 2 where
 | val (v : AST c .val) : AST c .trm -- AKA literal
 | apply (fn : AST c .trm) (arg : AST c .trm) : AST c .trm -- fn must be a function that can be applied on arg
 -- A lexical reference identifies a binder slot rather than a mutable variable.
-| ref (carrier : P.Proxy c) : AST (P.inc c) .trm
+| ref (carrier : P.Proxy c)
+    (scope : P.Reaches (P.inc c) target := by repeat constructor) : AST target .trm
  end
 
 namespace Binder

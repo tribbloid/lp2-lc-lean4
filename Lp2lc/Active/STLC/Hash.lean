@@ -29,7 +29,7 @@ mutual
     | .val v => .arr #["val", astToJson v sigC sigB]
     | .apply fnTerm arg =>
       .arr #["apply", astToJson fnTerm sigC sigB, astToJson arg sigC sigB]
-    | .ref (c := receipt) _ => .arr #["ref", sigC receipt]
+    | .ref (c := receipt) _ _ => .arr #["ref", sigC receipt]
 
   /-- Canonical JSON signature of a [Binder], applying its body to the unique proxy. -/
   def binderToJson {P : Parameters} {c : P.C} {l : Label} (self : Binder c l)
