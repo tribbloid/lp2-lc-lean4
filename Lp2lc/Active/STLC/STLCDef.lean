@@ -5,17 +5,19 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
+def UAST := Type 2
+
 mutual
 
 /-- A binder introduces the next lexical context for its body. -/
-inductive Binder {P : Parameters} : P.C → Label → Type 2 where
+inductive Binder {P : Parameters} : P.C → Label → UAST where
 | mk (body : P.Proxy c → AST (P.inc c) l) : Binder c l
 
 /-- Source type, value, and term syntax.
 
 `TLit` classifies primitive bytecode values and `TFn` classifies functions.
 -/
-inductive AST {P : Parameters} : P.C → Label → Type 2 where
+inductive AST {P : Parameters} : P.C → Label → UAST where
 | TLit : AST c .typ -- `AnyVal` in Scala, accepts only primitive values
 | lit (repr : P.B) : AST c .val -- most specific type is always `primitive`
 

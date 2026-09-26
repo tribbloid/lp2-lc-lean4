@@ -16,8 +16,6 @@ instance {α : Sort u} {β : Sort v} : CoeFun (α ↪ β) (λ _ => α → β) wh
 abbrev UCarrier := Type -- the `U` suffix signifies this symbol as denoting a universe level
 abbrev UByteCode := Type
 
--- universe u v TODO: can remove
-
 
 -- /--
 -- contract that relates `KVRefs` to its Lesser/Greater versions
@@ -125,13 +123,6 @@ structure HasByteCode where
 structure Parameters extends HasByteCode where
   C : UCarrier -- lexical context/index
   inc : C -> C
-  -- union: C -> C -> C
-  -- /--
-  -- AST domain: dependent predicate that allow UIdRefs retrieval of values of guaranteed subtype
-  -- AST of more specific domain can be used to constract AST of more general domain.
-  -- - A typiccal use case of this is to construct compiletime AST (with domain covering both `Val` and `Typ`) from runtime AST (with domain only covering `Val`)
-  -- -/
-  -- dom : C -> Prop := λ _ => true --TODO: remove, useless now
 
 namespace Parameters
 section variable (Self : Parameters)
