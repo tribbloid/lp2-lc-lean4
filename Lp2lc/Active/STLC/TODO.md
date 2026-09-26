@@ -1,5 +1,19 @@
 # High Priority
 
+## Dual indexing & binding
+
+- If you want absolute lambda uniformity/parametricity, stick with De Bruijn serial/cons
+- De Bruijn is annoying as each index can map to different entities at different exe frame (build frame also, for dependent functions)
+- The core observation: **De Bruijn indices is spatial/hierarchical, frames are temporal**, we need a hashmap-like structure that can handle both
+  - binding happen exactly once and is used through out traversal, no more "rekey"/"recarrier".
+  - ... due to the totality of KVEquiv, the key has to be generated from the entity
+  - ... fortunately, the parallel inductive proof generally don't depends on frame
+- Choose 1 of the following
+  - inv on frame, key outside .ref, don't rekey lambda body when applying (\`P.inc (c : P.C)\`) <--- require 2-tier KVEquiv
+    - frame key can be the outer key or inner key. Proof is easier if frame key is the inner key (soundness doesn't care which entity is used as long as they are all safe to use)
+  - inv on binded value, key inside .ref, rekey immediately when applying (\`P.C + Unit\`) <--- Simpler open term description, rekey is verbose in proof
+  - something in-between?
+
 ## Parallel Structural Induction? Does it eliminate the need for parametricity axiom?
 
 - both eval & infer use AST that can refer to everything
@@ -22,47 +36,20 @@ The vulnerability of forging Val from Typ UId is thwarted not by using different
 - when constructing val, typ is invisible ()
 - when constructing typ, val is invisible (cannot see result of execution iin compiletime)
 
-## Certified AST
+## [x] Certified AST
 
-Update: `AST.fn` stores a host-language function over the reference carrier.
-The tradeoff notes below describe earlier binder representations.
-
-PHOAS definition have many contradicting traits that makes it difficult to be used in proof:
-
-- idiomatic form is always invariant: "recarrier" is impossible
-- contravariant form (where .ref is flexible) => AST {TrmOrTyp} <:< AST {Trm} is absurd: AST.ref {TrmOrTyp} can't reify to value
-- covariant form (where .fn is flexible) => AST {Trm} <:< AST {TrmOrTyp} works but demand parametricity of AST.fn body
-  - this parametricity is built-in if AST.fn body is generated from expression with de Bruijn variable, this again make "recarrier" & proof very long, negating all advantages
-
-## Verdicts
+## Objective
 
 - Single carrier type for all AST, no more "recarrier"
   - UIdEquiv that uses this carrier must be able to save everything (Val/Typ/Proof etc.)
-- compilation can process `Val ⊕ Typ` (referring to breakpoint free vars and bounded vars in a subsection respectively)
 
 * eval can only process `Val` , to run (`AST.ref u1).eval` successfully, u1 must be a subtype ({x : P.C // Ev x})
 * the 2 parts x and Ev x can be stored in different places, Ev x may be flat
-* this allows AST ready for eval to be broken into 2 parts:
+* eval and compile/infer cannot depends on each other
+* in addition, the certification can be for the entire AST, instead of each binder .ref, but I don't know how to do it cleanly yet
 
-```lean
-structure Ref
-  body: P.C
+### Breakpoint compilation
 
-inductive AST {TRef : Type}: Parameters -> Label where
-  .ref (v: TRef)
+- compilation can process `Val ⊕ Typ` (referring to breakpoint free vars and bounded vars in a subsection respectively)
 
-structure Certified {TRef : Type} (ast : AST TRef P L)
-  .certify : P.C -> {x : PC // Ev x} -- This is not tight enough
-```
-
-what about this:
-
-\`\`\`
-
-structure CAST L
-
-P : Parameters
-
-ast: AST P L -- floating
-
-## Breakpoint compilation is too hard? Start with only closed terms
+### Breakpoint compilation is too hard? Start with only closed terms
