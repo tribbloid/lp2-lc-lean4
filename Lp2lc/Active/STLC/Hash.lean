@@ -32,7 +32,7 @@ mutual
     | .ref (c := receipt) _ _ => .arr #["ref", sigC receipt]
 
   /-- Canonical JSON signature of a [Binder], applying its body to the unique proxy. -/
-  def binderToJson {c : DeBruijn.C} {l : Label} (self : @Pre.Binder DeBruijn c l)
+  def binderToJson {c : DeBruijn.C} {l : Label} (self : AST.Binder c l)
       (sigC : DeBruijn.C → Json) (sigB : DeBruijn.B → Json) : Json :=
     match self with
     | .mk body => astToJson (body ⟨⟩) sigC sigB

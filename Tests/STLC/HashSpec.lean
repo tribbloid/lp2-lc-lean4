@@ -10,12 +10,12 @@ private def sigB (repr : String) : Json := toJson repr
 private def sigAny (_carrier : Nat) : Json := .null
 
 private def refOne : AST.Trm 3 :=
-  Pre.AST.ref (P := DeBruijn) (c := 1) (target := 3) ⟨⟩
+  AST.ref (c := 1) (target := 3) ⟨⟩
 
 private def refTwo : AST.Trm 3 :=
-  Pre.AST.ref (P := DeBruijn) (c := 2) (target := 3) ⟨⟩
+  AST.ref (c := 2) (target := 3) ⟨⟩
 
-private def idVal : AST.Val 1 := .fn .TLit (.mk (λ proxy => Pre.AST.ref (P := DeBruijn) proxy))
+private def idVal : AST.Val 1 := AST.fn .TLit (.mk (λ proxy => AST.ref proxy))
 
 example : astToJson (.TLit : AST.Typ 0) sigC sigB = "primitive" := rfl
 

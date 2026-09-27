@@ -54,9 +54,23 @@ abbrev AST := @Pre.AST DeBruijn
 
 namespace AST
 
+abbrev Binder (c : DeBruijn.C) (l : Label) := @Pre.Binder DeBruijn c l
+
 abbrev Typ (c : DeBruijn.C) := AST c .typ
 abbrev Trm (c : DeBruijn.C) := AST c .trm
 abbrev Val (c : DeBruijn.C) := AST c .val
+
+abbrev TLit {c : DeBruijn.C} : AST c .typ := @Pre.AST.TLit DeBruijn c
+abbrev lit {c : DeBruijn.C} (repr : DeBruijn.B) : AST c .val := @Pre.AST.lit DeBruijn c repr
+abbrev TFn {c : DeBruijn.C} (tIn tOut : AST.Typ c) : AST c .typ :=
+  @Pre.AST.TFn DeBruijn c tIn tOut
+abbrev fn {c : DeBruijn.C} (tIn : AST.Typ c) (body : AST.Binder c .trm) : AST c .val :=
+  @Pre.AST.fn DeBruijn c tIn body
+abbrev val {c : DeBruijn.C} (v : AST.Val c) : AST c .trm := @Pre.AST.val DeBruijn c v
+abbrev apply {c : DeBruijn.C} (fn arg : AST.Trm c) : AST c .trm := @Pre.AST.apply DeBruijn c fn arg
+abbrev ref {c target : DeBruijn.C} (carrier : DeBruijn.Proxy c)
+    (lesser : DeBruijn.Lesser (DeBruijn.inc c) target := by repeat constructor) : AST target .trm :=
+  @Pre.AST.ref DeBruijn c target carrier lesser
 
 /-- Current STLC subtyping coincides with structural type equality. -/
 instance typLE (c : DeBruijn.C) : LE (AST.Typ c) := ⟨Eq⟩
@@ -70,8 +84,8 @@ instance typDecidableLE (c : DeBruijn.C) : DecidableLE (AST.Typ c)
   | .TFn leftIn leftOut, .TFn rightIn rightOut =>
     match typDecidableLE c leftIn rightIn, typDecidableLE c leftOut rightOut with
     | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
-    | isFalse notEqual, _ => isFalse (λ equality => notEqual (Pre.AST.TFn.inj equality).1)
-    | _, isFalse notEqual => isFalse (λ equality => notEqual (Pre.AST.TFn.inj equality).2)
+    | isFalse notEqual, _ => isFalse (λ equality => notEqual (by cases equality; rfl))
+    | _, isFalse notEqual => isFalse (λ equality => notEqual (by cases equality; rfl))
 
 namespace Val
 

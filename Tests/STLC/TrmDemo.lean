@@ -27,13 +27,13 @@ def get1st : Trm :=
   .val
     (.fn .TLit
       (.mk (λ first =>
-        .val (.fn .TLit (.mk (λ _ => Pre.AST.ref (P := DeBruijn) (c := 0) first))))))
+        .val (.fn .TLit (.mk (λ _ => AST.ref (c := 0) first))))))
 
 def get2nd : Trm :=
   .val
     (.fn .TLit
       (.mk (λ _ =>
-        .val (.fn .TLit (.mk (λ second => Pre.AST.ref (P := DeBruijn) (c := 1) second))))))
+        .val (.fn .TLit (.mk (λ second => AST.ref (c := 1) second))))))
 
 def get1stOnTuple : Trm :=
   .apply (.apply get1st vFalse) vTrue
@@ -53,10 +53,10 @@ namespace FreeCapture
 def freeSlot : Lp2lc.Active.Util.Parameters.Proxy DeBruijn 0 := .only
 
 def directRef : AST.Trm 1 :=
-  Pre.AST.ref (P := DeBruijn) (c := 0) freeSlot
+  AST.ref (c := 0) freeSlot
 
 def capturedRef : AST.Trm 0 :=
-  .val (.fn .TLit (.mk (λ _ => Pre.AST.ref (P := DeBruijn) (c := 0) freeSlot)))
+  .val (.fn .TLit (.mk (λ _ => AST.ref (c := 0) freeSlot)))
 
 def capturedRefOnFalse : Trm :=
   .apply capturedRef (.val (.lit bFalse))
