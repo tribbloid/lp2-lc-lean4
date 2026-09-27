@@ -7,6 +7,8 @@ open Lp2lc.Active.Util
 
 def UAST := Type 2
 
+namespace Pre
+
 mutual
 
 /-- A binder introduces the next lexical context for its body. -/
@@ -43,97 +45,40 @@ def apply {P : Parameters} {c : P.C} {l : Label}
 
 end Binder
 
-section variable {P : Parameters} {c : P.C}
+end Pre
+--------------------------- Locking down Parameters -------------------------
 
-class Labelled (Ctor : Label → Type 2)
+abbrev DeBruijn : Parameters := {C := Nat, B := String, inc := λ v => v + 1 }
+
+abbrev AST := @Pre.AST DeBruijn
 
 namespace AST
 
-section variable {P : Parameters} (c: P.C)
-
-abbrev Typ := AST c .typ
-abbrev Trm := AST c .trm
-abbrev Val := AST c .val
-
-end
-
-namespace Val
-section variable {P : Parameters} (c: P.C)
-
-def asTrm (self : AST.Val c) : AST.Trm c := .val self
-
-end
-end Val
-
-end AST
+abbrev Typ (c : DeBruijn.C) := AST c .typ
+abbrev Trm (c : DeBruijn.C) := AST c .trm
+abbrev Val (c : DeBruijn.C) := AST c .val
 
 /-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE : LE (AST.Typ c) := ⟨Eq⟩
+instance typLE (c : DeBruijn.C) : LE (AST.Typ c) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
-instance typDecidableLE : DecidableLE (AST.Typ c)
+instance typDecidableLE (c : DeBruijn.C) : DecidableLE (AST.Typ c)
   | .TLit, .TLit => isTrue rfl
   | .TLit, .TFn _ _
   | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
   | .TFn leftIn leftOut, .TFn rightIn rightOut =>
-    match typDecidableLE leftIn rightIn, typDecidableLE leftOut rightOut with
+    match typDecidableLE c leftIn rightIn, typDecidableLE c leftOut rightOut with
     | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
-    | isFalse notEqual, _ => isFalse (λ equality => notEqual (AST.TFn.inj equality).1)
-    | _, isFalse notEqual => isFalse (λ equality => notEqual (AST.TFn.inj equality).2)
+    | isFalse notEqual, _ => isFalse (λ equality => notEqual (Pre.AST.TFn.inj equality).1)
+    | _, isFalse notEqual => isFalse (λ equality => notEqual (Pre.AST.TFn.inj equality).2)
 
-end
+namespace Val
 
--- /--
--- Shares one receipt carrier between executable values and build-time types.
+def asTrm (self : AST.Val c) : AST.Trm c := .val self
 
--- The underlying view stores a tagged value-or-type payload. Runtime and build
--- contexts expose independently typed [KVRefs.Lesser] views over the same receipt
--- carrier. Their equivalences mint receipts only from the matching payload, while
--- [Binder] distinguishes bound slots structurally so lambda construction cannot
--- inspect phase-specific minted receipts.
--- -/
--- class HasUId2Any extends HasByteCode, HasUId where
---   uid2any : KVRefs UId (
---     let P : Parameters := { C := UId, B := B }
+end Val
 
---     AST.Val P ⊕ AST.Typ P
---   )
-
--- namespace HasUId2Any
--- section variable (this : HasUId2Any)
-
--- /-- The shared syntax parameters are fixed by the mixed receipt view. -/
--- abbrev Parameters : Parameters := { C := this.UId, B := this.B }
-
--- end
--- end HasUId2Any
-
--- /-- Owns the runtime receipt bridge for executable STLC values. -/
--- class ExeEnv (refs : HasUId2Any) where
---   uid2val : refs.uid2any.Lesser refs.UId (AST.Val refs.Parameters)
---   uid2valCtx : KVEquiv uid2val.toKVRefs
-
--- namespace AST
-
--- /-- Evaluates executable terms whose references carry receipts from the runtime context. -/
--- def eval {refs} [exe : ExeEnv refs]
---     (self : Trm refs.Parameters) : RecOpt (Val refs.Parameters)
---   | 0 => .outOfFuel
---   | fuel + 1 =>
---     match self with
---     | .val value => .yield (some value)
---     | .apply fnTerm arg =>
---       let anf := (eval fnTerm fuel, eval arg fuel)
---       match anf with
---       | (.yield (some (fn _tIn body)), .yield (some arg)) =>
---         let receipt := exe.uid2valCtx.inv arg
---         eval (body.apply receipt) fuel
---       | (.outOfFuel, _) => .outOfFuel
---       | (_, .outOfFuel) => .outOfFuel
---       | _ => .yield none
---     | .ref receipt => .yield (some (exe.uid2val.get receipt))
-
--- end AST
+end AST
 
 end Lp2lc.Active.STLC

@@ -5,9 +5,9 @@ namespace Tests.STLC.Sanity
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
-def bFalse : I.B := "false"
+def bFalse : DeBruijn.B := "false"
 
-def bTrue : I.B := "true"
+def bTrue : DeBruijn.B := "true"
 
 namespace Trm
 
@@ -27,13 +27,13 @@ def get1st : Trm :=
   .val
     (.fn .TLit
       (.mk (λ first =>
-        .val (.fn .TLit (.mk (λ _ => AST.ref (P := I) (c := .root) first))))))
+        .val (.fn .TLit (.mk (λ _ => Pre.AST.ref (P := DeBruijn) (c := 0) first))))))
 
 def get2nd : Trm :=
   .val
     (.fn .TLit
       (.mk (λ _ =>
-        .val (.fn .TLit (.mk (λ second => AST.ref (P := I) (c := .extended) second))))))
+        .val (.fn .TLit (.mk (λ second => Pre.AST.ref (P := DeBruijn) (c := 1) second))))))
 
 def get1stOnTuple : Trm :=
   .apply (.apply get1st vFalse) vTrue
@@ -50,15 +50,15 @@ def primitiveTrueFnOnFalse : Trm :=
 namespace FreeCapture
 
 /-- A symbolic outer-context slot used by the syntax-only capture examples. -/
-def freeSlot : Lp2lc.Active.Util.Parameters.Proxy I .root := .only
+def freeSlot : Lp2lc.Active.Util.Parameters.Proxy DeBruijn 0 := .only
 
-def directRef : AST.Trm (P := I) .extended :=
-  AST.ref (P := I) (c := .root) freeSlot
+def directRef : AST.Trm 1 :=
+  Pre.AST.ref (P := DeBruijn) (c := 0) freeSlot
 
-def capturedRef : AST.Trm (P := I) .extended :=
-  .val (.fn .TLit (.mk (λ _ => AST.ref (P := I) (c := .root) freeSlot)))
+def capturedRef : AST.Trm 0 :=
+  .val (.fn .TLit (.mk (λ _ => Pre.AST.ref (P := DeBruijn) (c := 0) freeSlot)))
 
-def capturedRefOnFalse : AST.Trm (P := I) .extended :=
+def capturedRefOnFalse : Trm :=
   .apply capturedRef (.val (.lit bFalse))
 
 end FreeCapture

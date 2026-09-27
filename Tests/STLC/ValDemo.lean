@@ -2,21 +2,13 @@ import «Lp2lc».Active.STLC.STLCDef
 
 namespace Tests.STLC.Sanity
 
-open Lp2lc.Active.Util Lp2lc.Active.STLC
-
-inductive DemoCarrier where
-| root
-| extended
+open Lp2lc.Active.STLC
 
 namespace Symbolic
 
-/-- The carrier advances to `extended` whenever a binder introduces a body. -/
-abbrev I : Parameters :=
-  { C := DemoCarrier, B := String, inc := λ _ => .extended }
-
-abbrev Typ := AST.Typ (P := I) .root
-abbrev Val := AST.Val (P := I) .root
-abbrev Trm := AST.Trm (P := I) .root
+abbrev Typ := AST.Typ 0
+abbrev Val := AST.Val 0
+abbrev Trm := AST.Trm 0
 
 end Symbolic
 
