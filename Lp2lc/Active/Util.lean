@@ -72,9 +72,6 @@ structure Adapter (K2 V2) where
 end
 end KVRefs
 
-structure HasUId where --> SharedUID
-  UId : UCarrier
-
 -- /--
 -- Unlike [KVRefs], the key type `UId` is not shared with any other value type, so `get` cannot be abused to non-existing value.
 
