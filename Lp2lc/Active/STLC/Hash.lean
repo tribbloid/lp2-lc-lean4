@@ -17,7 +17,7 @@ mutual
   injected through caller-supplied signature functions, so wildcard or
   content-based comparators are expressed by their canonical image.
   -/
-  def astToJson {P : Parameters} {l : Label} (self : AST P l)
+  def astToJson {P : CtxEmbedding} {l : Label} (self : AST P l)
       (sigC : P.TIndex → Json) (sigB : P.B → Json) : Json :=
     match self with
     | .TLit => "primitive"
@@ -32,24 +32,24 @@ mutual
     | .ref (source := receipt) _ _ => .arr #["ref", sigC receipt]
 
   /-- Canonical JSON signature of a [Binder], applying its body to the unique proxy. -/
-  def binderToJson {P : Parameters} {l : Label} (self : AST.Binder P l)
+  def binderToJson {P : CtxEmbedding} {l : Label} (self : AST.Binder P l)
       (sigC : P.TIndex → Json) (sigB : P.B → Json) : Json :=
     match self with
     | .mk body => astToJson (body ⟨⟩) sigC sigB
 end
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
-def astBEq {P : Parameters} {l : Label} (a b : AST P l)
+def astBEq {P : CtxEmbedding} {l : Label} (a b : AST P l)
     (sigC : P.TIndex → Json) (sigB : P.B → Json) : Bool :=
   astToJson a sigC sigB == astToJson b sigC sigB
 
 /-- Hash of the caller-supplied JSON signature over [AST]. -/
-def astHash {P : Parameters} {l : Label} (self : AST P l)
+def astHash {P : CtxEmbedding} {l : Label} (self : AST P l)
     (sigC : P.TIndex → Json) (sigB : P.B → Json) : UInt64 :=
   hash (astToJson self sigC sigB)
 
 /-- Hash of the JSON signature of a mixed value-or-type payload. -/
-def hashSum {P : Parameters} (payload : AST.Val P ⊕ AST.Typ P)
+def hashSum {P : CtxEmbedding} (payload : AST.Val P ⊕ AST.Typ P)
     (sigC : P.TIndex → Json) (sigB : P.B → Json) : UInt64 :=
   match payload with
   | .inl v => astHash v sigC sigB

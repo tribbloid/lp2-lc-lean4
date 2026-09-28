@@ -13,8 +13,8 @@ infixr:25 " ↪ " => Embedding -- stolen from Mathlib
 instance {α : Sort u} {β : Sort v} : CoeFun (α ↪ β) (λ _ => α → β) where
   coe self := self.toFun
 
-abbrev UCarrier := Type -- the `U` prefix signifies this symbol as denoting a universe level
-abbrev UByteCode := Type
+abbrev URef := Type -- universe level of AST var/ref carrier
+abbrev UByteCode := Type -- universe level of literal bytecode
 
 
 -- /--
@@ -27,7 +27,7 @@ abbrev UByteCode := Type
 --   upcastV (V1 : Sort u) (V2 : Sort v) : Embedding V1 V2
 
 /-- Read-only lookup from receipt keys to values. -/
-structure KVRefs (K : UCarrier) (V : Sort u) where
+structure KVRefs (K : URef) (V : Sort u) where
   get : K → V
 
 
@@ -43,7 +43,7 @@ structure Greater (K2 V2) extends KVRefs K V2 where
   upcastV : Embedding V V2 -- distinguishes views made with different value embeddings
   equivariance : ∀ (receipt : K), get receipt = upcastV (this.get receipt)
 
-structure HasEv (K : UCarrier) where
+structure HasEv (K : URef) where
   ev : K → Prop -- a subtype of UId with extra contract
 
 namespace HasEv
