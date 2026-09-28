@@ -1,5 +1,6 @@
 import Std
 import «Lp2lc».Active.Util
+import «Lp2lc».Active.Parameters
 
 namespace Lp2lc.Active.STLC
 

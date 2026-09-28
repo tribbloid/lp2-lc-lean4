@@ -1,6 +1,7 @@
 
 import «Lp2lc».Active.Shared
 import «Lp2lc».Active.Util
+import «Lp2lc».Active.Parameters
 import «Lp2lc».Active.PartialDefInheritance
 
 -- STLC module exports definitions and hashing; scratch examples are imported from Tests.

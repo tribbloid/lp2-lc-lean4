@@ -116,38 +116,9 @@ attribute [simp] KVEquiv.rightInv KVEquiv.leftInv
 structure HasByteCode where
   B : UByteCode -- Binary Data type
 
-/-- Syntax contexts and their increment operation; lexical indices are distinct from runtime value receipts. -/
-structure Parameters extends HasByteCode where
-  TIndex : UCarrier -- lexical context/index
-  index : TIndex
-  inc : TIndex → TIndex
-
 /-- A proxy tied to an index type, so it survives updates to a Parameters context. -/
 inductive IndexProxy (Index : UCarrier) : Index → Type where
 | only {C : Index} : IndexProxy Index C
-
-namespace Parameters
-section variable (this : Parameters)
-
-abbrev nextIndex: this.TIndex := this.inc this.index
-
-abbrev Proxy := IndexProxy this.TIndex
-
-def TRef : Type := this.Proxy this.index
-
-abbrev Next : Parameters :=
-  {B := this.B, TIndex := this.TIndex, index := this.nextIndex, inc := this.inc}
-
-def NextTRef : Type := this.Next.TRef
-
-/-- An erased witness that a context is reachable by extending an earlier context. -/
-inductive Lesser (i1 : this.TIndex) : this.TIndex → Prop where
-| refl : Lesser i1 i1
-| step {i2} (prior : Lesser i1 i2) : Lesser i1 ({this with index := i2}).Next.index
-
-
-end
-end Parameters
 
 section variable {T : Sort u}
 
