@@ -18,7 +18,7 @@
       open term description, but rekeying is verbose in proofs.
   - Something in between?
 - The frame is always the outer index in P, while De Bruijn is always the inner index in `.ref`.
-  - `P.Next` advances the De Bruijn index; what should happen to the outer index?
+  - `P.Next` advances the lexical index; what should happen to the outer index?
   - When the frame advances, it keeps most free variables; how can it update the minimum needed (with delta encoding)?
   - One way is to define frames as a series of deltas, each containing one De Bruijn index and a fresh
       `Val`/`Typ`. To avoid a circular reference, an equivalence key replaces the `Val`/`Typ`.
