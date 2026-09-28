@@ -138,8 +138,10 @@ abbrev Proxy := IndexProxy this.TIndex
 
 def C : Type := this.Proxy this.index
 
+abbrev nextIndex := this.inc this.index
+
 abbrev Next : Parameters :=
-  {B := this.B, TIndex := this.TIndex, index := this.inc this.index, inc := this.inc}
+  {B := this.B, TIndex := this.TIndex, index := this.nextIndex, inc := this.inc}
 
 def NextC : Type := this.Next.C
 
