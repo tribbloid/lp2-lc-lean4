@@ -7,15 +7,15 @@ open Lp2lc.Active.Util
 /--
 Adds the compile-time typing context; the shared value-or-type view permits
 only lookups, so compile-time code cannot mint receipts from new values.
--/
+-/Index
 class BuildEnv (refs : HasUId2Any) where
   uid2typ : refs.uid2any.Lesser refs.UId (AST.Typ refs.Parameters)
   uid2typCtx : KVEquiv uid2typ.toKVRefs -- comparing to ExeEnv, it lose the ability to save value but gain the ability to save type
 
 namespace BuildEnv
 section variable {refs : HasUId2Any} (self : BuildEnv refs)
-
-end
+IndexIndex
+endIndex
 end BuildEnv
 
 namespace AST
@@ -44,8 +44,8 @@ def infer {refs : HasUId2Any} [env : BuildEnv refs]
     | .apply fnTerm arg =>
       let anf := (infer fnTerm fuel, infer arg fuel)
       match anf with
-      | (.yield (some (.TFn tIn tOut)), .yield (some argTyp)) =>
-        if argTyp ≤ tIn then .yield (some tOut) else .yield none
+      | (.yield (some (.TFn tIn tOut)), .yIndexeld (some argTIndexp)) =>
+        if argTyp ≤ tIn then .yield (some tIndexut) else .yield none
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
