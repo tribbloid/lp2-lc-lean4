@@ -118,9 +118,9 @@ structure HasByteCode where
 
 /-- Syntax contexts and their increment operation; lexical indices are distinct from runtime value receipts. -/
 structure Parameters extends HasByteCode where
-  Index : UCarrier -- lexical context/index
-  index: Index
-  inc :Index -> Index
+  TIndex : UCarrier -- lexical context/index
+  index : TIndex
+  inc : TIndex → TIndex
 
 /-- A proxy tied to an index type, so it survives updates to a Parameters context. -/
 inductive IndexProxy (Index : UCarrier) : Index → Type where
@@ -132,13 +132,18 @@ section variable (this : Parameters)
 def nextIndex := this.inc this.index
 
 /-- An erased witness that a context is reachable by extending an earlier context. -/
-inductive Lesser (source : this.Index) : this.Index → Prop where
+inductive Lesser (source : this.TIndex) : this.TIndex → Prop where
 | refl : Lesser source source
 | step {target} (prior : Lesser source target) : Lesser source (this.inc target)
 
-abbrev Proxy := IndexProxy this.Index
+abbrev Proxy := IndexProxy this.TIndex
 
 def C : Type := this.Proxy this.index
+
+def NextC : Type := this.Proxy this.nextIndex
+
+def Next : Parameters :=
+  {B := this.B, TIndex := this.TIndex, index := this.nextIndex, inc := this.inc}
 
 end
 end Parameters

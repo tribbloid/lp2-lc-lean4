@@ -32,7 +32,7 @@ inductive AST : Parameters → Label → UAST where
 | apply {P : Parameters} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
     -- fn must be a function that can be applied on arg
 -- A lexical reference identifies a binder slot rather than a mutable variable.
-| ref {P : Parameters} {source : P.Index} (carrier : P.Proxy source)
+| ref {P : Parameters} {source : P.TIndex} (carrier : P.Proxy source)
     (lesser : P.Lesser (P.inc source) P.index := by repeat constructor) : AST P .trm
  end
 
@@ -53,13 +53,13 @@ end Binder
 end Pre
 ---------------------------- Concrete Parameters ----------------------------
 
-abbrev DeBruijn : Parameters := {Index := Nat, index := 0, B := String, inc := λ v => v + 1 }
+abbrev DeBruijn : Parameters := {TIndex := Nat, index := 0, B := String, inc := λ v => v + 1 }
 
 abbrev AST := @Pre.AST
 
 namespace AST
 
-abbrev At (c : DeBruijn.Index) : Parameters := {DeBruijn with index := c}
+abbrev At (c : DeBruijn.TIndex) : Parameters := {DeBruijn with index := c}
 
 abbrev Binder (P : Parameters) (l : Label) := @Pre.Binder P l
 
@@ -75,7 +75,7 @@ abbrev fn {P : Parameters} (tIn : AST.Typ P) (body : AST.Binder P .trm) : AST.Va
   @Pre.AST.fn P tIn body
 abbrev val {P : Parameters} (v : AST.Val P) : AST.Trm P := @Pre.AST.val P v
 abbrev apply {P : Parameters} (fn arg : AST.Trm P) : AST.Trm P := @Pre.AST.apply P fn arg
-abbrev ref {P : Parameters} {source : P.Index} (carrier : P.Proxy source)
+abbrev ref {P : Parameters} {source : P.TIndex} (carrier : P.Proxy source)
     (lesser : P.Lesser (P.inc source) P.index := by repeat constructor) : AST.Trm P :=
   @Pre.AST.ref P source carrier lesser
 
