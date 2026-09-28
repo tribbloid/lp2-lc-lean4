@@ -99,7 +99,7 @@ end eval
 
 section serial
 
-abbrev Serial : Parameters := { C := Nat, B := Nat, inc := Nat.succ }
+abbrev Serial : Parameters := { C := Nat, B := Nat, nextIndex := Nat.succ }
 
 example (runtime : Runtime Serial) :
     eval runtime (root := 0) (.apply (.val (.fn .TLit (.mk (λ input => .ref input)))) (.val (.lit 7))) 2 =

@@ -53,7 +53,7 @@ end Binder
 end Pre
 ---------------------------- Concrete Parameters ----------------------------
 
-abbrev DeBruijn : Parameters := {TIndex := Nat, index := 0, B := String, inc := λ v => v + 1 }
+abbrev DeBruijn : Parameters := {TIndex := Nat, index := 0, B := String, nextIndex := Nat.succ }
 
 abbrev AST := @Pre.AST
 

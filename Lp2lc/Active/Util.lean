@@ -116,11 +116,11 @@ attribute [simp] KVEquiv.rightInv KVEquiv.leftInv
 structure HasByteCode where
   B : UByteCode -- Binary Data type
 
-/-- Syntax contexts and their increment operation; lexical indices are distinct from runtime value receipts. -/
+/-- Syntax contexts and their successor operation; lexical indices are distinct from runtime value receipts. -/
 structure Parameters extends HasByteCode where
   TIndex : UCarrier -- lexical context/index
   index : TIndex
-  inc : TIndex → TIndex
+  nextIndex : TIndex → TIndex
 
 /-- A proxy tied to an index type, so it survives updates to a Parameters context. -/
 inductive IndexProxy (Index : UCarrier) : Index → Type where
@@ -132,16 +132,14 @@ section variable (this : Parameters)
 /-- An erased witness that a context is reachable by extending an earlier context. -/
 inductive Lesser (source : this.TIndex) : this.TIndex → Prop where
 | refl : Lesser source source
-| step {target} (prior : Lesser source target) : Lesser source (this.inc target)
+| step {target} (prior : Lesser source target) : Lesser source (this.nextIndex target)
 
 abbrev Proxy := IndexProxy this.TIndex
 
 def C : Type := this.Proxy this.index
 
-abbrev nextIndex := this.inc this.index
-
 abbrev Next : Parameters :=
-  {B := this.B, TIndex := this.TIndex, index := this.nextIndex, inc := this.inc}
+  {this with index := this.nextIndex this.index}
 
 def NextC : Type := this.Next.C
 
