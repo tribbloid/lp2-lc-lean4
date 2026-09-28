@@ -6,9 +6,9 @@ open Lp2lc.Active.STLC
 
 namespace Symbolic
 
-abbrev Typ := AST.Typ 0
-abbrev Val := AST.Val 0
-abbrev Trm := AST.Trm 0
+abbrev Typ := AST.Typ (AST.At 0)
+abbrev Val := AST.Val (AST.At 0)
+abbrev Trm := AST.Trm (AST.At 0)
 
 end Symbolic
 

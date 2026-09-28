@@ -122,6 +122,10 @@ structure Parameters extends HasByteCode where
   index: Index
   inc :Index -> Index
 
+/-- A proxy tied to an index type, so it survives updates to a Parameters context. -/
+inductive IndexProxy (Index : UCarrier) : Index → Type where
+| only {C : Index} : IndexProxy Index C
+
 namespace Parameters
 section variable (this : Parameters)
 
@@ -132,8 +136,7 @@ inductive Lesser (source : this.Index) : this.Index → Prop where
 | refl : Lesser source source
 | step {target} (prior : Lesser source target) : Lesser source (this.inc target)
 
-inductive Proxy : this.Index -> Type where
-| only {C : this.Index} : Proxy C
+abbrev Proxy := IndexProxy this.Index
 
 def C : Type := this.Proxy this.index
 

@@ -12,33 +12,38 @@ namespace Pre
 mutual
 
 /-- A binder introduces the next lexical context for its body. -/
-inductive Binder {P : Parameters} : P.Index → Label → UAST where
-| mk (body : P.Proxy c → AST (P.inc c) l) : Binder c l
+inductive Binder : Parameters → Label → UAST where
+| mk {P : Parameters} (body : P.Proxy P.index →
+    AST ({P with index := P.inc P.index}) l) : Binder P l
 
 /-- Source type, value, and term syntax.
 
 `TLit` classifies primitive bytecode values and `TFn` classifies functions.
 -/
-inductive AST {P : Parameters} : P.Index → Label → UAST where
-| TLit : AST c .typ -- `AnyVal` in Scala, accepts only primitive values
-| lit (repr : P.B) : AST c .val -- most specific type is always `primitive`
+inductive AST : Parameters → Label → UAST where
+| TLit {P : Parameters} : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
+| lit {P : Parameters} (repr : P.B) : AST P .val -- most specific type is always `primitive`
 
-| TFn (tIn : AST c .typ) (tOut : AST c .typ) : AST c .typ -- function
-| fn (tIn : AST c .typ) (body : Binder c .trm) : AST c .val -- most specific type is always `.fn tIn _`
+| TFn {P : Parameters} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
+| fn {P : Parameters} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
+    -- most specific type is always `.fn tIn _`
 
-| val (v : AST c .val) : AST c .trm -- AKA literal
-| apply (fn : AST c .trm) (arg : AST c .trm) : AST c .trm -- fn must be a function that can be applied on arg
+| val {P : Parameters} (v : AST P .val) : AST P .trm -- AKA literal
+| apply {P : Parameters} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
+    -- fn must be a function that can be applied on arg
 -- A lexical reference identifies a binder slot rather than a mutable variable.
-| ref (carrier : P.Proxy c)
-    (lesser : P.Lesser (P.inc c) target := by repeat constructor) : AST target .trm
+| ref {P : Parameters} {source : P.Index} (carrier : P.Proxy source)
+    (lesser : P.Lesser (P.inc source) P.index := by repeat constructor) : AST P .trm
  end
 
 namespace Binder
 -- All theorems about Binder should be here, e.g. parametricity, lift relation
 
 /-- Opens a binder body at its declared reference slot. -/
-def apply {P : Parameters} {c : P.Index} {l : Label}
-    (self : Binder c l) (carrier : P.Proxy c) : AST (P.inc c) l :=
+def apply {P : Parameters} {l : Label}
+    (self : Binder P l)
+    (carrier : P.Proxy P.index) :
+    AST ({P with index := P.inc P.index}) l :=
   match self with
   | .mk body =>
     body carrier
@@ -46,50 +51,52 @@ def apply {P : Parameters} {c : P.Index} {l : Label}
 end Binder
 
 end Pre
---------------------------- Locking down Parameters -------------------------
+---------------------------- Concrete Parameters ----------------------------
 
 abbrev DeBruijn : Parameters := {Index := Nat, index := 0, B := String, inc := λ v => v + 1 }
 
-abbrev AST := @Pre.AST DeBruijn
+abbrev AST := @Pre.AST
 
 namespace AST
 
-abbrev Binder (c : DeBruijn.Index) (l : Label) := @Pre.Binder DeBruijn c l
+abbrev At (c : DeBruijn.Index) : Parameters := {DeBruijn with index := c}
 
-abbrev Typ (c : DeBruijn.Index) := AST c .typ
-abbrev Trm (c : DeBruijn.Index) := AST c .trm
-abbrev Val (c : DeBruijn.Index) := AST c .val
+abbrev Binder (P : Parameters) (l : Label) := @Pre.Binder P l
 
-abbrev TLit {c : DeBruijn.Index} : AST c .typ := @Pre.AST.TLit DeBruijn c
-abbrev lit {c : DeBruijn.Index} (repr : DeBruijn.B) : AST c .val := @Pre.AST.lit DeBruijn c repr
-abbrev TFn {c : DeBruijn.Index} (tIn tOut : AST.Typ c) : AST c .typ :=
-  @Pre.AST.TFn DeBruijn c tIn tOut
-abbrev fn {c : DeBruijn.Index} (tIn : AST.Typ c) (body : AST.Binder c .trm) : AST c .val :=
-  @Pre.AST.fn DeBruijn c tIn body
-abbrev val {c : DeBruijn.Index} (v : AST.Val c) : AST c .trm := @Pre.AST.val DeBruijn c v
-abbrev apply {c : DeBruijn.Index} (fn arg : AST.Trm c) : AST c .trm := @Pre.AST.apply DeBruijn c fn arg
-abbrev ref {c target : DeBruijn.Index} (carrier : DeBruijn.Proxy c)
-    (lesser : DeBruijn.Lesser (DeBruijn.inc c) target := by repeat constructor) : AST target .trm :=
-  @Pre.AST.ref DeBruijn c target carrier lesser
+abbrev Typ (P : Parameters) := AST P .typ
+abbrev Trm (P : Parameters) := AST P .trm
+abbrev Val (P : Parameters) := AST P .val
+
+abbrev TLit {P : Parameters} : AST.Typ P := @Pre.AST.TLit P
+abbrev lit {P : Parameters} (repr : P.B) : AST.Val P := @Pre.AST.lit P repr
+abbrev TFn {P : Parameters} (tIn tOut : AST.Typ P) : AST.Typ P :=
+  @Pre.AST.TFn P tIn tOut
+abbrev fn {P : Parameters} (tIn : AST.Typ P) (body : AST.Binder P .trm) : AST.Val P :=
+  @Pre.AST.fn P tIn body
+abbrev val {P : Parameters} (v : AST.Val P) : AST.Trm P := @Pre.AST.val P v
+abbrev apply {P : Parameters} (fn arg : AST.Trm P) : AST.Trm P := @Pre.AST.apply P fn arg
+abbrev ref {P : Parameters} {source : P.Index} (carrier : P.Proxy source)
+    (lesser : P.Lesser (P.inc source) P.index := by repeat constructor) : AST.Trm P :=
+  @Pre.AST.ref P source carrier lesser
 
 /-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE (c : DeBruijn.Index) : LE (AST.Typ c) := ⟨Eq⟩
+instance typLE {P : Parameters} : LE (AST.Typ P) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
-instance typDecidableLE (c : DeBruijn.Index) : DecidableLE (AST.Typ c)
+instance typDecidableLE {P : Parameters} : DecidableLE (AST.Typ P)
   | .TLit, .TLit => isTrue rfl
   | .TLit, .TFn _ _
   | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
   | .TFn leftIn leftOut, .TFn rightIn rightOut =>
-    match typDecidableLE c leftIn rightIn, typDecidableLE c leftOut rightOut with
+    match typDecidableLE leftIn rightIn, typDecidableLE leftOut rightOut with
     | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (by cases equality; rfl))
     | _, isFalse notEqual => isFalse (λ equality => notEqual (by cases equality; rfl))
 
 namespace Val
 
-def asTrm (self : AST.Val c) : AST.Trm c := .val self
+def asTrm {P : Parameters} (self : AST.Val P) : AST.Trm P := .val self
 
 end Val
 
