@@ -54,7 +54,7 @@ end Binder
 end Pre
 ---------------------------- Concrete Parameters ----------------------------
 
-abbrev DeBruijn : Parameters := {TIndex := Nat, index := 0, B := String, nextIndex := Nat.succ }
+abbrev DeBruijn : Parameters := {TIndex := Nat, index := 0, B := String, indexInc := Nat.succ }
 
 abbrev AST := @Pre.AST
 

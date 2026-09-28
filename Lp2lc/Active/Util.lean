@@ -116,9 +116,6 @@ attribute [simp] KVEquiv.rightInv KVEquiv.leftInv
 structure HasByteCode where
   B : UByteCode -- Binary Data type
 
-/-- A proxy tied to an index type, so it survives updates to a Parameters context. -/
-inductive IndexProxy (Index : UCarrier) : Index → Type where
-| only {C : Index} : IndexProxy Index C
 
 section variable {T : Sort u}
 
