@@ -14,7 +14,7 @@ mutual
 /-- A binder introduces the next lexical context for its body. -/
 inductive Binder : Parameters → Label → UAST where
 | mk {P : Parameters} (body : P.Proxy P.index →
-    AST ({P with index := P.inc P.index}) l) : Binder P l
+    AST P.Next l) : Binder P l
 
 /-- Source type, value, and term syntax.
 
@@ -33,7 +33,7 @@ inductive AST : Parameters → Label → UAST where
     -- fn must be a function that can be applied on arg
 -- A lexical reference identifies a binder slot rather than a mutable variable.
 | ref {P : Parameters} {source : P.TIndex} (carrier : P.Proxy source)
-    (lesser : P.Lesser (P.inc source) P.index := by repeat constructor) : AST P .trm
+    (lesser : P.Lesser ({P with index := source}).Next.index P.index := by repeat constructor) : AST P .trm
  end
 
 namespace Binder
@@ -43,7 +43,7 @@ namespace Binder
 def apply {P : Parameters} {l : Label}
     (self : Binder P l)
     (carrier : P.Proxy P.index) :
-    AST ({P with index := P.inc P.index}) l :=
+    AST P.Next l :=
   match self with
   | .mk body =>
     body carrier
@@ -76,7 +76,7 @@ abbrev fn {P : Parameters} (tIn : AST.Typ P) (body : AST.Binder P .trm) : AST.Va
 abbrev val {P : Parameters} (v : AST.Val P) : AST.Trm P := @Pre.AST.val P v
 abbrev apply {P : Parameters} (fn arg : AST.Trm P) : AST.Trm P := @Pre.AST.apply P fn arg
 abbrev ref {P : Parameters} {source : P.TIndex} (carrier : P.Proxy source)
-    (lesser : P.Lesser (P.inc source) P.index := by repeat constructor) : AST.Trm P :=
+    (lesser : P.Lesser ({P with index := source}).Next.index P.index := by repeat constructor) : AST.Trm P :=
   @Pre.AST.ref P source carrier lesser
 
 /-- Current STLC subtyping coincides with structural type equality. -/

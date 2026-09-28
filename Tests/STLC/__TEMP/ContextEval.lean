@@ -35,7 +35,7 @@ private def evalOpen (self : InContext (@AST P) runtime.EnvId .trm) :
       | (.yield (some ⟨index, captured, .fn _ body⟩), .yield (some arg)) =>
         let receipt := runtime.valueEquiv.inv arg
         let extended := runtime.envEquiv.inv ((index, receipt) :: runtime.envs.get captured)
-        evalOpen ⟨P.inc index, extended, body.apply .only⟩ fuel
+        evalOpen ⟨({P with index}).Next.index, extended, body.apply .only⟩ fuel
       | (.outOfFuel, _) => .outOfFuel
       | (_, .outOfFuel) => .outOfFuel
       | _ => .yield none
