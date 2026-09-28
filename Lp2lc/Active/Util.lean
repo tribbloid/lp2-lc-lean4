@@ -13,7 +13,7 @@ infixr:25 " ↪ " => Embedding -- stolen from Mathlib
 instance {α : Sort u} {β : Sort v} : CoeFun (α ↪ β) (λ _ => α → β) where
   coe self := self.toFun
 
-abbrev UCarrier := Type -- the `U` suffix signifies this symbol as denoting a universe level
+abbrev UCarrier := Type -- the `U` prefix signifies this symbol as denoting a universe level
 abbrev UByteCode := Type
 
 
@@ -40,7 +40,7 @@ def Unit (K) := KVRefs K PUnit
 /-- Read-only access to a larger carrier, preserving the base receipt mapping. -/
 structure Greater (K2 V2) extends KVRefs K V2 where
   upcastK : Embedding K2 K
-  upcastV : Embedding V V2 -- this is not important, but it also means (g1 : base.Greater X) != (g2 : base.Greater X) unless the same expression is used to generate them
+  upcastV : Embedding V V2 -- distinguishes views made with different value embeddings
   equivariance : ∀ (receipt : K), get receipt = upcastV (this.get receipt)
 
 structure HasEv (K : UCarrier) where
@@ -66,16 +66,16 @@ structure Lesser (K2 V2) extends KVRefs K2 V2 where
 --   equivariance : ∀ (receipt : {uid // ev uid}), upcastV (get receipt) = this.get receipt.val
 
 structure Adapter (K2 V2) where
-  specify : this.Lesser K2 V2 -- converting a KVRefs to it's Lesser
-  widen : this.Greater K2 V2 -- converting a KVRefs to it's Greater
+  specify : this.Lesser K2 V2 -- converts a KVRefs to its Lesser view
+  widen : this.Greater K2 V2 -- converts a KVRefs to its Greater view
 
 end
 end KVRefs
 
 -- /--
--- Unlike [KVRefs], the key type `UId` is not shared with any other value type, so `get` cannot be abused to non-existing value.
+-- Unlike [KVRefs], the key type `UId` is not shared with other value types, so `get` cannot produce nonexistent values.
 
--- type `V_` is deliberately a type constructor of `V`, without it V may be impossible to define due to cyclic references
+-- The type `V_` is deliberately a type constructor of `V`; otherwise cyclic references may prevent defining `V`.
 -- -/
 -- structure UIdRefs (V_ : UCarrier → Sort u) extends HasUId, KVRefs UId (V_ UId)
 
@@ -100,7 +100,7 @@ end
 end KVEquiv
 
 -- /--
--- has Dependent Unique ID
+-- Has a dependent unique ID.
 -- -/
 -- structure HasDepUId (T: Type) where
 --   DepUId : T -> UCarrier
@@ -193,7 +193,7 @@ end Rec
 -- universe u v
 def Rec (T : Sort u) := (fuel : Nat) -> @Rec.Outcome T
 
--- LATER: all algorithm with this signature should have a proof of monotonicity
+-- LATER: All algorithms with this signature should have a proof of monotonicity.
 
 namespace Rec
 section variable (self : Lp2lc.Active.Util.Rec T)
