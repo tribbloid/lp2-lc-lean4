@@ -87,7 +87,7 @@ hash losslessly recoverable without relying on mutable storage.
 abbrev TestUId := TestHash × Unit
 
 /-- The fixed STLC parameters shared by the concrete fixture. -/
-abbrev TestParameters : Parameters := { Index := TestUId, B := String }
+abbrev TestParameters : Parameters := { TRefndex := TestUId, B := String }
 
 /-- Boxes a `Type 2` payload into a `Type` value so it can be stored in a receipt. -/
 unsafe def boxPayload (payload : AST.Val TestParameters ⊕ AST.Typ TestParameters) : Unit :=

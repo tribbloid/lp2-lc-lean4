@@ -129,21 +129,22 @@ inductive IndexProxy (Index : UCarrier) : Index → Type where
 namespace Parameters
 section variable (this : Parameters)
 
-/-- An erased witness that a context is reachable by extending an earlier context. -/
-inductive Lesser (source : this.TIndex) : this.TIndex → Prop where
-| refl : Lesser source source
-| step {target} (prior : Lesser source target) : Lesser source (this.inc target)
+abbrev nextIndex: this.TIndex := this.inc this.index
 
 abbrev Proxy := IndexProxy this.TIndex
 
-def C : Type := this.Proxy this.index
-
-abbrev nextIndex: this.TIndex := this.inc this.index
+def TRef : Type := this.Proxy this.index
 
 abbrev Next : Parameters :=
   {B := this.B, TIndex := this.TIndex, index := this.nextIndex, inc := this.inc}
 
-def NextC : Type := this.Next.C
+def NextTRef : Type := this.Next.TRef
+
+/-- An erased witness that a context is reachable by extending an earlier context. -/
+inductive Lesser (i1 : this.TIndex) : this.TIndex → Prop where
+| refl : Lesser i1 i1
+| step {i2} (prior : Lesser i1 i2) : Lesser i1 (this.inc i2)
+
 
 end
 end Parameters
