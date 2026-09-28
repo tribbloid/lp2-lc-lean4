@@ -135,7 +135,7 @@ inductive Lesser (source : this.Index) : this.Index → Prop where
 inductive Proxy : this.Index -> Type where
 | only {C : this.Index} : Proxy C
 
-def C : Type := Proxy this.index
+def C : Type := this.Proxy this.index
 
 end
 end Parameters

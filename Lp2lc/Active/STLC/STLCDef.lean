@@ -48,7 +48,7 @@ end Binder
 end Pre
 --------------------------- Locking down Parameters -------------------------
 
-abbrev DeBruijn : Parameters := {Index := Nat, B := String, inc := λ v => v + 1 }
+abbrev DeBruijn : Parameters := {Index := Nat, index := 0, B := String, inc := λ v => v + 1 }
 
 abbrev AST := @Pre.AST DeBruijn
 

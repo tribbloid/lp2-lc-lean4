@@ -32,27 +32,27 @@ mutual
     | .ref (c := receipt) _ _ => .arr #["ref", sigC receipt]
 
   /-- Canonical JSON signature of a [Binder], applying its body to the unique proxy. -/
-  def binderToJson {c : DeBruijn.C} {l : Label} (self : AST.Binder c l)
-      (sigC : DeBruijn.C → Json) (sigB : DeBruijn.B → Json) : Json :=
-    match self withIndex
-    | .mk body => astToIndexson (body ⟨⟩) sigC sigB
+  def binderToJson {c : DeBruijn.Index} {l : Label} (self : AST.Binder c l)
+      (sigC : DeBruijn.Index → Json) (sigB : DeBruijn.B → Json) : Json :=
+    match self with
+    | .mk body => astToJson (body ⟨⟩) sigC sigB
 end
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
-def astBEq {c : DeBruijn.C} {l : Label} (a b : AST c l)
-    (sigC : DeBruijn.C → Json) (sigB : DeBruijn.B → Json) : Bool :=
-  astToJson a sigC sigB =Index astToJson b sigC sigB
-Index
+def astBEq {c : DeBruijn.Index} {l : Label} (a b : AST c l)
+    (sigC : DeBruijn.Index → Json) (sigB : DeBruijn.B → Json) : Bool :=
+  astToJson a sigC sigB == astToJson b sigC sigB
+
 /-- Hash of the caller-supplied JSON signature over [AST]. -/
-def astHash {c : DeBruijn.C} {l : Label} (self : AST c l)
-    (sigC : DeBruijn.C → Json) (sigB : DeBruijn.B → Json) : UInt64 :=
-  hash (astToJson self sigIndex sigB)
-Index
+def astHash {c : DeBruijn.Index} {l : Label} (self : AST c l)
+    (sigC : DeBruijn.Index → Json) (sigB : DeBruijn.B → Json) : UInt64 :=
+  hash (astToJson self sigC sigB)
+
 /-- Hash of the JSON signature of a mixed value-or-type payload. -/
-def hashSum {c : DeBruijn.C} (payload : AST.Val c ⊕ AST.Typ c)
-    (sigC : DeBruijn.C → Json) (sigB : DeBruijn.B → Json) : UInt64 :=
-  match payload withIndex
-  | .inl v => astHashIndexv sigC sigB
+def hashSum {c : DeBruijn.Index} (payload : AST.Val c ⊕ AST.Typ c)
+    (sigC : DeBruijn.Index → Json) (sigB : DeBruijn.B → Json) : UInt64 :=
+  match payload with
+  | .inl v => astHash v sigC sigB
   | .inr t => astHash t sigC sigB
 
 end Lp2lc.Active.STLC
