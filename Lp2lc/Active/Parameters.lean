@@ -20,7 +20,6 @@ inductive Under (base : Parameters) : Parameters → Prop where
 end
 end Parameters
 
-
 /-- Syntax contexts and their successor operation; lexical indices are distinct from runtime value receipts. -/
 structure CtxEmbedding extends HasByteCode where
   TIndex : URef -- lexical context/index
@@ -49,6 +48,9 @@ inductive Under (base : CtxEmbedding) : CtxEmbedding → Prop where
 | lower {p2} (prev : Under base p2) : Under base p2.Next
 
 end
+
+abbrev DeBruijn : CtxEmbedding := {TIndex := Nat, index := 0, B := String, indexInc := Nat.succ }
+
 end CtxEmbedding
 
 end Lp2lc.Active.Util

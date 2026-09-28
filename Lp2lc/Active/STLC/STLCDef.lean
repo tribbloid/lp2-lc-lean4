@@ -54,8 +54,6 @@ end Binder
 end Pre
 ---------------------------- Concrete Parameters ----------------------------
 
-abbrev DeBruijn : CtxEmbedding := {TIndex := Nat, index := 0, B := String, indexInc := Nat.succ }
-
 abbrev AST := @Pre.AST
 
 namespace AST
