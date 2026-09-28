@@ -10,7 +10,7 @@ private def sigB (repr : String) : Json := toJson repr
 private def sigAny (_carrier : Nat) : Json := .null
 
 private def refOne : AST.Trm (AST.At 3) :=
-  AST.ref (source := 1) ⟨⟩
+  AST.ref (source := 1) ⟨⟩ (under := .lower .same)
 
 private def refTwo : AST.Trm (AST.At 3) :=
   AST.ref (source := 2) ⟨⟩

@@ -34,7 +34,7 @@ inductive AST : Parameters → Label → UAST where
     -- fn must be a function that can be applied on arg
 -- A lexical reference identifies a binder slot rather than a mutable variable.
 | ref {P : Parameters} {source : P.TIndex} (carrier : P.Proxy source)
-    (lesser : P.Lesser ({P with index := source}).Next.index P.index := by repeat constructor) : AST P .trm
+    (under : Parameters.Under ({P with index := source}).Next P := by repeat constructor) : AST P .trm
  end
 
 namespace Binder
@@ -77,8 +77,8 @@ abbrev fn {P : Parameters} (tIn : AST.Typ P) (body : AST.Binder P .trm) : AST.Va
 abbrev val {P : Parameters} (v : AST.Val P) : AST.Trm P := @Pre.AST.val P v
 abbrev apply {P : Parameters} (fn arg : AST.Trm P) : AST.Trm P := @Pre.AST.apply P fn arg
 abbrev ref {P : Parameters} {source : P.TIndex} (carrier : P.Proxy source)
-    (lesser : P.Lesser ({P with index := source}).Next.index P.index := by repeat constructor) : AST.Trm P :=
-  @Pre.AST.ref P source carrier lesser
+    (under : Parameters.Under ({P with index := source}).Next P := by repeat constructor) : AST.Trm P :=
+  @Pre.AST.ref P source carrier under
 
 /-- Current STLC subtyping coincides with structural type equality. -/
 instance typLE {P : Parameters} : LE (AST.Typ P) := ⟨Eq⟩

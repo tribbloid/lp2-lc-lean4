@@ -21,13 +21,9 @@ abbrev Next : Parameters :=
 def NextTRef : Type := this.Next.TRef
 
 /-- An erased witness that a context is reachable by extending an earlier context. -/
-inductive Lesser (i1 : this.TIndex) : this.TIndex → Prop where
-| refl : Lesser i1 i1
-| step {i2} (prior : Lesser i1 i2) : Lesser i1 ({this with index := i2}).Next.index
-
-inductive Under (base : Parameters) : Parameters -> Prop where
+inductive Under (base : Parameters) : Parameters → Prop where
 | same : Under base base
-| lower {p2} (prev: Under base p2) : Under base p2.Next
+| lower {p2} (prev : Under base p2) : Under base p2.Next
 
 end
 end Parameters
