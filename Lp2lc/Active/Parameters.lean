@@ -29,7 +29,7 @@ structure CtxEmbedding extends HasByteCode where
 namespace CtxEmbedding
 section variable (this : CtxEmbedding)
 
-/-- A proxy tied to an index type, so it survives updates to a Parameters context. -/
+/-- A proxy whose type records a lexical context slot. -/
 inductive IndexProxy (Index : URef) : Index → Type where
 | only {C : Index} : IndexProxy Index C
 
