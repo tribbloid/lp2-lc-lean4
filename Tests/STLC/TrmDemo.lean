@@ -5,9 +5,9 @@ namespace Tests.STLC.Sanity
 open Lp2lc.Active.STLC
 open Tests.STLC.Sanity.Symbolic
 
-def bFalse : DeBruijn.B := "false"
+def bFalse : Lp2lc.Active.Util.CtxEmbedding.DeBruijn.B := "false"
 
-def bTrue : DeBruijn.B := "true"
+def bTrue : Lp2lc.Active.Util.CtxEmbedding.DeBruijn.B := "true"
 
 namespace Trm
 
@@ -50,7 +50,7 @@ def primitiveTrueFnOnFalse : Trm :=
 namespace FreeCapture
 
 /-- A symbolic outer-context slot used by the syntax-only capture examples. -/
-def freeSlot : Lp2lc.Active.Util.Parameters.Proxy DeBruijn 0 := .only
+def freeSlot : Lp2lc.Active.Util.CtxEmbedding.Proxy Lp2lc.Active.Util.CtxEmbedding.DeBruijn 0 := .only
 
 def directRef : AST.Trm (AST.At 1) :=
   AST.ref (source := 0) freeSlot
