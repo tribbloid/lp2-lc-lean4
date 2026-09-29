@@ -27,13 +27,13 @@ def get1st : Trm :=
   .val
     (.fn .TLit
       (.mk (λ first =>
-        .val (.fn .TLit (.mk (λ _ => AST.ref (source := 0) first))))))
+        .val (.fn .TLit (.mk (λ _ => AST.ref (source := 1) first))))))
 
 def get2nd : Trm :=
   .val
     (.fn .TLit
       (.mk (λ _ =>
-        .val (.fn .TLit (.mk (λ second => AST.ref (source := 1) second))))))
+        .val (.fn .TLit (.mk (λ second => AST.ref (source := 2) second))))))
 
 def get1stOnTuple : Trm :=
   .apply (.apply get1st vFalse) vTrue
