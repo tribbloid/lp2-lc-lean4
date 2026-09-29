@@ -5,17 +5,23 @@ namespace Tests.STLC.HashSpec
 open Lean (Json toJson)
 open Lp2lc.Active.Util Lp2lc.Active.STLC
 
-private def sigC (carrier : Nat) : Json := toJson carrier
+private def sigC (index : Nat) : Json := toJson index
 private def sigB (repr : String) : Json := toJson repr
-private def sigAny (_carrier : Nat) : Json := .null
+private def sigAny (_index : Nat) : Json := .null
 
 private def refOne : AST.Trm (AST.At 3) :=
-  AST.ref (source := 1) ⟨⟩ (under := .lower (.lower .same))
+  AST.ref (.inl (.inl (.inr .only)))
 
 private def refTwo : AST.Trm (AST.At 3) :=
-  AST.ref (source := 2) ⟨⟩ (under := .lower .same)
+  AST.ref (.inl (.inr .only))
 
-private def idVal : AST.Val (AST.At 1) := AST.fn .TLit (.mk (λ proxy => AST.ref proxy))
+private def idVal : AST.Val (AST.At 1) := .fn .TLit (.mk (λ proxy => .ref proxy))
+
+example : astToJson (AST.ref (.inl .only) : AST.Trm (AST.At 1)) sigC sigB =
+    .arr #["ref", toJson (0 : Nat)] := rfl
+
+example : astToJson (AST.ref (.inr .only) : AST.Trm (AST.At 1)) sigC sigB =
+    .arr #["ref", toJson (1 : Nat)] := rfl
 
 example : astToJson (.TLit : AST.Typ (AST.At 0)) sigC sigB = "primitive" := rfl
 

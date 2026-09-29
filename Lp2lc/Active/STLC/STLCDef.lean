@@ -13,41 +13,37 @@ namespace Pre
 mutual
 
 /-- A binder introduces the next lexical context for its body. -/
-inductive Binder : CtxEmbedding → Label → UAST where
-| mk {P : CtxEmbedding} (body : P.TRefNext →
+inductive Binder : Parameters → Label → UAST where
+| mk {P : Parameters} (body : P.TRefInc P.TRef →
     AST P.Next l) : Binder P l
 
 /-- Source type, value, and term syntax.
 
 `TLit` classifies primitive bytecode values and `TFn` classifies functions.
 -/
-inductive AST : CtxEmbedding → Label → UAST where
-| TLit {P : CtxEmbedding} : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
-| lit {P : CtxEmbedding} (repr : P.B) : AST P .val -- most specific type is always `primitive`
+inductive AST : Parameters → Label → UAST where
+| TLit {P : Parameters} : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
+| lit {P : Parameters} (repr : P.B) : AST P .val -- most specific type is always `primitive`
 
-| TFn {P : CtxEmbedding} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
-| fn {P : CtxEmbedding} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
+| TFn {P : Parameters} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
+| fn {P : Parameters} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
     -- most specific type is always `.fn tIn _`
 
-| val {P : CtxEmbedding} (v : AST P .val) : AST P .trm -- AKA literal
-| apply {P : CtxEmbedding} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
+| val {P : Parameters} (v : AST P .val) : AST P .trm -- AKA literal
+| apply {P : Parameters} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
     -- fn must be a function that can be applied on arg
 -- A lexical reference identifies a binder slot rather than a mutable variable.
-| ref {P : CtxEmbedding} {source : P.TIndex} (carrier : P.Proxy source)
-    (under : CtxEmbedding.Under {P with index := source} P := by repeat constructor) : AST P .trm
+| ref {P : Parameters} (carrier : P.TRef) : AST P .trm
  end
 
 namespace Binder
 -- All theorems about Binder should be here, e.g. parametricity, lift relation
 
-/-- Opens a binder body at its declared reference slot. -/
-def apply {P : CtxEmbedding} {l : Label}
-    (self : Binder P l)
-    (carrier : P.TRefNext) :
-    AST P.Next l :=
+/-- Opens a binder body with the supplied reference receipt. -/
+def apply {P : Parameters} {l : Label} (self : Binder P l)
+    (carrier : P.TRefInc P.TRef) : AST P.Next l :=
   match self with
-  | .mk body =>
-    body carrier
+  | .mk body => body carrier
 
 end Binder
 
@@ -58,32 +54,40 @@ abbrev AST := @Pre.AST
 
 namespace AST
 
-abbrev At (c : CtxEmbedding.DeBruijn.TIndex) : CtxEmbedding := {CtxEmbedding.DeBruijn with index := c}
+abbrev At (c : Nat) : Parameters :=
+  { (CtxEmbedding.DeBruijn : Parameters) with
+    TRef := Nat.rec (CtxEmbedding.DeBruijn : Parameters).TRef
+      (λ _ T => (CtxEmbedding.DeBruijn : Parameters).TRefInc T) c }
 
-abbrev Binder (P : CtxEmbedding) (l : Label) := @Pre.Binder P l
+theorem at_next (c : Nat) : (At c).Next = At (c + 1) := rfl
 
-abbrev Typ (P : CtxEmbedding) := AST P .typ
-abbrev Trm (P : CtxEmbedding) := AST P .trm
-abbrev Val (P : CtxEmbedding) := AST P .val
+/-- Decodes the lexical slot carried by a concrete De Bruijn reference. -/
+def refIndex : (c : Nat) → (At c).TRef → Nat
+  | 0, _ => 0
+  | c + 1, .inl carrier => refIndex c carrier
+  | c + 1, .inr _ => c + 1
 
-abbrev TLit {P : CtxEmbedding} : AST.Typ P := @Pre.AST.TLit P
-abbrev lit {P : CtxEmbedding} (repr : P.B) : AST.Val P := @Pre.AST.lit P repr
-abbrev TFn {P : CtxEmbedding} (tIn tOut : AST.Typ P) : AST.Typ P :=
-  @Pre.AST.TFn P tIn tOut
-abbrev fn {P : CtxEmbedding} (tIn : AST.Typ P) (body : AST.Binder P .trm) : AST.Val P :=
+abbrev Binder (P : Parameters) (l : Label) := @Pre.Binder P l
+
+abbrev Typ (P : Parameters) := AST P .typ
+abbrev Trm (P : Parameters) := AST P .trm
+abbrev Val (P : Parameters) := AST P .val
+
+abbrev TLit {P : Parameters} : AST.Typ P := @Pre.AST.TLit P
+abbrev lit {P : Parameters} (repr : P.B) : AST.Val P := @Pre.AST.lit P repr
+abbrev TFn {P : Parameters} (tIn tOut : AST.Typ P) : AST.Typ P := @Pre.AST.TFn P tIn tOut
+abbrev fn {P : Parameters} (tIn : AST.Typ P) (body : AST.Binder P .trm) : AST.Val P :=
   @Pre.AST.fn P tIn body
-abbrev val {P : CtxEmbedding} (v : AST.Val P) : AST.Trm P := @Pre.AST.val P v
-abbrev apply {P : CtxEmbedding} (fn arg : AST.Trm P) : AST.Trm P := @Pre.AST.apply P fn arg
-abbrev ref {P : CtxEmbedding} {source : P.TIndex} (carrier : P.Proxy source)
-    (under : CtxEmbedding.Under {P with index := source} P := by repeat constructor) : AST.Trm P :=
-  @Pre.AST.ref P source carrier under
+abbrev val {P : Parameters} (v : AST.Val P) : AST.Trm P := @Pre.AST.val P v
+abbrev apply {P : Parameters} (fn arg : AST.Trm P) : AST.Trm P := @Pre.AST.apply P fn arg
+abbrev ref := @Pre.AST.ref
 
 /-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE {P : CtxEmbedding} : LE (AST.Typ P) := ⟨Eq⟩
+instance typLE {P : Parameters} : LE (AST.Typ P) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
-instance typDecidableLE {P : CtxEmbedding} : DecidableLE (AST.Typ P)
+instance typDecidableLE {P : Parameters} : DecidableLE (AST.Typ P)
   | .TLit, .TLit => isTrue rfl
   | .TLit, .TFn _ _
   | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
@@ -95,7 +99,7 @@ instance typDecidableLE {P : CtxEmbedding} : DecidableLE (AST.Typ P)
 
 namespace Val
 
-def asTrm {P : CtxEmbedding} (self : AST.Val P) : AST.Trm P := .val self
+def asTrm {P : Parameters} (self : AST.Val P) : AST.Trm P := .val self
 
 end Val
 

@@ -49,11 +49,14 @@ inductive Under (base : CtxEmbedding) : CtxEmbedding → Prop where
 
 end
 
-/-- Builds reference-type parameters from a lexical context. -/
+/-- Builds parameters whose successor retains prior references and adds the next lexical slot. -/
 def toParameters (this : CtxEmbedding) : Parameters :=
   { B := this.B
     TRef := this.TRef
-    TRefInc := λ _TRef => this.TRefNext }
+    TRefInc := λ TRef => TRef ⊕ this.TRefNext }
+
+instance : Coe CtxEmbedding Parameters where
+  coe := toParameters
 
 abbrev DeBruijn : CtxEmbedding := {TIndex := Nat, index := 0, B := String, indexInc := Nat.succ }
 
