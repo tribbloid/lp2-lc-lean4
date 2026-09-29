@@ -65,7 +65,7 @@ end
 
 /-- JSON signature of concrete De Bruijn syntax. -/
 def astToJson {refs : URef} [numbering : SlotNumbering refs] {l : Label}
-    (self : AST (deBruijnParameters refs) l)
+    (self : AST (CtxEmbedding.DeBruijn.toParameters.withTRef refs) l)
     (sigC : Nat → Json) (sigB : String → Json) : Json :=
   astToJsonAux self
     { level := numbering.level
@@ -75,19 +75,20 @@ def astToJson {refs : URef} [numbering : SlotNumbering refs] {l : Label}
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
 def astBEq {refs : URef} [SlotNumbering refs] {l : Label}
-    (a b : AST (deBruijnParameters refs) l)
+    (a b : AST (CtxEmbedding.DeBruijn.toParameters.withTRef refs) l)
     (sigC : Nat → Json) (sigB : String → Json) : Bool :=
   astToJson a sigC sigB == astToJson b sigC sigB
 
 /-- Hash of the caller-supplied JSON signature over [AST]. -/
 def astHash {refs : URef} [SlotNumbering refs] {l : Label}
-    (self : AST (deBruijnParameters refs) l)
+    (self : AST (CtxEmbedding.DeBruijn.toParameters.withTRef refs) l)
     (sigC : Nat → Json) (sigB : String → Json) : UInt64 :=
   hash (astToJson self sigC sigB)
 
 /-- Hash of the JSON signature of a mixed value-or-type payload. -/
 def hashSum {refs : URef} [SlotNumbering refs]
-    (payload : AST.Val (deBruijnParameters refs) ⊕ AST.Typ (deBruijnParameters refs))
+    (payload : AST.Val (CtxEmbedding.DeBruijn.toParameters.withTRef refs) ⊕
+      AST.Typ (CtxEmbedding.DeBruijn.toParameters.withTRef refs))
     (sigC : Nat → Json) (sigB : String → Json) : UInt64 :=
   match payload with
   | .inl v => astHash v sigC sigB

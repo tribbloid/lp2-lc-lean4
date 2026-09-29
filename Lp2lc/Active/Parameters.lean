@@ -13,6 +13,8 @@ abbrev TRefNext : URef := this.TRefInc this.TRef
 
 abbrev Next : Parameters := {this with TRef := this.TRefNext}
 
+abbrev withTRef (refs : URef) : Parameters := {this with TRef := refs}
+
 /-- An erased witness that a context is reachable by extending an earlier context. -/
 inductive Under (base : Parameters) : Parameters → Prop where
 | same : Under base base
