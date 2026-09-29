@@ -18,12 +18,13 @@ def eval (self : AST.Trm (AST.At c)) (bindings : Bindings) : RecOpt RuntimeValue
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val value => .yield (some (.mk c value bindings))
-    | .ref (source := source) _ _ => .yield (bindings source)
-    | .apply fn arg =>
-      match fn.eval bindings fuel, arg.eval bindings fuel with
-      | .yield (some (.mk source (.fn _ body) captured)), .yield (some value) =>
-        eval (body.apply .only) (λ slot => if slot = source then some value else captured slot) fuel
+    | Pre.AST.val value => .yield (some (.mk c value bindings))
+    | Pre.AST.ref (source := source) _ _ => .yield (bindings source)
+    | Pre.AST.apply fn arg =>
+      match eval fn bindings fuel, eval arg bindings fuel with
+      | Rec.Outcome.yield (some (RuntimeValue.mk source (Pre.AST.fn _ body) captured)),
+          Rec.Outcome.yield (some value) =>
+        eval (body.apply .only) (λ slot => if slot = source + 1 then some value else captured slot) fuel
       | .outOfFuel, _ => .outOfFuel
       | _, .outOfFuel => .outOfFuel
       | _, _ => .yield none
