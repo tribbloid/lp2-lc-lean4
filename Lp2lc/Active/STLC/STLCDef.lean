@@ -14,7 +14,7 @@ mutual
 
 /-- A binder introduces the next lexical context for its body. -/
 inductive Binder : Parameters → Label → UAST where
-| mk {P : Parameters} (body : P.TRefInc P.TRef →
+| mk {P : Parameters} (body : P.TRefInc P.TRef → -- TODO: add P.TRefNext := TRefInc TRef, use it here
     AST P.Next l) : Binder P l
 
 /-- Source type, value, and term syntax.

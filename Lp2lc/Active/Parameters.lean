@@ -55,7 +55,7 @@ def toParameters (this : CtxEmbedding) : Parameters :=
     TRef := this.TRef
     TRefInc := λ TRef => TRef ⊕ this.TRefNext }
 
-instance : Coe CtxEmbedding Parameters where
+instance : Coe CtxEmbedding Parameters where -- TODO: not need, explicit conversion is good enough
   coe := toParameters
 
 abbrev DeBruijn : CtxEmbedding := {TIndex := Nat, index := 0, B := String, indexInc := Nat.succ }
