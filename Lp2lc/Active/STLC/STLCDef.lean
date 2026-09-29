@@ -55,9 +55,8 @@ abbrev AST := @Pre.AST
 namespace AST
 
 abbrev At (c : Nat) : Parameters :=
-  { (CtxEmbedding.DeBruijn : Parameters) with
-    TRef := Nat.rec (CtxEmbedding.DeBruijn : Parameters).TRef
-      (λ _ T => (CtxEmbedding.DeBruijn : Parameters).TRefInc T) c }
+  let base := CtxEmbedding.DeBruijn.toParameters
+  { base with TRef := Nat.rec base.TRef (λ _ T => base.TRefInc T) c }
 
 theorem at_next (c : Nat) : (At c).Next = At (c + 1) := rfl
 
