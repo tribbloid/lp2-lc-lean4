@@ -9,8 +9,9 @@ structure Parameters extends HasByteCode where
 namespace Parameters
 section variable (this : Parameters)
 
-abbrev Next : Parameters :=
-  {this with TRef := this.TRefInc this.TRef}
+abbrev TRefNext : URef := this.TRefInc this.TRef
+
+abbrev Next : Parameters := {this with TRef := this.TRefNext}
 
 /-- An erased witness that a context is reachable by extending an earlier context. -/
 inductive Under (base : Parameters) : Parameters → Prop where

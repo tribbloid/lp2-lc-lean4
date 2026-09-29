@@ -14,8 +14,7 @@ mutual
 
 /-- A binder introduces the next lexical context for its body. -/
 inductive Binder : Parameters → Label → UAST where
-| mk {P : Parameters} (body : P.TRefInc P.TRef → -- TODO: add P.TRefNext := TRefInc TRef, use it here
-    AST P.Next l) : Binder P l
+| mk {P : Parameters} (body : P.TRefNext → AST P.Next l) : Binder P l
 
 /-- Source type, value, and term syntax.
 
@@ -41,7 +40,7 @@ namespace Binder
 
 /-- Opens a binder body with the supplied reference receipt. -/
 def apply {P : Parameters} {l : Label} (self : Binder P l)
-    (carrier : P.TRefInc P.TRef) : AST P.Next l :=
+    (carrier : P.TRefNext) : AST P.Next l :=
   match self with
   | .mk body => body carrier
 
