@@ -14,7 +14,7 @@ mutual
 
 /-- A binder introduces the next lexical context for its body. -/
 inductive Binder : CtxEmbedding → Label → UAST where
-| mk {P : CtxEmbedding} (body : P.Proxy P.index →
+| mk {P : CtxEmbedding} (body : P.TRefNext →
     AST P.Next l) : Binder P l
 
 /-- Source type, value, and term syntax.
