@@ -57,14 +57,6 @@ abbrev At (c : Nat) : Parameters :=
   let base := CtxEmbedding.DeBruijn.toParameters
   { base with TRef := Nat.rec base.TRef (λ _ T => base.TRefInc T) c }
 
-theorem at_next (c : Nat) : (At c).Next = At (c + 1) := rfl
-
-/-- Decodes the lexical slot carried by a concrete De Bruijn reference. -/
-def refIndex : (c : Nat) → (At c).TRef → Nat
-  | 0, _ => 0
-  | c + 1, .inl carrier => refIndex c carrier
-  | c + 1, .inr _ => c + 1
-
 abbrev Binder (P : Parameters) (l : Label) := @Pre.Binder P l
 
 abbrev Typ (P : Parameters) := AST P .typ

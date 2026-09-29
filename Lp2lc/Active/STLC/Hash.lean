@@ -22,11 +22,13 @@ private def RefIndex.next {P : Parameters} (self : RefIndex P) : RefIndex P.Next
     lift := self.lift
     fresh := self.fresh }
 
-private def deBruijnRefs (c : Nat) : RefIndex (AST.At c) :=
-  { level := c
-    read := AST.refIndex c
-    lift := λ _ level read carrier => carrier.elim read (λ _ => level + 1)
-    fresh := λ _ => .inr .only }
+private def deBruijnRefs : (c : Nat) → RefIndex (AST.At c)
+  | 0 =>
+    { level := 0
+      read := λ _ => 0
+      lift := λ _ level read carrier => carrier.elim read (λ _ => level + 1)
+      fresh := λ _ => .inr .only }
+  | c + 1 => (deBruijnRefs c).next
 
 mutual
   /--

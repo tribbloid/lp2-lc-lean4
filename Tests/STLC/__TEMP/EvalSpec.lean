@@ -14,12 +14,13 @@ private def literalResult (result : Rec.Outcome (Option RuntimeValue)) : Option 
   | _ => none
 
 private def outerValue : RuntimeValue := .mk 0 (.lit "outer") (λ _ => none)
-private def knownBindings : Bindings := λ slot => if slot = 0 then some outerValue else none
+private def knownBindings : Bindings 0 := λ _ => some outerValue
 
 example : literalResult (AST.Trm.eval Trm.primitiveIdFnOnFalse (λ _ => none) 2) = some "false" := rfl
 example : literalResult (AST.Trm.eval Trm.get1stOnTuple (λ _ => none) 3) = some "false" := rfl
 example : literalResult (AST.Trm.eval Trm.get2ndOnTuple (λ _ => none) 3) = some "true" := rfl
-example : literalResult (AST.Trm.eval Trm.FreeCapture.directRef knownBindings 1) = some "outer" := rfl
+example : literalResult (AST.Trm.eval Trm.FreeCapture.directRef
+    (λ carrier => carrier.elim knownBindings (λ _ => none)) 1) = some "outer" := rfl
 example : literalResult (AST.Trm.eval Trm.FreeCapture.capturedRefOnFalse knownBindings 2) = some "outer" := rfl
 
 end eval
