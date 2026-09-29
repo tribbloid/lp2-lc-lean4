@@ -51,9 +51,9 @@ inductive Under (base : CtxEmbedding) : CtxEmbedding → Prop where
 end
 
 /-- Builds parameters whose successor retains prior references and adds the next lexical slot. -/
-abbrev toParameters (this : CtxEmbedding) (refs : URef := this.TRef) : Parameters :=
+abbrev toParameters (this : CtxEmbedding) : Parameters :=
   { B := this.B
-    TRef := refs
+    TRef := this.TRef
     TRefInc := λ TRef => TRef ⊕ this.TRefNext }
 
 abbrev DeBruijn : CtxEmbedding := {TIndex := Nat, index := 0, B := String, indexInc := Nat.succ }

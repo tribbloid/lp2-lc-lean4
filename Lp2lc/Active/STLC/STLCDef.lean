@@ -51,6 +51,10 @@ end Pre
 
 abbrev AST := @Pre.AST
 
+/-- De Bruijn parameters with a carrier for the references already in scope. -/
+abbrev deBruijnParameters (refs : URef) : Parameters :=
+  {CtxEmbedding.DeBruijn.toParameters with TRef := refs}
+
 namespace AST
 
 abbrev Binder (P : Parameters) (l : Label) := @Pre.Binder P l
