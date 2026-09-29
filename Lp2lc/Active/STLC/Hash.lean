@@ -10,6 +10,19 @@ namespace Lp2lc.Active.STLC
 open Lean (Json)
 open Lp2lc.Active.Util
 
+class SlotNumbering (refs : URef) where
+  level : Nat
+  read : refs → Nat
+
+instance : SlotNumbering CtxEmbedding.DeBruijn.TRef where
+  level := 0
+  read := λ _ => 0
+
+instance {refs : URef} [numbering : SlotNumbering refs] :
+    SlotNumbering (refs ⊕ CtxEmbedding.DeBruijn.TRefNext) where
+  level := numbering.level + 1
+  read := λ carrier => carrier.elim numbering.read (λ _ => numbering.level + 1)
+
 private structure RefIndex (P : Parameters) where
   level : Nat
   read : P.TRef → Nat
@@ -21,14 +34,6 @@ private def RefIndex.next {P : Parameters} (self : RefIndex P) : RefIndex P.Next
     read := self.lift P.TRef self.level self.read
     lift := self.lift
     fresh := self.fresh }
-
-private def deBruijnRefs : (c : Nat) → RefIndex (AST.At c)
-  | 0 =>
-    { level := 0
-      read := λ _ => 0
-      lift := λ _ level read carrier => carrier.elim read (λ _ => level + 1)
-      fresh := λ _ => .inr .only }
-  | c + 1 => (deBruijnRefs c).next
 
 mutual
   /--
@@ -59,22 +64,31 @@ mutual
 end
 
 /-- JSON signature of concrete De Bruijn syntax. -/
-def astToJson {c : Nat} {l : Label} (self : AST (AST.At c) l)
+def astToJson {refs : URef} [numbering : SlotNumbering refs] {l : Label}
+    (self : AST (CtxEmbedding.DeBruijn.toParameters (refs := refs)) l)
     (sigC : Nat → Json) (sigB : String → Json) : Json :=
-  astToJsonAux self (deBruijnRefs c) sigC sigB
+  astToJsonAux self
+    { level := numbering.level
+      read := numbering.read
+      lift := λ _ level read carrier => carrier.elim read (λ _ => level + 1)
+      fresh := λ _ => .inr .only } sigC sigB
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
-def astBEq {c : Nat} {l : Label} (a b : AST (AST.At c) l)
+def astBEq {refs : URef} [SlotNumbering refs] {l : Label}
+    (a b : AST (CtxEmbedding.DeBruijn.toParameters (refs := refs)) l)
     (sigC : Nat → Json) (sigB : String → Json) : Bool :=
   astToJson a sigC sigB == astToJson b sigC sigB
 
 /-- Hash of the caller-supplied JSON signature over [AST]. -/
-def astHash {c : Nat} {l : Label} (self : AST (AST.At c) l)
+def astHash {refs : URef} [SlotNumbering refs] {l : Label}
+    (self : AST (CtxEmbedding.DeBruijn.toParameters (refs := refs)) l)
     (sigC : Nat → Json) (sigB : String → Json) : UInt64 :=
   hash (astToJson self sigC sigB)
 
 /-- Hash of the JSON signature of a mixed value-or-type payload. -/
-def hashSum {c : Nat} (payload : AST.Val (AST.At c) ⊕ AST.Typ (AST.At c))
+def hashSum {refs : URef} [SlotNumbering refs]
+    (payload : AST.Val (CtxEmbedding.DeBruijn.toParameters (refs := refs)) ⊕
+      AST.Typ (CtxEmbedding.DeBruijn.toParameters (refs := refs)))
     (sigC : Nat → Json) (sigB : String → Json) : UInt64 :=
   match payload with
   | .inl v => astHash v sigC sigB

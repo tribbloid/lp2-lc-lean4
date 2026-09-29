@@ -3,6 +3,7 @@ import «Tests».STLC.ValDemo
 namespace Tests.STLC.Sanity
 
 open Lp2lc.Active.STLC
+open Lp2lc.Active.Util
 open Tests.STLC.Sanity.Symbolic
 
 def bFalse : Lp2lc.Active.Util.CtxEmbedding.DeBruijn.B := "false"
@@ -50,12 +51,12 @@ def primitiveTrueFnOnFalse : Trm :=
 namespace FreeCapture
 
 /-- A symbolic outer-context slot used by the syntax-only capture examples. -/
-def freeSlot : (AST.At 0).TRef := .only
+def freeSlot : CtxEmbedding.DeBruijn.TRef := .only
 
-def directRef : AST.Trm (AST.At 1) :=
+def directRef : AST.Trm CtxEmbedding.DeBruijn.toParameters.Next :=
   AST.ref (.inl freeSlot)
 
-def capturedRef : AST.Trm (AST.At 0) :=
+def capturedRef : AST.Trm CtxEmbedding.DeBruijn.toParameters :=
   .val (.fn .TLit (.mk (λ _ => AST.ref (.inl freeSlot))))
 
 def capturedRefOnFalse : Trm :=

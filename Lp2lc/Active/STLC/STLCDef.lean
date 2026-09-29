@@ -53,10 +53,6 @@ abbrev AST := @Pre.AST
 
 namespace AST
 
-abbrev At (c : Nat) : Parameters :=
-  let base := CtxEmbedding.DeBruijn.toParameters
-  { base with TRef := Nat.rec base.TRef (λ _ T => base.TRefInc T) c }
-
 abbrev Binder (P : Parameters) (l : Label) := @Pre.Binder P l
 
 abbrev Typ (P : Parameters) := AST P .typ

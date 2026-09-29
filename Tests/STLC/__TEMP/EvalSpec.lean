@@ -13,8 +13,10 @@ private def literalResult (result : Rec.Outcome (Option RuntimeValue)) : Option 
   | .yield (some (RuntimeValue.mk _ (Pre.AST.lit repr) _)) => some repr
   | _ => none
 
-private def outerValue : RuntimeValue := .mk 0 (.lit "outer") (λ _ => none)
-private def knownBindings : Bindings 0 := λ _ => some outerValue
+private def outerValue : RuntimeValue :=
+  .mk CtxEmbedding.DeBruijn.TRef (.lit "outer") (λ _ => none)
+private def knownBindings : CtxEmbedding.DeBruijn.TRef → Option RuntimeValue :=
+  λ _ => some outerValue
 
 example : literalResult (AST.Trm.eval Trm.primitiveIdFnOnFalse (λ _ => none) 2) = some "false" := rfl
 example : literalResult (AST.Trm.eval Trm.get1stOnTuple (λ _ => none) 3) = some "false" := rfl

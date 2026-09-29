@@ -3,12 +3,13 @@ import «Lp2lc».Active.STLC.STLCDef
 namespace Tests.STLC.Sanity
 
 open Lp2lc.Active.STLC
+open Lp2lc.Active.Util
 
 namespace Symbolic
 
-abbrev Typ := AST.Typ (AST.At 0)
-abbrev Val := AST.Val (AST.At 0)
-abbrev Trm := AST.Trm (AST.At 0)
+abbrev Typ := AST.Typ CtxEmbedding.DeBruijn.toParameters
+abbrev Val := AST.Val CtxEmbedding.DeBruijn.toParameters
+abbrev Trm := AST.Trm CtxEmbedding.DeBruijn.toParameters
 
 end Symbolic
 
