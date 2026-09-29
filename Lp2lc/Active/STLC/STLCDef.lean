@@ -34,7 +34,7 @@ inductive AST : CtxEmbedding → Label → UAST where
     -- fn must be a function that can be applied on arg
 -- A lexical reference identifies a binder slot rather than a mutable variable.
 | ref {P : CtxEmbedding} {source : P.TIndex} (carrier : P.Proxy source)
-    (under : CtxEmbedding.Under ({P with index := source}).Next P := by repeat constructor) : AST P .trm
+    (under : CtxEmbedding.Under {P with index := source} P := by repeat constructor) : AST P .trm
  end
 
 namespace Binder
@@ -43,7 +43,7 @@ namespace Binder
 /-- Opens a binder body at its declared reference slot. -/
 def apply {P : CtxEmbedding} {l : Label}
     (self : Binder P l)
-    (carrier : P.Proxy P.index) :
+    (carrier : P.TRefNext) :
     AST P.Next l :=
   match self with
   | .mk body =>
@@ -75,7 +75,7 @@ abbrev fn {P : CtxEmbedding} (tIn : AST.Typ P) (body : AST.Binder P .trm) : AST.
 abbrev val {P : CtxEmbedding} (v : AST.Val P) : AST.Trm P := @Pre.AST.val P v
 abbrev apply {P : CtxEmbedding} (fn arg : AST.Trm P) : AST.Trm P := @Pre.AST.apply P fn arg
 abbrev ref {P : CtxEmbedding} {source : P.TIndex} (carrier : P.Proxy source)
-    (under : CtxEmbedding.Under ({P with index := source}).Next P := by repeat constructor) : AST.Trm P :=
+    (under : CtxEmbedding.Under {P with index := source} P := by repeat constructor) : AST.Trm P :=
   @Pre.AST.ref P source carrier under
 
 /-- Current STLC subtyping coincides with structural type equality. -/
