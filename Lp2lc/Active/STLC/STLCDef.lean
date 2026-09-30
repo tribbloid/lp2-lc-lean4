@@ -49,7 +49,7 @@ end Binder
 end Pre
 ---------------------------- Concrete Parameters ----------------------------
 
-abbrev AST := @Pre.AST
+abbrev AST := @Pre.AST CtxEmbedding.DeBruijn.toParameters
 
 namespace AST
 
