@@ -1,5 +1,7 @@
 OOPSALA Proof
-- https://github.com/TiarkRompf/minidot
+
+- <https://github.com/TiarkRompf/minidot>
 
 WadlerFest Proof
-- https://github.com/samuelgruetter/dot-calculus
+
+- <https://github.com/samuelgruetter/dot-calculus>

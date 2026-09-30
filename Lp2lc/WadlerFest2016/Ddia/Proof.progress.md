@@ -98,5 +98,6 @@ All theorem/lemma statements to be scaffolded in Proof.lean (Proven? = no).
 | progress_result                | progress_result            | no      | progress         |
 
 Notes:
+
 - This table is comprehensive for Ddia.v; as stubs are added to Proof.lean, keep this list in-sync.
 - All entries are currently unproven (scaffold step).

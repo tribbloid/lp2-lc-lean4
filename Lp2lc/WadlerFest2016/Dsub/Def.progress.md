@@ -3,7 +3,7 @@
 This file tracks the conversion of Coq declarations in Lp2lc_coq/Active/Dsub.v into Lean.
 
 | Coq name | Lean name | Category |
-|---|---|---|
+| --- | --- | --- |
 | Inductive typ | typ | inductive |
 | Inductive trm | trm | inductive |
 | Fixpoint open_t_rec | open_t_rec | function |

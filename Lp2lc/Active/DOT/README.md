@@ -5,22 +5,22 @@ Conventions:
   irrelevant, no de Bruijn serial or explicit variable name allowed
 - All typing/subtyping/variance relations are evidences (a special kind of
   term)! These includes:
-  - typing: t : T
-  - subtyping: T1 <:< T2
-  - variance for type constructors: [+I] => T[I], [-I] => T[I]
+    - typing: t : T
+    - subtyping: T1 <:< T2
+    - variance for type constructors: [+I] => T[I], [-I] => T[I]
 - Extrinsic typing, in pCIC a type cannot be indexed by another type in the same
   mutual block which makes intrinsic typing IMPOSSIBLE. Types still exists in
   term constructors, but they are evaluated much later.
 - Scala is purely functional, stateless with structural object/record, so:
-  - No let-binding! (exists in Wadler 2016 but was quickly removed), binding is
+    - No let-binding! (exists in Wadler 2016 but was quickly removed), binding is
     just monoFn/monoApply with side effects on the record of local variables
-  - Explicit Env/Context/Store is just a collection of all 3 kinds of evidences
+    - Explicit Env/Context/Store is just a collection of all 3 kinds of evidences
     (backed by Heyting lattice).
 
     It's only an IR built from only a AST tree and nothing else, but it's an
     important one. Without it we may never be able to infer the equality of
-    - `type A; type B <: A`, and
-    - `type B; type A >: B`
+        - `type A; type B <: A`, and
+        - `type B; type A >: B`
 - We haven't reach variance yet, so both Function and SubtypeEvidence are
   invariant (IRL they are 1-contravariant and 2-covariant, but we will get
   there)

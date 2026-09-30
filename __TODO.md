@@ -7,9 +7,9 @@ in HOAS, functions in Scala (object-language) is usually represented by construc
 the most difficult part of HOAS repr is that it is hard to enforce 2 rules to 1 AST:
 
 - compilletime cannot execute most code (assumed to be non-pure & interacting with IO)
-  - transparent fns are exception (not inline fns! they are subjected to normal typing rule)
+    - transparent fns are exception (not inline fns! they are subjected to normal typing rule)
 - runtime cannot see most types
-  - classTag/typeTag are exception
+    - classTag/typeTag are exception
 - both are recursive and uses fuel
 
 There are some very weird fns in Scala (see \__ExoticFunctions.scala), they all fit under .fn syntax, with subtle differences:
@@ -31,11 +31,11 @@ So **for a normal fn**: what happens if it is applied on a constant?
 ideally fnAST is a generator: compiletimeFunction <- fnAST -> runtimeFunction:
 
 - compiletimeFunction:
-  - can always be applied on input type (even Singleton types) and yield `Trm[T]`
-  - (not in DOT) if transparent inline, can be applied on input term
-  - `Trm[T]` -> `Trm[D]` is strictly forbidden
+    - can always be applied on input type (even Singleton types) and yield `Trm[T]`
+    - (not in DOT) if transparent inline, can be applied on input term
+    - `Trm[T]` -> `Trm[D]` is strictly forbidden
 - runtimeFunction:
-  - can always be applied on input value and yield `Trm[D]`
+    - can always be applied on input value and yield `Trm[D]`
 
 there are 3 ways to enforce this discipline (no eval at compiletime):
 

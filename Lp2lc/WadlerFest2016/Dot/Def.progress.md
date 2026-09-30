@@ -1,4 +1,5 @@
 # Coq source: Lp2lc_coq/Active/Dot.v
+
 # Track converted declarations (definitions/data) present in Def.lean
 
 | Coq name | Lean name | Category |

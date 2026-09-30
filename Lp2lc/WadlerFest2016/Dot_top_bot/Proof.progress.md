@@ -3,13 +3,14 @@
 List of Coq lemmas/theorems and their Lean counterparts in `Lp2lc/Active/Dot_top_bot/Proof.lean`.
 
 Columns:
+
 - Coq theorem name
 - Lean theorem name
 - Discharged (yes/no)
 - Category (full name)
 
 | Coq theorem name | Lean theorem name | Discharged | Category |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | fresh_push_eq_inv | fresh_push_eq_inv | yes | Infrastructure |
 | weaken_rules | weaken_rules | no | Weakening |
 | weaken_ty_trm | weaken_ty_trm | no | Weakening |
@@ -121,4 +122,5 @@ Columns:
 | safety | safety | no | Safety |
 
 Notes:
+
 - Maintain original order as in Coq where possible; this table currently covers the subset scaffolded in `Proof.lean`. More entries will be appended as scaffolding proceeds across the file.

@@ -7,5 +7,5 @@
 - [ ] Scan all Coq source under `../../Lp2lc_coq/Active` and rank them by size (in ascending order)
 - [ ] For each Coq source: Reify the [prompt template](_Template.md) into a concrete prompts and save it
   into `.agent/instruct/<index_number>_<coq_source>.md`
-  - Index number should starts from 1.
+    - Index number should starts from 1.
 - [ ] Finally, scan and fix all broken links in each generated markdown file under `.agent/instruct`, make sure that all file references are valid. Create empty file if needed.

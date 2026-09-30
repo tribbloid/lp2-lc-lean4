@@ -1,5 +1,5 @@
 | Coq theorem name | Lean theorem name | Proven? | Category |
-| ---|---|---|---|
+| --- | --- | --- | --- |
 | open_tt_rec_type_core | open_tt_rec_type_core | yes | opening/subst |
 | open_tt_rec_type | open_tt_rec_type | yes | opening/subst |
 | subst_tt_fresh | subst_tt_fresh | yes | substitution |

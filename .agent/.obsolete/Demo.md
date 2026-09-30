@@ -18,7 +18,7 @@
   use
   higher-kinded type / type constructor.
 - You are writing demo for an existing language, not writing compiler.
-- Search https://www.cis.upenn.edu/~plclub/popl08-tutorial/code/coqdoc and other coq documents for symbols you don't
+- Search <https://www.cis.upenn.edu/~plclub/popl08-tutorial/code/coqdoc> and other coq documents for symbols you don't
   know.
 
 ## Verify

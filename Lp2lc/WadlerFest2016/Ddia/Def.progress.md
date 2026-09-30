@@ -35,5 +35,6 @@ This table maps Coq declarations (non-theorems) to Lean counterparts in Def.lean
 || possible_types      | possible_types   | inductive       |
 
 Notes:
+
 - Ordering follows the Coq source where applicable; each Lean definition is prefixed by a Coq line-range comment in Def.lean.
 - No theorems appear in Def.lean per CodeStructure.md.

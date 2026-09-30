@@ -12,6 +12,7 @@ section eval
 
 end eval
 ```
+
 - Theorems, propositions, and properties should be excluded from tests.
 - Test assertions should use `example` and the `rfl` tactic when possible.
 

@@ -1,5 +1,5 @@
 | Coq name | Lean name | Category |
-| ---|---|---|
+| --- | --- | --- |
 | typ | typ | data |
 | trm | trm | data |
 | open_tt_rec | open_tt_rec | def |

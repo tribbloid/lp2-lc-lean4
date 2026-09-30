@@ -1,5 +1,6 @@
 # Coq source: Lp2lc_coq/Active/Dot.v
-# Track converted theorems in Proof.lean, in original order. All start as not proven.
+
+# Track converted theorems in Proof.lean, in original order. All start as not proven
 
 | Coq theorem name | Lean theorem name | Proven? | Category |
 | --- | --- | --- | --- |

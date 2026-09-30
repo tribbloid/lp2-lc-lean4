@@ -3,12 +3,13 @@
 List of Coq definitions/types/inductives and their Lean counterparts in `Lp2lc/Active/Dot_top_bot/Def.lean`.
 
 Columns:
+
 - Coq name
 - Lean name
 - Category
 
 | Coq name | Lean name | Category |
-|---|---|---|
+| --- | --- | --- |
 | typ_label (Parameter) | `typ_label` (structure) | Syntax |
 | trm_label (Parameter) | `trm_label` (structure) | Syntax |
 | label | `label` | Syntax |
@@ -52,5 +53,6 @@ Columns:
 | subenv | `subenv` (in Auxiliary.lean) | Environment relations |
 
 Notes:
+
 - `def` in Coq is renamed to `defn` in Lean to avoid keyword conflict; all uses updated consistently.
 - Environment helpers `Env.binds`/`Env.dom` specialized locally; shared `Var`/`Vars`/`ok` come from `Lp2lc/Active/Shared.lean`.

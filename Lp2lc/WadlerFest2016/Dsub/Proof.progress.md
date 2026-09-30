@@ -3,7 +3,7 @@
 Track all lemmas and theorems from Coq Lp2lc_coq/Active/Dsub.v. Maintain source order.
 
 | Coq theorem name | Lean theorem name | proven? | Category |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | open_rec_lc_core (type part) | open_rec_lc_core_t | no | substitution/opening |
 | open_rec_lc_core (term part) | open_rec_lc_core_e | no | substitution/opening |
 | open_rec_lc (type part) | open_rec_lc_t | no | local closure |

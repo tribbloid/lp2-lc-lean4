@@ -6,10 +6,12 @@ type symbols with their subtype lattice, which:
 - always have top & bottom
 - is composible, multiple lattices can be merged together
 - can be composed by traversing the AST. The subtyping reference graph is never a tree, e.g.:
+
     ```scala
     type A <: B
     type B >: A
     ```
+
     is perfectly valid but contains circular definition, it is only expressed in AST because different nodes are discovered to be the same thing later.
 
 Fortunately, it is impossible to define type alias outside object in DOT, and it only become a type alias when explicitly invoked, this means the most complex subtype lattice only needs to be defined inside an object, e.g.:
@@ -31,6 +33,7 @@ trait T1 {
 ```
 
 which is interpreted by:
+
 ```lean
 .and
   "X" ~ .object1 .typeAlias "X"
@@ -38,4 +41,3 @@ which is interpreted by:
     "" ~ .term .subtypeEv Tuple1 `(x : .self).X`
     "" ~ .term .subtypeEv `(x : .self).X` Product
 ```
-
