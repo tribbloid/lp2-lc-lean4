@@ -5,19 +5,9 @@ namespace Tests.STLC.Sanity
 open Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
-namespace Symbolic
-
-abbrev Typ := AST.Typ
-abbrev Val := AST.Val
-abbrev Trm := AST.Trm
-
-end Symbolic
-
-open Symbolic
-
 namespace Val
 
-def idFn : Val :=
+def idFn : AST .val :=
   .fn .TLit (.mk (λ proxy => .ref proxy))
 
 end Val

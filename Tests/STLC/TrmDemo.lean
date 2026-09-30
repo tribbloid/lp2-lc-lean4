@@ -4,7 +4,6 @@ namespace Tests.STLC.Sanity
 
 open Lp2lc.Active.STLC
 open Lp2lc.Active.Util
-open Tests.STLC.Sanity.Symbolic
 
 def bFalse : Lp2lc.Active.Util.CtxEmbedding.DeBruijn.B := "false"
 
@@ -12,40 +11,40 @@ def bTrue : Lp2lc.Active.Util.CtxEmbedding.DeBruijn.B := "true"
 
 namespace Trm
 
-def vFalse : Trm :=
+def vFalse : AST .trm :=
   .val (.lit bFalse)
 
-def vTrue : Trm :=
+def vTrue : AST .trm :=
   .val (.lit bTrue)
 
-def primitiveIdFn : Trm :=
+def primitiveIdFn : AST .trm :=
   .val (.fn .TLit (.mk (λ proxy => .ref proxy)))
 
-def primitiveIdFnOnFalse : Trm :=
+def primitiveIdFnOnFalse : AST .trm :=
   .apply primitiveIdFn vFalse
 
-def get1st : Trm :=
+def get1st : AST .trm :=
   .val
     (.fn .TLit
       (.mk (λ first =>
         .val (.fn .TLit (.mk (λ _ => .ref (.inl first)))))))
 
-def get2nd : Trm :=
+def get2nd : AST .trm :=
   .val
     (.fn .TLit
       (.mk (λ _ =>
         .val (.fn .TLit (.mk (λ second => .ref second))))))
 
-def get1stOnTuple : Trm :=
+def get1stOnTuple : AST .trm :=
   .apply (.apply get1st vFalse) vTrue
 
-def get2ndOnTuple : Trm :=
+def get2ndOnTuple : AST .trm :=
   .apply (.apply get2nd vFalse) vTrue
 
-def primitiveTrueFn : Trm :=
+def primitiveTrueFn : AST .trm :=
   .val (.fn .TLit (.mk (λ _ => .val (.lit bTrue))))
 
-def primitiveTrueFnOnFalse : Trm :=
+def primitiveTrueFnOnFalse : AST .trm :=
   .apply primitiveTrueFn vFalse
 
 namespace FreeCapture
@@ -56,39 +55,39 @@ def freeSlot : CtxEmbedding.DeBruijn.TRef := .only
 def directRef : Pre.AST CtxEmbedding.DeBruijn.toParameters.Next .trm :=
   .ref (.inl freeSlot)
 
-def capturedRef : Trm :=
+def capturedRef : AST .trm :=
   .val (.fn .TLit (.mk (λ _ => .ref (.inl freeSlot))))
 
-def capturedRefOnFalse : Trm :=
+def capturedRefOnFalse : AST .trm :=
   .apply capturedRef (.val (.lit bFalse))
 
 end FreeCapture
 
 namespace TypeHinted
 
-def hintedFalse : Trm :=
+def hintedFalse : AST .trm :=
   .val (.lit bFalse)
 
-def hintedIdFn : Trm :=
+def hintedIdFn : AST .trm :=
   .val (.fn .TLit (.mk (λ proxy => .ref proxy)))
 
-def hintedIdFnOnFalse : Trm :=
+def hintedIdFnOnFalse : AST .trm :=
   .apply hintedIdFn hintedFalse
 
 end TypeHinted
 
 namespace Malformed
 
-def applyIdFnOnItself : Trm :=
+def applyIdFnOnItself : AST .trm :=
   .apply primitiveIdFn primitiveIdFn
 
-def idFnOnFalse2 : Trm :=
+def idFnOnFalse2 : AST .trm :=
   .apply applyIdFnOnItself vFalse
 
-def primitiveApply : Trm :=
+def primitiveApply : AST .trm :=
   .apply vFalse vTrue
 
-def apply1 : Trm :=
+def apply1 : AST .trm :=
   .apply (.apply primitiveIdFn vFalse) vTrue
 
 end Malformed

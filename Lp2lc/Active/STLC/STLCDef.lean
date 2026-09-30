@@ -55,18 +55,6 @@ namespace AST
 
 abbrev Binder := @Pre.Binder CtxEmbedding.DeBruijn.toParameters
 
-abbrev Typ := AST .typ
-abbrev Trm := AST .trm
-abbrev Val := AST .val
-
-abbrev TLit : Typ := Pre.AST.TLit
-abbrev lit (repr : String) : Val := Pre.AST.lit repr
-abbrev TFn (tIn tOut : Typ) : Typ := Pre.AST.TFn tIn tOut
-abbrev fn (tIn : Typ) (body : Binder .trm) : Val := Pre.AST.fn tIn body
-abbrev val (v : Val) : Trm := Pre.AST.val v
-abbrev apply (fn arg : Trm) : Trm := Pre.AST.apply fn arg
-abbrev ref (carrier : CtxEmbedding.DeBruijn.TRef) : Trm := Pre.AST.ref carrier
-
 /-- Current STLC subtyping coincides with structural type equality. -/
 instance typLE {P : Parameters} : LE (Pre.AST P .typ) := ⟨Eq⟩
 
@@ -84,7 +72,7 @@ instance typDecidableLE {P : Parameters} : DecidableLE (Pre.AST P .typ)
 
 namespace Val
 
-def asTrm (self : Val) : Trm := .val self
+def asTrm (self : AST .val) : AST .trm := .val self
 
 end Val
 
