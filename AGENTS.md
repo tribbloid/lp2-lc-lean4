@@ -155,7 +155,7 @@ corrections in one or more preceding git commits if necessary:
 
 ## Git (Version Control)
 
-- Commit message always have the following format:
+- Commit messages must always have the following format:
 
 ```
 [{{LLM MODEL}}] {{Task Info}} {{Optional Subtask Category & Info}}
