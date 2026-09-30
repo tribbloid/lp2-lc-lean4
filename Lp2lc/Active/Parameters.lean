@@ -13,7 +13,7 @@ abbrev TRefNext : URef := this.TRefInc this.TRef
 
 abbrev Next : Parameters := {this with TRef := this.TRefNext}
 
-abbrev withTRef (refs : URef) : Parameters := {this with TRef := refs}
+abbrev withTRef (refs : URef) : Parameters := {this with TRef := refs} -- TODO: this can be inlined
 
 /-- An erased witness that a context is reachable by extending an earlier context. -/
 inductive Under (base : Parameters) : Parameters → Prop where
@@ -44,6 +44,8 @@ abbrev Next : CtxEmbedding :=
   {this with index := this.indexInc this.index}
 
 def TRefNext : Type := this.Next.TRef
+
+instance : Inhabited this.TRefNext := ⟨.only⟩
 
 /-- An erased witness that a context is reachable by extending an earlier context. -/
 inductive Under (base : CtxEmbedding) : CtxEmbedding → Prop where
