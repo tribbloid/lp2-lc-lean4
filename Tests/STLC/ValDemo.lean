@@ -7,9 +7,9 @@ open Lp2lc.Active.Util
 
 namespace Symbolic
 
-abbrev Typ := AST.Typ CtxEmbedding.DeBruijn.toParameters
-abbrev Val := AST.Val CtxEmbedding.DeBruijn.toParameters
-abbrev Trm := AST.Trm CtxEmbedding.DeBruijn.toParameters
+abbrev Typ := AST.Typ
+abbrev Val := AST.Val
+abbrev Trm := AST.Trm
 
 end Symbolic
 

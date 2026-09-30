@@ -53,27 +53,26 @@ abbrev AST := @Pre.AST CtxEmbedding.DeBruijn.toParameters
 
 namespace AST
 
-abbrev Binder (P : Parameters) (l : Label) := @Pre.Binder P l
+abbrev Binder := @Pre.Binder CtxEmbedding.DeBruijn.toParameters
 
-abbrev Typ (P : Parameters) := AST P .typ
-abbrev Trm (P : Parameters) := AST P .trm
-abbrev Val (P : Parameters) := AST P .val
+abbrev Typ := AST .typ
+abbrev Trm := AST .trm
+abbrev Val := AST .val
 
-abbrev TLit {P : Parameters} : AST.Typ P := @Pre.AST.TLit P
-abbrev lit {P : Parameters} (repr : P.B) : AST.Val P := @Pre.AST.lit P repr
-abbrev TFn {P : Parameters} (tIn tOut : AST.Typ P) : AST.Typ P := @Pre.AST.TFn P tIn tOut
-abbrev fn {P : Parameters} (tIn : AST.Typ P) (body : AST.Binder P .trm) : AST.Val P :=
-  @Pre.AST.fn P tIn body
-abbrev val {P : Parameters} (v : AST.Val P) : AST.Trm P := @Pre.AST.val P v
-abbrev apply {P : Parameters} (fn arg : AST.Trm P) : AST.Trm P := @Pre.AST.apply P fn arg
-abbrev ref := @Pre.AST.ref
+abbrev TLit : Typ := Pre.AST.TLit
+abbrev lit (repr : String) : Val := Pre.AST.lit repr
+abbrev TFn (tIn tOut : Typ) : Typ := Pre.AST.TFn tIn tOut
+abbrev fn (tIn : Typ) (body : Binder .trm) : Val := Pre.AST.fn tIn body
+abbrev val (v : Val) : Trm := Pre.AST.val v
+abbrev apply (fn arg : Trm) : Trm := Pre.AST.apply fn arg
+abbrev ref (carrier : CtxEmbedding.DeBruijn.TRef) : Trm := Pre.AST.ref carrier
 
 /-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE {P : Parameters} : LE (AST.Typ P) := ⟨Eq⟩
+instance typLE {P : Parameters} : LE (Pre.AST P .typ) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
-instance typDecidableLE {P : Parameters} : DecidableLE (AST.Typ P)
+instance typDecidableLE {P : Parameters} : DecidableLE (Pre.AST P .typ)
   | .TLit, .TLit => isTrue rfl
   | .TLit, .TFn _ _
   | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
@@ -85,7 +84,7 @@ instance typDecidableLE {P : Parameters} : DecidableLE (AST.Typ P)
 
 namespace Val
 
-def asTrm {P : Parameters} (self : AST.Val P) : AST.Trm P := .val self
+def asTrm (self : Val) : Trm := .val self
 
 end Val
 

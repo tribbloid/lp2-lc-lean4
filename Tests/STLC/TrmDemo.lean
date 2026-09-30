@@ -28,13 +28,13 @@ def get1st : Trm :=
   .val
     (.fn .TLit
       (.mk (λ first =>
-        .val (.fn .TLit (.mk (λ _ => AST.ref (.inl first)))))))
+        .val (.fn .TLit (.mk (λ _ => .ref (.inl first)))))))
 
 def get2nd : Trm :=
   .val
     (.fn .TLit
       (.mk (λ _ =>
-        .val (.fn .TLit (.mk (λ second => AST.ref second))))))
+        .val (.fn .TLit (.mk (λ second => .ref second))))))
 
 def get1stOnTuple : Trm :=
   .apply (.apply get1st vFalse) vTrue
@@ -53,11 +53,11 @@ namespace FreeCapture
 /-- A symbolic outer-context slot used by the syntax-only capture examples. -/
 def freeSlot : CtxEmbedding.DeBruijn.TRef := .only
 
-def directRef : AST.Trm CtxEmbedding.DeBruijn.toParameters.Next :=
-  AST.ref (.inl freeSlot)
+def directRef : Pre.AST CtxEmbedding.DeBruijn.toParameters.Next .trm :=
+  .ref (.inl freeSlot)
 
-def capturedRef : AST.Trm CtxEmbedding.DeBruijn.toParameters :=
-  .val (.fn .TLit (.mk (λ _ => AST.ref (.inl freeSlot))))
+def capturedRef : Trm :=
+  .val (.fn .TLit (.mk (λ _ => .ref (.inl freeSlot))))
 
 def capturedRefOnFalse : Trm :=
   .apply capturedRef (.val (.lit bFalse))

@@ -6,13 +6,13 @@ open Lp2lc.Active.Util
 
 /-- A source value together with the bindings captured when it was evaluated. -/
 inductive RuntimeValue : Type 2 where
-| mk (refs : URef) (value : AST.Val (CtxEmbedding.DeBruijn.toParameters.withTRef refs))
+| mk (refs : URef) (value : Pre.AST (CtxEmbedding.DeBruijn.toParameters.withTRef refs) .val)
     (captured : refs → Option RuntimeValue) : RuntimeValue
 
 namespace AST.Trm
 
 /-- Evaluate a term using the caller's known bindings. -/
-def eval {refs : URef} (self : AST.Trm (CtxEmbedding.DeBruijn.toParameters.withTRef refs))
+def eval {refs : URef} (self : Pre.AST (CtxEmbedding.DeBruijn.toParameters.withTRef refs) .trm)
     (bindings : refs → Option RuntimeValue) : RecOpt RuntimeValue
   | 0 => .outOfFuel
   | fuel + 1 =>
