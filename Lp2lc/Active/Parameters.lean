@@ -58,7 +58,7 @@ abbrev toParameters (this : CtxEmbedding) : Parameters :=
     TRef := this.TRef
     TRefInc := λ TRef => TRef ⊕ this.TRefNext }
 
-abbrev DeBruijn : CtxEmbedding := {TIndex := Nat, index := 0, B := String, indexInc := Nat.succ }
+abbrev DeBruijn (index : Nat := 0) : CtxEmbedding := {TIndex := Nat, index := index, B := String, indexInc := Nat.succ }
 
 end CtxEmbedding
 

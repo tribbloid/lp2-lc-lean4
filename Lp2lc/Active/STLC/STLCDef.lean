@@ -49,11 +49,14 @@ end Binder
 end Pre
 ---------------------------- Concrete Parameters ----------------------------
 
-abbrev AST := @Pre.AST CtxEmbedding.DeBruijn.toParameters
+abbrev AST (l : Label) (n : Nat := 0) (refs : URef := (CtxEmbedding.DeBruijn n).TRef) :=
+  Pre.AST ((CtxEmbedding.DeBruijn n).toParameters.withTRef refs) l
+
+abbrev Binder (l : Label) (n : Nat := 0) (refs : URef := (CtxEmbedding.DeBruijn n).TRef) :=
+  Pre.Binder ((CtxEmbedding.DeBruijn n).toParameters.withTRef refs) l
 
 namespace AST
 
-abbrev Binder := @Pre.Binder CtxEmbedding.DeBruijn.toParameters
 
 /-- Current STLC subtyping coincides with structural type equality. -/
 instance typLE {P : Parameters} : LE (Pre.AST P .typ) := ⟨Eq⟩
