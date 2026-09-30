@@ -17,11 +17,11 @@ def eval {refs : URef} (self : AST.Trm (CtxEmbedding.DeBruijn.toParameters.withT
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | Pre.AST.val value => .yield (some (.mk refs value bindings))
-    | Pre.AST.ref carrier => .yield (bindings carrier)
-    | Pre.AST.apply fn arg =>
-      match eval fn bindings fuel, eval arg bindings fuel with
-      | Rec.Outcome.yield (some (RuntimeValue.mk source (Pre.AST.fn _ body) captured)),
+    | .val value => .yield (some (.mk refs value bindings))
+    | .ref carrier => .yield (bindings carrier)
+    | .apply fnTerm arg =>
+      match eval fnTerm bindings fuel, eval arg bindings fuel with
+      | Rec.Outcome.yield (some (RuntimeValue.mk source (.fn _ body) captured)),
           Rec.Outcome.yield (some value) =>
         eval (refs := source ⊕ CtxEmbedding.DeBruijn.TRefNext) (body.apply (.inr .only))
           (λ carrier =>

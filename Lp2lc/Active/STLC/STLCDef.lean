@@ -8,8 +8,6 @@ open Lp2lc.Active.Util
 
 def UAST := Type 2
 
-namespace Pre
-
 mutual
 
 /-- A binder introduces the next lexical context for its body. -/
@@ -46,27 +44,13 @@ def apply {P : Parameters} {l : Label} (self : Binder P l)
 
 end Binder
 
-end Pre
 ---------------------------- Concrete Parameters ----------------------------
 
-abbrev AST := @Pre.AST
-
 namespace AST
-
-abbrev Binder (P : Parameters) (l : Label) := @Pre.Binder P l
 
 abbrev Typ (P : Parameters) := AST P .typ
 abbrev Trm (P : Parameters) := AST P .trm
 abbrev Val (P : Parameters) := AST P .val
-
-abbrev TLit {P : Parameters} : AST.Typ P := @Pre.AST.TLit P
-abbrev lit {P : Parameters} (repr : P.B) : AST.Val P := @Pre.AST.lit P repr
-abbrev TFn {P : Parameters} (tIn tOut : AST.Typ P) : AST.Typ P := @Pre.AST.TFn P tIn tOut
-abbrev fn {P : Parameters} (tIn : AST.Typ P) (body : AST.Binder P .trm) : AST.Val P :=
-  @Pre.AST.fn P tIn body
-abbrev val {P : Parameters} (v : AST.Val P) : AST.Trm P := @Pre.AST.val P v
-abbrev apply {P : Parameters} (fn arg : AST.Trm P) : AST.Trm P := @Pre.AST.apply P fn arg
-abbrev ref := @Pre.AST.ref
 
 /-- Current STLC subtyping coincides with structural type equality. -/
 instance typLE {P : Parameters} : LE (AST.Typ P) := ⟨Eq⟩

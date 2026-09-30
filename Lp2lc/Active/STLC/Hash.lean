@@ -57,7 +57,7 @@ mutual
     | .ref carrier => .arr #["ref", sigC (refs.read carrier)]
 
   /-- Canonical JSON signature of a [Binder], applying its body to the new slot. -/
-  private def binderToJsonAux {P : Parameters} {l : Label} (self : AST.Binder P l)
+  private def binderToJsonAux {P : Parameters} {l : Label} (self : Binder P l)
       (refs : RefIndex P) (sigC : Nat → Json) (sigB : P.B → Json) : Json :=
     match self with
     | .mk body => astToJsonAux (body (refs.fresh P.TRef)) refs.next sigC sigB

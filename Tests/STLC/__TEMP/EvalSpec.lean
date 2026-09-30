@@ -10,7 +10,7 @@ section eval
 
 private def literalResult (result : Rec.Outcome (Option RuntimeValue)) : Option String :=
   match result with
-  | .yield (some (RuntimeValue.mk _ (Pre.AST.lit repr) _)) => some repr
+  | .yield (some (RuntimeValue.mk _ (.lit repr) _)) => some repr
   | _ => none
 
 private def outerValue : RuntimeValue :=
