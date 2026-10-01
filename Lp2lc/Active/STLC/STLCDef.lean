@@ -32,7 +32,7 @@ inductive AST : Parameters → Label → UAST where
 | apply {P : Parameters} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
     -- fn must be a function that can be applied on arg
 -- A lexical reference retains its source context and a witness reaching the current context.
-| ref {P : Parameters} (carrier : P.TRef) : AST P .trm
+| ref {P lower : Parameters} (carrier : lower.TRef) (under : lower.Under P) : AST P .trm
  end
 
 namespace Binder

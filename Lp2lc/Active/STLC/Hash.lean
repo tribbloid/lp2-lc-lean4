@@ -26,12 +26,14 @@ instance {refs : URef} [numbering : SlotNumbering refs] :
 private structure RefIndex (P : Parameters) where
   level : Nat
   read : P.TRef → Nat
+  inc (T : URef) (carrier : T) : P.TRefInc T
   lift (T : URef) (level : Nat) (read : T → Nat) : P.TRefInc T → Nat
   fresh (T : URef) : P.TRefInc T
 
 private def RefIndex.next {P : Parameters} (self : RefIndex P) : RefIndex P.Next :=
   { level := self.level + 1
     read := self.lift P.TRef self.level self.read
+    inc := self.inc
     lift := self.lift
     fresh := self.fresh }
 
@@ -54,7 +56,7 @@ mutual
     | .val v => .arr #["val", astToJsonAux v refs sigC sigB]
     | .apply fnTerm arg =>
       .arr #["apply", astToJsonAux fnTerm refs sigC sigB, astToJsonAux arg refs sigC sigB]
-    | .ref carrier => .arr #["ref", sigC (refs.read carrier)]
+    | .ref carrier under => .arr #["ref", sigC (refs.read (under.shift refs.inc carrier))]
 
   /-- Canonical JSON signature of a [Binder], applying its body to the new slot. -/
   private def binderToJsonAux {P : Parameters} {l : Label} (self : Pre.Binder P l)
@@ -70,6 +72,7 @@ def astToJson {refs : URef} [numbering : SlotNumbering refs] {l : Label}
   astToJsonAux self
     { level := numbering.level
       read := numbering.read
+      inc := λ _ carrier => .inl carrier
       lift := λ _ level read carrier => carrier.elim read (λ _ => level + 1)
       fresh := λ _ => .inr .only } sigC sigB
 

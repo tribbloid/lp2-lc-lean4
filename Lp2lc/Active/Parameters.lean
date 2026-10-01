@@ -16,11 +16,21 @@ abbrev Next : Parameters := {this with TRef := this.TRefNext}
 abbrev withTRef (refs : URef) : Parameters := {this with TRef := refs}
 
 /-- A witness that a context is reachable by extending an earlier context. -/
-inductive Under (base : Parameters) : Parameters → Prop where
+inductive Under (base : Parameters) : Parameters → Type 1 where
 | same : Under base base
 | lower {p2} (prev : Under base p2) : Under base p2.Next
 
 end
+
+namespace Under
+
+def shift {base target} (self : Under base target)
+    (inc : (refs : URef) → refs → target.TRefInc refs) (carrier : base.TRef) : target.TRef :=
+  match self with
+  | .same => carrier
+  | .lower prev => inc _ (prev.shift inc carrier)
+
+end Under
 end Parameters
 
 /-- Syntax contexts and their successor operation; lexical indices are distinct from runtime value receipts. -/

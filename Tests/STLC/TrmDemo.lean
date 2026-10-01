@@ -18,7 +18,7 @@ def vTrue : AST 0 .trm :=
   .val (.lit bTrue)
 
 def primitiveIdFn : AST 0 .trm :=
-  .val (.fn .TLit (.mk (λ proxy => .ref proxy)))
+  .val (.fn .TLit (.mk (λ proxy => .ref proxy .same)))
 
 def primitiveIdFnOnFalse : AST 0 .trm :=
   .apply primitiveIdFn vFalse
@@ -27,13 +27,13 @@ def get1st : AST 0 .trm :=
   .val
     (.fn .TLit
       (.mk (λ first =>
-        .val (.fn .TLit (.mk (λ _ => .ref (.inl first)))))))
+        .val (.fn .TLit (.mk (λ _ => .ref first (.lower .same)))))))
 
 def get2nd : AST 0 .trm :=
   .val
     (.fn .TLit
       (.mk (λ _ =>
-        .val (.fn .TLit (.mk (λ second => .ref second))))))
+        .val (.fn .TLit (.mk (λ second => .ref second .same))))))
 
 def get1stOnTuple : AST 0 .trm :=
   .apply (.apply get1st vFalse) vTrue
@@ -53,10 +53,10 @@ namespace FreeCapture
 def freeSlot : CtxEmbedding.DeBruijn.TRef := .only
 
 def directRef : Pre.AST CtxEmbedding.DeBruijn.toParameters.Next .trm :=
-  .ref (.inl freeSlot)
+  .ref freeSlot (.lower .same)
 
 def capturedRef : AST 0 .trm :=
-  .val (.fn .TLit (.mk (λ _ => .ref (.inl freeSlot))))
+  .val (.fn .TLit (.mk (λ _ => .ref freeSlot (.lower .same))))
 
 def capturedRefOnFalse : AST 0 .trm :=
   .apply capturedRef (.val (.lit bFalse))
@@ -69,7 +69,7 @@ def hintedFalse : AST 0 .trm :=
   .val (.lit bFalse)
 
 def hintedIdFn : AST 0 .trm :=
-  .val (.fn .TLit (.mk (λ proxy => .ref proxy)))
+  .val (.fn .TLit (.mk (λ proxy => .ref proxy .same)))
 
 def hintedIdFnOnFalse : AST 0 .trm :=
   .apply hintedIdFn hintedFalse
