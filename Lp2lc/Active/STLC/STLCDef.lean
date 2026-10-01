@@ -25,7 +25,7 @@ inductive AST : Parameters → Label → UAST where
 | lit {P : Parameters} (repr : P.B) : AST P .val -- most specific type is always `primitive`
 
 | TFn {P : Parameters} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
-| fn {P : Parameters} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
+| fn {P : Parameters} (tIn : AST P .typ) (body : Binder P.Next .trm) : AST P .val
     -- most specific type is always `.fn tIn _`
 
 | val {P : Parameters} (v : AST P .val) : AST P .trm -- AKA literal
