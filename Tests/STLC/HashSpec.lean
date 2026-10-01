@@ -23,18 +23,18 @@ example : astToJson (Pre.AST.ref (.inl .only) : Pre.AST CtxEmbedding.DeBruijn.to
 example : astToJson (Pre.AST.ref (.inr .only) : Pre.AST CtxEmbedding.DeBruijn.toParameters.Next .trm) sigC sigB =
     .arr #["ref", toJson (1 : Nat)] := rfl
 
-example : astToJson (.TLit : AST .typ) sigC sigB = "primitive" := rfl
+example : astToJson (.TLit : AST 0 .typ) sigC sigB = "primitive" := rfl
 
-example : astToJson (.TFn .TLit .TLit : AST .typ) sigC sigB =
+example : astToJson (.TFn .TLit .TLit : AST 0 .typ) sigC sigB =
     .arr #["fn", "primitive", "primitive"] := rfl
 
-example : astToJson (.lit "x" : AST .val) sigC sigB =
+example : astToJson (.lit "x" : AST 0 .val) sigC sigB =
     .arr #["lit", toJson ("x" : String)] := rfl
 
 example : astToJson idVal sigC sigB =
     .arr #["lam", .arr #["ref", toJson (2 : Nat)], "primitive"] := rfl
 
-example : astToJson (.val (.lit "x") : AST .trm) sigC sigB =
+example : astToJson (.val (.lit "x") : AST 0 .trm) sigC sigB =
     .arr #["val", .arr #["lit", toJson ("x" : String)]] := rfl
 
 example : astToJson (.apply refOne refTwo : Pre.AST CtxEmbedding.DeBruijn.toParameters.Next.Next.Next .trm) sigC sigB =

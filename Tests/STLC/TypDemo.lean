@@ -5,16 +5,16 @@ open Lp2lc.Active.STLC
 
 namespace Typ
 
-def tFalse : AST .typ :=
+def tFalse : AST 0 .typ :=
   .TLit
 
-def idFn : AST .typ :=
+def idFn : AST 0 .typ :=
   .TFn .TLit .TLit
 
-def get1st : AST .typ :=
+def get1st : AST 0 .typ :=
   .TFn .TLit (.TFn .TLit .TLit)
 
-def apply1stOn2ndFn : AST .typ :=
+def apply1stOn2ndFn : AST 0 .typ :=
   .TFn (.TFn .TLit .TLit) (.TFn .TLit .TLit)
 
 end Typ

@@ -7,7 +7,7 @@ open Lp2lc.Active.Util
 
 namespace Val
 
-def idFn : AST .val :=
+def idFn : AST 0 .val :=
   .fn .TLit (.mk (λ proxy => .ref proxy))
 
 end Val

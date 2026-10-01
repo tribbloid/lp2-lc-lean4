@@ -11,40 +11,40 @@ def bTrue : Lp2lc.Active.Util.CtxEmbedding.DeBruijn.B := "true"
 
 namespace Trm
 
-def vFalse : AST .trm :=
+def vFalse : AST 0 .trm :=
   .val (.lit bFalse)
 
-def vTrue : AST .trm :=
+def vTrue : AST 0 .trm :=
   .val (.lit bTrue)
 
-def primitiveIdFn : AST .trm :=
+def primitiveIdFn : AST 0 .trm :=
   .val (.fn .TLit (.mk (λ proxy => .ref proxy)))
 
-def primitiveIdFnOnFalse : AST .trm :=
+def primitiveIdFnOnFalse : AST 0 .trm :=
   .apply primitiveIdFn vFalse
 
-def get1st : AST .trm :=
+def get1st : AST 0 .trm :=
   .val
     (.fn .TLit
       (.mk (λ first =>
         .val (.fn .TLit (.mk (λ _ => .ref (.inl first)))))))
 
-def get2nd : AST .trm :=
+def get2nd : AST 0 .trm :=
   .val
     (.fn .TLit
       (.mk (λ _ =>
         .val (.fn .TLit (.mk (λ second => .ref second))))))
 
-def get1stOnTuple : AST .trm :=
+def get1stOnTuple : AST 0 .trm :=
   .apply (.apply get1st vFalse) vTrue
 
-def get2ndOnTuple : AST .trm :=
+def get2ndOnTuple : AST 0 .trm :=
   .apply (.apply get2nd vFalse) vTrue
 
-def primitiveTrueFn : AST .trm :=
+def primitiveTrueFn : AST 0 .trm :=
   .val (.fn .TLit (.mk (λ _ => .val (.lit bTrue))))
 
-def primitiveTrueFnOnFalse : AST .trm :=
+def primitiveTrueFnOnFalse : AST 0 .trm :=
   .apply primitiveTrueFn vFalse
 
 namespace FreeCapture
@@ -55,39 +55,39 @@ def freeSlot : CtxEmbedding.DeBruijn.TRef := .only
 def directRef : Pre.AST CtxEmbedding.DeBruijn.toParameters.Next .trm :=
   .ref (.inl freeSlot)
 
-def capturedRef : AST .trm :=
+def capturedRef : AST 0 .trm :=
   .val (.fn .TLit (.mk (λ _ => .ref (.inl freeSlot))))
 
-def capturedRefOnFalse : AST .trm :=
+def capturedRefOnFalse : AST 0 .trm :=
   .apply capturedRef (.val (.lit bFalse))
 
 end FreeCapture
 
 namespace TypeHinted
 
-def hintedFalse : AST .trm :=
+def hintedFalse : AST 0 .trm :=
   .val (.lit bFalse)
 
-def hintedIdFn : AST .trm :=
+def hintedIdFn : AST 0 .trm :=
   .val (.fn .TLit (.mk (λ proxy => .ref proxy)))
 
-def hintedIdFnOnFalse : AST .trm :=
+def hintedIdFnOnFalse : AST 0 .trm :=
   .apply hintedIdFn hintedFalse
 
 end TypeHinted
 
 namespace Malformed
 
-def applyIdFnOnItself : AST .trm :=
+def applyIdFnOnItself : AST 0 .trm :=
   .apply primitiveIdFn primitiveIdFn
 
-def idFnOnFalse2 : AST .trm :=
+def idFnOnFalse2 : AST 0 .trm :=
   .apply applyIdFnOnItself vFalse
 
-def primitiveApply : AST .trm :=
+def primitiveApply : AST 0 .trm :=
   .apply vFalse vTrue
 
-def apply1 : AST .trm :=
+def apply1 : AST 0 .trm :=
   .apply (.apply primitiveIdFn vFalse) vTrue
 
 end Malformed
