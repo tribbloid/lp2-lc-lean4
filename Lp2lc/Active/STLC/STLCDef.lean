@@ -49,7 +49,7 @@ end Binder
 end Pre
 ---------------------------- Concrete indexed AST ----------------------------
 
-abbrev AST (n : Nat := 0) (l : Label)  := -- TODO: last arg is just currying
+abbrev AST (n : Nat := 0) (l : Label)  := -- TODO: the label argument is just currying
   let refs : URef := (CtxEmbedding.DeBruijn n).TRef
   Pre.AST ((CtxEmbedding.DeBruijn n).toParameters.withTRef refs) l
 
