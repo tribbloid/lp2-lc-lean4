@@ -4,16 +4,14 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-local notation "𝒫" n:arg refs:arg => Parameters.withTRef (CtxEmbedding.toParameters (CtxEmbedding.DeBruijn n)) refs
-
 /-- A source value together with the bindings captured when it was evaluated. -/
 inductive RuntimeValue : Type 2 where
-| mk (n : Nat) (refs : URef) (value : Pre.AST (𝒫 n refs) .val) (captured : refs → Option RuntimeValue)
+| mk (n : Nat) (refs : URef) (value : AST n .val refs) (captured : refs → Option RuntimeValue)
 
 namespace AST
 
 /-- Evaluate a term using the caller's known bindings. -/
-def eval {n refs} (self : Pre.AST (𝒫 n refs) .trm) (bindings : refs → Option RuntimeValue) : RecOpt RuntimeValue := λ fuel =>
+def eval {n refs} (self : AST n .trm refs) (bindings : refs → Option RuntimeValue) : RecOpt RuntimeValue := λ fuel =>
   match fuel, self with
   | 0, _ => .outOfFuel
   | _, .val value => .yield (some (.mk n refs value bindings))

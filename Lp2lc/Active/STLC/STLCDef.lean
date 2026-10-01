@@ -54,22 +54,22 @@ end Binder
 end Pre
 ---------------------------- Concrete indexed AST ----------------------------
 
-abbrev AST (n : Nat := 0) (l : Label)  := -- TODO: the label argument is just currying
-  let refs : URef := (CtxEmbedding.DeBruijn n).TRef
+abbrev AST (n : Nat := 0) (l : Label) -- TODO: the label argument is just currying
+    (refs : URef := (CtxEmbedding.DeBruijn n).TRef) :=
   Pre.AST ((CtxEmbedding.DeBruijn n).toParameters.withTRef refs) l
 
-abbrev Binder (n : Nat := 0) (l : Label)  :=
-  let refs : URef := (CtxEmbedding.DeBruijn n).TRef
+abbrev Binder (n : Nat := 0) (l : Label)
+    (refs : URef := (CtxEmbedding.DeBruijn n).TRef) :=
   Pre.Binder ((CtxEmbedding.DeBruijn n).toParameters.withTRef refs) l
 
 namespace AST
 
 /-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE {P : Parameters} : LE (Pre.AST P .typ) := ⟨Eq⟩
+instance typLE {n refs} : LE (AST n .typ refs) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
-instance typDecidableLE {P : Parameters} : DecidableLE (Pre.AST P .typ)
+instance typDecidableLE {n refs} : DecidableLE (AST n .typ refs)
   | .TLit, .TLit => isTrue rfl
   | .TLit, .TFn _ _
   | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
