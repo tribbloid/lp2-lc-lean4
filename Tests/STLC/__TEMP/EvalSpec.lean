@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.Eval
+import «Lp2lc».Active.STLC.Serial.Eval
 import «Tests».STLC.TrmDemo
 
 namespace Tests.STLC.EvalSpec
@@ -10,20 +10,25 @@ section eval
 
 private def literalResult (result : Rec.Outcome (Option RuntimeValue)) : Option String :=
   match result with
-  | .yield (some (RuntimeValue.mk _ (Pre.AST.lit repr) _)) => some repr
+  | .yield (some (RuntimeValue.mk _ _ (.lit repr) _)) => some repr
   | _ => none
 
 private def outerValue : RuntimeValue :=
-  .mk CtxEmbedding.DeBruijn.TRef (.lit "outer") (λ _ => none)
+  .mk 0 CtxEmbedding.DeBruijn.TRef (.lit "outer") (λ _ => none)
 private def knownBindings : CtxEmbedding.DeBruijn.TRef → Option RuntimeValue :=
   λ _ => some outerValue
 
-example : literalResult (AST.Trm.eval Trm.primitiveIdFnOnFalse (λ _ => none) 2) = some "false" := rfl
-example : literalResult (AST.Trm.eval Trm.get1stOnTuple (λ _ => none) 3) = some "false" := rfl
-example : literalResult (AST.Trm.eval Trm.get2ndOnTuple (λ _ => none) 3) = some "true" := rfl
-example : literalResult (AST.Trm.eval Trm.FreeCapture.directRef
+example : literalResult (AST.eval Trm.primitiveIdFnOnFalse (λ _ => none) 2) = some "false" := rfl
+example : literalResult (AST.eval Trm.get1stOnTuple (λ _ => none) 3) = some "false" := rfl
+example : literalResult (AST.eval Trm.get2ndOnTuple (λ _ => none) 3) = some "true" := rfl
+example : literalResult (AST.eval Trm.FreeCapture.directRef
     (λ carrier => carrier.elim knownBindings (λ _ => none)) 1) = some "outer" := rfl
-example : literalResult (AST.Trm.eval Trm.FreeCapture.capturedRefOnFalse knownBindings 2) = some "outer" := rfl
+example : literalResult (AST.eval Trm.FreeCapture.capturedRefOnFalse knownBindings 2) = some "outer" := rfl
+
+example : AST.eval Trm.vFalse (λ _ => none) 0 = .outOfFuel := rfl
+example : AST.eval Trm.Malformed.primitiveApply (λ _ => none) 2 = .yield none := rfl
+example : AST.eval (.ref Trm.FreeCapture.freeSlot .same : Trm 0) (λ _ => none) 1 = .yield none := rfl
+example : AST.eval (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) (λ _ => none) 2 = .outOfFuel := rfl
 
 end eval
 

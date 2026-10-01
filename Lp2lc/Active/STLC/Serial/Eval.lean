@@ -31,7 +31,7 @@ def eval {n refs} (self : Syntax (𝒫 n refs) .trm) (bindings : refs → Option
 theorem termEvalMonotone {n refs} (trm) (bindings : refs → Option RuntimeValue) :
     (eval (n := n) trm bindings).Monotone := by
   intro less more result hFuel hEval
-  induction less using Nat.strongRecOn generalizing trm more result with
+  induction less using Nat.strongRecOn generalizing n refs trm bindings more result with
   | ind fromFuel ih =>
     cases fromFuel with
     | zero =>
@@ -45,38 +45,38 @@ theorem termEvalMonotone {n refs} (trm) (bindings : refs → Option RuntimeValue
         | val value =>
           simpa [AST.eval] using hEval
         | apply fnTerm arg =>
-          cases hFn : fnTerm.eval fuel with
+          cases hFn : eval fnTerm bindings fuel with
           | outOfFuel => simp [AST.eval, hFn] at hEval
           | yield fnResult =>
             have hFnTop := ih fuel (Nat.lt_succ_self fuel)
-              fnTerm toFuel fnResult hFuelTail hFn
-            cases hArg : arg.eval fuel with
+              fnTerm bindings toFuel fnResult hFuelTail hFn
+            cases hArg : eval arg bindings fuel with
             | outOfFuel => simp [AST.eval, hFn, hArg] at hEval
             | yield argResult =>
               have hArgTop := ih fuel (Nat.lt_succ_self fuel)
-                arg toFuel argResult hFuelTail hArg
+                arg bindings toFuel argResult hFuelTail hArg
               cases fnResult with
               | none =>
                 simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
               | some fnValue =>
                 cases fnValue with
-                | lit repr =>
-                  simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
-                | fn body tIn =>
-                  cases argResult with
-                  | none =>
+                | mk context carriers value captured =>
+                  cases value with
+                  | lit repr =>
                     simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
-                  | some input =>
-                    cases hBody : (body.apply (env.uid2valCtx.inv input)).eval fuel with
-                    | outOfFuel =>
-                      simp [AST.eval, hFn, hArg, hBody] at hEval
-                    | yield bodyResult =>
+                  | fn tIn body =>
+                    cases argResult with
+                    | none => simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
+                    | some input =>
+                      have hBody : eval (body.apply (.inr .only))
+                          (λ carrier => carrier.elim
+                            (λ prev => prev.elim captured (λ _ => none)) (λ _ => some input))
+                          fuel = .yield result := by
+                        simpa [AST.eval, hFn, hArg] using hEval
                       have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
-                        (body.apply (env.uid2valCtx.inv input))
-                        toFuel bodyResult hFuelTail hBody
-                      simpa [AST.eval, hFn, hArg, hFnTop, hArgTop,
-                        hBody, hBodyTop] using hEval
-        | ref receipt => simpa [AST.eval] using hEval
+                        _ _ toFuel result hFuelTail hBody
+                      simpa [AST.eval, hFnTop, hArgTop] using hBodyTop
+        | ref receipt under => simpa [AST.eval] using hEval
 
 end AST
 
