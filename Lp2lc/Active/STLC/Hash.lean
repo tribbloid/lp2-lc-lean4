@@ -44,7 +44,7 @@ mutual
   injected through caller-supplied signature functions, so wildcard or
   content-based comparators are expressed by their canonical image.
   -/
-  private def astToJsonAux {P : Parameters} {l : Label} (self : Syntax P l)
+  private def astToJsonAux {P : Parameters} {l : Label} (self : Pre.AST P l)
       (refs : RefIndex P) (sigC : Nat → Json) (sigB : P.B → Json) : Json :=
     match self with
     | .TLit => "primitive"
@@ -59,7 +59,7 @@ mutual
     | .ref carrier under => .arr #["ref", sigC (refs.read (under.shift refs.inc carrier))]
 
   /-- Canonical JSON signature of a [Binder], applying its body to the new slot. -/
-  private def binderToJsonAux {P : Parameters} {l : Label} (self : Scope P l)
+  private def binderToJsonAux {P : Parameters} {l : Label} (self : Pre.Binder P l)
       (refs : RefIndex P) (sigC : Nat → Json) (sigB : P.B → Json) : Json :=
     match self with
     | .mk body => astToJsonAux (body (refs.fresh P.TRef)) refs.next sigC sigB
@@ -69,7 +69,7 @@ local notation "𝒫" => CtxEmbedding.DeBruijn.toParameters
 
 /-- JSON signature of concrete De Bruijn syntax. -/
 def astToJson {refs : URef} [numbering : SlotNumbering refs] {l : Label}
-    (self : Syntax ((𝒫).withTRef refs) l)
+    (self : Pre.AST ((𝒫).withTRef refs) l)
     (sigC : Nat → Json) (sigB : String → Json) : Json :=
   astToJsonAux self
     { level := numbering.level
@@ -80,20 +80,20 @@ def astToJson {refs : URef} [numbering : SlotNumbering refs] {l : Label}
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
 def astBEq {refs : URef} [SlotNumbering refs] {l : Label}
-    (a b : Syntax ((𝒫).withTRef refs) l)
+    (a b : Pre.AST ((𝒫).withTRef refs) l)
     (sigC : Nat → Json) (sigB : String → Json) : Bool :=
   astToJson a sigC sigB == astToJson b sigC sigB
 
 /-- Hash of the caller-supplied JSON signature over [AST]. -/
 def astHash {refs : URef} [SlotNumbering refs] {l : Label}
-    (self : Syntax ((𝒫).withTRef refs) l)
+    (self : Pre.AST ((𝒫).withTRef refs) l)
     (sigC : Nat → Json) (sigB : String → Json) : UInt64 :=
   hash (astToJson self sigC sigB)
 
 /-- Hash of the JSON signature of a mixed value-or-type payload. -/
 def hashSum {refs : URef} [SlotNumbering refs]
-    (payload : Syntax ((𝒫).withTRef refs) .val ⊕
-      Syntax ((𝒫).withTRef refs) .typ)
+    (payload : Pre.AST ((𝒫).withTRef refs) .val ⊕
+      Pre.AST ((𝒫).withTRef refs) .typ)
     (sigC : Nat → Json) (sigB : String → Json) : UInt64 :=
   match payload with
   | .inl v => astHash v sigC sigB
