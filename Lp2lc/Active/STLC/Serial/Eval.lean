@@ -4,27 +4,28 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
+local notation "𝒫" n:arg refs:arg => Parameters.withTRef (CtxEmbedding.toParameters (CtxEmbedding.DeBruijn n)) refs
+
 /-- A source value together with the bindings captured when it was evaluated. -/
 inductive RuntimeValue : Type 2 where
-| mk (n : Nat) (refs : URef) (value : Val n refs)
-    (captured : refs → Option RuntimeValue) : RuntimeValue
+| mk (n : Nat) (refs : URef) (value : Syntax (𝒫 n refs) .val) (captured : refs → Option RuntimeValue)
+
+namespace AST
 
 /-- Evaluate a term using the caller's known bindings. -/
-def AST.eval {n refs} (self : Trm n refs)
-    (bindings : refs → Option RuntimeValue) : RecOpt RuntimeValue := λ fuel =>
+def eval {n refs} (self : Syntax (𝒫 n refs) .trm) (bindings : refs → Option RuntimeValue) : RecOpt RuntimeValue := λ fuel =>
   match fuel, self with
   | 0, _ => .outOfFuel
   | _, .val value => .yield (some (.mk n refs value bindings))
-  | _, .ref carrier => .yield (bindings carrier)
+  | _, .ref carrier under => .yield (bindings (under.shift (λ _ => .inl) carrier))
   | fuel + 1, .apply fn arg =>
     match eval fn bindings fuel, eval arg bindings fuel with
     | .yield (some (.mk _ _ (.fn _ body) captured)), .yield (some value) =>
-      eval (body.apply (.inr .only)) (λ carrier => carrier.elim captured (λ _ => some value)) fuel
+      eval (body.apply (.inr .only))
+        (λ carrier => carrier.elim (λ prev => prev.elim captured (λ _ => none)) (λ _ => some value)) fuel
     | .yield _, .yield _ => .yield none
     | _, _ => .outOfFuel
 
-
-namespace AST
 
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
 theorem termEvalMonotone {n refs} (trm) (bindings : refs → Option RuntimeValue) :
