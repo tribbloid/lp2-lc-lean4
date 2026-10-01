@@ -8,6 +8,11 @@ open Lp2lc.Active.Util
 
 def UAST := Type 2
 
+/-
+Unreified AST with parametric carrier
+
+Rule: this is an internal API, actual language should use AST/Binder under STLC namespace
+-/
 namespace Pre
 
 mutual
