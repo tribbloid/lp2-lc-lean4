@@ -47,16 +47,17 @@ def apply {P : Parameters} {l : Label} (self : Binder P l)
 end Binder
 
 end Pre
----------------------------- Concrete Parameters ----------------------------
+---------------------------- Concrete indexed AST ----------------------------
 
-abbrev AST (l : Label) (n : Nat := 0) (refs : URef := (CtxEmbedding.DeBruijn n).TRef) :=
+abbrev AST (n : Nat := 0) (l : Label)  := -- TODO: last arg is just currying
+  let refs : URef := (CtxEmbedding.DeBruijn n).TRef
   Pre.AST ((CtxEmbedding.DeBruijn n).toParameters.withTRef refs) l
 
-abbrev Binder (l : Label) (n : Nat := 0) (refs : URef := (CtxEmbedding.DeBruijn n).TRef) :=
+abbrev Binder (n : Nat := 0) (l : Label)  :=
+  let refs : URef := (CtxEmbedding.DeBruijn n).TRef
   Pre.Binder ((CtxEmbedding.DeBruijn n).toParameters.withTRef refs) l
 
 namespace AST
-
 
 /-- Current STLC subtyping coincides with structural type equality. -/
 instance typLE {P : Parameters} : LE (Pre.AST P .typ) := ⟨Eq⟩
@@ -73,12 +74,16 @@ instance typDecidableLE {P : Parameters} : DecidableLE (Pre.AST P .typ)
     | isFalse notEqual, _ => isFalse (λ equality => notEqual (by cases equality; rfl))
     | _, isFalse notEqual => isFalse (λ equality => notEqual (by cases equality; rfl))
 
+end AST
+
+abbrev Val (n : Nat := 0) := AST n .val
+abbrev Trm (n : Nat := 0) := AST n .trm
+abbrev Typ (n : Nat := 0) := AST n .typ
+
 namespace Val
 
-def asTrm (self : AST .val) : AST .trm := .val self
+def asTrm (self : Val n) : Trm n := .val self
 
 end Val
-
-end AST
 
 end Lp2lc.Active.STLC
