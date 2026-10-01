@@ -23,9 +23,9 @@ theorem fundamental {refs} [build : BuildEnv refs] [exe : ExeEnv refs]
     Safety trm typ := sorry
 
 /--
-if compiled a term and succeeded, the term must be safe
+If compilation succeeds, the term must be safe.
 
-TODO: this is the "Paranoid Fundamental theorem": compilation may fail even but term evaluation may succeed
+TODO: this is the "Paranoid Fundamental theorem": compilation may fail even when term evaluation succeeds.
 -/
 theorem paranoidFundamental {refs} [build : BuildEnv refs] [exe : ExeEnv refs]
     (trm : AST.Trm refs.Parameters) :

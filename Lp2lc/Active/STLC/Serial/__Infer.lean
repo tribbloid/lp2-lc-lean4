@@ -5,12 +5,11 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
 /--
-Adds the compile-time typing context; the shared value-or-type view permits
-only lookups, so compile-time code cannot mint receipts from new values.
+Supplies the compile-time typing context through read-only type bindings.
 -/
 class BuildEnv (refs : HasUId2Any) where
   uid2typ : refs.uid2any.Lesser refs.UId (AST.Typ refs.Parameters)
-  uid2typCtx : KVEquiv uid2typ.toKVRefs -- comparing to ExeEnv, it lose the ability to save value but gain the ability to save type
+  uid2typCtx : KVEquiv uid2typ.toKVRefs -- Compile-time receipts store types rather than runtime values.
 
 namespace BuildEnv
 section variable {refs : HasUId2Any} (self : BuildEnv refs)
@@ -21,13 +20,8 @@ end BuildEnv
 namespace AST
 
 /--
-Infers types from the shared value-or-type reference view.
-
-Value references are inferred recursively, while type references are returned
-directly. Compile-time code can read both payloads but can mint only type
-receipts through [BuildEnv.uid2typCtx].
-
-WARNING: this function should have no access to ExeEnv! Executing in compile time is strictly prohibited
+Infers types using compile-time bindings, extending them when opening a binder.
+Compile-time inference has no access to runtime evaluation.
 -/
 def infer {refs : HasUId2Any} [env : BuildEnv refs]
     (self : Trm refs.Parameters) : RecOpt (Typ refs.Parameters)
