@@ -6,11 +6,11 @@ open Lp2lc.Active.Util
 
 /-- A source value together with the bindings captured when it was evaluated. -/
 inductive RuntimeValue : Type 2 where
-| mk (n : Nat) (refs : URef) (value : AST .val n refs)
+| mk (n : Nat) (refs : URef) (value : Val n refs)
     (captured : refs → Option RuntimeValue) : RuntimeValue
 
 /-- Evaluate a term using the caller's known bindings. -/
-def AST.eval {n refs} (self : AST .trm n refs)
+def AST.eval {n refs} (self : Trm n refs)
     (bindings : refs → Option RuntimeValue) : RecOpt RuntimeValue := λ fuel =>
   match fuel, self with
   | 0, _ => .outOfFuel
@@ -27,9 +27,8 @@ def AST.eval {n refs} (self : AST .trm n refs)
 namespace AST
 
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
-theorem termEvalMonotone [refs : HasUId2Any] [env : ExeEnv refs]
-    (trm : Trm refs.Parameters) :
-    trm.eval.Monotone := by
+theorem termEvalMonotone {n refs} (trm) (bindings : refs → Option RuntimeValue) :
+    (eval (n := n) trm bindings).Monotone := by
   intro less more result hFuel hEval
   induction less using Nat.strongRecOn generalizing trm more result with
   | ind fromFuel ih =>
