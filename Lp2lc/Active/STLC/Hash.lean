@@ -52,7 +52,7 @@ mutual
       .arr #["fn", astToJsonAux tIn refs sigC sigB, astToJsonAux tOut refs sigC sigB]
     | .lit repr => .arr #["lit", sigB repr]
     | .fn tIn body =>
-      .arr #["lam", binderToJsonAux body refs sigC sigB, astToJsonAux tIn refs sigC sigB]
+      .arr #["lam", binderToJsonAux body refs.next sigC sigB, astToJsonAux tIn refs sigC sigB]
     | .val v => .arr #["val", astToJsonAux v refs sigC sigB]
     | .apply fnTerm arg =>
       .arr #["apply", astToJsonAux fnTerm refs sigC sigB, astToJsonAux arg refs sigC sigB]

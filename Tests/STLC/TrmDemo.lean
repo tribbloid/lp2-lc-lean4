@@ -27,7 +27,7 @@ def get1st : AST 0 .trm :=
   .val
     (.fn .TLit
       (.mk (λ first =>
-        .val (.fn .TLit (.mk (λ _ => .ref first (.lower .same)))))))
+        .val (.fn .TLit (.mk (λ _ => .ref first (.lower (.lower .same))))))))
 
 def get2nd : AST 0 .trm :=
   .val
@@ -56,7 +56,7 @@ def directRef : Pre.AST CtxEmbedding.DeBruijn.toParameters.Next .trm :=
   .ref freeSlot (.lower .same)
 
 def capturedRef : AST 0 .trm :=
-  .val (.fn .TLit (.mk (λ _ => .ref freeSlot (.lower .same))))
+  .val (.fn .TLit (.mk (λ _ => .ref freeSlot (.lower (.lower .same)))))
 
 def capturedRefOnFalse : AST 0 .trm :=
   .apply capturedRef (.val (.lit bFalse))

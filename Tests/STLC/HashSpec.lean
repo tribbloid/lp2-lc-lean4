@@ -37,7 +37,7 @@ example : astToJson (.lit "x" : AST 0 .val) sigC sigB =
     .arr #["lit", toJson ("x" : String)] := rfl
 
 example : astToJson idVal sigC sigB =
-    .arr #["lam", .arr #["ref", toJson (2 : Nat)], "primitive"] := rfl
+    .arr #["lam", .arr #["ref", toJson (3 : Nat)], "primitive"] := rfl
 
 example : astToJson (.val (.lit "x") : AST 0 .trm) sigC sigB =
     .arr #["val", .arr #["lit", toJson ("x" : String)]] := rfl
