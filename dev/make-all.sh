@@ -10,6 +10,6 @@ cd "$FWDIR"
 
 rm -R ".metals" # Windows/Linux build cache are not mutually compatible
 
-markdownlint --fix --dot "**/*.md" && \
+git ls-files -z --cached --others --exclude-standard -- '*.md' | xargs -0 markdownlint --fix && \
 lake build Lp2lc Tests Docs && \
 sbt --server compile
