@@ -49,9 +49,6 @@ end Binder
 end Pre
 ---------------------------- Concrete indexed AST ----------------------------
 
-abbrev Syntax (P : Parameters) (l : Label) := Pre.AST P l
-abbrev Scope (P : Parameters) (l : Label) := Pre.Binder P l
-
 abbrev AST (n : Nat := 0) (l : Label)  := -- TODO: the label argument is just currying
   let refs : URef := (CtxEmbedding.DeBruijn n).TRef
   Pre.AST ((CtxEmbedding.DeBruijn n).toParameters.withTRef refs) l
