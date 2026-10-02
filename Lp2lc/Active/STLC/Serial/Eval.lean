@@ -36,7 +36,7 @@ def eval {n refs} (self : AST n .trm refs) (indices : refs → Nat)
 theorem termEvalMonotone {n refs} (trm) (indices : refs → Nat) (bindings : Nat → Option RuntimeValue) :
     (eval (n := n) trm indices bindings).Monotone := by
   intro less more result hFuel hEval
-  induction less using Nat.strongRecOn generalizing n refs trm bindings more result with
+  induction less using Nat.strongRecOn generalizing n refs trm indices bindings more result with
   | ind fromFuel ih =>
     cases fromFuel with
     | zero =>
@@ -50,22 +50,22 @@ theorem termEvalMonotone {n refs} (trm) (indices : refs → Nat) (bindings : Nat
         | val value =>
           simpa [AST.eval] using hEval
         | apply fnTerm arg =>
-          cases hFn : eval fnTerm bindings fuel with
+          cases hFn : eval fnTerm indices bindings fuel with
           | outOfFuel => simp [AST.eval, hFn] at hEval
           | yield fnResult =>
             have hFnTop := ih fuel (Nat.lt_succ_self fuel)
-              fnTerm bindings toFuel fnResult hFuelTail hFn
-            cases hArg : eval arg bindings fuel with
+              fnTerm indices bindings toFuel fnResult hFuelTail hFn
+            cases hArg : eval arg indices bindings fuel with
             | outOfFuel => simp [AST.eval, hFn, hArg] at hEval
             | yield argResult =>
               have hArgTop := ih fuel (Nat.lt_succ_self fuel)
-                arg bindings toFuel argResult hFuelTail hArg
+                arg indices bindings toFuel argResult hFuelTail hArg
               cases fnResult with
               | none =>
                 simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
               | some fnValue =>
                 cases fnValue with
-                | mk context carriers value captured =>
+                | mk value slots captured =>
                   cases value with
                   | lit repr =>
                     simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
@@ -73,13 +73,10 @@ theorem termEvalMonotone {n refs} (trm) (indices : refs → Nat) (bindings : Nat
                     cases argResult with
                     | none => simpa [AST.eval, hFn, hArg, hFnTop, hArgTop] using hEval
                     | some input =>
-                      have hBody : eval (body.apply (.inr .only))
-                          (λ carrier => carrier.elim
-                            (λ prev => prev.elim captured (λ _ => none)) (λ _ => some input))
-                          fuel = .yield result := by
-                        simpa [AST.eval, hFn, hArg] using hEval
+                      simp only [eval, hFn, hArg] at hEval
+                      change eval (body.apply (.inr .only)) _ _ fuel = .yield result at hEval
                       have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
-                        _ _ toFuel result hFuelTail hBody
+                        _ _ _ toFuel result hFuelTail hEval
                       simpa [AST.eval, hFnTop, hArgTop] using hBodyTop
         | ref receipt under => simpa [AST.eval] using hEval
 
