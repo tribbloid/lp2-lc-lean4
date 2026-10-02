@@ -5,28 +5,23 @@ namespace Tests.STLC.HashSpec
 open Lean (Json toJson)
 open Lp2lc.Active.Util Lp2lc.Active.STLC
 
-local notation "𝒫" => CtxEmbedding.DeBruijn.toParameters
-
 private def sigC (index : Nat) : Json := toJson index
 private def sigB (repr : String) : Json := toJson repr
 private def sigAny (_index : Nat) : Json := .null
 
-private def refOne : Pre.AST (𝒫).Next.Next.Next .trm :=
-  .ref (lower := (𝒫).Next) (.inr .only) (.lower (.lower .same))
+private def capturedRef (useOuter : Bool) : Val 1 :=
+  .fn .TLit (.mk (λ proxy =>
+    if useOuter then .ref (lower := (CtxEmbedding.DeBruijn 1).toParameters) .only (.lower (.lower .same))
+    else .ref proxy .same))
 
-private def refTwo : Pre.AST (𝒫).Next.Next.Next .trm :=
-  .ref (lower := (𝒫).Next.Next) (.inr .only) (.lower .same)
-
-private def idVal : Pre.AST (𝒫).Next .val :=
+private def idVal : Val 1 :=
   .fn .TLit (.mk (λ proxy => .ref proxy .same))
 
-example : astToJson (.ref (lower := 𝒫) .only (.lower .same) :
-    Pre.AST (𝒫).Next .trm) sigC sigB =
+example : astToJson (.ref (lower := CtxEmbedding.DeBruijn.toParameters) .only .same : Trm 0) sigC sigB =
     .arr #["ref", toJson (0 : Nat)] := rfl
 
-example : astToJson (.ref (lower := (𝒫).Next) (.inr .only) .same :
-    Pre.AST (𝒫).Next .trm) sigC sigB =
-    .arr #["ref", toJson (1 : Nat)] := rfl
+example : astToJson (.ref (lower := (CtxEmbedding.DeBruijn 3).toParameters) .only .same : Trm 3) sigC sigB =
+    .arr #["ref", toJson (3 : Nat)] := rfl
 
 example : astToJson (.TLit : AST 0 .typ) sigC sigB = "primitive" := rfl
 
@@ -42,21 +37,22 @@ example : astToJson idVal sigC sigB =
 example : astToJson (.val (.lit "x") : AST 0 .trm) sigC sigB =
     .arr #["val", .arr #["lit", toJson ("x" : String)]] := rfl
 
-example : astToJson (.apply refOne refTwo : Pre.AST (𝒫).Next.Next.Next .trm) sigC sigB =
-    .arr #["apply", .arr #["ref", toJson (1 : Nat)],
-      .arr #["ref", toJson (2 : Nat)]] := rfl
+example : astToJson (.apply (.val (capturedRef true)) (.val (capturedRef false)) : Trm 1) sigC sigB =
+    .arr #["apply", .arr #["val", .arr #["lam", .arr #["ref", toJson (1 : Nat)], "primitive"]],
+      .arr #["val", .arr #["lam", .arr #["ref", toJson (3 : Nat)], "primitive"]]] := rfl
 
-example : (astToJson refOne sigC sigB == astToJson refTwo sigC sigB) = false := by native_decide
+example : (astToJson (capturedRef true) sigC sigB == astToJson (capturedRef false) sigC sigB) = false :=
+  by native_decide
 
-example : astBEq refOne refTwo sigC sigB = false := by native_decide
+example : astBEq (capturedRef true) (capturedRef false) sigC sigB = false := by native_decide
 
-example : astBEq refOne refTwo sigAny sigB = true := by native_decide
+example : astBEq (capturedRef true) (capturedRef false) sigAny sigB = true := by native_decide
 
-example : astHash refOne sigAny sigB = astHash refTwo sigAny sigB := rfl
+example : astHash (capturedRef true) sigAny sigB = astHash (capturedRef false) sigAny sigB := rfl
 
 example : hashSum (.inl idVal) sigC sigB = astHash idVal sigC sigB := rfl
 
-example : hashSum (.inr (.TLit : Pre.AST (𝒫).Next .typ)) sigC sigB =
-    astHash (.TLit : Pre.AST (𝒫).Next .typ) sigC sigB := rfl
+example : hashSum (.inr (.TLit : Typ 1)) sigC sigB =
+    astHash (.TLit : Typ 1) sigC sigB := rfl
 
 end Tests.STLC.HashSpec

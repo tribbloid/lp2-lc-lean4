@@ -52,8 +52,8 @@ namespace FreeCapture
 /-- A symbolic outer-context slot used by the syntax-only capture examples. -/
 def freeSlot : CtxEmbedding.DeBruijn.TRef := .only
 
-def directRef : Pre.AST CtxEmbedding.DeBruijn.toParameters.Next .trm :=
-  .ref freeSlot (.lower .same)
+def directRef : Trm 0 :=
+  .ref freeSlot .same
 
 def capturedRef : AST 0 .trm :=
   .val (.fn .TLit (.mk (λ _ => .ref freeSlot (.lower (.lower .same)))))

@@ -10,19 +10,6 @@ namespace Lp2lc.Active.STLC
 open Lean (Json)
 open Lp2lc.Active.Util
 
-class SlotNumbering (refs : URef) where
-  level : Nat
-  read : refs → Nat
-
-instance : SlotNumbering CtxEmbedding.DeBruijn.TRef where
-  level := 0
-  read := λ _ => 0
-
-instance {refs : URef} [numbering : SlotNumbering refs] :
-    SlotNumbering (refs ⊕ CtxEmbedding.DeBruijn.TRefNext) where
-  level := numbering.level + 1
-  read := λ carrier => carrier.elim numbering.read (λ _ => numbering.level + 1)
-
 private structure RefIndex (P : Parameters) where
   level : Nat
   read : P.TRef → Nat
@@ -65,35 +52,28 @@ mutual
     | .mk body => astToJsonAux (body (refs.fresh P.TRef)) refs.next sigC sigB
 end
 
-local notation "𝒫" => CtxEmbedding.DeBruijn.toParameters
-
 /-- JSON signature of concrete De Bruijn syntax. -/
-def astToJson {refs : URef} [numbering : SlotNumbering refs] {l : Label}
-    (self : Pre.AST ((𝒫).withTRef refs) l)
+def astToJson {n l} (self : AST n l)
     (sigC : Nat → Json) (sigB : String → Json) : Json :=
   astToJsonAux self
-    { level := numbering.level
-      read := numbering.read
+    { level := n
+      read := λ _ => n
       inc := λ _ carrier => .inl carrier
       lift := λ _ level read carrier => carrier.elim read (λ _ => level + 1)
       fresh := λ _ => .inr .only } sigC sigB
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
-def astBEq {refs : URef} [SlotNumbering refs] {l : Label}
-    (a b : Pre.AST ((𝒫).withTRef refs) l)
+def astBEq {n l} (a b : AST n l)
     (sigC : Nat → Json) (sigB : String → Json) : Bool :=
   astToJson a sigC sigB == astToJson b sigC sigB
 
 /-- Hash of the caller-supplied JSON signature over [AST]. -/
-def astHash {refs : URef} [SlotNumbering refs] {l : Label}
-    (self : Pre.AST ((𝒫).withTRef refs) l)
+def astHash {n l} (self : AST n l)
     (sigC : Nat → Json) (sigB : String → Json) : UInt64 :=
   hash (astToJson self sigC sigB)
 
 /-- Hash of the JSON signature of a mixed value-or-type payload. -/
-def hashSum {refs : URef} [SlotNumbering refs]
-    (payload : Pre.AST ((𝒫).withTRef refs) .val ⊕
-      Pre.AST ((𝒫).withTRef refs) .typ)
+def hashSum {n} (payload : Val n ⊕ Typ n)
     (sigC : Nat → Json) (sigB : String → Json) : UInt64 :=
   match payload with
   | .inl v => astHash v sigC sigB
