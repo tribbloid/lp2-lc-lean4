@@ -13,8 +13,6 @@ abbrev TRefNext : URef := this.TRefInc this.TRef
 
 abbrev Next : Parameters := {this with TRef := this.TRefNext}
 
-abbrev withTRef (refs : URef) : Parameters := {this with TRef := refs}
-
 /-- A witness that a context is reachable by extending an earlier context. -/
 inductive Under (base : Parameters) : Parameters → Type 1 where
 | same : Under base base
@@ -55,18 +53,18 @@ abbrev Next : CtxEmbedding :=
 
 def TRefNext : Type := this.Next.TRef
 
-/-- An erased witness that a context is reachable by extending an earlier context. -/
-inductive Under (base : CtxEmbedding) : CtxEmbedding → Prop where
-| same : Under base base
-| lower {p2} (prev : Under base p2) : Under base p2.Next
-
 end
 
 /-- Builds parameters whose successor retains prior references and adds the next lexical slot. -/
 abbrev toParameters (this : CtxEmbedding) : Parameters :=
-  { B := this.B
+  {
+    B := this.B
     TRef := this.TRef
-    TRefInc := λ TRef => TRef ⊕ this.TRefNext }
+    TRefInc := λ TRef =>
+      match TRef with
+      | this.Proxy v =>
+        this.Proxy (this.indexInc v)
+  }
 
 abbrev DeBruijn (index : Nat := 0) : CtxEmbedding := {TIndex := Nat, index := index, B := String, indexInc := Nat.succ }
 
