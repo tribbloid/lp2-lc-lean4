@@ -66,4 +66,20 @@ example : hashSum (.inl idVal) sigC sigB 8 = astHash idVal sigC sigB 8 := rfl
 example : hashSum (.inr (.TLit : Pre.AST (𝒫).Next .typ)) sigC sigB 8 =
     astHash (.TLit : Pre.AST (𝒫).Next .typ) sigC sigB 8 := rfl
 
+example : astToJson (.TLit : AST 0 .typ) sigC sigB 0 = .outOfFuel := rfl
+
+example : astToJson (.TFn .TLit .TLit : AST 0 .typ) sigC sigB 1 = .outOfFuel := rfl
+
+example : astToJson idVal sigC sigB 1 = .outOfFuel := rfl
+
+example : astToJson (.val (.lit "x") : AST 0 .trm) sigC sigB 1 = .outOfFuel := rfl
+
+example : astBEq refOne refTwo sigC sigB 0 = .outOfFuel := rfl
+
+example : astBEq refOne (.apply refOne refTwo) sigAny sigB 1 = .outOfFuel := rfl
+
+example : astHash idVal sigC sigB 1 = .outOfFuel := rfl
+
+example : hashSum (.inl idVal) sigC sigB 1 = .outOfFuel := rfl
+
 end Tests.STLC.HashSpec
