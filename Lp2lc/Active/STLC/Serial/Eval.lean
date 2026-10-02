@@ -6,28 +6,35 @@ open Lp2lc.Active.Util
 
 /-- A source value together with the bindings captured when it was evaluated. -/
 inductive RuntimeValue : Type 2 where
-| mk (n : Nat) (refs : URef) (value : AST n .val refs) (captured : refs → Option RuntimeValue)
+| mk {n refs} (value : AST n .val refs) (indices : refs → Nat) (captured : Nat → Option RuntimeValue)
 
 namespace AST
 
-/-- Evaluate a term using the caller's known bindings. -/
-def eval {n refs} (self : AST n .trm refs) (bindings : refs → Option RuntimeValue) : RecOpt RuntimeValue := λ fuel =>
+/-- Evaluate with Nat-indexed bindings and a distinct index for each lexical slot.
+Opening a function puts its argument at 0, leaves its unused context slot at 1, and shifts captures by 2.
+-/
+def eval {n refs} (self : AST n .trm refs) (indices : refs → Nat)
+    (bindings : Nat → Option RuntimeValue) : RecOpt RuntimeValue := λ fuel =>
   match fuel, self with
   | 0, _ => .outOfFuel
-  | _, .val value => .yield (some (.mk n refs value bindings))
-  | _, .ref carrier under => .yield (bindings (under.shift (λ _ => .inl) carrier))
+  | _, .val value => .yield (some (.mk value indices bindings))
+  | _, .ref carrier under => .yield (bindings (indices (under.shift (λ _ => .inl) carrier)))
   | fuel + 1, .apply fn arg =>
-    match eval fn bindings fuel, eval arg bindings fuel with
-    | .yield (some (.mk _ _ (.fn _ body) captured)), .yield (some value) =>
+    match eval fn indices bindings fuel, eval arg indices bindings fuel with
+    | .yield (some (.mk (.fn _ body) indices captured)), .yield (some value) =>
       eval (body.apply (.inr .only))
-        (λ carrier => carrier.elim (λ prev => prev.elim captured (λ _ => none)) (λ _ => some value)) fuel
+        (λ carrier => carrier.elim (λ prev => prev.elim (λ ref => indices ref + 2) (λ _ => 1)) (λ _ => 0))
+        (λ index => match index with
+          | 0 => some value
+          | 1 => none
+          | index + 2 => captured index) fuel
     | .yield _, .yield _ => .yield none
     | _, _ => .outOfFuel
 
 
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
-theorem termEvalMonotone {n refs} (trm) (bindings : refs → Option RuntimeValue) :
-    (eval (n := n) trm bindings).Monotone := by
+theorem termEvalMonotone {n refs} (trm) (indices : refs → Nat) (bindings : Nat → Option RuntimeValue) :
+    (eval (n := n) trm indices bindings).Monotone := by
   intro less more result hFuel hEval
   induction less using Nat.strongRecOn generalizing n refs trm bindings more result with
   | ind fromFuel ih =>

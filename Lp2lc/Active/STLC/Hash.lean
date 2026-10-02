@@ -23,77 +23,53 @@ instance {refs : URef} [numbering : SlotNumbering refs] :
   level := numbering.level + 1
   read := λ carrier => carrier.elim numbering.read (λ _ => numbering.level + 1)
 
-private structure RefIndex (P : Parameters) where
-  level : Nat
-  read : P.TRef → Nat
-  inc (T : URef) (carrier : T) : P.TRefInc T
-  lift (T : URef) (level : Nat) (read : T → Nat) : P.TRefInc T → Nat
-  fresh (T : URef) : P.TRefInc T
+private def jsonPair (tag : Json) (left right : Rec.Outcome Json) : Rec.Outcome Json :=
+  left.flatMap (λ left => right.map (λ right => .arr #[tag, left, right]))
 
-private def RefIndex.next {P : Parameters} (self : RefIndex P) : RefIndex P.Next :=
-  { level := self.level + 1
-    read := self.lift P.TRef self.level self.read
-    inc := self.inc
-    lift := self.lift
-    fresh := self.fresh }
+section variable {refs : URef} [numbering : SlotNumbering refs] {l : Label}
 
-mutual
   /--
   Canonical JSON signature of an [AST]: a single tree traversal that both
   signature equality and hashing delegate to. Reference indices and bytecode values are
   injected through caller-supplied signature functions, so wildcard or
   content-based comparators are expressed by their canonical image.
   -/
-  private def astToJsonAux {P : Parameters} {l : Label} (self : Pre.AST P l)
-      (refs : RefIndex P) (sigC : Nat → Json) (sigB : P.B → Json) : Json :=
-    match self with
-    | .TLit => "primitive"
-    | .TFn tIn tOut =>
-      .arr #["fn", astToJsonAux tIn refs sigC sigB, astToJsonAux tOut refs sigC sigB]
-    | .lit repr => .arr #["lit", sigB repr]
-    | .fn tIn body =>
-      .arr #["lam", binderToJsonAux body refs.next sigC sigB, astToJsonAux tIn refs sigC sigB]
-    | .val v => .arr #["val", astToJsonAux v refs sigC sigB]
-    | .apply fnTerm arg =>
-      .arr #["apply", astToJsonAux fnTerm refs sigC sigB, astToJsonAux arg refs sigC sigB]
-    | .ref carrier under => .arr #["ref", sigC (refs.read (under.shift refs.inc carrier))]
+  private def astToJsonAux {refs} [numbering : SlotNumbering refs] {l} (self : AST 0 l refs)
+      (sigC : Nat → Json) (sigB : String → Json) : Rec Json := λ fuel =>
+    match fuel, self with
+    | 0, _ => .outOfFuel
+    | _, .TLit => .yield "primitive"
+    | fuel + 1, .TFn tIn tOut =>
+      jsonPair "fn" (astToJsonAux tIn sigC sigB fuel) (astToJsonAux tOut sigC sigB fuel)
+    | _, .lit repr => .yield (.arr #["lit", sigB repr])
+    -- Canonical JSON signature of a [Binder], applying its body to the new slot.
+    | fuel + 1, .fn tIn (.mk body) =>
+      jsonPair "lam" (astToJsonAux (body (.inr .only)) sigC sigB fuel) (astToJsonAux tIn sigC sigB fuel)
+    | fuel + 1, .val v => (astToJsonAux v sigC sigB fuel).map (λ value => .arr #["val", value])
+    | fuel + 1, .apply fnTerm arg =>
+      jsonPair "apply" (astToJsonAux fnTerm sigC sigB fuel) (astToJsonAux arg sigC sigB fuel)
+    | _, .ref carrier under =>
+      .yield (.arr #["ref", sigC (numbering.read (under.shift (λ _ => .inl) carrier))])
 
-  /-- Canonical JSON signature of a [Binder], applying its body to the new slot. -/
-  private def binderToJsonAux {P : Parameters} {l : Label} (self : Pre.Binder P l)
-      (refs : RefIndex P) (sigC : Nat → Json) (sigB : P.B → Json) : Json :=
-    match self with
-    | .mk body => astToJsonAux (body (refs.fresh P.TRef)) refs.next sigC sigB
-end
-
-/-- JSON signature of concrete De Bruijn syntax. -/
-def astToJson {refs : URef} [numbering : SlotNumbering refs] {l : Label}
-    (self : AST 0 l refs)
-    (sigC : Nat → Json) (sigB : String → Json) : Json :=
-  astToJsonAux self
-    { level := numbering.level
-      read := numbering.read
-      inc := λ _ carrier => .inl carrier
-      lift := λ _ level read carrier => carrier.elim read (λ _ => level + 1)
-      fresh := λ _ => .inr .only } sigC sigB
+/-- JSON signature of concrete De Bruijn syntax, reporting insufficient traversal fuel. -/
+def astToJson (self : AST 0 l refs) (sigC : Nat → Json) (sigB : String → Json) : Rec Json :=
+  astToJsonAux self sigC sigB
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
-def astBEq {refs : URef} [SlotNumbering refs] {l : Label}
-    (a b : AST 0 l refs)
-    (sigC : Nat → Json) (sigB : String → Json) : Bool :=
-  astToJson a sigC sigB == astToJson b sigC sigB
+def astBEq (a b : AST 0 l refs) (sigC : Nat → Json) (sigB : String → Json) : Rec Bool := λ fuel =>
+  (astToJson a sigC sigB fuel).flatMap (λ left => (astToJson b sigC sigB fuel).map (left == ·))
 
 /-- Hash of the caller-supplied JSON signature over [AST]. -/
-def astHash {refs : URef} [SlotNumbering refs] {l : Label}
-    (self : AST 0 l refs)
-    (sigC : Nat → Json) (sigB : String → Json) : UInt64 :=
-  hash (astToJson self sigC sigB)
+def astHash (self : AST 0 l refs) (sigC : Nat → Json) (sigB : String → Json) : Rec UInt64 := λ fuel =>
+  (astToJson self sigC sigB fuel).map hash
 
 /-- Hash of the JSON signature of a mixed value-or-type payload. -/
-def hashSum {refs : URef} [SlotNumbering refs]
-    (payload : AST 0 .val refs ⊕ AST 0 .typ refs)
-    (sigC : Nat → Json) (sigB : String → Json) : UInt64 :=
+def hashSum (payload : AST 0 .val refs ⊕ AST 0 .typ refs)
+    (sigC : Nat → Json) (sigB : String → Json) : Rec UInt64 :=
   match payload with
   | .inl v => astHash v sigC sigB
   | .inr t => astHash t sigC sigB
+
+end
 
 end Lp2lc.Active.STLC

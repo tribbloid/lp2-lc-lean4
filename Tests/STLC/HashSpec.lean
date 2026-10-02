@@ -21,42 +21,49 @@ private def idVal : Pre.AST (𝒫).Next .val :=
   .fn .TLit (.mk (λ proxy => .ref proxy .same))
 
 example : astToJson (.ref (lower := 𝒫) .only (.lower .same) :
-    Pre.AST (𝒫).Next .trm) sigC sigB =
-    .arr #["ref", toJson (0 : Nat)] := rfl
+    Pre.AST (𝒫).Next .trm) sigC sigB 8 =
+    .yield (.arr #["ref", toJson (0 : Nat)]) := rfl
 
 example : astToJson (.ref (lower := (𝒫).Next) (.inr .only) .same :
-    Pre.AST (𝒫).Next .trm) sigC sigB =
-    .arr #["ref", toJson (1 : Nat)] := rfl
+    Pre.AST (𝒫).Next .trm) sigC sigB 8 =
+    .yield (.arr #["ref", toJson (1 : Nat)]) := rfl
 
-example : astToJson (.TLit : AST 0 .typ) sigC sigB = "primitive" := rfl
+example : astToJson (.TLit : AST 0 .typ) sigC sigB 8 = .yield "primitive" := rfl
 
-example : astToJson (.TFn .TLit .TLit : AST 0 .typ) sigC sigB =
-    .arr #["fn", "primitive", "primitive"] := rfl
+example : astToJson (.TFn .TLit .TLit : AST 0 .typ) sigC sigB 8 =
+    .yield (.arr #["fn", "primitive", "primitive"]) := rfl
 
-example : astToJson (.lit "x" : AST 0 .val) sigC sigB =
-    .arr #["lit", toJson ("x" : String)] := rfl
+example : astToJson (.lit "x" : AST 0 .val) sigC sigB 8 =
+    .yield (.arr #["lit", toJson ("x" : String)]) := rfl
 
-example : astToJson idVal sigC sigB =
-    .arr #["lam", .arr #["ref", toJson (3 : Nat)], "primitive"] := rfl
+example : astToJson idVal sigC sigB 8 =
+    .yield (.arr #["lam", .arr #["ref", toJson (3 : Nat)], "primitive"]) := rfl
 
-example : astToJson (.val (.lit "x") : AST 0 .trm) sigC sigB =
-    .arr #["val", .arr #["lit", toJson ("x" : String)]] := rfl
+example : astToJson (.val (.lit "x") : AST 0 .trm) sigC sigB 8 =
+    .yield (.arr #["val", .arr #["lit", toJson ("x" : String)]]) := rfl
 
-example : astToJson (.apply refOne refTwo : Pre.AST (𝒫).Next.Next.Next .trm) sigC sigB =
-    .arr #["apply", .arr #["ref", toJson (1 : Nat)],
-      .arr #["ref", toJson (2 : Nat)]] := rfl
+example : astToJson (.apply refOne refTwo : Pre.AST (𝒫).Next.Next.Next .trm) sigC sigB 8 =
+    .yield (.arr #["apply", .arr #["ref", toJson (1 : Nat)],
+      .arr #["ref", toJson (2 : Nat)]]) := rfl
 
-example : (astToJson refOne sigC sigB == astToJson refTwo sigC sigB) = false := by native_decide
+example : (astToJson refOne sigC sigB 8).map
+    (λ json => json == .arr #["ref", toJson (2 : Nat)]) = .yield false := by
+  apply congrArg Rec.Outcome.yield
+  native_decide
 
-example : astBEq refOne refTwo sigC sigB = false := by native_decide
+example : astBEq refOne refTwo sigC sigB 8 = .yield false := by
+  apply congrArg Rec.Outcome.yield
+  native_decide
 
-example : astBEq refOne refTwo sigAny sigB = true := by native_decide
+example : astBEq refOne refTwo sigAny sigB 8 = .yield true := by
+  apply congrArg Rec.Outcome.yield
+  native_decide
 
-example : astHash refOne sigAny sigB = astHash refTwo sigAny sigB := rfl
+example : astHash refOne sigAny sigB 8 = astHash refTwo sigAny sigB 8 := rfl
 
-example : hashSum (.inl idVal) sigC sigB = astHash idVal sigC sigB := rfl
+example : hashSum (.inl idVal) sigC sigB 8 = astHash idVal sigC sigB 8 := rfl
 
-example : hashSum (.inr (.TLit : Pre.AST (𝒫).Next .typ)) sigC sigB =
-    astHash (.TLit : Pre.AST (𝒫).Next .typ) sigC sigB := rfl
+example : hashSum (.inr (.TLit : Pre.AST (𝒫).Next .typ)) sigC sigB 8 =
+    astHash (.TLit : Pre.AST (𝒫).Next .typ) sigC sigB 8 := rfl
 
 end Tests.STLC.HashSpec
