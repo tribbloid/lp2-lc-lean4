@@ -28,32 +28,28 @@ private def jsonPair (tag : Json) (left right : Rec.Outcome Json) : Rec.Outcome 
 
 section variable {refs : URef} [numbering : SlotNumbering refs] {l : Label}
 
-  /--
-  Canonical JSON signature of an [AST]: a single tree traversal that both
-  signature equality and hashing delegate to. Reference indices and bytecode values are
-  injected through caller-supplied signature functions, so wildcard or
-  content-based comparators are expressed by their canonical image.
-  -/
-  private def astToJsonAux {refs} [numbering : SlotNumbering refs] {l} (self : AST 0 l refs)
-      (sigC : Nat → Json) (sigB : String → Json) : Rec Json := λ fuel =>
-    match fuel, self with
-    | 0, _ => .outOfFuel
-    | _, .TLit => .yield "primitive"
-    | fuel + 1, .TFn tIn tOut =>
-      jsonPair "fn" (astToJsonAux tIn sigC sigB fuel) (astToJsonAux tOut sigC sigB fuel)
-    | _, .lit repr => .yield (.arr #["lit", sigB repr])
-    -- Canonical JSON signature of a [Binder], applying its body to the new slot.
-    | fuel + 1, .fn tIn (.mk body) =>
-      jsonPair "lam" (astToJsonAux (body (.inr .only)) sigC sigB fuel) (astToJsonAux tIn sigC sigB fuel)
-    | fuel + 1, .val v => (astToJsonAux v sigC sigB fuel).map (λ value => .arr #["val", value])
-    | fuel + 1, .apply fnTerm arg =>
-      jsonPair "apply" (astToJsonAux fnTerm sigC sigB fuel) (astToJsonAux arg sigC sigB fuel)
-    | _, .ref carrier under =>
-      .yield (.arr #["ref", sigC (numbering.read (under.shift (λ _ => .inl) carrier))])
-
-/-- JSON signature of concrete De Bruijn syntax, reporting insufficient traversal fuel. -/
-def astToJson (self : AST 0 l refs) (sigC : Nat → Json) (sigB : String → Json) : Rec Json :=
-  astToJsonAux self sigC sigB
+/--
+Canonical JSON signature of a concrete De Bruijn [AST], reporting insufficient traversal fuel.
+Signature equality and hashing delegate to this single tree traversal.
+Reference indices and bytecode values are injected through caller-supplied signature functions, so wildcard or
+content-based comparators are expressed by their canonical image.
+-/
+def astToJson {refs} [numbering : SlotNumbering refs] {l} (self : AST 0 l refs)
+    (sigC : Nat → Json) (sigB : String → Json) : Rec Json := λ fuel =>
+  match fuel, self with
+  | 0, _ => .outOfFuel
+  | _, .TLit => .yield "primitive"
+  | fuel + 1, .TFn tIn tOut =>
+    jsonPair "fn" (astToJson tIn sigC sigB fuel) (astToJson tOut sigC sigB fuel)
+  | _, .lit repr => .yield (.arr #["lit", sigB repr])
+  -- Canonical JSON signature of a [Binder], applying its body to the new slot.
+  | fuel + 1, .fn tIn (.mk body) =>
+    jsonPair "lam" (astToJson (body (.inr .only)) sigC sigB fuel) (astToJson tIn sigC sigB fuel)
+  | fuel + 1, .val v => (astToJson v sigC sigB fuel).map (λ value => .arr #["val", value])
+  | fuel + 1, .apply fnTerm arg =>
+    jsonPair "apply" (astToJson fnTerm sigC sigB fuel) (astToJson arg sigC sigB fuel)
+  | _, .ref carrier under =>
+    .yield (.arr #["ref", sigC (numbering.read (under.shift (λ _ => .inl) carrier))])
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
 def astBEq (a b : AST 0 l refs) (sigC : Nat → Json) (sigB : String → Json) : Rec Bool := λ fuel =>
