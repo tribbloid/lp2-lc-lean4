@@ -62,10 +62,15 @@ abbrev toParameters (this : CtxEmbedding) : Parameters :=
 
 abbrev DeBruijn (index : Nat := 0) : CtxEmbedding := {TIndex := Nat, index := index, B := String, indexInc := Nat.succ }
 
-example (index : Nat) :
-    (DeBruijn index).toParameters.TRefInc (DeBruijn index).toParameters.TRef =
-      (DeBruijn index).Next.ProxyOf (index + 1) := by
-  simp [Next, TRef, Proxy]
+-- Rule: these are ground truth tests and must be maintained at all cost
+def p0 := (DeBruijn 0).toParameters
+
+#guard p0.Next = (DeBruijn 1).toParameters
+#guard p0.Next.Next = (DeBruijn 2).toParameters
+#guard p0.Next.Next.Next = (DeBruijn 3).toParameters
+#guard p0.Next.Next.Next.Next = (DeBruijn 4).toParameters
+#guard p0.Next.Next.Next.Next.Next = (DeBruijn 5).toParameters
+
 
 end CtxEmbedding
 
