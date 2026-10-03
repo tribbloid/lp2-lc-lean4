@@ -13,7 +13,7 @@ open Lp2lc.Active.Util
 private structure RefIndex (P : Parameters) where
   level : Nat
   read : P.TRef → Nat
-  inc (T : URef) (carrier : T) : P.TRefInc T
+  inc (T : URef) (carrier : T) : P.TRefInc TSerial
   lift (T : URef) (level : Nat) (read : T → Nat) : P.TRefInc T → Nat
   fresh (T : URef) : P.TRefInc T
 

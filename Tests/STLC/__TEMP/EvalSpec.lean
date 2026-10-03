@@ -14,8 +14,8 @@ private def literalResult (result : Rec.Outcome (Option RuntimeValue)) : Option 
   | _ => none
 
 private def outerValue : RuntimeValue :=
-  .mk 0 CtxEmbedding.DeBruijn.TRef (.lit "outer") (λ _ => none)
-private def knownBindings : CtxEmbedding.DeBruijn.TRef → Option RuntimeValue :=
+  .mk 0 Serial.TRef (.lit "outer") (λ _ => none)
+private def knownBindings : Serial.TRef → Option RuntimeValue :=
   λ _ => some outerValue
 
 example : literalResult (AST.eval Trm.primitiveIdFnOnFalse (λ _ => none) 2) = some "false" := rfl

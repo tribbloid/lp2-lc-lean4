@@ -4,7 +4,7 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-local notation "𝒫" n:arg refs:arg => Parameters.withTRef (CtxEmbedding.toParameters (CtxEmbedding.DeBruijn n)) refs
+local notation "𝒫" n:arg refs:arg => Parameters.withTRef (CtxEmbedding.toParameters (Serial n)) refs
 
 /-- A source value together with the bindings captured when it was evaluated. -/
 inductive RuntimeValue : Type 2 where

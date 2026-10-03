@@ -55,12 +55,12 @@ end Pre
 ---------------------------- Concrete indexed AST ----------------------------
 
 abbrev AST (n : Nat := 0) (l : Label)  := -- TODO: the label argument is just currying
-  let refs : URef := (CtxEmbedding.DeBruijn n).TRef
-  Pre.AST ((CtxEmbedding.DeBruijn n).toParameters.withTRef refs) l
+  let refs : URef := (Serial n).TRef
+  Pre.AST ((Serial n).toParameters.withTRef refs) l
 
 abbrev Binder (n : Nat := 0) (l : Label)  :=
-  let refs : URef := (CtxEmbedding.DeBruijn n).TRef
-  Pre.Binder ((CtxEmbedding.DeBruijn n).toParameters.withTRef refs) l
+  let refs : URef := (Serial n).TRef
+  Pre.Binder ((Serial n).toParameters.withTRef refs) l
 
 namespace AST
 

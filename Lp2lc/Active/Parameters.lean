@@ -63,18 +63,18 @@ abbrev toParameters : Parameters :=
 
 end
 
-abbrev DeBruijn (index : Nat := 0) : CtxEmbedding := {TIndex := Nat, index := index, B := String, indexInc := Nat.succ }
+abbrev Serial (index : Nat := 0) : CtxEmbedding := {TIndex := Nat, index := index, B := String, indexInc := Nat.succ }
 
 -- Rule: these are ground truth rules and must be maintained at all cost
 theorem equivariance(this : CtxEmbedding): this.Next.toParemeters = this.toParameters.Next := sorry
 
-def p0 := (DeBruijn 0).toParameters
+def p0 := (Serial 0).toParameters
 
-#guard p0.Next = (DeBruijn 1).toParameters
-#guard p0.Next.Next = (DeBruijn 2).toParameters
-#guard p0.Next.Next.Next = (DeBruijn 3).toParameters
-#guard p0.Next.Next.Next.Next = (DeBruijn 4).toParameters
-#guard p0.Next.Next.Next.Next.Next = (DeBruijn 5).toParameters
+#guard p0.Next = (Serial 1).toParameters
+#guard p0.Next.Next = (Serial 2).toParameters
+#guard p0.Next.Next.Next = (Serial 3).toParameters
+#guard p0.Next.Next.Next.Next = (Serial 4).toParameters
+#guard p0.Next.Next.Next.Next.Next = (Serial 5).toParameters
 
 
 end CtxEmbedding
