@@ -33,7 +33,7 @@ end Parameters
 
 -- Rule: do not change order
 
-/-- Syntax contexts and their successor operation; lexical indices are distinct from runtime value receipts. -/
+/-- simplified version of Parameters, TRef is now solely a dependent proxy of index value-/
 structure CtxEmbedding extends HasByteCode where
   TIndex : URef -- lexical context/index
   index : TIndex
