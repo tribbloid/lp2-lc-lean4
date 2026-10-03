@@ -50,11 +50,6 @@ abbrev Proxy := this.ProxyOf this.index
 
 def TRef : Type := this.Proxy
 
-abbrev Next : CtxEmbedding :=
-  {this with index := this.indexInc this.index}
-
-def TRefNext : Type := this.Next.TRef
-
 end
 
 /-- Builds parameters whose successor retains prior references and adds the next lexical slot. -/
