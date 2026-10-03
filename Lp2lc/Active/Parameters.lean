@@ -31,6 +31,8 @@ def shift {base target} (self : Under base target)
 end Under
 end Parameters
 
+-- Rule: do not change order
+
 /-- Syntax contexts and their successor operation; lexical indices are distinct from runtime value receipts. -/
 structure CtxEmbedding extends HasByteCode where
   TIndex : URef -- lexical context/index
