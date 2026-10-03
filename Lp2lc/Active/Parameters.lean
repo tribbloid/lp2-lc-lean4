@@ -66,7 +66,7 @@ end
 abbrev Serial (index : Nat := 0) : CtxEmbedding := {TIndex := Nat, index := index, B := String, indexInc := Nat.succ }
 
 -- Rule: these are ground truth rules and must be maintained at all cost
-theorem equivariance(this : CtxEmbedding): this.Next.toParemeters = this.toParameters.Next := sorry
+theorem equivariance(this : CtxEmbedding): this.Next.toParameters = this.toParameters.Next := sorry
 
 def p0 := (Serial 0).toParameters
 
