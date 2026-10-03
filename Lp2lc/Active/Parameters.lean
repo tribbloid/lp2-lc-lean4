@@ -33,7 +33,7 @@ end Parameters
 
 -- Rule: do not change order
 
-/-- simplified version of Parameters, TRef is now solely a dependent proxy of index value-/
+/-- Simplified parameters whose reference carrier is a dependent proxy of the lexical index. -/
 structure CtxEmbedding extends HasByteCode where
   TIndex : URef -- lexical context/index
   index : TIndex
@@ -53,7 +53,7 @@ def TRef : Type := this.Proxy
 abbrev Next : CtxEmbedding :=
   {this with index := this.indexInc this.index}
 
-/-- Builds parameters whose successor retains prior references and adds the next lexical slot. -/
+/-- Converts the lexical index and its proxy family to parameters. -/
 abbrev toParameters : Parameters :=
   {
     B := this.B
