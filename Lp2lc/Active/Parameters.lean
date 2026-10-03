@@ -63,6 +63,7 @@ abbrev toParameters : Parameters :=
 
 end
 
+/-- this extra condition set makes AST almost identical to that in @ExtrinsicTyping/CE.lean -/
 abbrev Serial (index : Nat := 0) : CtxEmbedding := {TIndex := Nat, index := index, B := String, indexInc := Nat.succ }
 
 -- Rule: these are ground truth rules and must be maintained at all cost
