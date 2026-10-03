@@ -22,7 +22,7 @@ end
 
 namespace Under
 
-def shift {base target} (self : Under base target)
+def shift {base target} (self : Under base target) -- TODO replace this by a tactic
     (inc : (refs : URef) → refs → target.TRefInc refs) (carrier : base.TRef) : target.TRef :=
   match self with
   | .same => carrier
@@ -50,19 +50,24 @@ abbrev Proxy := this.ProxyOf this.index
 
 def TRef : Type := this.Proxy
 
-end
+abbrev Next : CtxEmbedding :=
+  {this with index := this.indexInc this.index}
 
 /-- Builds parameters whose successor retains prior references and adds the next lexical slot. -/
-abbrev toParameters (this : CtxEmbedding) : Parameters :=
+abbrev toParameters : Parameters :=
   {
     B := this.B
     TRef := this.TRef
     TRefInc := λ _ => this.Next.TRef
   }
 
+end
+
 abbrev DeBruijn (index : Nat := 0) : CtxEmbedding := {TIndex := Nat, index := index, B := String, indexInc := Nat.succ }
 
--- Rule: these are ground truth tests and must be maintained at all cost
+-- Rule: these are ground truth rules and must be maintained at all cost
+theorem equivariance(this : CtxEmbedding): this.Next.toParemeters = this.toParameters.Next := sorry
+
 def p0 := (DeBruijn 0).toParameters
 
 #guard p0.Next = (DeBruijn 1).toParameters
