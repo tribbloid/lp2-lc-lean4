@@ -41,12 +41,12 @@ namespace CtxEmbedding
 section variable (this : CtxEmbedding)
 
 /-- A proxy whose type records a lexical context slot. -/
-inductive IndexProxy (Index : URef) : Index → Type where
-| only {C : Index} : IndexProxy Index C
+inductive ProxyOf : this.TIndex → Type where
+| only {C : this.TIndex} : ProxyOf C
 
-abbrev Proxy := IndexProxy this.TIndex
+abbrev Proxy := this.ProxyOf this.index
 
-def TRef : Type := this.Proxy this.index
+def TRef : Type := this.Proxy
 
 abbrev Next : CtxEmbedding :=
   {this with index := this.indexInc this.index}
@@ -60,13 +60,15 @@ abbrev toParameters (this : CtxEmbedding) : Parameters :=
   {
     B := this.B
     TRef := this.TRef
-    TRefInc := λ TRef =>
-      match TRef with
-      | this.Proxy v =>
-        this.Proxy (this.indexInc v)
+    TRefInc := λ _ => this.Next.TRef
   }
 
 abbrev DeBruijn (index : Nat := 0) : CtxEmbedding := {TIndex := Nat, index := index, B := String, indexInc := Nat.succ }
+
+example (index : Nat) :
+    (DeBruijn index).toParameters.TRefInc (DeBruijn index).toParameters.TRef =
+      (DeBruijn index).Next.ProxyOf (index + 1) := by
+  simp [Next, TRef, Proxy]
 
 end CtxEmbedding
 
