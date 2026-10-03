@@ -33,22 +33,22 @@ end Parameters
 
 -- Rule: do not change order
 
+--TODO: index can only be Nat, this is not general enough, the type of index should be customisable
 /-- Simplified parameters whose reference carrier is a dependent proxy of the lexical index. -/
 structure CtxEmbedding extends HasByteCode where
-  TIndex : URef -- lexical context/index
-  index : TIndex
-  indexInc : TIndex → TIndex
+  index : Nat
+  indexInc : Nat → Nat
 
 namespace CtxEmbedding
 section variable (this : CtxEmbedding)
 
 /-- A proxy whose type records a lexical context slot. -/
-inductive ProxyOf : this.TIndex → Type where
-| only {C : this.TIndex} : ProxyOf C
+inductive ProxyOf : Nat → Type where
+| only {C : Nat} : ProxyOf C
 
-abbrev Proxy := this.ProxyOf this.index
+abbrev Proxy : ProxyOf this.index := ProxyOf.only
 
-def TRef : Type := this.Proxy
+def TRef := ProxyOf this.index -- TODO: use this to shorten code
 
 abbrev Next : CtxEmbedding :=
   {this with index := this.indexInc this.index}
@@ -57,17 +57,17 @@ abbrev Next : CtxEmbedding :=
 abbrev toParameters : Parameters :=
   {
     B := this.B
-    TRef := this.TRef
+    TRef := ProxyOf this.index
     TRefInc := λ _ => this.Next.TRef
   }
 
 end
 
 /-- this extra condition set makes AST almost identical to that in @ExtrinsicTyping/CE.lean -/
-abbrev Serial (index : Nat := 0) : CtxEmbedding := {TIndex := Nat, index := index, B := String, indexInc := Nat.succ }
+abbrev Serial (index : Nat := 0) : CtxEmbedding := {index := index, B := String, indexInc := Nat.succ }
 
 -- Rule: these are ground truth rules and must be maintained at all cost
-theorem equivariance(this : CtxEmbedding): this.Next.toParameters = this.toParameters.Next := sorry
+theorem equivariance(this : CtxEmbedding): this.Next.toParameters = this.toParameters.Next := rfl
 
 def p0 := (Serial 0).toParameters
 
