@@ -26,6 +26,8 @@ structure Parameters extends HasByteCode where
 namespace Parameters
 section variable (this : Parameters)
 
+abbrev TRef := this.I.getTRef this.index
+
 abbrev Next := {this with index := this.I.inc this.index}
 
 /-- A witness that a context is reachable by extending an earlier context. -/
