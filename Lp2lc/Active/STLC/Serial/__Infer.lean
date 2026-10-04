@@ -40,10 +40,46 @@ def infer {n} (self : Trm n)
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
 
+private theorem resolveTypeMonotone {n} (typ : Typ n) : (resolveType typ).Monotone := by
+  intro less more result hFuel hInfer
+  induction less generalizing n typ more result with
+  | zero => simp [resolveType] at hInfer
+  | succ fuel ih =>
+    cases more with
+    | zero => cases hFuel
+    | succ more =>
+      have hFuelTail := Nat.le_of_succ_le_succ hFuel
+      cases typ <;> simp only [resolveType.eq_2, resolveType.eq_3,
+        Rec.Outcome.flatMap, Rec.Outcome.map] at hInfer ⊢
+      all_goals
+        repeat split at hInfer
+        all_goals simp_all
+      all_goals
+        rename_i tIn tOut _ input hIn _ output hOut
+        simpa [ih tIn more input hFuelTail hIn, ih tOut more output hFuelTail hOut] using hInfer
+
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone {n} (trm : Trm n)
     (bindings : Nat → Option ((context : Nat) × Typ context)) :
-    (infer trm bindings).Monotone := by sorry
+    (infer trm bindings).Monotone := by
+  intro less more result hFuel hInfer
+  induction less generalizing n trm bindings more result with
+  | zero => simp [infer] at hInfer
+  | succ fuel ih =>
+    cases more with
+    | zero => cases hFuel
+    | succ more =>
+      have hFuelTail := Nat.le_of_succ_le_succ hFuel
+      have hTypes {n} (typ : Typ n) (result) := resolveTypeMonotone typ fuel more result hFuelTail
+      cases trm <;> try cases ‹Val n›
+      all_goals
+        simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5,
+          Rec.Outcome.flatMap, Rec.Outcome.map] at hInfer ⊢
+        repeat split at hInfer
+        all_goals simp_all
+      all_goals
+        have hTypeTop := hTypes _ _ (by assumption)
+        simp_all
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone {n} (value : Val n)
