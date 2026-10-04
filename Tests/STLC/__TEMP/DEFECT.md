@@ -1,4 +1,4 @@
-# Inference monotonicity refutation attempt
+# Fuel monotonicity refutation attempts
 
 Category: Example/Demo/Test/Benchmark, with an adversarial refutation check. No counterexample was found in
 [InferRefutation.lean](InferRefutation.lean).
@@ -23,3 +23,12 @@ production monotonicity theorems supply the universal claims.
 
 Validation: `lake build Tests.STLC.__TEMP.InferRefutation` succeeds. All equality assertions use `rfl`;
 there is no private type reindexing helper.
+
+## Evaluation
+
+[EvalRefutation.lean](EvalRefutation.lean) checks caller-supplied closures, higher-order captures, missing references,
+ghost-slot masking, malformed applications, and exhausted children. Its 12 examples compile with
+`lake build Tests.STLC.__TEMP.EvalRefutation`; no monotonicity counterexample was found.
+
+The evaluator gates syntax resolution on positive fuel and passes predecessor fuel to every recursive call.
+Source values capture bindings directly, so these checks preserve their existing fuel boundaries.
