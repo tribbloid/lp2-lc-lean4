@@ -23,9 +23,9 @@ A subagent MUST be launched at the end of each task or subtask to obstruct any v
 - Build after every revision. Do not proceed while compiler/LSP errors remain; final Lean changes must pass `lake build`
       without errors. Existing `sorry`-backed scaffolds may remain only when the current task is not discharging them;
       do not introduce new production `sorry` unless the task is explicitly Conjecture Scaffolding.
-- Only create new permanent core file if required by `.agent/CodeStructure.md`.
+- Only create new permanent file if required by `.agent/CodeStructure.md`.
     - Agent tool scripts not part of the core project should be under the `<project-dir>/.agent/script` directory.
-    - Other new files should be under a `__TEMP` subdirectory.
+    - Temporary files (e.g. experiments and demos) should be under a `__TEMP` subdirectory.
 
 ### Don't
 
@@ -58,6 +58,9 @@ Tests/AGENTS.md are not exhaustive.
 - Multiple functions with the same namespace prefix should be grouped into as few explicit namespace blocks as possible.
 - If multiple functions in a namespace block can be shortened with shared section variables, they should be.
 - Shorten function calls with dot notation when possible.
+- Every permanent (non-temporary) Lean file must be mentioned in its module aggregator with either:
+    - an import clause (`import XXX`), or
+    - an import comment (`-- import XXX`).
 
 #### Don't
 
@@ -71,6 +74,7 @@ Tests/AGENTS.md are not exhaustive.
 - Do not export definition, only open at callsite.
 - Do not write unnecessary arguments at call sites.
 - Do not create Lean file with `.` in file name.
+- Do not import temporary Lean files in a module aggregator.
 - Do not use the following Lean keywords:
     - `forall` (use `∀`)
     - `exists` (use `∃`)
