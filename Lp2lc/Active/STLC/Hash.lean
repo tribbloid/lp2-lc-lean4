@@ -10,57 +10,30 @@ namespace Lp2lc.Active.STLC
 open Lean (Json)
 open Lp2lc.Active.Util
 
-private structure RefIndex (P : Parameters) where
-  level : Nat
-  read : P.TRef → Nat
-  inc (T : URef) (carrier : T) : P.TRefInc TSerial
-  lift (T : URef) (level : Nat) (read : T → Nat) : P.TRefInc T → Nat
-  fresh (T : URef) : P.TRefInc T
+/--
+Canonical JSON signature of concrete serial syntax: a single tree traversal that both
+signature equality and hashing delegate to. Reference indices and bytecode values are
+injected through caller-supplied signature functions, so wildcard or
+content-based comparators are expressed by their canonical image.
+-/
+private def astToJsonAux {P : Parameters Indices.Serial} {l} (self : Pre.AST P l)
+    (sigC : Nat → Json) (sigB : P.B → Json) : Json :=
+  match self with
+  | .TLit => "primitive"
+  | .TFn tIn tOut =>
+    .arr #["fn", astToJsonAux tIn sigC sigB, astToJsonAux tOut sigC sigB]
+  | .lit repr => .arr #["lit", sigB repr]
+  | .fn tIn (.mk body) =>
+    .arr #["lam", astToJsonAux (body .only) sigC sigB, astToJsonAux tIn sigC sigB]
+  | .val v => .arr #["val", astToJsonAux v sigC sigB]
+  | .apply fnTerm arg =>
+    .arr #["apply", astToJsonAux fnTerm sigC sigB, astToJsonAux arg sigC sigB]
+  | .ref (lower := lower) _ _ => .arr #["ref", sigC lower.index]
 
-private def RefIndex.next {P : Parameters} (self : RefIndex P) : RefIndex P.Next :=
-  { level := self.level + 1
-    read := self.lift P.TRef self.level self.read
-    inc := self.inc
-    lift := self.lift
-    fresh := self.fresh }
-
-mutual
-  /--
-  Canonical JSON signature of an [AST]: a single tree traversal that both
-  signature equality and hashing delegate to. Reference indices and bytecode values are
-  injected through caller-supplied signature functions, so wildcard or
-  content-based comparators are expressed by their canonical image.
-  -/
-  private def astToJsonAux {P : Parameters} {l : Label} (self : Pre.AST P l)
-      (refs : RefIndex P) (sigC : Nat → Json) (sigB : P.B → Json) : Json :=
-    match self with
-    | .TLit => "primitive"
-    | .TFn tIn tOut =>
-      .arr #["fn", astToJsonAux tIn refs sigC sigB, astToJsonAux tOut refs sigC sigB]
-    | .lit repr => .arr #["lit", sigB repr]
-    | .fn tIn body =>
-      .arr #["lam", binderToJsonAux body refs.next sigC sigB, astToJsonAux tIn refs sigC sigB]
-    | .val v => .arr #["val", astToJsonAux v refs sigC sigB]
-    | .apply fnTerm arg =>
-      .arr #["apply", astToJsonAux fnTerm refs sigC sigB, astToJsonAux arg refs sigC sigB]
-    | .ref carrier under => .arr #["ref", sigC (refs.read (under.shift refs.inc carrier))]
-
-  /-- Canonical JSON signature of a [Binder], applying its body to the new slot. -/
-  private def binderToJsonAux {P : Parameters} {l : Label} (self : Pre.Binder P l)
-      (refs : RefIndex P) (sigC : Nat → Json) (sigB : P.B → Json) : Json :=
-    match self with
-    | .mk body => astToJsonAux (body (refs.fresh P.TRef)) refs.next sigC sigB
-end
-
-/-- JSON signature of concrete De Bruijn syntax. -/
+/-- JSON signature of concrete serial syntax. -/
 def astToJson {n l} (self : AST n l)
     (sigC : Nat → Json) (sigB : String → Json) : Json :=
-  astToJsonAux self
-    { level := n
-      read := λ _ => n
-      inc := λ _ carrier => .inl carrier
-      lift := λ _ level read carrier => carrier.elim read (λ _ => level + 1)
-      fresh := λ _ => .inr .only } sigC sigB
+  astToJsonAux self sigC sigB
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
 def astBEq {n l} (a b : AST n l)

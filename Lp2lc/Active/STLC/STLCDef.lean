@@ -6,7 +6,7 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-def UAST := Type 2
+def UAST.{u} := Type (max 2 u)
 
 /-
 Unreified AST with parametric carrier
@@ -18,34 +18,34 @@ namespace Pre
 mutual
 
 /-- A binder introduces the next lexical context for its body. -/
-inductive Binder : Parameters → Label → UAST where
-| mk {P : Parameters} (body : P.TRefNext → AST P.Next l) : Binder P l
+inductive Binder {I : Indices.{u}} : Parameters I → Label → UAST.{u} where
+| mk {P} (body : I.getTRef P.Next.index → AST P.Next l) : Binder P l
 
 /-- Source type, value, and term syntax.
 
 `TLit` classifies primitive bytecode values and `TFn` classifies functions.
 -/
-inductive AST : Parameters → Label → UAST where
-| TLit {P : Parameters} : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
-| lit {P : Parameters} (repr : P.B) : AST P .val -- most specific type is always `primitive`
+inductive AST {I : Indices.{u}} : Parameters I → Label → UAST.{u} where
+| TLit {P} : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
+| lit {P} (repr : P.B) : AST P .val -- most specific type is always `primitive`
 
-| TFn {P : Parameters} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
-| fn {P : Parameters} (tIn : AST P .typ) (body : Binder P.Next .trm) : AST P .val
+| TFn {P} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
+| fn {P} (tIn : AST P .typ) (body : Binder P.Next .trm) : AST P .val
     -- most specific type is always `.fn tIn _`
 
-| val {P : Parameters} (v : AST P .val) : AST P .trm -- AKA literal
-| apply {P : Parameters} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
+| val {P} (v : AST P .val) : AST P .trm -- AKA literal
+| apply {P} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
     -- fn must be a function that can be applied on arg
 -- A lexical reference retains its source context and a witness reaching the current context.
-| ref {P lower : Parameters} (carrier : lower.TRef) (under : lower.Under P) : AST P .trm
+| ref {P} {lower : Parameters I} (carrier : I.getTRef lower.index) (under : lower.Under P) : AST P .trm
  end
 
 namespace Binder
 -- All theorems about Binder should be here, e.g. parametricity, lift relation
 
 /-- Opens a binder body with the supplied reference receipt. -/
-def apply {P : Parameters} {l : Label} (self : Binder P l)
-    (carrier : P.TRefNext) : AST P.Next l :=
+def apply {P : Parameters I} {l : Label} (self : Binder P l)
+    (carrier : I.getTRef P.Next.index) : AST P.Next l :=
   match self with
   | .mk body => body carrier
 
@@ -55,21 +55,20 @@ end Pre
 ---------------------------- Concrete indexed AST ----------------------------
 
 abbrev AST (n : Nat := 0) (l : Label)  := -- TODO: the label argument is just currying
-  let refs : URef := (Serial n).TRef
-  Pre.AST ((Serial n).toParameters.withTRef refs) l
+  Pre.AST (I := Indices.Serial) { B := String, index := n } l
 
 abbrev Binder (n : Nat := 0) (l : Label)  :=
-  let refs : URef := (Serial n).TRef
-  Pre.Binder ((Serial n).toParameters.withTRef refs) l
+  Pre.Binder (I := Indices.Serial) { B := String, index := n } l
 
 namespace AST
+variable {P : Parameters I}
 
 /-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE {P : Parameters} : LE (Pre.AST P .typ) := ⟨Eq⟩
+instance typLE : LE (Pre.AST P .typ) := ⟨Eq⟩
 
 /-- Decides the current structural subtyping relation. -/
 @[instance_reducible]
-instance typDecidableLE {P : Parameters} : DecidableLE (Pre.AST P .typ)
+instance typDecidableLE : DecidableLE (Pre.AST P .typ)
   | .TLit, .TLit => isTrue rfl
   | .TLit, .TFn _ _
   | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
