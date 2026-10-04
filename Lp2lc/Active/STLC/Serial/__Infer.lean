@@ -58,7 +58,7 @@ private theorem resolveTypeMonotone {n} (typ : Typ n) : (resolveType typ).Monoto
         rename_i tIn tOut _ input hIn _ output hOut
         simpa [ih tIn more input hFuelTail hIn, ih tOut more output hFuelTail hOut] using hInfer
 
-/-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
+/-- Every completed inference result, including rejection, is preserved when fuel increases. -/
 theorem termInferMonotone {n} (trm : Trm n)
     (bindings : Nat → Option ((context : Nat) × Typ context)) :
     (infer trm bindings).Monotone := by
