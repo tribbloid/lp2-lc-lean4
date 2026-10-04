@@ -5,9 +5,9 @@ namespace Tests.STLC.Sanity
 open Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
-def bFalse : Serial.B := "false"
+def bFalse := "false"
 
-def bTrue : Serial.B := "true"
+def bTrue := "true"
 
 namespace Trm
 
@@ -50,7 +50,7 @@ def primitiveTrueFnOnFalse : AST 0 .trm :=
 namespace FreeCapture
 
 /-- A symbolic outer-context slot used by the syntax-only capture examples. -/
-def freeSlot : Serial.TRef := .only
+def freeSlot : Indices.Serial.getTRef 0 := .only
 
 def directRef : Trm 0 :=
   .ref freeSlot .same

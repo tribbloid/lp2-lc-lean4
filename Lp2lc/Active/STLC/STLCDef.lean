@@ -6,7 +6,7 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-def UAST.{u} := Type (max 2 u)
+def UAST := Type 2
 
 /-
 Unreified AST with parametric carrier
@@ -18,14 +18,14 @@ namespace Pre
 mutual
 
 /-- A binder introduces the next lexical context for its body. -/
-inductive Binder {I : Indices.{u}} : Parameters I → Label → UAST.{u} where
-| mk {P} (body : I.getTRef P.Next.index → AST P.Next l) : Binder P l
+inductive Binder : Parameters → Label → UAST where
+| mk {P} (body : P.I.getTRef P.Next.index → AST P.Next l) : Binder P l
 
 /-- Source type, value, and term syntax.
 
 `TLit` classifies primitive bytecode values and `TFn` classifies functions.
 -/
-inductive AST {I : Indices.{u}} : Parameters I → Label → UAST.{u} where
+inductive AST : Parameters → Label → UAST where
 | TLit {P} : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
 | lit {P} (repr : P.B) : AST P .val -- most specific type is always `primitive`
 
@@ -37,15 +37,16 @@ inductive AST {I : Indices.{u}} : Parameters I → Label → UAST.{u} where
 | apply {P} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
     -- fn must be a function that can be applied on arg
 -- A lexical reference retains its source context and a witness reaching the current context.
-| ref {P} {lower : Parameters I} (carrier : I.getTRef lower.index) (under : lower.Under P) : AST P .trm
+| ref {P} {lower : P.I.Index} (carrier : P.I.getTRef lower)
+    (under : ({P with index := lower}).Under P) : AST P .trm
  end
 
 namespace Binder
 -- All theorems about Binder should be here, e.g. parametricity, lift relation
 
 /-- Opens a binder body with the supplied reference receipt. -/
-def apply {P : Parameters I} {l : Label} (self : Binder P l)
-    (carrier : I.getTRef P.Next.index) : AST P.Next l :=
+def apply {P : Parameters} {l : Label} (self : Binder P l)
+    (carrier : P.I.getTRef P.Next.index) : AST P.Next l :=
   match self with
   | .mk body => body carrier
 
@@ -55,13 +56,13 @@ end Pre
 ---------------------------- Concrete indexed AST ----------------------------
 
 abbrev AST (n : Nat := 0) (l : Label)  := -- TODO: the label argument is just currying
-  Pre.AST (I := Indices.Serial) { B := String, index := n } l
+  Pre.AST { B := String, I := Indices.Serial, index := n } l
 
 abbrev Binder (n : Nat := 0) (l : Label)  :=
-  Pre.Binder (I := Indices.Serial) { B := String, index := n } l
+  Pre.Binder { B := String, I := Indices.Serial, index := n } l
 
 namespace AST
-variable {P : Parameters I}
+variable {P : Parameters}
 
 /-- Current STLC subtyping coincides with structural type equality. -/
 instance typLE : LE (Pre.AST P .typ) := ⟨Eq⟩

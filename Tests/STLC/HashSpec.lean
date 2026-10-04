@@ -11,16 +11,16 @@ private def sigAny (_index : Nat) : Json := .null
 
 private def capturedRef (useOuter : Bool) : Val 1 :=
   .fn .TLit (.mk (λ proxy =>
-    if useOuter then .ref (lower := (CtxEmbedding.DeBruijn 1).toParameters) .only (.lower (.lower .same))
+    if useOuter then .ref (lower := 1) .only (.lower (.lower .same))
     else .ref proxy .same))
 
 private def idVal : Val 1 :=
   .fn .TLit (.mk (λ proxy => .ref proxy .same))
 
-example : astToJson (.ref (lower := CtxEmbedding.DeBruijn.toParameters) .only .same : Trm 0) sigC sigB =
+example : astToJson (.ref .only .same : Trm 0) sigC sigB =
     .arr #["ref", toJson (0 : Nat)] := rfl
 
-example : astToJson (.ref (lower := (CtxEmbedding.DeBruijn 3).toParameters) .only .same : Trm 3) sigC sigB =
+example : astToJson (.ref .only .same : Trm 3) sigC sigB =
     .arr #["ref", toJson (3 : Nat)] := rfl
 
 example : astToJson (.TLit : AST 0 .typ) sigC sigB = "primitive" := rfl
