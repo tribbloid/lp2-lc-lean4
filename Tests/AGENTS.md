@@ -1,6 +1,6 @@
 # Test and example files for Syntax & Semantic Rules
 
-This directory contains Scala examples of type system features and their AST representations in Lean 4.
+This directory contains Lean 4 tests and examples of type system features, with corresponding Scala examples.
 
 ## Conventions
 
