@@ -34,7 +34,7 @@ def infer {n} (self : Trm n) (bindings : (index : Nat) → Option (Typ index)) :
 theorem termInferMonotone {n} (trm : Trm n) (bindings : (index : Nat) → Option (Typ index)) :
     (infer trm bindings).Monotone := by
   intro less more result hFuel hInfer
-  induction less using Nat.strongRecOn generalizing trm more result with
+  induction less using Nat.strongRecOn generalizing n trm bindings more result with
   | ind fromFuel ih =>
     cases fromFuel with
     | zero =>
@@ -48,41 +48,33 @@ theorem termInferMonotone {n} (trm : Trm n) (bindings : (index : Nat) → Option
         | val value =>
           cases value with
           | lit repr => simpa [infer] using hInfer
-          | fn body tIn =>
-            simp only [infer, Outcome.map] at hInfer ⊢
-            split at hInfer
-            next _ bodyResult hBody =>
+          | fn tIn body =>
+            cases hBody : infer (body.apply .only)
+                (λ index => if index = n + 2 then some (reindex tIn)
+                  else if index = n + 1 then none else bindings index) fuel with
+            | outOfFuel => simp [infer, hBody, Rec.Outcome.map] at hInfer
+            | yield bodyResult =>
               have hBodyTop := ih fuel (Nat.lt_succ_self fuel)
-                _ toFuel bodyResult hFuelTail hBody
-              simpa [hBodyTop] using hInfer
-            next _ hBody =>
-              cases hInfer
+                _ _ toFuel bodyResult hFuelTail hBody
+              simpa [infer, hBody, hBodyTop, Rec.Outcome.map] using hInfer
         | apply fnTerm arg =>
-          cases hFn : fnTerm.infer fuel with
+          cases hFn : infer fnTerm bindings fuel with
           | outOfFuel => simp [infer, hFn] at hInfer
           | yield fnResult =>
-            cases hArg : arg.infer fuel with
+            cases hArg : infer arg bindings fuel with
             | outOfFuel => simp [infer, hFn, hArg] at hInfer
             | yield argResult =>
               have hFnTop := ih fuel (Nat.lt_succ_self fuel)
-                fnTerm toFuel fnResult hFuelTail hFn
+                fnTerm bindings toFuel fnResult hFuelTail hFn
               have hArgTop := ih fuel (Nat.lt_succ_self fuel)
-                arg toFuel argResult hFuelTail hArg
+                arg bindings toFuel argResult hFuelTail hArg
               simpa [infer, hFn, hArg, hFnTop, hArgTop] using hInfer
-        | ref receipt =>
-          cases hRef : refs.uid2any.get receipt with
-          | inl value =>
-            have hValue : value.asTrm.infer fuel = .yield result := by
-              simpa [infer, hRef] using hInfer
-            have hValueTop := ih fuel (Nat.lt_succ_self fuel)
-              value.asTrm toFuel result hFuelTail hValue
-            simpa [infer, hRef] using hValueTop
-          | inr typ => simpa [infer, hRef] using hInfer
+        | ref receipt under => simpa [infer] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone {n} (value : Val n) (bindings : (index : Nat) → Option (Typ index)) :
     (infer value.asTrm bindings).Monotone :=
-  termInferMonotone value.asTrm
+  termInferMonotone value.asTrm bindings
 
 end AST
 
