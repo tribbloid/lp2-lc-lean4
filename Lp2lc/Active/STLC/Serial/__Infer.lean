@@ -56,7 +56,7 @@ private theorem resolveTypeMonotone {n} (typ : Typ n) : (resolveType typ).Monoto
         all_goals simp_all
       all_goals
         rename_i tIn tOut _ input hIn _ output hOut
-        simpa [ih tIn more input hFuelTail hIn, ih tOut more output hFuelTail hOut] using hInfer
+        simp_all [ih tIn more input hFuelTail hIn, ih tOut more output hFuelTail hOut]
 
 /-- Every completed inference result, including rejection, is preserved when fuel increases. -/
 theorem termInferMonotone {n} (trm : Trm n)
@@ -70,16 +70,13 @@ theorem termInferMonotone {n} (trm : Trm n)
     | zero => cases hFuel
     | succ more =>
       have hFuelTail := Nat.le_of_succ_le_succ hFuel
-      have hTypes {n} (typ : Typ n) (result) := resolveTypeMonotone typ fuel more result hFuelTail
       cases trm <;> try cases ‹Val n›
       all_goals
         simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5,
           Rec.Outcome.flatMap, Rec.Outcome.map] at hInfer ⊢
         repeat split at hInfer
         all_goals simp_all
-      all_goals
-        have hTypeTop := hTypes _ _ (by assumption)
-        simp_all
+      all_goals simp_all [resolveTypeMonotone _ fuel more _ hFuelTail (by assumption)]
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone {n} (value : Val n)
