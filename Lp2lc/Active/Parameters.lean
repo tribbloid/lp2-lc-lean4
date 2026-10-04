@@ -4,14 +4,20 @@ namespace Lp2lc.Active.Util
 
 structure Indices where
   Index : Type u
+  getTRef : Index -> URef
   inc : Index -> Index -- TODO: for intrinsically typed AST binder this should be "Index -> Typ -> Index"
-  TRef : Index -> URef
+
+namespace Indices
+
+abbrev Raw : Indices := {Index := Type, getTRef := id, inc := λ T => T ⊕ Unit}
 
 /-- A proxy whose type records a lexical context slot. -/
 inductive ProxyOf : Nat → Type where
 | only {C : Nat} : ProxyOf C
 
-abbrev Serial : Indices := {Index := Nat, inc := λ t => t + 1, TRef := λ t => ProxyOf t}
+abbrev Serial : Indices := {Index := Nat, getTRef := λ t => ProxyOf t, inc := λ t => t + 1}
+
+end Indices
 
 structure Parameters (I: Indices) extends HasByteCode where
   index: I.Index
@@ -28,65 +34,15 @@ inductive Under (base : Parameters I) : Parameters I → Type 1 where
 
 end
 
-namespace Under
-
-def shift {base target} (self : Under base target) -- TODO replace this by a tactic
-    (inc : (refs : URef) → refs → target.TRefInc refs) (carrier : base.TRef) : target.TRef :=
-  match self with
-  | .same => carrier
-  | .lower prev => inc _ (prev.shift inc carrier)
-
-end Under
 end Parameters
 
 -- Rule: do not change order
 
---TODO: index can only be Nat, this is not general enough, the type of index should be customisable
-/-- Simplified parameters whose reference carrier is a dependent proxy of the lexical index. -/
-structure CtxEmbedding extends HasByteCode where
-  index : Nat
-  indexInc : Nat → Nat
+def p0 := (Parameters Indices.Serial).mk 0
 
-namespace CtxEmbedding
-section variable (this : CtxEmbedding)
-
-
-abbrev Proxy : ProxyOf this.index := ProxyOf.only
-
-def TRef : URef := ProxyOf this.index -- TODO: use this to shorten code
-
-def TRefInc : URef -> URef := λ T =>
-  match T with
-  | T
-
-abbrev Next : CtxEmbedding :=
-  {this with index := this.indexInc this.index}
-
-/-- Converts the lexical index and its proxy family to parameters. -/
-abbrev toParameters : Parameters :=
-  {
-    B := this.B
-    TRef := ProxyOf this.index
-    TRefInc := λ _ => this.Next.TRef
-  }
-
-end
-
-/-- this extra condition set makes AST almost identical to that in @ExtrinsicTyping/CE.lean -/
-abbrev Serial (index : Nat := 0) : CtxEmbedding := {index := index, B := String, indexInc := Nat.succ }
-
--- Rule: these are ground truth rules and must be maintained at all cost
-theorem equivariance(this : CtxEmbedding): this.Next.toParameters = this.toParameters.Next := rfl
-
-def p0 := (Serial 0).toParameters
-
-#guard p0.Next = (Serial 1).toParameters
-#guard p0.Next.Next = (Serial 2).toParameters
-#guard p0.Next.Next.Next = (Serial 3).toParameters
-#guard p0.Next.Next.Next.Next = (Serial 4).toParameters
-#guard p0.Next.Next.Next.Next.Next = (Serial 5).toParameters
-
-
-end CtxEmbedding
+#guard p0.Next.index = 1
+#guard p0.Next.Next.index = 2
+#guard p0.Next.Next.Next.index = 3
+#guard p0.Next.Next.Next.Next.index = 4
 
 end Lp2lc.Active.Util
