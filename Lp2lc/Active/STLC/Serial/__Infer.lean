@@ -13,7 +13,7 @@ private def resolveType {n} (self : Typ n) : Rec Typ := λ fuel =>
     | .TLit => .yield .TLit
     | .TFn tIn tOut =>
       (resolveType tIn fuel).flatMap (λ input =>
-        (resolveType tOut fuel).map (λ output => .TFn input output))
+        (resolveType tOut fuel).map (.TFn input))
 
 /-- Resolve a term using the caller's type bindings. Every recursive resolution consumes one unit of fuel. -/
 def infer {n} (self : Trm n)
@@ -28,7 +28,7 @@ def infer {n} (self : Trm n)
         (infer (body.apply .only)
           (λ index => if index = n + 2 then some ⟨n, tIn⟩
             else if index = n + 1 then none else bindings index) fuel).map
-          (λ output => output.map (λ tOut => .TFn input tOut)))
+          (Option.map (.TFn input)))
     | .ref _ under =>
       match bindings under.sourceIndex with
       | some ⟨_, typ⟩ => (resolveType typ fuel).map some
@@ -36,7 +36,7 @@ def infer {n} (self : Trm n)
     | .apply fn arg =>
       match infer fn bindings fuel, infer arg bindings fuel with
       | .yield (some (.TFn tIn tOut)), .yield (some argTyp) =>
-        if argTyp ≤ tIn then .yield (some tOut) else .yield none
+        .yield (if argTyp ≤ tIn then some tOut else none)
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
 
