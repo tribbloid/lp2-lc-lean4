@@ -17,7 +17,7 @@ injected through caller-supplied signature functions, so wildcard or
 content-based comparators are expressed by their canonical image.
 -/
 private def visit {P : Parameters} {l} (self : Pre.AST P l)
-    (get : (index : P.I.Index) → P.I.getTRef index)
+    (get : ∀ index, ({P with index := index}).TRef)
     (sigC : P.I.Index → Json) (sigB : P.B → Json) : Json :=
   match self with
   | .TLit => "primitive"

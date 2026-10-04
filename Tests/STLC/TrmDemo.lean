@@ -50,7 +50,7 @@ def primitiveTrueFnOnFalse : AST 0 .trm :=
 namespace FreeCapture
 
 /-- A symbolic outer-context slot used by the syntax-only capture examples. -/
-def freeSlot : Indices.Serial.getTRef 0 := .only
+def freeSlot : p0.TRef := .only
 
 def directRef : Trm 0 :=
   .ref freeSlot .same
