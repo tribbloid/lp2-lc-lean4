@@ -5,7 +5,7 @@ open Lp2lc.Active.Util
 namespace AST
 
 /-- Resolve syntax using the caller's type bindings. Every recursive resolution consumes one unit of fuel. -/
-def infer {n l} (self : AST n l)
+def infer {n} (self : Trm n)
     (bindings : Nat → Option ((context : Nat) × Typ context)) : RecOpt Typ := λ fuel =>
   match fuel with
   | 0 => .outOfFuel
