@@ -37,7 +37,21 @@ def infer {n l} (self : AST n l)
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
 theorem termInferMonotone {n l} (trm : AST n l)
     (bindings : Nat → Option ((context : Nat) × Typ context)) :
-    (infer trm bindings).Monotone := by sorry
+    (infer trm bindings).Monotone := by
+  intro less more result hFuel hInfer
+  induction less generalizing n l trm bindings more result with
+  | zero => simp [infer] at hInfer
+  | succ fuel ih =>
+    cases more with
+    | zero => cases hFuel
+    | succ more =>
+      have hFuelTail := Nat.le_of_succ_le_succ hFuel
+      cases trm <;>
+        simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5,
+          infer.eq_6, infer.eq_7, infer.eq_8, Rec.Outcome.flatMap, Rec.Outcome.map] at hInfer ⊢
+      all_goals
+        repeat split at hInfer
+        all_goals simp_all
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone {n} (value : Val n)
