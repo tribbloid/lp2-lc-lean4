@@ -45,12 +45,12 @@ example : AST.infer (.val (.lit "false") : Trm 8) (λ _ => none) 1 = .yield (som
 
 example : AST.infer Trm.vFalse (λ _ => none) 0 = .outOfFuel := by rfl
 example : AST.infer Trm.vFalse (λ _ => none) 1 = .yield (some .TLit) := by rfl
-example : AST.infer Trm.vFalse knownTypes 1 = AST.infer Trm.vFalse knownTypes 9 := by rfl
+example (more : Nat) : AST.infer Trm.vFalse knownTypes (more + 1) = .yield (some .TLit) := by rfl
 example : AST.infer Trm.vTrue (λ _ => none) 1 = .yield (some .TLit) := by rfl
 
 example : AST.infer Trm.FreeCapture.directRef (λ _ => none) 1 = .yield none := by rfl
-example : AST.infer Trm.FreeCapture.directRef (λ _ => none) 1 =
-    AST.infer Trm.FreeCapture.directRef (λ _ => none) 9 := by rfl
+example (more : Nat) : AST.infer Trm.FreeCapture.directRef (λ _ => none) (more + 1) =
+    .yield none := by rfl
 example : AST.infer Trm.FreeCapture.directRef knownTypes 3 = .outOfFuel := by rfl
 example : AST.infer Trm.FreeCapture.directRef knownTypes 4 =
     .yield (some (.TFn .TLit (.TFn .TLit .TLit))) := by rfl
@@ -114,7 +114,7 @@ example : AST.infer missingDeepInputRef (λ _ => none) 4 =
 
 example : AST.infer ghostRef knownTypes 1 = .outOfFuel := by rfl
 example : AST.infer ghostRef knownTypes 2 = .yield none := by rfl
-example : AST.infer ghostRef knownTypes 2 = AST.infer ghostRef knownTypes 9 := by rfl
+example (more : Nat) : AST.infer ghostRef knownTypes (more + 2) = .yield none := by rfl
 example : AST.infer Trm.Malformed.applyIdFnOnItself knownTypes 4 = .yield none := by rfl
 example : AST.infer Trm.Malformed.applyIdFnOnItself knownTypes 4 =
     AST.infer Trm.Malformed.applyIdFnOnItself knownTypes 9 := by rfl
@@ -130,5 +130,21 @@ example : AST.infer (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) knownTypes 5 =
     AST.infer (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) knownTypes 9 := by rfl
 
 end infer
+
+section propositionAudit
+
+example (computation : RecOpt Typ) : computation.Monotone ↔
+    ∀ (less more : Nat) (result : Option Typ), less ≤ more →
+      computation less = .yield result → computation more = .yield result := by rfl
+
+/-- info: 'Lp2lc.Active.STLC.AST.termInferMonotone' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AST.termInferMonotone
+
+/-- info: 'Lp2lc.Active.STLC.AST.valueInferMonotone' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms AST.valueInferMonotone
+
+end propositionAudit
 
 end Tests.STLC.InferRefutation
