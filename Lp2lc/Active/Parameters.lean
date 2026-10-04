@@ -35,6 +35,11 @@ inductive Under (base : Parameters) : Parameters → Type 1 where
 | same : Under base base
 | lower {p2} (prev : Under base p2) : Under base p2.Next
 
+def Under.sourceIndex {base target} (self : Under base target) : target.I.Index :=
+  match self with
+  | .same => base.index
+  | .lower prev => prev.sourceIndex
+
 end
 
 end Parameters

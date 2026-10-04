@@ -29,7 +29,7 @@ private def visit {P : Parameters} {l} (self : Pre.AST P l)
   | .val v => .arr #["val", visit v get sigC sigB]
   | .apply fnTerm arg =>
     .arr #["apply", visit fnTerm get sigC sigB, visit arg get sigC sigB]
-  | .ref (lower := lower) _ _ => .arr #["ref", sigC lower]
+  | .ref _ under => .arr #["ref", sigC under.sourceIndex]
 
 /-- JSON signature of concrete serial syntax. -/
 def astToJson {n l} (self : AST n l)

@@ -5,6 +5,7 @@ namespace Tests.STLC.EvalRefutation
 
 open Lp2lc.Active.STLC Lp2lc.Active.Util
 open Tests.STLC.Sanity
+open Lp2lc.Active.Util.Indices.SerialProxy (only)
 
 section eval
 
@@ -17,14 +18,14 @@ private def boundIdentity : RuntimeValue :=
 
 private def boundCapture : RuntimeValue :=
   .mk 0 (.fn .TLit (.mk (λ _ =>
-    .ref (lower := 0) .only (.lower (.lower .same))))) hostileBindings
+    .ref only (.lower (.lower .same))))) hostileBindings
 
 private def boundGhost : RuntimeValue :=
   .mk 0 (.fn .TLit (.mk (λ _ =>
-    .ref (lower := 1) .only (.lower .same)))) hostileBindings
+    .ref only (.lower .same)))) hostileBindings
 
 private def boundApply : Trm 0 :=
-  .apply (.ref .only .same) Trm.vFalse
+  .apply (.ref only .same) Trm.vFalse
 
 example : AST.eval boundApply (λ _ => some boundIdentity) 2 =
     AST.eval boundApply (λ _ => some boundIdentity) 7 := rfl

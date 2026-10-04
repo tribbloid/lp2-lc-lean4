@@ -17,7 +17,7 @@ def eval {n} (self : Trm n) (bindings : Nat → Option RuntimeValue) : RecOpt Ru
   | fuel + 1 =>
     match self with
     | .val value => .yield (some (.mk n value bindings))
-    | .ref (lower := lower) _ _ => .yield (bindings lower)
+    | .ref _ under => .yield (bindings under.sourceIndex)
     | .apply fn arg =>
       match eval fn bindings fuel, eval arg bindings fuel with
       | .yield (some (.mk context (.fn _ body) captured)), .yield (some value) =>

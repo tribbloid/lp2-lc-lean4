@@ -29,8 +29,8 @@ def infer {n} (self : Trm n)
           (λ index => if index = n + 2 then some ⟨n, tIn⟩
             else if index = n + 1 then none else bindings index) fuel).map
           (λ output => output.map (λ tOut => .TFn input tOut)))
-    | .ref (lower := lower) _ _ =>
-      match bindings lower with
+    | .ref _ under =>
+      match bindings under.sourceIndex with
       | some ⟨_, typ⟩ => (resolveType typ fuel).map some
       | none => .yield none
     | .apply fn arg =>

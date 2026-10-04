@@ -5,6 +5,7 @@ namespace Tests.STLC.InferRefutation
 
 open Lp2lc.Active.STLC Lp2lc.Active.Util
 open Tests.STLC.Sanity
+open Lp2lc.Active.Util.Indices.SerialProxy (only)
 
 section infer
 
@@ -17,11 +18,11 @@ private def higherOrderArg : Trm 0 :=
     .apply (.ref fn .same) (.val (.lit "arg")))))
 
 private def ghostRef : Trm 0 :=
-  .val (.fn .TLit (.mk (λ _ => .ref (lower := 1) .only (.lower .same))))
+  .val (.fn .TLit (.mk (λ _ => .ref only (.lower .same))))
 
 private def missingDeepInputRef : Trm :=
   .val (.fn (.TFn .TLit (.TFn .TLit .TLit))
-    (.mk (λ _ => .ref (lower := 0) .only (.lower (.lower .same)))))
+    (.mk (λ _ => .ref only (.lower (.lower .same)))))
 
 /-- but is expected to have type Trm 8 -/
 #guard_msgs (error, drop info, whitespace := lax, substring := true) in
@@ -55,7 +56,9 @@ example : AST.infer Trm.FreeCapture.directRef knownTypes 4 =
     .yield (some (.TFn .TLit (.TFn .TLit .TLit))) := by rfl
 example : AST.infer Trm.FreeCapture.directRef knownTypes 4 =
     AST.infer Trm.FreeCapture.directRef knownTypes 9 := by rfl
-example : AST.infer (.ref (lower := 1) .only (.lower (.lower .same)) : Trm 3) knownTypes 2 =
+example : AST.infer
+    (.ref (P' := { B := String, I := .Serial, index := 1 }) .only (.lower (.lower .same)) : Trm 3)
+    knownTypes 2 =
     .yield (some .TLit) := by rfl
 
 example : AST.infer Trm.primitiveIdFn (λ _ => none) 3 = .yield (some (.TFn .TLit .TLit)) := by rfl

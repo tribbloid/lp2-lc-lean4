@@ -5,6 +5,7 @@ namespace Tests.STLC.EvalSpec
 
 open Lp2lc.Active.STLC Lp2lc.Active.Util
 open Tests.STLC.Sanity
+open Lp2lc.Active.Util.Indices.SerialProxy (only)
 
 section eval
 
@@ -20,7 +21,7 @@ private def knownBindings : Nat → Option RuntimeValue :=
 
 private def ghostRef : Trm 0 :=
   .apply (.val (.fn .TLit (.mk (λ _ =>
-    .ref (lower := 1) .only (.lower .same))))) Trm.vFalse
+    .ref only (.lower .same))))) Trm.vFalse
 
 example : literalResult (AST.eval Trm.primitiveIdFnOnFalse (λ _ => none) 2) = some "false" := rfl
 example : literalResult (AST.eval Trm.get1stOnTuple (λ _ => none) 3) = some "false" := rfl
@@ -31,7 +32,7 @@ example : literalResult (AST.eval Trm.primitiveTrueFnOnFalse knownBindings 2) = 
 example : literalResult (AST.eval Trm.Malformed.idFnOnFalse2 knownBindings 3) = some "false" := rfl
 
 example : literalResult (AST.eval
-    (.ref (lower := 1) .only (.lower (.lower .same)) : Trm 3)
+    (.ref (P' := { B := String, I := .Serial, index := 1 }) .only (.lower (.lower .same)) : Trm 3)
     (λ index => if index = 1 then some outerValue else none) 1) = some "outer" := rfl
 
 example : AST.eval Trm.vFalse (λ _ => none) 0 = .outOfFuel := rfl
