@@ -12,14 +12,15 @@ namespace Indices
 abbrev Raw : Indices := {Index := Type, getTRef := id, inc := λ T => T ⊕ Unit}
 
 /-- A proxy whose type records a lexical context slot. -/
-inductive ProxyOf : Nat → Type where
-| only {C : Nat} : ProxyOf C
+inductive SerialProxy : Nat → Type where
+| only {C : Nat} : SerialProxy C
 
-abbrev Serial : Indices := {Index := Nat, getTRef := λ t => ProxyOf t, inc := λ t => t + 1}
+abbrev Serial : Indices := {Index := Nat, getTRef := λ t => SerialProxy t, inc := λ t => t + 1}
 
 end Indices
 
-structure Parameters (I: Indices) extends HasByteCode where
+structure Parameters extends HasByteCode where
+  I: Indices
   index: I.Index
 
 namespace Parameters
@@ -35,5 +36,16 @@ inductive Under (base : Parameters I) : Parameters I → Type (max 1 u) where
 end
 
 end Parameters
+
+
+-- Rule: do not change order
+
+-- def p0 := (Parameters Indices.Serial).mk 0
+
+-- #guard p0.Next.index = 1
+-- #guard p0.Next.Next.index = 2
+-- #guard p0.Next.Next.Next.index = 3
+-- #guard p0.Next.Next.Next.Next.index = 4
+
 
 end Lp2lc.Active.Util
