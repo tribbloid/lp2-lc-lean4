@@ -24,12 +24,12 @@ structure Parameters extends HasByteCode where
   index: I.Index
 
 namespace Parameters
-section variable (this : Parameters I)
+section variable (this : Parameters)
 
-abbrev Next : Parameters I := {this with index := I.inc this.index}
+abbrev Next := {this with index := this.I.inc this.index}
 
 /-- A witness that a context is reachable by extending an earlier context. -/
-inductive Under (base : Parameters I) : Parameters I → Type (max 1 u) where
+inductive Under (base : Parameters) : Parameters → Type 1 where
 | same : Under base base
 | lower {p2} (prev : Under base p2) : Under base p2.Next
 
@@ -40,12 +40,12 @@ end Parameters
 
 -- Rule: do not change order
 
--- def p0 := (Parameters Indices.Serial).mk 0
+abbrev p0 : Parameters := { B := String, I := Indices.Serial, index := 0 }
 
--- #guard p0.Next.index = 1
--- #guard p0.Next.Next.index = 2
--- #guard p0.Next.Next.Next.index = 3
--- #guard p0.Next.Next.Next.Next.index = 4
+#guard p0.Next.index = 1
+#guard p0.Next.Next.index = 2
+#guard p0.Next.Next.Next.index = 3
+#guard p0.Next.Next.Next.Next.index = 4
 
 
 end Lp2lc.Active.Util
