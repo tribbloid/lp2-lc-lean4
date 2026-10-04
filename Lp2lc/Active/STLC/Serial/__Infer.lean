@@ -4,59 +4,35 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-/--
-Supplies the compile-time typing context through read-only type bindings.
--/
-class BuildEnv (refs : HasUId2Any) where
-  uid2typ : refs.uid2any.Lesser refs.UId (AST.Typ refs.Parameters)
-  uid2typCtx : KVEquiv uid2typ.toKVRefs -- Compile-time receipts store types rather than runtime values.
-
-namespace BuildEnv
-section variable {refs : HasUId2Any} (self : BuildEnv refs)
-
-end
-end BuildEnv
-
 namespace AST
 
-/--
-Infers types using compile-time bindings, extending them when opening a binder.
-Compile-time inference has no access to runtime evaluation.
--/
-def infer {refs : HasUId2Any} [env : BuildEnv refs]
-    (self : Trm refs.Parameters) : RecOpt (Typ refs.Parameters)
-  | 0 => .outOfFuel
-  | fuel + 1 =>
-    match self with
-    | .val value =>
-      match value with
-      | .lit _ => .yield (some .TLit)
-      | .fn body tIn =>
-        let receipt := env.uid2typCtx.inv tIn
-        ((body.apply receipt).infer fuel).map
-          (λ out => out.map (λ tOut => .TFn tIn tOut))
-    | .apply fnTerm arg =>
-      let anf := (infer fnTerm fuel, infer arg fuel)
-      match anf with
-      | (.yield (some (.TFn tIn tOut)), .yield (some argTyp)) =>
-        if argTyp ≤ tIn then .yield (some tOut) else .yield none
-      | (.outOfFuel, _) => .outOfFuel
-      | (_, .outOfFuel) => .outOfFuel
-      | _ => .yield none
-    | .ref receipt =>
-      match refs.uid2any.get receipt with
-      | .inl value => value.asTrm.infer fuel
-      | .inr typ => .yield (some typ)
+/-- Type syntax has no references, so its lexical context can be changed structurally. -/
+private def reindex {n m} (self : Typ n) : Typ m :=
+  match self with
+  | .TLit => .TLit
+  | .TFn tIn tOut => .TFn (reindex tIn) (reindex tOut)
 
--- TODO: remove, not useful
-def CanInhabit {refs : HasUId2Any} [env : BuildEnv refs]
-    (trm : Trm refs.Parameters) (t2 : Typ refs.Parameters) : Prop :=
-  trm.infer.isDecidable (λ t1 => t1 ≤ t2)
+/-- Infer a term's type using the caller's known type bindings, without runtime evaluation. -/
+def infer {n} (self : Trm n) (bindings : (index : Nat) → Option (Typ index)) : RecOpt (Typ n) := λ fuel =>
+  match fuel, self with
+  | 0, _ => .outOfFuel
+  | _, .val (.lit _) => .yield (some .TLit)
+  | _, .ref (lower := lower) _ _ => .yield ((bindings lower).map reindex)
+  | fuel + 1, .val (.fn tIn body) =>
+    (infer (body.apply .only)
+      (λ index => if index = n + 2 then some (reindex tIn)
+        else if index = n + 1 then none else bindings index) fuel).map
+      (λ out => out.map (λ tOut => .TFn tIn (reindex tOut)))
+  | fuel + 1, .apply fn arg =>
+    match infer fn bindings fuel, infer arg bindings fuel with
+    | .yield (some (.TFn tIn tOut)), .yield (some argTyp) =>
+      if argTyp ≤ tIn then .yield (some tOut) else .yield none
+    | .yield _, .yield _ => .yield none
+    | _, _ => .outOfFuel
 
 /-- Inference that succeeds with smaller fuel succeeds with the same type at larger fuel. -/
-theorem termInferMonotone [refs : HasUId2Any] [env : BuildEnv refs]
-    (trm : Trm refs.Parameters) :
-    trm.infer.Monotone := by
+theorem termInferMonotone {n} (trm : Trm n) (bindings : (index : Nat) → Option (Typ index)) :
+    (infer trm bindings).Monotone := by
   intro less more result hFuel hInfer
   induction less using Nat.strongRecOn generalizing trm more result with
   | ind fromFuel ih =>
@@ -104,9 +80,8 @@ theorem termInferMonotone [refs : HasUId2Any] [env : BuildEnv refs]
           | inr typ => simpa [infer, hRef] using hInfer
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
-theorem valueInferMonotone [refs : HasUId2Any] [env : BuildEnv refs]
-    (value : Val refs.Parameters) :
-    value.asTrm.infer.Monotone :=
+theorem valueInferMonotone {n} (value : Val n) (bindings : (index : Nat) → Option (Typ index)) :
+    (infer value.asTrm bindings).Monotone :=
   termInferMonotone value.asTrm
 
 end AST
