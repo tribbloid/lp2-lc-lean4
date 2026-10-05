@@ -4,8 +4,7 @@ This directory contains Lean 4 tests and examples of type system features, with 
 
 ## Conventions
 
-- Test cases for a specific semantic rule should be enclosed in a section. For example, tests for `eval`
-      should be written in:
+- Test cases for a specific semantic rule should be enclosed in a section. For example, tests for `eval` should be written in:
 
 ```
 section eval
@@ -20,8 +19,8 @@ end eval
 
 These files demonstrate Scala type system features. Each Lean AST should correspond to its Scala example:
 
-- [TrmDemo.lean](STLC/TrmDemo.lean) ↔ [TrmDemo.scala](Example/TrmDemo.scala)
-- [TypDemo.lean](STLC/TypDemo.lean) ↔ [TypDemo.scala](Example/TypDemo.scala)
-- [ValDemo.lean](STLC/ValDemo.lean) ↔ [ValDemo.scala](Example/ValDemo.scala)
+- TrmDemo.lean ↔ TrmDemo.scala
+- TypDemo.lean ↔ TypDemo.scala
+- ValDemo.lean ↔ ValDemo.scala
 
 Prefer these Lean ASTs in other tests. Versions with and without type annotations are both valid.
