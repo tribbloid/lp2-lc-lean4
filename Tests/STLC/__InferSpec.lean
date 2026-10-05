@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.__Infer
+import «Lp2lc».Active.STLC.Serial.__Infer
 import «Tests».STLC.TrmDemo
 
 namespace Tests.STLC.Sanity
@@ -7,12 +7,13 @@ namespace Trm
 
 open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
-open Tests.STLC.Sanity.Symbolic
 
 section infer
-variable [testEnv : TestEnv]
 
-abbrev Typ := AST.Typ refs.Parameters
+local instance : BEq Typ := ⟨λ first second => decide (first ≤ second)⟩
+
+private def literalBindings (_index : Nat) : Option RuntimeValue :=
+  some (.mk 0 (.lit bTrue) (λ _ => none))
 
 #guard vFalse.infer.shouldYieldsBool 1 .TLit
 
@@ -40,9 +41,9 @@ abbrev Typ := AST.Typ refs.Parameters
 
 #guard TypeHinted.hintedIdFnOnFalse.infer.shouldYieldsBool 3 .TLit
 
-#guard FreeCapture.directRef.infer.shouldYieldsBool 2 .TLit
+#guard (FreeCapture.directRef.inferInternal literalBindings).shouldYieldsBool 2 .TLit
 
-#guard (AST.ref ((inferInstance : BuildEnv refs).uid2typCtx.inv (.TLit : Typ)) : AST.Trm refs.Parameters).infer.shouldYieldsBool 1 .TLit
+#guard (AST.inferInternal (.ref FreeCapture.freeSlot .same : Trm 0) literalBindings).shouldYieldsBool 1 .TLit
 
 #guard Malformed.applyIdFnOnItself.infer.shouldFailBool 3
 

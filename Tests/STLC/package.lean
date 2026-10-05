@@ -4,7 +4,7 @@ import «Tests».STLC.ValDemo
 import «Tests».STLC.TypDemo
 import «Tests».STLC.TrmDemo
 import «Tests».STLC.Serial.EvalSpec
+import «Tests».STLC.__InferSpec
 
 -- import «Tests».STLC.Fixture
 -- import «Tests».STLC.TrmSpec
--- import «Tests».STLC.__InferSpec

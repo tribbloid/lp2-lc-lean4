@@ -10,7 +10,7 @@ import «Lp2lc».Active.STLC.Hash
 import «Lp2lc».Active.STLC.Serial.Eval
 import «Lp2lc».Active.STLC.Serial.__Infer
 -- import «Lp2lc».Active.STLC.__Infer_umbralV1
--- import «Lp2lc».Active.STLC.Serial.__Infer_proof
+import «Lp2lc».Active.STLC.Serial.__Infer_proof
 -- import «Lp2lc».Active.STLC.__Infer_umbral
 
 -- import «Lp2lc».Active.DOT.DOTDef

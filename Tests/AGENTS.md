@@ -4,7 +4,8 @@ This directory contains Lean 4 tests and examples of type system features, with 
 
 ## Conventions
 
-- Test cases for a specific semantic rule should be enclosed in a section. For example, tests for `eval` should be written in:
+- Test cases for a specific semantic rule should be enclosed in a section. For example, tests for `eval` should be
+      written in:
 
 ```
 section eval
