@@ -16,7 +16,7 @@ private def literalValue : ExeValue := .mk 0 (.lit bTrue) (λ _ => none)
 
 private def literalBindings : AST.BuildBindings := λ _ => some (.inl literalValue)
 
-private def typeBindings : AST.BuildBindings := λ _ => some (.inr (.TFn .TLit .TLit))
+private def typeBindings : AST.BuildBindings := λ _ => some (.inr (.TFn .TLit .TLit)) --TODO: remove, this is superseded by mixedBindings
 
 private def mixedBindings : AST.BuildBindings := λ index =>
   match index with
