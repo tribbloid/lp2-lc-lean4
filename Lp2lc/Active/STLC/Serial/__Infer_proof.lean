@@ -199,14 +199,8 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
         ∃ valueFuel, infer value.asTrm captured valueFuel = .yield (some typ)) := by
   intro evalFuel
   have hSafety := inferEvalSafetyAtFuel trm bindings evalFuel inferFuel typ hInfer
-  cases hEval : eval trm bindings evalFuel with
-  | outOfFuel => trivial
-  | yield result =>
-    cases result with
-    | none => simp [hEval] at hSafety
-    | some value =>
-      cases value
-      simpa [hEval] using hSafety
+  cases hEval : eval trm bindings evalFuel <;> (try cases ‹Option ExeValue›) <;> (try cases ‹ExeValue›) <;>
+    simp_all
 
 
 
@@ -216,17 +210,10 @@ theorem main (fuel : Nat) (typ : Typ)
     safety trm bindings typ := by
   intro evalFuel
   have safe := inferEvalSafety trm bindings fuel typ hInfer evalFuel
-  cases result : trm.eval bindings evalFuel with
-  | outOfFuel => trivial
-  | yield value =>
-    cases value with
-    | none => simp [result] at safe
-    | some value =>
-      cases value with
-      | mk context value captured =>
-        simp only [result] at safe
-        obtain ⟨valueFuel, typed⟩ := safe
-        exact ⟨valueFuel, by rw [typed]; exact (rfl : typ ≤ typ)⟩
+  cases result : trm.eval bindings evalFuel <;> (try cases ‹Option ExeValue›) <;> (try cases ‹ExeValue›) <;>
+    simp_all
+  obtain ⟨valueFuel, typed⟩ := safe
+  exact ⟨valueFuel, by rw [typed]; exact (rfl : typ ≤ typ)⟩
 
 /--
 If compilation succeeds, the term must be safe.
@@ -236,12 +223,8 @@ TODO: this is the "Paranoid Fundamental theorem": compilation may fail even when
 theorem paranoid :
     (trm.infer bindings).ifSucceedMustSatisfy (safety trm bindings) := by
   intro fuel
-  cases result : trm.infer bindings fuel with
-  | outOfFuel => trivial
-  | yield value =>
-    cases value with
-    | none => trivial
-    | some typ => exact main trm bindings fuel typ result
+  cases result : trm.infer bindings fuel <;> (try cases ‹Option Typ›) <;>
+    first | trivial | exact main trm bindings fuel _ result
 
 end Fundamental
 
