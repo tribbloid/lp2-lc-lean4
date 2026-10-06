@@ -4,6 +4,10 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 namespace AST
 
+abbrev ValOrTyp := RuntimeValue ⊕ Typ -- "infer at breakpoint" capability: infer should handle runtim
+
+abbrev Bindings := Nat → Option ValOrTyp -- append-only
+
 /-- Convert a known type to the result context, consuming fuel for each type node. -/
 private def resolveType {n} (self : Typ n) : Rec Typ := λ fuel =>
   match fuel with
@@ -86,6 +90,8 @@ private theorem inferVisitMonotone {n} (trm : Trm n)
         all_goals simp_all
       all_goals simp_all [resolveTypeMonotone _ fuel more _ hFuelTail (by assumption)]
 
+namespace Monotone
+
 /-- Every completed inference result, including rejection, is preserved when fuel increases. -/
 theorem termInferMonotone {n} (trm : Trm n)
     (bindings : Nat → Option RuntimeValue) :
@@ -97,6 +103,8 @@ theorem valueInferMonotone {n} (value : Val n)
     (bindings : Nat → Option RuntimeValue) :
     (inferInternal value.asTrm bindings).Monotone :=
   termInferMonotone value.asTrm bindings
+
+end Monotone
 
 private theorem inferVisitApplySuccess {n} (fn arg : Trm n)
     (entries : Nat → Option (RuntimeValue ⊕ Typ)) (fuel : Nat) (typ : Typ)

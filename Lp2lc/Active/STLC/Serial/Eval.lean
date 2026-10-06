@@ -5,8 +5,12 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
 /-- A source value together with the bindings captured when it was evaluated. -/
-inductive RuntimeValue : Type 2 where
-| mk (n : Nat) (value : Val n) (captured : Nat → Option RuntimeValue)
+structure RuntimeValue : Type 2 where
+  n : Nat
+  value : Val n
+  captured : Nat -> Option RuntimeValue
+
+abbrev Captured := Nat → Option RuntimeValue -- append-only
 
 namespace AST
 
