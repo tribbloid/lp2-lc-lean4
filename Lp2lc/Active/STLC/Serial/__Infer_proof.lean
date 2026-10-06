@@ -73,21 +73,8 @@ private theorem inferReplace (trm : Trm n)
         obtain ⟨bodyFuel, hTarget⟩ := ih (body.apply .only)
           (λ index => if index = n + 1 then some (.inr input) else source index)
           (λ index => if index = n + 1 then some (.inr input) else target index) output
-          (by
-            intro index value hSource
-            by_cases hArg : index = n + 1
-            · simp [hArg] at hSource
-            · simp only [ite_eq_right hArg] at hSource ⊢
-              exact hRuntime index value hSource)
-          (by
-            intro index inputTyp hSource
-            by_cases hArg : index = n + 1
-            · simp only [ite_eq_left hArg, Option.some.injEq] at hSource
-              have hType := Sum.inr.inj hSource
-              subst inputTyp
-              exact Or.inl (by simp [hArg])
-            · simp only [ite_eq_right hArg] at hSource ⊢
-              exact hTypes index inputTyp hSource) hBody
+          (by intro index value hSource; split at hSource <;> simp_all; exact hRuntime index value hSource)
+          (by intro index inputTyp hSource; split at hSource <;> simp_all) hBody
         dsimp only [input] at hTarget
         exact ⟨bodyFuel + 1, by
           simp only [inferInternal.eq_3, hTarget, Rec.Outcome.map]
@@ -188,21 +175,16 @@ private theorem inferEvalSafetyAtFuel (trm : Trm n)
                     obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace (body.apply .only)
                       (λ index => if index = context + 1 then some (.inr input) else (captured index).map .inl)
                       (λ index => (bodyBindings index).map .inl) fnInferFuel typ
-                      (by
-                        intro index value hSource
-                        by_cases hArgIndex : index = context + 1
-                        · simp [hArgIndex] at hSource
-                        · simpa [bodyBindings, hArgIndex] using hSource)
+                      (by intro index value hSource; split at hSource <;> simp_all [bodyBindings])
                       (by
                         intro index inputTyp hSource
-                        by_cases hArgIndex : index = context + 1
-                        · simp only [ite_eq_left hArgIndex, Option.some.injEq] at hSource
+                        split at hSource
+                        · simp only [Option.some.injEq] at hSource
                           have hType := Sum.inr.inj hSource
                           subst inputTyp
                           exact Or.inr ⟨argContext, argValue, argCaptured, argInferFuel,
-                            by simp [bodyBindings, hArgIndex, Option.map], hArgValue⟩
-                        · simp only [ite_eq_right hArgIndex] at hSource
-                          cases hCaptured : captured index <;> simp [hCaptured, Option.map] at hSource)
+                            by simp [bodyBindings, *, Option.map], hArgValue⟩
+                        · cases hCaptured : captured index <;> simp [hCaptured, Option.map] at hSource)
                       hBody
                     simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
                       ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
