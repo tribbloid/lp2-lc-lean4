@@ -8,16 +8,11 @@ abbrev ValOrTyp := ExeValue ⊕ Typ -- Inference at a breakpoint accepts runtime
 
 abbrev BuildBindings := Nat → Option ValOrTyp -- append-only
 
-/-- Convert a known type to the result context, consuming fuel for each type node. -/
-def resolveType {n} (self : Typ n) : Rec Typ := λ fuel => --TODO: this function always produce "self", why can't it be omitted?
-  match fuel with
-  | 0 => .outOfFuel
-  | fuel + 1 =>
-    match self with
-    | .TLit => .yield .TLit
-    | .TFn tIn tOut =>
-      (resolveType tIn fuel).flatMap (λ input =>
-        (resolveType tOut fuel).map (.TFn input))
+/-- Convert `Typ n` to `Typ 0`, preserving its structure without consuming inference fuel. -/
+def resolveType {n} (self : Typ n) : Typ :=
+  match self with
+  | .TLit => .TLit
+  | .TFn tIn tOut => .TFn (resolveType tIn) (resolveType tOut)
 
 /-- Infer using runtime values or hypothetical types, resolving runtime values in their captured environments. -/
 def inferInternal {n} (self : Trm n) (bindings : BuildBindings) : RecOpt Typ := λ fuel =>
@@ -27,10 +22,10 @@ def inferInternal {n} (self : Trm n) (bindings : BuildBindings) : RecOpt Typ := 
     match self with
     | .val (.lit _) => .yield (some .TLit)
     | .val (.fn tIn body) =>
-      (resolveType tIn fuel).flatMap (λ input =>
-        (inferInternal (body.apply .only)
-          (λ index => if index = n + 1 then some (.inr input) else bindings index) fuel).map
-          (Option.map (.TFn input)))
+      let input := resolveType tIn
+      (inferInternal (body.apply .only)
+        (λ index => if index = n + 1 then some (.inr input) else bindings index) fuel).map
+        (Option.map (.TFn input))
     | .ref _ under =>
       match bindings under.sourceIndex with
       | some (.inl (.mk _ value captured)) =>
@@ -44,33 +39,13 @@ def inferInternal {n} (self : Trm n) (bindings : BuildBindings) : RecOpt Typ := 
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
 
-def inferOpen {n} (self : Trm n) (bindings : ExeBindings) : RecOpt Typ := sorry -- TODO: impl this, then rewrite __Infer_proof and all tests to use it instead of "inferInternal"
-
-/-- Infer with no external runtime bindings. -/
-def infer {n} (self : Trm n) : RecOpt Typ :=
-  self.inferInternal (λ _ => none)
+/-- Infer using runtime values only, resolving each captured value to its type. -/
+def infer {n} (self : Trm n) (exeBindings : ExeBindings := λ _ => .none) : RecOpt Typ :=
+  self.inferInternal (λ index => (exeBindings index).map .inl)
 
 variable {n : Nat}
 
 namespace Monotone
-
-theorem resolveType (typ : Typ n) : (resolveType typ).Monotone := by
-  intro less more result hFuel hInfer
-  induction less generalizing n typ more result with
-  | zero => simp [resolveType] at hInfer
-  | succ fuel ih =>
-    cases more with
-    | zero => cases hFuel
-    | succ more =>
-      have hFuelTail := Nat.le_of_succ_le_succ hFuel
-      cases typ <;> simp only [resolveType.eq_2, resolveType.eq_3,
-        Rec.Outcome.flatMap, Rec.Outcome.map] at hInfer ⊢
-      all_goals
-        repeat split at hInfer
-        all_goals simp_all
-      all_goals
-        rename_i tIn tOut _ input hIn _ output hOut
-        simp_all [ih tIn more input hFuelTail hIn, ih tOut more output hFuelTail hOut]
 
 /-- Every completed inference result, including rejection, is preserved when fuel increases. -/
 theorem termInfer (trm : Trm n)
@@ -87,10 +62,9 @@ theorem termInfer (trm : Trm n)
       cases trm <;> try cases ‹Val n›
       all_goals
         simp only [inferInternal.eq_2, inferInternal.eq_3, inferInternal.eq_4, inferInternal.eq_5,
-          Rec.Outcome.flatMap, Rec.Outcome.map] at hInfer ⊢
+          Rec.Outcome.map] at hInfer ⊢
         repeat split at hInfer
         all_goals simp_all
-      all_goals simp_all [resolveType _ fuel more _ hFuelTail (by assumption)]
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInfer (value : Val n)

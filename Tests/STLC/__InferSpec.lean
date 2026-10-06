@@ -14,13 +14,16 @@ local instance : BEq Typ := ⟨λ first second => decide (first ≤ second)⟩
 
 private def literalValue : ExeValue := .mk 0 (.lit bTrue) (λ _ => none)
 
-private def literalBindings : AST.BuildBindings := λ _ => some (.inl literalValue)
+private def fnValue : ExeValue :=
+  .mk 0 (.fn .TLit (.mk (λ proxy => .ref proxy .same))) (λ _ => none)
 
-private def typeBindings : AST.BuildBindings := λ _ => some (.inr (.TFn .TLit .TLit)) --TODO: remove, this is superseded by mixedBindings
+private def literalBindings : ExeBindings := λ _ => some literalValue
 
-private def mixedBindings : AST.BuildBindings := λ index =>
+private def fnBindings : ExeBindings := λ _ => some fnValue
+
+private def mixedBindings : ExeBindings := λ index =>
   match index with
-  | 0 => typeBindings index
+  | 0 => fnBindings index
   | 1 => literalBindings index
   | _ => none
 
@@ -31,6 +34,10 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := .Serial, index :
 #guard vTrue.infer.shouldYieldsBool 1 .TLit
 
 #guard primitiveIdFn.infer.shouldYieldsBool 2 (.TFn .TLit .TLit)
+
+#guard (AST.infer (.val (.fn (.TFn .TLit (.TFn .TLit .TLit))
+  (.mk (λ proxy => .ref proxy .same))) : Trm 7)).shouldYieldsBool 2
+  (.TFn (.TFn .TLit (.TFn .TLit .TLit)) (.TFn .TLit (.TFn .TLit .TLit)))
 
 #guard primitiveIdFnOnFalse.infer.shouldYieldsBool 3 .TLit
 
@@ -52,32 +59,32 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := .Serial, index :
 
 #guard TypeHinted.hintedIdFnOnFalse.infer.shouldYieldsBool 3 .TLit
 
-#guard (FreeCapture.directRef.inferInternal literalBindings).shouldYieldsBool 2 .TLit
+#guard (FreeCapture.directRef.infer literalBindings).shouldYieldsBool 2 .TLit
 
-#guard (AST.inferInternal (.ref FreeCapture.freeSlot .same : Trm 0) literalBindings).shouldYieldsBool 2 .TLit
+#guard (AST.infer (.ref FreeCapture.freeSlot .same : Trm 0) literalBindings).shouldYieldsBool 2 .TLit
 
-#guard (FreeCapture.directRef.inferInternal typeBindings).shouldYieldsBool 1 (.TFn .TLit .TLit)
+#guard (FreeCapture.directRef.infer fnBindings).shouldYieldsBool 3 (.TFn .TLit .TLit)
 
-#guard (FreeCapture.capturedRef.inferInternal typeBindings).shouldYieldsBool 2
+#guard (FreeCapture.capturedRef.infer fnBindings).shouldYieldsBool 4
   (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard (FreeCapture.capturedRefOnFalse.inferInternal typeBindings).shouldYieldsBool 3 (.TFn .TLit .TLit)
+#guard (FreeCapture.capturedRefOnFalse.infer fnBindings).shouldYieldsBool 5 (.TFn .TLit .TLit)
 
-#guard (primitiveIdFn.inferInternal typeBindings).shouldYieldsBool 2 (.TFn .TLit .TLit)
+#guard (primitiveIdFn.infer fnBindings).shouldYieldsBool 2 (.TFn .TLit .TLit)
 
-#guard (primitiveIdFn.inferInternal mixedBindings).shouldYieldsBool 2 (.TFn .TLit .TLit)
+#guard (primitiveIdFn.infer mixedBindings).shouldYieldsBool 2 (.TFn .TLit .TLit)
 
-#guard (FreeCapture.directRef.inferInternal mixedBindings).shouldYieldsBool 1 (.TFn .TLit .TLit)
+#guard (FreeCapture.directRef.infer mixedBindings).shouldYieldsBool 3 (.TFn .TLit .TLit)
 
-#guard (innerRef.inferInternal mixedBindings).shouldYieldsBool 2 .TLit
+#guard (innerRef.infer mixedBindings).shouldYieldsBool 2 .TLit
 
-#guard (AST.inferInternal (.apply FreeCapture.directRef primitiveIdFn) typeBindings).shouldFailBool 3
+#guard (AST.infer (.apply FreeCapture.directRef primitiveIdFn) fnBindings).shouldFailBool 4
 
 #guard match FreeCapture.capturedRef.eval (λ _ => some literalValue) 1 with
   | .yield (some closure) =>
-    let bindings := λ index => if index = 1 then some (.inl closure) else mixedBindings index
-    (innerRef.inferInternal bindings).shouldYieldsBool 4 (.TFn .TLit .TLit) &&
-      (AST.inferInternal (.apply innerRef (.val (.lit bFalse))) bindings).shouldYieldsBool 5 .TLit
+    let bindings := λ index => if index = 1 then some closure else mixedBindings index
+    (innerRef.infer bindings).shouldYieldsBool 4 (.TFn .TLit .TLit) &&
+      (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYieldsBool 5 .TLit
   | _ => false
 
 #guard Malformed.applyIdFnOnItself.infer.shouldFailBool 3

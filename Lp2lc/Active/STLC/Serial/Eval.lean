@@ -15,7 +15,7 @@ abbrev ExeBindings := Nat → Option ExeValue -- append-only
 namespace AST
 
 /-- Evaluate using the caller's bindings. Every recursive resolution consumes one unit of fuel. -/
-def eval {n} (self : Trm n) (bindings : ExeBindings) : RecOpt ExeValue := λ fuel =>
+def eval {n} (self : Trm n) (bindings : ExeBindings := λ _ => .none) : RecOpt ExeValue := λ fuel =>
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>

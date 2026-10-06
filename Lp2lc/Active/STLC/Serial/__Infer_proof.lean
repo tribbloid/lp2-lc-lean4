@@ -13,7 +13,7 @@ def safety (typ : Typ) : Prop :=
   (trm.eval bindings).isSemiDecidable (λ result =>
     match result with
     | .mk _ value captured =>
-      (value.asTrm.inferInternal (λ index => (captured index).map .inl)).isDecidable (λ inferred => inferred ≤ typ))
+      (value.asTrm.infer captured).isDecidable (λ inferred => inferred ≤ typ))
 
 private theorem inferApplySuccess (fn arg : Trm n)
     (entries : BuildBindings) (fuel : Nat) (typ : Typ)
@@ -32,16 +32,16 @@ private theorem inferApplySuccess (fn arg : Trm n)
 private theorem inferFnSuccess (annotation : Typ n) (body : Binder n .trm)
     (entries : BuildBindings) (fuel : Nat) (typ : Typ)
     (hInfer : inferInternal (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
-    ∃ input output, resolveType annotation fuel = .yield input ∧
-      inferInternal (body.apply .only)
+    let input := resolveType annotation
+    ∃ output, inferInternal (body.apply .only)
         (λ index => if index = n + 1 then some (.inr input) else entries index) fuel = .yield (some output) ∧
       typ = .TFn input output := by
-  simp only [inferInternal.eq_3, Rec.Outcome.flatMap, Rec.Outcome.map] at hInfer
+  simp only [inferInternal.eq_3, Rec.Outcome.map] at hInfer
   repeat split at hInfer
   all_goals simp_all
   all_goals cases ‹Option Typ› <;> simp only [Option.map] at hInfer
   all_goals try cases hInfer
-  all_goals exact ⟨_, _, rfl, by assumption, rfl⟩
+  all_goals exact ⟨_, rfl, rfl⟩
 
 private theorem inferReplace (trm : Trm n)
     (source target : BuildBindings) (fuel : Nat) (typ : Typ)
@@ -66,7 +66,8 @@ private theorem inferReplace (trm : Trm n)
         subst typ
         exact ⟨1, rfl⟩
       | fn annotation body =>
-        obtain ⟨input, output, hIn, hBody, hType⟩ :=
+        let input := resolveType annotation
+        obtain ⟨output, hBody, hType⟩ :=
           inferFnSuccess annotation body source fuel typ hInfer
         subst typ
         obtain ⟨bodyFuel, hTarget⟩ := ih (body.apply .only)
@@ -87,12 +88,9 @@ private theorem inferReplace (trm : Trm n)
               exact Or.inl (by simp [hArg])
             · simp only [ite_eq_right hArg] at hSource ⊢
               exact hTypes index inputTyp hSource) hBody
-        have hInMore := Monotone.resolveType annotation fuel (max fuel bodyFuel) input
-          (Nat.le_max_left _ _) hIn
-        have hBodyMore := Monotone.termInfer _ _ bodyFuel (max fuel bodyFuel) (some output)
-          (Nat.le_max_right _ _) hTarget
-        exact ⟨max fuel bodyFuel + 1, by
-          simp only [inferInternal.eq_3, hInMore, hBodyMore, Rec.Outcome.flatMap, Rec.Outcome.map]
+        dsimp only [input] at hTarget
+        exact ⟨bodyFuel + 1, by
+          simp only [inferInternal.eq_3, hTarget, Rec.Outcome.map]
           rfl⟩
     | ref carrier under =>
       simp only [inferInternal.eq_4] at hInfer
@@ -126,27 +124,27 @@ private theorem inferReplace (trm : Trm n)
 
 private theorem inferEvalSafetyAtFuel (trm : Trm n)
     (bindings : ExeBindings) (evalFuel inferFuel : Nat) (typ : Typ)
-    (hInfer : inferInternal trm (λ index => (bindings index).map .inl) inferFuel = .yield (some typ)) :
+    (hInfer : infer trm bindings inferFuel = .yield (some typ)) :
     match eval trm bindings evalFuel with
     | .outOfFuel => True
     | .yield none => False
     | .yield (some (.mk _ value captured)) =>
-      ∃ valueFuel, inferInternal value.asTrm (λ index => (captured index).map .inl) valueFuel = .yield (some typ) := by
+      ∃ valueFuel, infer value.asTrm captured valueFuel = .yield (some typ) := by
   induction evalFuel generalizing n trm bindings inferFuel typ with
   | zero => trivial
   | succ evalFuel ih =>
     cases inferFuel with
-    | zero => simp [inferInternal] at hInfer
+    | zero => simp [infer, inferInternal] at hInfer
     | succ inferFuel =>
       cases trm with
       | val value => exact ⟨inferFuel + 1, hInfer⟩
       | ref carrier under =>
         cases hBinding : bindings under.sourceIndex with
-        | none => simp [inferInternal.eq_4, hBinding, Option.map] at hInfer
+        | none => simp [infer, inferInternal.eq_4, hBinding, Option.map] at hInfer
         | some value =>
           rcases value with ⟨context, value, captured⟩
           simp only [eval.eq_3, hBinding]
-          exact ⟨inferFuel, by simpa [inferInternal.eq_4, hBinding, Option.map] using hInfer⟩
+          exact ⟨inferFuel, by simpa [infer, inferInternal.eq_4, hBinding, Option.map] using hInfer⟩
       | apply fn arg =>
         obtain ⟨input, hFn, hArg⟩ := inferApplySuccess fn arg
           (λ index => (bindings index).map .inl) inferFuel typ hInfer
@@ -163,11 +161,11 @@ private theorem inferEvalSafetyAtFuel (trm : Trm n)
             simp only [hFnEval] at hFnSafety
             obtain ⟨fnInferFuel, hFnValue⟩ := hFnSafety
             cases fnInferFuel with
-            | zero => simp [inferInternal] at hFnValue
+            | zero => simp [infer, inferInternal] at hFnValue
             | succ fnInferFuel =>
               cases fnValue with
               | lit repr =>
-                simp only [Val.asTrm, inferInternal.eq_2, Rec.Outcome.yield.injEq] at hFnValue
+                simp only [Val.asTrm, infer, inferInternal.eq_2, Rec.Outcome.yield.injEq] at hFnValue
                 cases Option.some.inj hFnValue
               | fn annotation body =>
                 cases hArgEval : eval arg bindings evalFuel with
@@ -179,11 +177,12 @@ private theorem inferEvalSafetyAtFuel (trm : Trm n)
                     rcases runtimeArg with ⟨argContext, argValue, argCaptured⟩
                     simp only [hArgEval] at hArgSafety
                     obtain ⟨argInferFuel, hArgValue⟩ := hArgSafety
-                    obtain ⟨fnInput, fnOutput, _, hBody, hFnType⟩ :=
+                    obtain ⟨fnOutput, hBody, hFnType⟩ :=
                       inferFnSuccess annotation body (λ index => (captured index).map .inl)
                         fnInferFuel (.TFn input typ) hFnValue
                     rcases Pre.AST.TFn.inj hFnType with ⟨hInput, hOutput⟩
-                    subst fnInput fnOutput
+                    subst fnOutput
+                    rw [← hInput] at hBody
                     let bodyBindings := λ index =>
                       if index = context + 1 then some (.mk argContext argValue argCaptured) else captured index
                     obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace (body.apply .only)
@@ -211,11 +210,11 @@ private theorem inferEvalSafetyAtFuel (trm : Trm n)
 /-- Successful inference excludes evaluation rejection and preserves the inferred type of every result. -/
 theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
     (inferFuel : Nat) (typ : Typ)
-    (hInfer : inferInternal trm (λ index => (bindings index).map .inl) inferFuel = .yield (some typ)) :
+    (hInfer : infer trm bindings inferFuel = .yield (some typ)) :
     (eval trm bindings).isSemiDecidable (λ result =>
       match result with
       | .mk _ value captured =>
-        ∃ valueFuel, inferInternal value.asTrm (λ index => (captured index).map .inl) valueFuel = .yield (some typ)) := by
+        ∃ valueFuel, infer value.asTrm captured valueFuel = .yield (some typ)) := by
   intro evalFuel
   have hSafety := inferEvalSafetyAtFuel trm bindings evalFuel inferFuel typ hInfer
   cases hEval : eval trm bindings evalFuel with
@@ -231,7 +230,7 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
 
 /-- A successfully inferred type makes the executable term safe at that type. -/
 theorem main (fuel : Nat) (typ : Typ)
-    (hInfer : trm.inferInternal (λ index => (bindings index).map .inl) fuel = .yield (some typ)) :
+    (hInfer : trm.infer bindings fuel = .yield (some typ)) :
     safety trm bindings typ := by
   intro evalFuel
   have safe := inferEvalSafety trm bindings fuel typ hInfer evalFuel
@@ -253,9 +252,9 @@ If compilation succeeds, the term must be safe.
 TODO: this is the "Paranoid Fundamental theorem": compilation may fail even when term evaluation succeeds.
 -/
 theorem paranoid :
-    (trm.inferInternal (λ index => (bindings index).map .inl)).ifSucceedMustSatisfy (safety trm bindings) := by
+    (trm.infer bindings).ifSucceedMustSatisfy (safety trm bindings) := by
   intro fuel
-  cases result : trm.inferInternal (λ index => (bindings index).map .inl) fuel with
+  cases result : trm.infer bindings fuel with
   | outOfFuel => trivial
   | yield value =>
     cases value with
