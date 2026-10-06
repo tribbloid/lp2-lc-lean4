@@ -26,14 +26,17 @@ The proofs use fuel induction and the inference equations; neither introduces a 
 ## Mixed build bindings and runtime safety audit
 
 No counterexample or inconsistent premise was found for the mixed-binding replacement and evaluation safety statements
-in [Serial/__Infer.lean](Serial/__Infer.lean), or for `Fundamental.safety`, `Fundamental.main`, and
-`Fundamental.paranoid` in [Serial/__Infer_proof.lean](Serial/__Infer_proof.lean).
+in [Serial/__Infer_proof.lean](Serial/__Infer_proof.lean), including `Fundamental.main`.
 
-Inference accepts `BuildBindings` directly, including hypothetical types and runtime values. Replacing a type entry
-requires a runtime value that infers to the identical type in its captured environment. Existing runtime entries must
-remain identical. These premises prevent replacement from changing a successful inferred result.
+Internal inference accepts `BuildBindings` directly, including hypothetical types and runtime values. Replacing a type
+entry requires a runtime value that infers to the identical type in its captured environment. Existing runtime entries
+must remain identical. These premises prevent replacement from changing a successful inferred result.
 
 Evaluation safety uses `ExeBindings`, with every runtime entry explicitly embedded into `BuildBindings`. A hypothetical
 type entry alone cannot satisfy the runtime inference premise. Resolving a closure uses its captured bindings, and the
 argument slot overrides the corresponding captured entry. The statements do not claim runtime safety for arbitrary
 hypothetical bindings.
+
+The public safety theorem covers arbitrary evaluation fuel. Successful inference excludes completed evaluation
+rejection; every evaluated closure admits successful inference of the original type in its captured environment.
+Evaluation may exhaust its fuel, and successful inference does not assert eventual evaluation termination.
