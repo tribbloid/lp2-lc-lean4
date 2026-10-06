@@ -29,71 +29,71 @@ private def mixedBindings : ExeBindings := λ index =>
 
 private def innerRef : Trm 1 := .ref (P' := { B := String, I := .Serial, index := 1 }) .only .same
 
-#guard vFalse.infer.shouldYieldsBool 1 .TLit
+#guard (AST.infer vFalse).shouldYieldsBool 1 .TLit
 
-#guard vTrue.infer.shouldYieldsBool 1 .TLit
+#guard (AST.infer vTrue).shouldYieldsBool 1 .TLit
 
-#guard primitiveIdFn.infer.shouldYieldsBool 2 (.TFn .TLit .TLit)
+#guard (AST.infer primitiveIdFn).shouldYieldsBool 2 (.TFn .TLit .TLit)
 
 #guard (AST.infer (.val (.fn (.TFn .TLit (.TFn .TLit .TLit))
   (.mk (λ proxy => .ref proxy .same))) : Trm 7)).shouldYieldsBool 2
   (.TFn (.TFn .TLit (.TFn .TLit .TLit)) (.TFn .TLit (.TFn .TLit .TLit)))
 
-#guard primitiveIdFnOnFalse.infer.shouldYieldsBool 3 .TLit
+#guard (AST.infer primitiveIdFnOnFalse).shouldYieldsBool 3 .TLit
 
-#guard get1st.infer.shouldYieldsBool 3 (.TFn .TLit (.TFn .TLit .TLit))
+#guard (AST.infer get1st).shouldYieldsBool 3 (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard get2nd.infer.shouldYieldsBool 3 (.TFn .TLit (.TFn .TLit .TLit))
+#guard (AST.infer get2nd).shouldYieldsBool 3 (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard get1stOnTuple.infer.shouldYieldsBool 5 .TLit
+#guard (AST.infer get1stOnTuple).shouldYieldsBool 5 .TLit
 
-#guard get2ndOnTuple.infer.shouldYieldsBool 5 .TLit
+#guard (AST.infer get2ndOnTuple).shouldYieldsBool 5 .TLit
 
-#guard primitiveTrueFn.infer.shouldYieldsBool 2 (.TFn .TLit .TLit)
+#guard (AST.infer primitiveTrueFn).shouldYieldsBool 2 (.TFn .TLit .TLit)
 
-#guard primitiveTrueFnOnFalse.infer.shouldYieldsBool 3 .TLit
+#guard (AST.infer primitiveTrueFnOnFalse).shouldYieldsBool 3 .TLit
 
-#guard TypeHinted.hintedFalse.infer.shouldYieldsBool 1 .TLit
+#guard (AST.infer TypeHinted.hintedFalse).shouldYieldsBool 1 .TLit
 
-#guard TypeHinted.hintedIdFn.infer.shouldYieldsBool 2 (.TFn .TLit .TLit)
+#guard (AST.infer TypeHinted.hintedIdFn).shouldYieldsBool 2 (.TFn .TLit .TLit)
 
-#guard TypeHinted.hintedIdFnOnFalse.infer.shouldYieldsBool 3 .TLit
+#guard (AST.infer TypeHinted.hintedIdFnOnFalse).shouldYieldsBool 3 .TLit
 
-#guard (FreeCapture.directRef.infer literalBindings).shouldYieldsBool 2 .TLit
+#guard (AST.infer FreeCapture.directRef literalBindings).shouldYieldsBool 2 .TLit
 
 #guard (AST.infer (.ref FreeCapture.freeSlot .same : Trm 0) literalBindings).shouldYieldsBool 2 .TLit
 
-#guard (FreeCapture.directRef.infer fnBindings).shouldYieldsBool 3 (.TFn .TLit .TLit)
+#guard (AST.infer FreeCapture.directRef fnBindings).shouldYieldsBool 3 (.TFn .TLit .TLit)
 
-#guard (FreeCapture.capturedRef.infer fnBindings).shouldYieldsBool 4
+#guard (AST.infer FreeCapture.capturedRef fnBindings).shouldYieldsBool 4
   (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard (FreeCapture.capturedRefOnFalse.infer fnBindings).shouldYieldsBool 5 (.TFn .TLit .TLit)
+#guard (AST.infer FreeCapture.capturedRefOnFalse fnBindings).shouldYieldsBool 5 (.TFn .TLit .TLit)
 
-#guard (primitiveIdFn.infer fnBindings).shouldYieldsBool 2 (.TFn .TLit .TLit)
+#guard (AST.infer primitiveIdFn fnBindings).shouldYieldsBool 2 (.TFn .TLit .TLit)
 
-#guard (primitiveIdFn.infer mixedBindings).shouldYieldsBool 2 (.TFn .TLit .TLit)
+#guard (AST.infer primitiveIdFn mixedBindings).shouldYieldsBool 2 (.TFn .TLit .TLit)
 
-#guard (FreeCapture.directRef.infer mixedBindings).shouldYieldsBool 3 (.TFn .TLit .TLit)
+#guard (AST.infer FreeCapture.directRef mixedBindings).shouldYieldsBool 3 (.TFn .TLit .TLit)
 
 #guard (innerRef.infer mixedBindings).shouldYieldsBool 2 .TLit
 
 #guard (AST.infer (.apply FreeCapture.directRef primitiveIdFn) fnBindings).shouldFailBool 4
 
-#guard match FreeCapture.capturedRef.eval (λ _ => some literalValue) 1 with
+#guard match AST.eval FreeCapture.capturedRef (λ _ => some literalValue) 1 with
   | .yield (some closure) =>
     let bindings := λ index => if index = 1 then some closure else mixedBindings index
     (innerRef.infer bindings).shouldYieldsBool 4 (.TFn .TLit .TLit) &&
       (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYieldsBool 5 .TLit
   | _ => false
 
-#guard Malformed.applyIdFnOnItself.infer.shouldFailBool 3
+#guard (AST.infer Malformed.applyIdFnOnItself).shouldFailBool 3
 
-#guard Malformed.idFnOnFalse2.infer.shouldFailBool 4
+#guard (AST.infer Malformed.idFnOnFalse2).shouldFailBool 4
 
-#guard Malformed.apply1.infer.shouldFailBool 4
+#guard (AST.infer Malformed.apply1).shouldFailBool 4
 
-#guard Malformed.primitiveApply.infer.shouldFailBool 2
+#guard (AST.infer Malformed.primitiveApply).shouldFailBool 2
 
 end infer
 
