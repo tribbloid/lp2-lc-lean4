@@ -4,17 +4,17 @@ namespace Lp2lc.Active.STLC.Infer_Proof
 
 open Lp2lc.Active.Util
 
-variable {n} (trm : Trm n) (bindings : Nat → Option ExeValue)
+variable {n} (trm : Trm n) (bindings : ExeBindings)
 
 def Safety (typ : Typ) : Prop :=
   (trm.eval bindings).isSemiDecidable (λ result =>
     match result with
     | .mk _ value captured =>
-      (value.asTrm.inferInternal captured).isDecidable (λ inferred => inferred ≤ typ))
+      (value.asTrm.inferInternal (λ index => (captured index).map .inl)).isDecidable (λ inferred => inferred ≤ typ))
 
 /-- A successfully inferred type makes the executable term safe at that type. -/
 theorem fundamental (fuel : Nat) (typ : Typ)
-    (hInfer : trm.inferInternal bindings fuel = .yield (some typ)) :
+    (hInfer : trm.inferInternal (λ index => (bindings index).map .inl) fuel = .yield (some typ)) :
     Safety trm bindings typ := by
   intro evalFuel
   have safe := AST.inferEvalSafety trm bindings fuel typ hInfer evalFuel
@@ -36,9 +36,9 @@ If compilation succeeds, the term must be safe.
 TODO: this is the "Paranoid Fundamental theorem": compilation may fail even when term evaluation succeeds.
 -/
 theorem paranoidFundamental :
-    (trm.inferInternal bindings).ifSucceedMustSatisfy (Safety trm bindings) := by
+    (trm.inferInternal (λ index => (bindings index).map .inl)).ifSucceedMustSatisfy (Safety trm bindings) := by
   intro fuel
-  cases result : trm.inferInternal bindings fuel with
+  cases result : trm.inferInternal (λ index => (bindings index).map .inl) fuel with
   | outOfFuel => trivial
   | yield value =>
     cases value with
