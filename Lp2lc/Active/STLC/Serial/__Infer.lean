@@ -9,7 +9,7 @@ abbrev ValOrTyp := ExeValue ⊕ Typ -- Inference at a breakpoint accepts runtime
 abbrev BuildBindings := Nat → Option ValOrTyp -- append-only
 
 /-- Convert a known type to the result context, consuming fuel for each type node. -/
-def resolveType {n} (self : Typ n) : Rec Typ := λ fuel =>
+def resolveType {n} (self : Typ n) : Rec Typ := λ fuel => --TODO: this function always produce "self", why can't it be omitted?
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -43,6 +43,8 @@ def inferInternal {n} (self : Trm n) (bindings : BuildBindings) : RecOpt Typ := 
         .yield (if argTyp ≤ tIn then some tOut else none)
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
+
+def inferOpen {n} (self : Trm n) (bindings : ExeBindings) : RecOpt Typ := sorry -- TODO: impl this, then rewrite __Infer_proof and all tests to use it instead of "inferInternal"
 
 /-- Infer with no external runtime bindings. -/
 def infer {n} (self : Trm n) : RecOpt Typ :=
