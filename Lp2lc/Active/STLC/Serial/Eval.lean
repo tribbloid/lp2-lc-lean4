@@ -5,17 +5,17 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
 /-- A source value together with the bindings captured when it was evaluated. -/
-structure RuntimeValue : UAST where
+structure ExeValue : UAST where
   n : Nat
   value : Val n
-  captured : Nat -> Option RuntimeValue
+  captured : Nat -> Option ExeValue
 
-abbrev Captured := Nat → Option RuntimeValue -- append-only
+abbrev ExeBindings := Nat → Option ExeValue -- append-only
 
 namespace AST
 
 /-- Evaluate using the caller's bindings. Every recursive resolution consumes one unit of fuel. -/
-def eval {n} (self : Trm n) (bindings : Nat → Option RuntimeValue) : RecOpt RuntimeValue := λ fuel =>
+def eval {n} (self : Trm n) (bindings : ExeBindings) : RecOpt ExeValue := λ fuel =>
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -31,7 +31,7 @@ def eval {n} (self : Trm n) (bindings : Nat → Option RuntimeValue) : RecOpt Ru
       | _, _ => .outOfFuel
 
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
-theorem termEvalMonotone {n} (trm) (bindings : Nat → Option RuntimeValue) :
+theorem termEvalMonotone {n} (trm) (bindings : ExeBindings) :
     (eval (n := n) trm bindings).Monotone := by
   intro less more result hFuel hEval
   induction less generalizing n trm bindings more result with

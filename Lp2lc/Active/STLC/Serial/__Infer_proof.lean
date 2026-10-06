@@ -4,7 +4,7 @@ namespace Lp2lc.Active.STLC.Infer_Proof
 
 open Lp2lc.Active.Util
 
-variable {n} (trm : Trm n) (bindings : Nat → Option RuntimeValue)
+variable {n} (trm : Trm n) (bindings : Nat → Option ExeValue)
 
 def Safety (typ : Typ) : Prop :=
   (trm.eval bindings).isSemiDecidable (λ result =>

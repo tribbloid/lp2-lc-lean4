@@ -12,7 +12,7 @@ section infer
 
 local instance : BEq Typ := ⟨λ first second => decide (first ≤ second)⟩
 
-private def literalBindings (_index : Nat) : Option RuntimeValue :=
+private def literalBindings (_index : Nat) : Option ExeValue :=
   some (.mk 0 (.lit bTrue) (λ _ => none))
 
 #guard vFalse.infer.shouldYieldsBool 1 .TLit

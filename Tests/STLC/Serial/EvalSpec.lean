@@ -8,14 +8,14 @@ open Tests.STLC.Sanity
 
 section eval
 
-private def literalResult (result : Rec.Outcome (Option RuntimeValue)) : Option String :=
+private def literalResult (result : Rec.Outcome (Option ExeValue)) : Option String :=
   match result with
-  | .yield (some (RuntimeValue.mk _ (.lit repr) _)) => some repr
+  | .yield (some (.mk _ (.lit repr) _)) => some repr
   | _ => none
 
-private def outerValue : RuntimeValue :=
+private def outerValue : ExeValue :=
   .mk 0 (.lit "outer") (λ _ => none)
-private def knownBindings : Nat → Option RuntimeValue :=
+private def knownBindings : Nat → Option ExeValue :=
   λ _ => some outerValue
 
 example : literalResult (AST.eval Trm.primitiveIdFnOnFalse (λ _ => none) 2) = some "false" := rfl

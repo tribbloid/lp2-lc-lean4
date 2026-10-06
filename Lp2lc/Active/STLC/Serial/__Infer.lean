@@ -4,9 +4,9 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 namespace AST
 
-abbrev ValOrTyp := RuntimeValue ⊕ Typ -- Inference at a breakpoint accepts runtime values or types.
+abbrev ValOrTyp := ExeValue ⊕ Typ -- Inference at a breakpoint accepts runtime values or types.
 
-abbrev Bindings := Nat → Option ValOrTyp -- append-only
+abbrev BuildBindings := Nat → Option ValOrTyp -- append-only
 
 /-- Convert a known type to the result context, consuming fuel for each type node. -/
 private def resolveType {n} (self : Typ n) : Rec Typ := λ fuel =>
@@ -21,9 +21,9 @@ private def resolveType {n} (self : Typ n) : Rec Typ := λ fuel =>
 
 /-- Infer using actual runtime bindings and captured environments, with hypothetical types only under binders. -/
 def inferInternal {n} (self : Trm n)
-    (bindings : Nat → Option RuntimeValue) : RecOpt Typ :=
+    (bindings : Nat → Option ExeValue) : RecOpt Typ :=
   let rec visit {context} (trm : Trm context)
-      (entries : Nat → Option (RuntimeValue ⊕ Typ)) : RecOpt Typ := λ fuel =>
+      (entries : Nat → Option (ExeValue ⊕ Typ)) : RecOpt Typ := λ fuel =>
     match fuel with
     | 0 => .outOfFuel
     | fuel + 1 =>
@@ -71,7 +71,7 @@ private theorem resolveTypeMonotone {n} (typ : Typ n) : (resolveType typ).Monoto
         simp_all [ih tIn more input hFuelTail hIn, ih tOut more output hFuelTail hOut]
 
 private theorem inferVisitMonotone {n} (trm : Trm n)
-    (entries : Nat → Option (RuntimeValue ⊕ Typ)) :
+    (entries : Nat → Option (ExeValue ⊕ Typ)) :
     Rec.Monotone (inferInternal.visit trm entries) := by
   intro less more result hFuel hInfer
   induction less generalizing n trm entries more result with
@@ -93,20 +93,20 @@ namespace Monotone
 
 /-- Every completed inference result, including rejection, is preserved when fuel increases. -/
 theorem termInferMonotone {n} (trm : Trm n)
-    (bindings : Nat → Option RuntimeValue) :
+    (bindings : Nat → Option ExeValue) :
     (inferInternal trm bindings).Monotone :=
   inferVisitMonotone trm (λ index => (bindings index).map .inl)
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInferMonotone {n} (value : Val n)
-    (bindings : Nat → Option RuntimeValue) :
+    (bindings : Nat → Option ExeValue) :
     (inferInternal value.asTrm bindings).Monotone :=
   termInferMonotone value.asTrm bindings
 
 end Monotone
 
 private theorem inferVisitApplySuccess {n} (fn arg : Trm n)
-    (entries : Nat → Option (RuntimeValue ⊕ Typ)) (fuel : Nat) (typ : Typ)
+    (entries : Nat → Option (ExeValue ⊕ Typ)) (fuel : Nat) (typ : Typ)
     (hInfer : inferInternal.visit (.apply fn arg) entries (fuel + 1) = .yield (some typ)) :
     ∃ input, inferInternal.visit fn entries fuel = .yield (some (.TFn input typ)) ∧
       inferInternal.visit arg entries fuel = .yield (some input) := by
@@ -120,7 +120,7 @@ private theorem inferVisitApplySuccess {n} (fn arg : Trm n)
     exact ⟨_, rfl, rfl⟩
 
 private theorem inferVisitFnSuccess {n} (annotation : Typ n) (body : Binder n .trm)
-    (entries : Nat → Option (RuntimeValue ⊕ Typ)) (fuel : Nat) (typ : Typ)
+    (entries : Nat → Option (ExeValue ⊕ Typ)) (fuel : Nat) (typ : Typ)
     (hInfer : inferInternal.visit (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
     ∃ input output, resolveType annotation fuel = .yield input ∧
       inferInternal.visit (body.apply .only)
@@ -143,7 +143,7 @@ private theorem inferVisitFnSuccess {n} (annotation : Typ n) (body : Binder n .t
         exact ⟨input, output, rfl, hBody, hType.symm⟩
 
 private theorem inferVisitReplace {n} (trm : Trm n)
-    (source target : Nat → Option (RuntimeValue ⊕ Typ)) (fuel : Nat) (typ : Typ)
+    (source target : Nat → Option (ExeValue ⊕ Typ)) (fuel : Nat) (typ : Typ)
     (hRuntime : ∀ index value, source index = some (.inl value) →
       target index = some (.inl value))
     (hTypes : ∀ index input, source index = some (.inr input) →
@@ -224,7 +224,7 @@ private theorem inferVisitReplace {n} (trm : Trm n)
         simp [hRefl]⟩
 
 private theorem inferEvalSafetyAtFuel {n} (trm : Trm n)
-    (bindings : Nat → Option RuntimeValue) (evalFuel inferFuel : Nat) (typ : Typ)
+    (bindings : Nat → Option ExeValue) (evalFuel inferFuel : Nat) (typ : Typ)
     (hInfer : inferInternal trm bindings inferFuel = .yield (some typ)) :
     match eval trm bindings evalFuel with
     | .outOfFuel => True
@@ -321,7 +321,7 @@ private theorem inferEvalSafetyAtFuel {n} (trm : Trm n)
                         simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using hBodySafety
 
 /-- Successful inference excludes evaluation rejection and preserves the inferred type of every result. -/
-theorem inferEvalSafety {n} (trm : Trm n) (bindings : Nat → Option RuntimeValue)
+theorem inferEvalSafety {n} (trm : Trm n) (bindings : Nat → Option ExeValue)
     (inferFuel : Nat) (typ : Typ)
     (hInfer : inferInternal trm bindings inferFuel = .yield (some typ)) :
     (eval trm bindings).isSemiDecidable (λ result =>
