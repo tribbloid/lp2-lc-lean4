@@ -5,7 +5,7 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
 /-- A source value together with the bindings captured when it was evaluated. -/
-structure RuntimeValue : Type 2 where
+structure RuntimeValue : UAST where
   n : Nat
   value : Val n
   captured : Nat -> Option RuntimeValue
