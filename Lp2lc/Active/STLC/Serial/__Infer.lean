@@ -9,7 +9,7 @@ abbrev ValOrTyp := ExeValue ⊕ Typ -- Inference at a breakpoint accepts runtime
 abbrev BuildBindings := Nat → Option ValOrTyp -- append-only
 
 /-- Convert a known type to the result context, consuming fuel for each type node. -/
-private def resolveType {n} (self : Typ n) : Rec Typ := λ fuel =>
+def resolveType {n} (self : Typ n) : Rec Typ := λ fuel =>
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -70,12 +70,12 @@ theorem resolveType (typ : Typ n) : (resolveType typ).Monotone := by
         rename_i tIn tOut _ input hIn _ output hOut
         simp_all [ih tIn more input hFuelTail hIn, ih tOut more output hFuelTail hOut]
 
-
-private theorem inferMonotone (trm : Trm n) -- TODO: remove, just an alias of termInferMonotone
-    (entries : BuildBindings) :
-    Rec.Monotone (inferInternal trm entries) := by
+/-- Every completed inference result, including rejection, is preserved when fuel increases. -/
+theorem termInfer (trm : Trm n)
+    (bindings : BuildBindings) :
+    (inferInternal trm bindings).Monotone := by
   intro less more result hFuel hInfer
-  induction less generalizing n trm entries more result with
+  induction less generalizing n trm bindings more result with
   | zero => simp [inferInternal] at hInfer
   | succ fuel ih =>
     cases more with
@@ -89,13 +89,6 @@ private theorem inferMonotone (trm : Trm n) -- TODO: remove, just an alias of te
         repeat split at hInfer
         all_goals simp_all
       all_goals simp_all [resolveType _ fuel more _ hFuelTail (by assumption)]
-
-
-/-- Every completed inference result, including rejection, is preserved when fuel increases. -/
-theorem termInfer (trm : Trm n)
-    (bindings : BuildBindings) :
-    (inferInternal trm bindings).Monotone :=
-  inferMonotone trm bindings
 
 /-- Value inference monotonicity follows from term inference monotonicity. -/
 theorem valueInfer (value : Val n)

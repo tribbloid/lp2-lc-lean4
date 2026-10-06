@@ -2,8 +2,8 @@
 
 ## Inference monotonicity audit
 
-No counterexample or inconsistent premise was found for `AST.Monotone.termInferMonotone` or
-`AST.Monotone.valueInferMonotone` in
+No counterexample or inconsistent premise was found for `AST.Monotone.termInfer` or
+`AST.Monotone.valueInfer` in
 [Serial/__Infer.lean](Serial/__Infer.lean).
 
 The term proposition fixes a term `Trm n` and a binding function. A build binding stores either a runtime value with
@@ -26,8 +26,8 @@ The proofs use fuel induction and the inference equations; neither introduces a 
 ## Mixed build bindings and runtime safety audit
 
 No counterexample or inconsistent premise was found for the mixed-binding replacement and evaluation safety statements
-in [Serial/__Infer.lean](Serial/__Infer.lean), or for `Safety`, `fundamental`, and `paranoidFundamental` in
-[Serial/__Infer_proof.lean](Serial/__Infer_proof.lean).
+in [Serial/__Infer.lean](Serial/__Infer.lean), or for `Fundamental.safety`, `Fundamental.main`, and
+`Fundamental.paranoid` in [Serial/__Infer_proof.lean](Serial/__Infer_proof.lean).
 
 Inference accepts `BuildBindings` directly, including hypothetical types and runtime values. Replacing a type entry
 requires a runtime value that infers to the identical type in its captured environment. Existing runtime entries must

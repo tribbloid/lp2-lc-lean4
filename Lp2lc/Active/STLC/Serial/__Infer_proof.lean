@@ -89,7 +89,7 @@ private theorem inferReplace (trm : Trm n)
               exact hTypes index inputTyp hSource) hBody
         have hInMore := Monotone.resolveType annotation fuel (max fuel bodyFuel) input
           (Nat.le_max_left _ _) hIn
-        have hBodyMore := Monotone.inferMonotone _ _ bodyFuel (max fuel bodyFuel) (some output)
+        have hBodyMore := Monotone.termInfer _ _ bodyFuel (max fuel bodyFuel) (some output)
           (Nat.le_max_right _ _) hTarget
         exact ⟨max fuel bodyFuel + 1, by
           simp only [inferInternal.eq_3, hInMore, hBodyMore, Rec.Outcome.flatMap, Rec.Outcome.map]
@@ -115,9 +115,9 @@ private theorem inferReplace (trm : Trm n)
       obtain ⟨input, hFn, hArg⟩ := inferApplySuccess fn arg source fuel typ hInfer
       obtain ⟨fnFuel, hFnTarget⟩ := ih fn source target (.TFn input typ) hRuntime hTypes hFn
       obtain ⟨argFuel, hArgTarget⟩ := ih arg source target input hRuntime hTypes hArg
-      have hFnMore := Monotone.inferMonotone fn target fnFuel (max fnFuel argFuel) _
+      have hFnMore := Monotone.termInfer fn target fnFuel (max fnFuel argFuel) _
         (Nat.le_max_left _ _) hFnTarget
-      have hArgMore := Monotone.inferMonotone arg target argFuel (max fnFuel argFuel) _
+      have hArgMore := Monotone.termInfer arg target argFuel (max fnFuel argFuel) _
         (Nat.le_max_right _ _) hArgTarget
       exact ⟨max fnFuel argFuel + 1, by
         simp only [inferInternal.eq_5, hFnMore, hArgMore]
@@ -234,7 +234,7 @@ theorem main (fuel : Nat) (typ : Typ)
     (hInfer : trm.inferInternal (λ index => (bindings index).map .inl) fuel = .yield (some typ)) :
     safety trm bindings typ := by
   intro evalFuel
-  have safe := AST.inferEvalSafety trm bindings fuel typ hInfer evalFuel
+  have safe := inferEvalSafety trm bindings fuel typ hInfer evalFuel
   cases result : trm.eval bindings evalFuel with
   | outOfFuel => trivial
   | yield value =>
