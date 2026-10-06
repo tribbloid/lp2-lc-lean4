@@ -26,8 +26,7 @@ def eval {n} (self : Trm n) (bindings : Nat → Option RuntimeValue) : RecOpt Ru
       match eval fn bindings fuel, eval arg bindings fuel with
       | .yield (some (.mk context (.fn _ body) captured)), .yield (some value) =>
         eval (body.apply .only)
-          (λ index => if index = context + 2 then some value
-            else if index = context + 1 then none else captured index) fuel
+          (λ index => if index = context + 1 then some value else captured index) fuel
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
 

@@ -2,7 +2,8 @@
 
 ## Inference monotonicity audit
 
-No counterexample or inconsistent premise was found for `AST.termInferMonotone` or `AST.valueInferMonotone` in
+No counterexample or inconsistent premise was found for `AST.Monotone.termInferMonotone` or
+`AST.Monotone.valueInferMonotone` in
 [Serial/__Infer.lean](Serial/__Infer.lean).
 
 The term proposition fixes a term `Trm n` and a binding function. Each binding stores a runtime value with its
@@ -16,7 +17,7 @@ no separate value algorithm or stronger typing property. Neither proposition ass
 binder parametricity certificate. Their premises are an ordinary natural-number inequality and a computation
 equality, with no inconsistent assumption identified.
 
-The ghost slot `n + 1` is unavailable and the argument slot `n + 2` overrides external bindings. These extensions
-are fixed independently of fuel. Binder bodies are opened with the same serial receipt at every fuel level.
+The argument slot `n + 1` overrides external bindings; all earlier slots retain their captured entries. This extension
+is fixed independently of fuel. Binder bodies are opened with the same serial receipt at every fuel level.
 
 The proofs use fuel induction and the inference equations; neither introduces a project-specific axiom.

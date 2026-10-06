@@ -4,7 +4,7 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 namespace AST
 
-abbrev ValOrTyp := RuntimeValue ⊕ Typ -- "infer at breakpoint" capability: infer should handle runtim
+abbrev ValOrTyp := RuntimeValue ⊕ Typ -- Inference at a breakpoint accepts runtime values or types.
 
 abbrev Bindings := Nat → Option ValOrTyp -- append-only
 
@@ -32,8 +32,7 @@ def inferInternal {n} (self : Trm n)
       | .val (.fn tIn body) =>
         (resolveType tIn fuel).flatMap (λ input =>
           (visit (body.apply .only)
-            (λ index => if index = context + 2 then some (.inr input)
-              else if index = context + 1 then none else entries index) fuel).map
+            (λ index => if index = context + 1 then some (.inr input) else entries index) fuel).map
             (Option.map (.TFn input)))
       | .ref _ under =>
         match entries under.sourceIndex with
@@ -120,13 +119,12 @@ private theorem inferVisitApplySuccess {n} (fn arg : Trm n)
     subst_vars
     exact ⟨_, rfl, rfl⟩
 
-private theorem inferVisitFnSuccess {n} (annotation : Typ n) (body : Binder (n + 1) .trm)
+private theorem inferVisitFnSuccess {n} (annotation : Typ n) (body : Binder n .trm)
     (entries : Nat → Option (RuntimeValue ⊕ Typ)) (fuel : Nat) (typ : Typ)
     (hInfer : inferInternal.visit (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
     ∃ input output, resolveType annotation fuel = .yield input ∧
       inferInternal.visit (body.apply .only)
-        (λ index => if index = n + 2 then some (.inr input)
-          else if index = n + 1 then none else entries index) fuel = .yield (some output) ∧
+        (λ index => if index = n + 1 then some (.inr input) else entries index) fuel = .yield (some output) ∧
       typ = .TFn input output := by
   simp only [inferInternal.visit.eq_3] at hInfer
   cases hIn : resolveType annotation fuel with
@@ -134,8 +132,7 @@ private theorem inferVisitFnSuccess {n} (annotation : Typ n) (body : Binder (n +
   | yield input =>
     simp only [hIn, Rec.Outcome.flatMap] at hInfer
     cases hBody : inferInternal.visit (body.apply .only)
-        (λ index => if index = n + 2 then some (.inr input)
-          else if index = n + 1 then none else entries index) fuel with
+        (λ index => if index = n + 1 then some (.inr input) else entries index) fuel with
     | outOfFuel => simp [hBody, Rec.Outcome.map] at hInfer
     | yield result =>
       simp only [hBody, Rec.Outcome.map, Rec.Outcome.yield.injEq] at hInfer
@@ -172,29 +169,23 @@ private theorem inferVisitReplace {n} (trm : Trm n)
           inferVisitFnSuccess annotation body source fuel typ hInfer
         subst typ
         obtain ⟨bodyFuel, hTarget⟩ := ih (body.apply .only)
-          (λ index => if index = n + 2 then some (.inr input)
-            else if index = n + 1 then none else source index)
-          (λ index => if index = n + 2 then some (.inr input)
-            else if index = n + 1 then none else target index) output
+          (λ index => if index = n + 1 then some (.inr input) else source index)
+          (λ index => if index = n + 1 then some (.inr input) else target index) output
           (by
             intro index value hSource
-            by_cases hArg : index = n + 2
+            by_cases hArg : index = n + 1
             · simp [hArg] at hSource
-            · by_cases hGhost : index = n + 1
-              · simp [hGhost] at hSource
-              · simp only [ite_eq_right hArg, ite_eq_right hGhost] at hSource ⊢
-                exact hRuntime index value hSource)
+            · simp only [ite_eq_right hArg] at hSource ⊢
+              exact hRuntime index value hSource)
           (by
             intro index inputTyp hSource
-            by_cases hArg : index = n + 2
+            by_cases hArg : index = n + 1
             · simp only [ite_eq_left hArg, Option.some.injEq] at hSource
               have hType := Sum.inr.inj hSource
               subst inputTyp
               exact Or.inl (by simp [hArg])
-            · by_cases hGhost : index = n + 1
-              · simp [hGhost] at hSource
-              · simp only [ite_eq_right hArg, ite_eq_right hGhost] at hSource ⊢
-                exact hTypes index inputTyp hSource) hBody
+            · simp only [ite_eq_right hArg] at hSource ⊢
+              exact hTypes index inputTyp hSource) hBody
         have hInMore := resolveTypeMonotone annotation fuel (max fuel bodyFuel) input
           (Nat.le_max_left _ _) hIn
         have hBodyMore := inferVisitMonotone _ _ bodyFuel (max fuel bodyFuel) (some output)
@@ -250,12 +241,12 @@ private theorem inferEvalSafetyAtFuel {n} (trm : Trm n)
       | zero => simp [inferInternal, inferInternal.visit] at hInfer
       | succ inferFuel =>
         cases hBinding : bindings under.sourceIndex with
-        | none => simp [inferInternal, inferInternal.visit.eq_4, hBinding] at hInfer
+        | none => simp [inferInternal, inferInternal.visit.eq_4, hBinding, Option.map] at hInfer
         | some value =>
           cases value with
           | mk context value captured =>
             simp only [eval.eq_3, hBinding]
-            exact ⟨inferFuel, by simpa [inferInternal, inferInternal.visit.eq_4, hBinding] using hInfer⟩
+            exact ⟨inferFuel, by simpa [inferInternal, inferInternal.visit.eq_4, hBinding, Option.map] using hInfer⟩
     | apply fn arg =>
       cases inferFuel with
       | zero => simp [inferInternal, inferInternal.visit] at hInfer
@@ -305,31 +296,26 @@ private theorem inferEvalSafetyAtFuel {n} (trm : Trm n)
                         subst fnInput
                         subst fnOutput
                         let bodyBindings := λ index =>
-                          if index = context + 2 then some (.mk argContext argValue argCaptured)
-                            else if index = context + 1 then none else captured index
+                          if index = context + 1 then some (.mk argContext argValue argCaptured)
+                            else captured index
                         obtain ⟨bodyFuel, hBodyTarget⟩ := inferVisitReplace (body.apply .only)
-                          (λ index => if index = context + 2 then some (.inr input)
-                            else if index = context + 1 then none else (captured index).map .inl)
+                          (λ index => if index = context + 1 then some (.inr input) else (captured index).map .inl)
                           (λ index => (bodyBindings index).map .inl) fnInferFuel typ
                           (by
                             intro index value hSource
-                            by_cases hArgIndex : index = context + 2
+                            by_cases hArgIndex : index = context + 1
                             · simp [hArgIndex] at hSource
-                            · by_cases hGhost : index = context + 1
-                              · simp [hGhost] at hSource
-                              · simpa [bodyBindings, hArgIndex, hGhost] using hSource)
+                            · simpa [bodyBindings, hArgIndex] using hSource)
                           (by
                             intro index inputTyp hSource
-                            by_cases hArgIndex : index = context + 2
+                            by_cases hArgIndex : index = context + 1
                             · simp only [ite_eq_left hArgIndex, Option.some.injEq] at hSource
                               have hType := Sum.inr.inj hSource
                               subst inputTyp
                               exact Or.inr ⟨argContext, argValue, argCaptured, argInferFuel,
-                                by simp [bodyBindings, hArgIndex], hArgValue⟩
-                            · by_cases hGhost : index = context + 1
-                              · simp [hGhost] at hSource
-                              · simp only [ite_eq_right hArgIndex, ite_eq_right hGhost] at hSource
-                                cases hCaptured : captured index <;> simp [hCaptured] at hSource)
+                                by simp [bodyBindings, hArgIndex, Option.map], hArgValue⟩
+                            · simp only [ite_eq_right hArgIndex] at hSource
+                              cases hCaptured : captured index <;> simp [hCaptured, Option.map] at hSource)
                           hBody
                         have hBodySafety := ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
                         simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using hBodySafety

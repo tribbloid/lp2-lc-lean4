@@ -6,13 +6,15 @@ open Lean (Json toJson)
 open Lp2lc.Active.Util.Indices.SerialProxy (only)
 open Lp2lc.Active.Util Lp2lc.Active.STLC
 
+section hash
+
 private def sigC (index : Nat) : Json := toJson index
 private def sigB (repr : String) : Json := toJson repr
 private def sigAny (_index : Nat) : Json := .null
 
 private def capturedRef (useOuter : Bool) : Val 1 :=
   .fn .TLit (.mk (λ proxy =>
-    if useOuter then .ref only (.lower (.lower .same))
+    if useOuter then .ref only (.lower .same)
     else .ref proxy .same))
 
 private def idVal : Val 1 :=
@@ -33,14 +35,14 @@ example : astToJson (.lit "x" : AST 0 .val) sigC sigB =
     .arr #["lit", toJson ("x" : String)] := rfl
 
 example : astToJson idVal sigC sigB =
-    .arr #["lam", .arr #["ref", toJson (3 : Nat)], "primitive"] := rfl
+    .arr #["lam", .arr #["ref", toJson (2 : Nat)], "primitive"] := rfl
 
 example : astToJson (.val (.lit "x") : AST 0 .trm) sigC sigB =
     .arr #["val", .arr #["lit", toJson ("x" : String)]] := rfl
 
 example : astToJson (.apply (.val (capturedRef true)) (.val (capturedRef false)) : Trm 1) sigC sigB =
     .arr #["apply", .arr #["val", .arr #["lam", .arr #["ref", toJson (1 : Nat)], "primitive"]],
-      .arr #["val", .arr #["lam", .arr #["ref", toJson (3 : Nat)], "primitive"]]] := rfl
+      .arr #["val", .arr #["lam", .arr #["ref", toJson (2 : Nat)], "primitive"]]] := rfl
 
 example : (astToJson (capturedRef true) sigC sigB == astToJson (capturedRef false) sigC sigB) = false :=
   by native_decide
@@ -55,5 +57,7 @@ example : hashSum (.inl idVal) sigC sigB = astHash idVal sigC sigB := rfl
 
 example : hashSum (.inr (.TLit : Typ 1)) sigC sigB =
     astHash (.TLit : Typ 1) sigC sigB := rfl
+
+end hash
 
 end Tests.STLC.HashSpec

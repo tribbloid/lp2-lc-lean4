@@ -25,7 +25,7 @@ private def visit {P : Parameters} {l} (self : Pre.AST P l)
     .arr #["fn", visit tIn get sigC sigB, visit tOut get sigC sigB]
   | .lit repr => .arr #["lit", sigB repr]
   | .fn tIn (.mk body) =>
-    .arr #["lam", visit (body (get P.Next.Next.index)) get sigC sigB, visit tIn get sigC sigB]
+    .arr #["lam", visit (body (get P.Next.index)) get sigC sigB, visit tIn get sigC sigB]
   | .val v => .arr #["val", visit v get sigC sigB]
   | .apply fnTerm arg =>
     .arr #["apply", visit fnTerm get sigC sigB, visit arg get sigC sigB]
