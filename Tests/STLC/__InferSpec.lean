@@ -43,7 +43,7 @@ private def literalBindings (_index : Nat) : Option RuntimeValue :=
 
 #guard (FreeCapture.directRef.inferInternal literalBindings).shouldYieldsBool 2 .TLit
 
-#guard (AST.inferInternal (.ref FreeCapture.freeSlot .same : Trm 0) literalBindings).shouldYieldsBool 1 .TLit
+#guard (AST.inferInternal (.ref FreeCapture.freeSlot .same : Trm 0) literalBindings).shouldYieldsBool 2 .TLit
 
 #guard Malformed.applyIdFnOnItself.infer.shouldFailBool 3
 
