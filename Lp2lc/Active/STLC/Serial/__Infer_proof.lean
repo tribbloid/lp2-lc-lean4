@@ -66,12 +66,12 @@ private theorem inferReplace {trm : Trm n}
         exact ⟨bodyFuel + 1, by simp only [inferInternal.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
     | ref carrier under =>
       simp only [inferInternal.eq_4] at hInfer
-      have hFit : EntryFits (source under.sourceIndex) typ := by
-        cases hEntry : source under.sourceIndex <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
+      have hFit : EntryFits (source under.sourceIndex.down) typ := by
+        cases hEntry : source under.sourceIndex.down <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
         all_goals simp only [hEntry, EntryFits, Rec.Outcome.yield.injEq] at hInfer ⊢
         all_goals first | (cases hInfer <;> rfl) | exact ⟨fuel, hInfer⟩ | exact Option.some.inj hInfer
-      have hTarget := hReplace under.sourceIndex typ hFit
-      cases hEntry : target under.sourceIndex <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
+      have hTarget := hReplace under.sourceIndex.down typ hFit
+      cases hEntry : target under.sourceIndex.down <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
       all_goals simp only [hEntry, EntryFits] at hTarget
       all_goals
         first
@@ -108,7 +108,7 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
       cases trm with
       | val value => exact ⟨inferFuel + 1, hInfer⟩
       | ref carrier under =>
-        cases hBinding : bindings under.sourceIndex <;> (try cases ‹ExeValue›)
+        cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeValue›)
         all_goals simp only [infer, inferInternal.eq_4, Bindings.getMap, hBinding, Option.map, eval.eq_3] at hInfer ⊢
         all_goals first | cases hInfer | exact ⟨inferFuel, hInfer⟩
       | apply fn arg =>
