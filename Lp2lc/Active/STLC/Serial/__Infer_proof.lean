@@ -11,9 +11,7 @@ namespace Fundamental
 
 def safety (typ : Typ) : Prop :=
   (trm.eval bindings).isSemiDecidable (λ result =>
-    match result with
-    | .mk _ value captured =>
-      (value.asTrm.infer captured).isDecidable (λ inferred => inferred ≤ typ))
+    (result.value.asTrm.infer result.captured).isDecidable (λ inferred => inferred ≤ typ))
 
 private theorem inferApplySuccess (fn arg : Trm n)
     (entries : BuildBindings) (fuel : Nat) (typ : Typ)
@@ -43,15 +41,16 @@ private theorem inferFnSuccess (annotation : Typ n) (body : Binder n .trm)
   all_goals try cases hInfer
   all_goals exact ⟨_, rfl, rfl⟩
 
+private def EntryFits (entry : Option ValOrTyp) (typ : Typ) : Prop :=
+  match entry with
+  | none => False
+  | some (.inr input) => input = typ
+  | some (.inl (.mk _ value captured)) =>
+    ∃ fuel, inferInternal value.asTrm (Option.map .inl ∘ captured) fuel = .yield (some typ)
+
 private theorem inferReplace (trm : Trm n)
     (source target : BuildBindings) (fuel : Nat) (typ : Typ)
-    (hRuntime : ∀ index value, source index = some (.inl value) →
-      target index = some (.inl value))
-    (hTypes : ∀ index input, source index = some (.inr input) →
-      target index = some (.inr input) ∨
-        ∃ context value captured valueFuel,
-          target index = some (.inl (.mk context value captured)) ∧
-          inferInternal value.asTrm (λ index => (captured index).map .inl) valueFuel = .yield (some input))
+    (hReplace : ∀ index typ, EntryFits (source index) typ → EntryFits (target index) typ)
     (hInfer : inferInternal trm source fuel = .yield (some typ)) :
     ∃ targetFuel, inferInternal trm target targetFuel = .yield (some typ) := by
   induction fuel generalizing n trm source target typ with
@@ -110,14 +109,11 @@ private theorem inferReplace (trm : Trm n)
         simp [hRefl]⟩
 
 /-- Successful inference excludes evaluation rejection and preserves the inferred type of every result. -/
-private theorem inferEvalSafetyAtFuel (trm : Trm n)
-    (bindings : ExeBindings) (evalFuel inferFuel : Nat) (typ : Typ)
+theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
+    (inferFuel : Nat) (typ : Typ)
     (hInfer : infer trm bindings inferFuel = .yield (some typ)) :
-    match eval trm bindings evalFuel with
-    | .outOfFuel => True
-    | .yield none => False
-    | .yield (some (.mk _ value captured)) =>
-      ∃ valueFuel, infer value.asTrm captured valueFuel = .yield (some typ) := by
+    (eval trm bindings).isSemiDecidable (λ result =>
+      ∃ valueFuel, infer result.value.asTrm result.captured valueFuel = .yield (some typ)) := by
   induction evalFuel generalizing n trm bindings inferFuel typ with
   | zero => trivial
   | succ evalFuel ih =>
@@ -189,20 +185,6 @@ private theorem inferEvalSafetyAtFuel (trm : Trm n)
                       hBody
                     simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
                       ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
-
-theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
-    (inferFuel : Nat) (typ : Typ)
-    (hInfer : infer trm bindings inferFuel = .yield (some typ)) :
-    (eval trm bindings).isSemiDecidable (λ result =>
-      match result with
-      | .mk _ value captured =>
-        ∃ valueFuel, infer value.asTrm captured valueFuel = .yield (some typ)) := by
-  intro evalFuel
-  have hSafety := inferEvalSafetyAtFuel trm bindings evalFuel inferFuel typ hInfer
-  cases hEval : eval trm bindings evalFuel <;> (try cases ‹Option ExeValue›) <;> (try cases ‹ExeValue›) <;>
-    simp_all
-
-
 
 /-- A successfully inferred type makes the executable term safe at that type. -/
 theorem main (fuel : Nat) (typ : Typ)
