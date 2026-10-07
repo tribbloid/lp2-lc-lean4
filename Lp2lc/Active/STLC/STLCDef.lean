@@ -6,7 +6,7 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-def UAST := Type 1
+def UAST := Type 2
 
 /-
 Unreified AST with parametric carrier

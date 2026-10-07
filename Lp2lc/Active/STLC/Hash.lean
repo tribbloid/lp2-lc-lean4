@@ -34,7 +34,7 @@ private def visit {P : Parameters} {l} (self : Pre.AST P l)
 /-- JSON signature of concrete serial syntax. -/
 def astToJson {n l} (self : AST n l)
     (sigC : Nat → Json) (sigB : String → Json) : Json :=
-  visit self (λ _ => .only) sigC sigB
+  visit self (λ _ => .only) (λ index => sigC index.down) sigB
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
 def astBEq {n l} (a b : AST n l)

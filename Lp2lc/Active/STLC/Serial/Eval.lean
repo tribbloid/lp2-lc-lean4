@@ -13,7 +13,7 @@ def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt ExeValue
   | fuel + 1 =>
     match self with
     | .val value => .yield (some (.mk n value bindings))
-    | .ref _ under => .yield (bindings under.sourceIndex)
+    | .ref _ under => .yield (bindings under.sourceIndex.down)
     | .apply fn arg =>
       match eval fn bindings fuel, eval arg bindings fuel with
       | .yield (some (.mk context (.fn _ body) captured)), .yield (some value) =>

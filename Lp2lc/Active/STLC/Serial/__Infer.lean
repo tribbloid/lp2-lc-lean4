@@ -26,7 +26,7 @@ def inferInternal {n} (self : Trm n) (bindings : BuildBindings) : RecOpt Typ := 
         (bindings.set (n + 1) (.inr input)) fuel).map
         (Option.map (.TFn input))
     | .ref _ under =>
-      match bindings under.sourceIndex with
+      match bindings under.sourceIndex.down with
       | some (.inl (.mk _ value captured)) =>
         inferInternal value.asTrm (captured.map .inl) fuel
       | some (.inr typ) => .yield (some typ)

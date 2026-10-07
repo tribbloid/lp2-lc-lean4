@@ -4,12 +4,12 @@ namespace Lp2lc.Active.Util
 
 
 /-- Finite source-index bindings, newest entry first. -/
-structure Bindings (α : Type 1) where
+structure Bindings (α : Type 2) where
   entries : List (Nat × α)
 
 namespace Bindings
 
-variable {α β : Type 1} (self : Bindings α)
+variable {α β : Type 2} (self : Bindings α)
 
 def empty : Bindings α := ⟨[]⟩
 
