@@ -2,10 +2,10 @@ import «Lp2lc».Active.Util
 
 namespace Lp2lc.Active.Util
 
-structure Indices where
-  Index : Type u
-  getTRef : Index -> URef
-  inc : Index -> Index -- TODO: for intrinsically typed AST binder this should be "Index -> Typ -> Index"
+structure Indices : Type 2 where
+  Index : Type 1
+  getTRef (index : Index) : URef
+  inc (index : Index) : Index -- TODO: for intrinsically typed AST binder this should be "Index -> Typ -> Index"
 
 namespace Indices
 
@@ -21,11 +21,15 @@ substitute (body (.inr .unit)) v == body (.inl v)
 abbrev FreeOrUnit : Indices := {Index := Type, getTRef := id, inc := λ T => T ⊕ Unit}
 
 /-- A proxy whose type records a lexical context slot. -/
-inductive SerialProxy : Nat → Type where
+inductive SerialProxy : Nat → URef where
 | only {C : Nat} : SerialProxy C
 
 /-- De Bruijn serial: index is fixed and incremental for every binder position-/
-abbrev Serial : Indices := {Index := Nat, getTRef := λ t => SerialProxy t, inc := λ t => t + 1}
+abbrev Serial : Indices := {
+  Index := ULift.{1} Nat
+  getTRef := λ t => SerialProxy t.down
+  inc := λ t => ⟨t.down + 1⟩
+}
 
 end Indices
 
@@ -41,7 +45,7 @@ abbrev TRef := this.I.getTRef this.index
 abbrev Next := {this with index := this.I.inc this.index}
 
 /-- A witness that a context is reachable by extending an earlier context. -/
-inductive Under (base : Parameters) : Parameters → Type 1 where
+inductive Under (base : Parameters) : Parameters → Type 2 where
 | same : Under base base
 | lower {p2} (prev : Under base p2) : Under base p2.Next
 

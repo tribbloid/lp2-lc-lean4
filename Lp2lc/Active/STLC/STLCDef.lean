@@ -52,6 +52,26 @@ def apply {P : Parameters} {l : Label} (self : Binder P l)
 
 end Binder
 
+namespace AST
+variable {P : Parameters}
+
+/-- Current STLC subtyping coincides with structural type equality. -/
+instance typLE : LE (AST P .typ) := ⟨Eq⟩
+
+/-- Decides the current structural subtyping relation. -/
+@[instance_reducible]
+instance typDecidableLE : DecidableLE (AST P .typ)
+  | .TLit, .TLit => isTrue rfl
+  | .TLit, .TFn _ _
+  | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
+  | .TFn leftIn leftOut, .TFn rightIn rightOut =>
+    match typDecidableLE leftIn rightIn, typDecidableLE leftOut rightOut with
+    | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
+    | isFalse notEqual, _ => isFalse (λ equality => notEqual (by cases equality; rfl))
+    | _, isFalse notEqual => isFalse (λ equality => notEqual (by cases equality; rfl))
+
+end AST
+
 end Pre
 
 end Lp2lc.Active.STLC
