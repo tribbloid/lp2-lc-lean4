@@ -29,7 +29,7 @@ def inferInternal {n} (self : Trm n) (bindings : BuildBindings) : RecOpt Typ := 
     | .ref _ under =>
       match bindings under.sourceIndex with
       | some (.inl (.mk _ value captured)) =>
-        inferInternal value.asTrm (λ index => (captured index).map .inl) fuel
+        inferInternal value.asTrm (Option.map .inl ∘ captured) fuel
       | some (.inr typ) => .yield (some typ)
       | none => .yield none
     | .apply fn arg =>
@@ -41,7 +41,7 @@ def inferInternal {n} (self : Trm n) (bindings : BuildBindings) : RecOpt Typ := 
 
 /-- Infer using runtime values only, resolving each captured value to its type. -/
 def infer {n} (self : Trm n) (exeBindings : ExeBindings := λ _ => .none) : RecOpt Typ :=
-  self.inferInternal (λ index => (exeBindings index).map .inl)
+  self.inferInternal (Option.map .inl ∘ exeBindings)
 
 variable {n : Nat}
 
