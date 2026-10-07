@@ -75,6 +75,7 @@ Tests/AGENTS.md are not exhaustive.
 - Do not write unnecessary arguments at call sites.
 - Do not create Lean file with `.` in file name.
 - Do not import temporary Lean files in a module aggregator.
+- Do not import or modify Lean files in ".obsolete" directory
 - Do not use the following Lean keywords:
     - `forall` (use `∀`)
     - `exists` (use `∃`)
