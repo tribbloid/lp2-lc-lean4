@@ -1,12 +1,11 @@
 import «Lp2lc».Active.STLC.Serial.Eval
-
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 namespace AST
 
 abbrev ValOrTyp := ExeValue ⊕ Typ -- Inference at a breakpoint accepts runtime values or types.
 
-abbrev BuildBindings := Nat → Option ValOrTyp -- append-only
+abbrev BuildBindings := Bindings ValOrTyp -- append-only
 
 /-- Convert `Typ n` to `Typ 0`, preserving its structure without consuming inference fuel. -/
 def resolveType {n} (self : Typ n) : Typ :=
@@ -24,12 +23,12 @@ def inferInternal {n} (self : Trm n) (bindings : BuildBindings) : RecOpt Typ := 
     | .val (.fn tIn body) =>
       let input := resolveType tIn
       (inferInternal (body.apply .only)
-        (λ index => if index = n + 1 then some (.inr input) else bindings index) fuel).map
+        (bindings.set (n + 1) (.inr input)) fuel).map
         (Option.map (.TFn input))
     | .ref _ under =>
       match bindings under.sourceIndex with
       | some (.inl (.mk _ value captured)) =>
-        inferInternal value.asTrm (Option.map .inl ∘ captured) fuel
+        inferInternal value.asTrm (captured.map .inl) fuel
       | some (.inr typ) => .yield (some typ)
       | none => .yield none
     | .apply fn arg =>
@@ -40,8 +39,8 @@ def inferInternal {n} (self : Trm n) (bindings : BuildBindings) : RecOpt Typ := 
       | _, _ => .outOfFuel
 
 /-- Infer using runtime values only, resolving each captured value to its type. -/
-def infer {n} (self : Trm n) (exeBindings : ExeBindings := λ _ => .none) : RecOpt Typ :=
-  self.inferInternal (Option.map .inl ∘ exeBindings)
+def infer {n} (self : Trm n) (exeBindings : ExeBindings := .empty) : RecOpt Typ :=
+  self.inferInternal (exeBindings.map .inl)
 
 variable {n : Nat}
 
@@ -65,12 +64,6 @@ theorem termInfer (trm : Trm n)
           Rec.Outcome.map] at hInfer ⊢
         repeat split at hInfer
         all_goals simp_all
-
-/-- Value inference monotonicity follows from term inference monotonicity. -/
-theorem valueInfer (value : Val n)
-    (bindings : BuildBindings) :
-    (inferInternal value.asTrm bindings).Monotone :=
-  termInfer value.asTrm bindings
 
 end Monotone
 

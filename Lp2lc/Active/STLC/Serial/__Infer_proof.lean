@@ -12,8 +12,8 @@ def safety (typ : Typ) : Prop :=
   (trm.eval bindings).isSemiDecidable (λ result =>
     (result.value.asTrm.infer result.captured).isDecidable (λ inferred => inferred ≤ typ))
 
-private theorem inferApplySuccess (fn arg : Trm n)
-    (entries : BuildBindings) (fuel : Nat) (typ : Typ)
+private theorem inferApplySuccess {fn arg : Trm n}
+    {entries : BuildBindings} {fuel : Nat} {typ : Typ}
     (hInfer : inferInternal (.apply fn arg) entries (fuel + 1) = .yield (some typ)) :
     ∃ input, inferInternal fn entries fuel = .yield (some (.TFn input typ)) ∧
       inferInternal arg entries fuel = .yield (some input) := by
@@ -26,12 +26,12 @@ private theorem inferApplySuccess (fn arg : Trm n)
     subst_vars
     exact ⟨_, rfl, rfl⟩
 
-private theorem inferFnSuccess (annotation : Typ n) (body : Binder n .trm)
-    (entries : BuildBindings) (fuel : Nat) (typ : Typ)
+private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
+    {entries : BuildBindings} {fuel : Nat} {typ : Typ}
     (hInfer : inferInternal (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
     let input := resolveType annotation
     ∃ output, inferInternal (body.apply .only)
-        (λ index => if index = n + 1 then some (.inr input) else entries index) fuel = .yield (some output) ∧
+        (entries.set (n + 1) (.inr input)) fuel = .yield (some output) ∧
       typ = .TFn input output := by
   simp only [inferInternal.eq_3, Rec.Outcome.map] at hInfer
   repeat split at hInfer
@@ -45,10 +45,10 @@ private def EntryFits (entry : Option ValOrTyp) (typ : Typ) : Prop :=
   | none => False
   | some (.inr input) => input = typ
   | some (.inl (.mk _ value captured)) =>
-    ∃ fuel, inferInternal value.asTrm (Option.map .inl ∘ captured) fuel = .yield (some typ)
+    ∃ fuel, inferInternal value.asTrm (captured.map .inl) fuel = .yield (some typ)
 
-private theorem inferReplace (trm : Trm n)
-    (source target : BuildBindings) (fuel : Nat) (typ : Typ)
+private theorem inferReplace {trm : Trm n}
+    {source target : BuildBindings} {fuel : Nat} {typ : Typ}
     (hReplace : ∀ index typ, EntryFits (source index) typ → EntryFits (target index) typ)
     (hInfer : inferInternal trm source fuel = .yield (some typ)) :
     ∃ targetFuel, inferInternal trm target targetFuel = .yield (some typ) := by

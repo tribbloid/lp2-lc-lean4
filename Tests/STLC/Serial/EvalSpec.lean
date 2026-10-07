@@ -14,13 +14,12 @@ private def literalResult (result : Rec.Outcome (Option ExeValue)) : Option Stri
   | _ => none
 
 private def outerValue : ExeValue :=
-  .mk 0 (.lit "outer") (λ _ => none)
-private def knownBindings : Nat → Option ExeValue :=
-  λ _ => some outerValue
+  .mk 0 (.lit "outer") .empty
+private def knownBindings : ExeBindings := (Bindings.empty.set 0 outerValue).set 1 outerValue
 
-example : literalResult (AST.eval Trm.primitiveIdFnOnFalse (λ _ => none) 2) = some "false" := rfl
-example : literalResult (AST.eval Trm.get1stOnTuple (λ _ => none) 3) = some "false" := rfl
-example : literalResult (AST.eval Trm.get2ndOnTuple (λ _ => none) 3) = some "true" := rfl
+example : literalResult (AST.eval Trm.primitiveIdFnOnFalse .empty 2) = some "false" := rfl
+example : literalResult (AST.eval Trm.get1stOnTuple .empty 3) = some "false" := rfl
+example : literalResult (AST.eval Trm.get2ndOnTuple .empty 3) = some "true" := rfl
 example : literalResult (AST.eval Trm.FreeCapture.directRef knownBindings 1) = some "outer" := rfl
 example : literalResult (AST.eval Trm.FreeCapture.capturedRefOnFalse knownBindings 2) = some "outer" := rfl
 example : literalResult (AST.eval Trm.primitiveTrueFnOnFalse knownBindings 2) = some "true" := rfl
@@ -28,12 +27,12 @@ example : literalResult (AST.eval Trm.Malformed.idFnOnFalse2 knownBindings 3) = 
 
 example : literalResult (AST.eval
     (.ref (P' := { B := String, I := .Serial, index := 1 }) .only (.lower (.lower .same)) : Trm 3)
-    (λ index => if index = 1 then some outerValue else none) 1) = some "outer" := rfl
+    (Bindings.empty.set 1 outerValue) 1) = some "outer" := rfl
 
-example : AST.eval Trm.vFalse (λ _ => none) 0 = .outOfFuel := rfl
-example : AST.eval Trm.Malformed.primitiveApply (λ _ => none) 2 = .yield none := rfl
-example : AST.eval (.ref Trm.FreeCapture.freeSlot .same : Trm 0) (λ _ => none) 1 = .yield none := rfl
-example : AST.eval (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) (λ _ => none) 2 = .outOfFuel := rfl
+example : AST.eval Trm.vFalse .empty 0 = .outOfFuel := rfl
+example : AST.eval Trm.Malformed.primitiveApply .empty 2 = .yield none := rfl
+example : AST.eval (.ref Trm.FreeCapture.freeSlot .same : Trm 0) .empty 1 = .yield none := rfl
+example : AST.eval (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empty 2 = .outOfFuel := rfl
 example : literalResult (AST.eval Trm.primitiveIdFnOnFalse knownBindings 2) = some "false" := rfl
 
 end eval
