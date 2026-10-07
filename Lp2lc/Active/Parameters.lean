@@ -9,12 +9,22 @@ structure Indices where
 
 namespace Indices
 
-abbrev Raw : Indices := {Index := Type, getTRef := id, inc := λ T => T ⊕ Unit}
+/-- naive PHOAS binding using unknown type directly as input, inc does nothign-/
+abbrev Free : Indices := {Index := Type, getTRef := id, inc := λ T => T}
+
+/--
+Every new binder mixin a tagged Unit.
+At first the binder body may lack uniformity. It has to be verified first in semantics:
+
+substitute (body (.inr .unit)) v == body (.inl v)
+ -/
+abbrev FreeOrUnit : Indices := {Index := Type, getTRef := id, inc := λ T => T ⊕ Unit}
 
 /-- A proxy whose type records a lexical context slot. -/
 inductive SerialProxy : Nat → Type where
 | only {C : Nat} : SerialProxy C
 
+/-- De Bruijn serial: index is fixed and incremental for every binder position-/
 abbrev Serial : Indices := {Index := Nat, getTRef := λ t => SerialProxy t, inc := λ t => t + 1}
 
 end Indices
@@ -43,16 +53,5 @@ def Under.sourceIndex {base target} (self : Under base target) : target.I.Index 
 end
 
 end Parameters
-
-
--- Rule: do not change order
-
-abbrev p0 : Parameters := { B := String, I := Indices.Serial, index := 0 }
-
-#guard p0.Next.index = 1
-#guard p0.Next.Next.index = 2
-#guard p0.Next.Next.Next.index = 3
-#guard p0.Next.Next.Next.Next.index = 4
-
 
 end Lp2lc.Active.Util

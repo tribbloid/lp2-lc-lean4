@@ -2,6 +2,7 @@
 import «Lp2lc».Active.Shared
 import «Lp2lc».Active.Util
 import «Lp2lc».Active.Parameters
+import «Lp2lc».Active.NatBindings
 import «Lp2lc».Active.PartialDefInheritance
 
 -- STLC syntax, hashing, serial execution, and type inference.
