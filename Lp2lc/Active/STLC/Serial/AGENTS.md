@@ -1,6 +1,6 @@
 # PL semantics
 
-.. with untyped De Bruijn serial & Context Embedding:
+This module uses untyped De Bruijn serials and context embedding.
 
-- functional binder is used but all inputs are subsingleton/contractable. Therefore all binders are parametric/uniform
-- for each binder, the only permitted input is De Bruijn serial
+- Functional binders receive contractible serial proxies, so their bodies are uniform over inputs at a fixed context.
+- Each binder accepts only the proxy for its next De Bruijn serial.
