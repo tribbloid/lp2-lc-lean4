@@ -21,8 +21,9 @@ def map (f : α → β) : Bindings β := ⟨self.entries.map (λ entry => (entry
 
 @[simp] theorem getMap (f : α → β) (index : Nat) :
     self.map f index = (self index).map f := by
-  rcases self with ⟨keys, values⟩
-  induction keys <;> simp_all [map, get, Function.comp_def, apply_ite]
+  rcases self with ⟨entries⟩
+  induction entries <;> simp_all [map, List.lookup]
+  split <;> simp_all
 
 end Bindings
 

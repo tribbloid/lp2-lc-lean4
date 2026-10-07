@@ -61,7 +61,7 @@ private theorem inferReplace {trm : Trm n}
         obtain ⟨output, hBody, hType⟩ := inferFnSuccess hInfer
         subst typ
         obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) (.inr input))
-          (by intro index inputTyp; simp only [Bindings.set, Bindings.get]; split <;> simp_all [input]) hBody
+          (by intro index inputTyp; simp only [Bindings.set, List.lookup]; split <;> simp_all [input]) hBody
         dsimp only [input] at hTarget
         exact ⟨bodyFuel + 1, by simp only [inferInternal.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
     | ref carrier under =>
@@ -144,7 +144,7 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
                       have typedArg : EntryFits (some (.inl (.mk _ argValue argCaptured))) input :=
                         ⟨argInferFuel, hArgValue⟩
                       intro index inputTyp hSource
-                      simp only [bodyBindings, Bindings.getMap, Bindings.set, Bindings.get] at hSource ⊢
+                      simp only [bodyBindings, Bindings.getMap, Bindings.set, List.lookup] at hSource ⊢
                       split at hSource <;> simp_all [EntryFits])
                     hBody
                   simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
