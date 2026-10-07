@@ -28,9 +28,9 @@ The proofs use fuel induction and the inference equations; neither introduces a 
 No counterexample or inconsistent premise was found for the mixed-binding replacement and evaluation safety statements
 in [Serial/__Infer_proof.lean](Serial/__Infer_proof.lean), including `Fundamental.main`.
 
-Internal inference accepts `BuildBindings` directly, including hypothetical types and runtime values. Replacing a type
-entry requires a runtime value that infers to the identical type in its captured environment. Existing runtime entries
-must remain identical. These premises prevent replacement from changing a successful inferred result.
+Internal inference accepts `BuildBindings` directly, including hypothetical types and runtime values. Replacement
+preserves every type obtainable from a source entry. A hypothetical type is retained or realized by a runtime value
+that infers to it in its captured environment. Retaining a runtime entry satisfies this contract directly.
 
 Evaluation safety uses `ExeBindings`, with every runtime entry explicitly embedded into `BuildBindings`. A hypothetical
 type entry alone cannot satisfy the runtime inference premise. Resolving a closure uses its captured bindings, and the

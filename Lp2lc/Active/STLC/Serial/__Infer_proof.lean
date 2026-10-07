@@ -109,6 +109,7 @@ private theorem inferReplace (trm : Trm n)
         have hRefl : input ≤ input := rfl
         simp [hRefl]⟩
 
+/-- Successful inference excludes evaluation rejection and preserves the inferred type of every result. -/
 private theorem inferEvalSafetyAtFuel (trm : Trm n)
     (bindings : ExeBindings) (evalFuel inferFuel : Nat) (typ : Typ)
     (hInfer : infer trm bindings inferFuel = .yield (some typ)) :
@@ -189,7 +190,6 @@ private theorem inferEvalSafetyAtFuel (trm : Trm n)
                     simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
                       ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
 
-/-- Successful inference excludes evaluation rejection and preserves the inferred type of every result. -/
 theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
     (inferFuel : Nat) (typ : Typ)
     (hInfer : infer trm bindings inferFuel = .yield (some typ)) :

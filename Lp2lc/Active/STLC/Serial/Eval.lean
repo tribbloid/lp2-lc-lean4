@@ -26,7 +26,8 @@ def eval {n} (self : Trm n) (bindings : ExeBindings := λ _ => .none) : RecOpt E
       match eval fn bindings fuel, eval arg bindings fuel with
       | .yield (some (.mk context (.fn _ body) captured)), .yield (some value) =>
         eval (body.apply .only)
-          (λ index => if index = context + 1 then some value else captured index) fuel -- TODO: Binding extension should become a dot-method
+          -- TODO: Binding extension should become a dot-method
+          (λ index => if index = context + 1 then some value else captured index) fuel
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
 
