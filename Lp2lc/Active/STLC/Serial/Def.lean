@@ -1,6 +1,9 @@
 import «Lp2lc».Active.STLC.STLCDef
+import «Lp2lc».Active.NatBindings
 
 namespace Lp2lc.Active.STLC
+
+open Lp2lc.Active.Util
 
 ---------------------------- Concrete indexed AST ----------------------------
 

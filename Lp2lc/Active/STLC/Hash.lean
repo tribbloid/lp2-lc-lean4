@@ -1,5 +1,5 @@
 import Lean.Data.Json
-import «Lp2lc».Active.STLC.STLCDef
+import «Lp2lc».Active.STLC.Serial.Def
 
 /-
 Warning: this is for runtime test, DO NOT use it in any proof!

@@ -3,6 +3,7 @@ import «Lp2lc».Active.Parameters
 namespace Tests.STLC.ParametersSpec
 
 open Lp2lc.Active.Util
+open Indices (FreeOrUnit)
 
 section next
 

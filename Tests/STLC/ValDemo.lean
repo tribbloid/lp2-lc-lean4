@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.STLCDef
+import «Lp2lc».Active.STLC.Serial.Def
 
 namespace Tests.STLC.Sanity
 
