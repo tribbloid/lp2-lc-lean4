@@ -1,29 +1,27 @@
 import «Lp2lc».Active.STLC.STLCDef
-import «Lp2lc».Active.NatBindings
 
 namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
 structure EnvBase where
-  I : Indices.FreeOrUnit -- chosen to make verifying binder uniformity easier
+  UId : Type
 
 namespace EnvBase
 section variable (this : EnvBase)
 
-def P : Parameters := {B := String, I := this.I, index := this.UId}
+-- FreeOrUnit is chosen to make verifying binder uniformity easier.
+abbrev P : Parameters := {B := String, I := .FreeOrUnit, index := this.UId}
 
-def UId := this.I.Index
+abbrev AST (l : Label) := Pre.AST this.P l
 
-abbrev AST (l : Label) := Pre.AST P l
+abbrev Binder (l : Label) := Pre.Binder this.P l
 
-abbrev Binder (l : Label) := Pre.Binder P l
+abbrev Val := this.AST .val
+abbrev Trm := this.AST .trm
+abbrev Typ := this.AST .typ
 
-abbrev Val := AST .val
-abbrev Trm := AST .trm
-abbrev Typ := AST .typ
-
-def Val.asTrm (v : Val) : Trm := .val self
+def Val.asTrm {this : EnvBase} (v : this.Val) : this.Trm := .val v
 
 end
 end EnvBase
