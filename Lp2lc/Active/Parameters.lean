@@ -9,11 +9,11 @@ structure Indices where
 
 namespace Indices
 
-/-- naive PHOAS binding using unknown type directly as input, inc does nothign-/
+/-- Naive PHOAS binding using an unknown type directly as input; `inc` does nothing. -/
 abbrev Free : Indices := {Index := Type, getTRef := id, inc := λ T => T}
 
 /--
-Every new binder mixin a tagged Unit.
+Every new binder mixes in a tagged Unit.
 At first the binder body may lack uniformity. It has to be verified first in semantics:
 
 substitute (body (.inr .unit)) v == body (.inl v)
