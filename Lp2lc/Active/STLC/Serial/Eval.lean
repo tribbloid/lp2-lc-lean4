@@ -27,6 +27,11 @@ def set (index : Nat) (value : α) : Bindings α :=
 
 def map (f : α → β) : Bindings β := ⟨self.keys, f ∘ self.values⟩
 
+@[simp] theorem getMap (f : α → β) (index : Nat) :
+    self.map f index = (self index).map f := by
+  rcases self with ⟨keys, values⟩
+  induction keys <;> simp_all [map, get, Function.comp_def, apply_ite]
+
 end Bindings
 
 set_option genSizeOf false in
@@ -63,14 +68,12 @@ theorem termEvalMonotone {n} (trm) (bindings : ExeBindings) :
   induction less generalizing n trm bindings more result with
   | zero => simp [eval] at hEval
   | succ fuel ih =>
-    cases more with
-    | zero => cases hFuel
-    | succ more =>
-      have hFuelTail := Nat.le_of_succ_le_succ hFuel
-      cases trm <;> simp only [eval.eq_2, eval.eq_3, eval.eq_4] at hEval ⊢
-      all_goals
-        repeat split at hEval
-        all_goals simp_all
+    cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
+    replace hFuel := Nat.le_of_succ_le_succ hFuel
+    cases trm <;> simp only [eval.eq_2, eval.eq_3, eval.eq_4] at hEval ⊢
+    all_goals
+      repeat split at hEval
+      all_goals simp_all
 
 end AST
 

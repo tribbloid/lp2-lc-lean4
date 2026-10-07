@@ -54,16 +54,14 @@ theorem termInfer (trm : Trm n)
   induction less generalizing n trm bindings more result with
   | zero => simp [inferInternal] at hInfer
   | succ fuel ih =>
-    cases more with
-    | zero => cases hFuel
-    | succ more =>
-      have hFuelTail := Nat.le_of_succ_le_succ hFuel
-      cases trm <;> try cases ‹Val n›
-      all_goals
-        simp only [inferInternal.eq_2, inferInternal.eq_3, inferInternal.eq_4, inferInternal.eq_5,
-          Rec.Outcome.map] at hInfer ⊢
-        repeat split at hInfer
-        all_goals simp_all
+    cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
+    replace hFuel := Nat.le_of_succ_le_succ hFuel
+    cases trm <;> try cases ‹Val n›
+    all_goals
+      simp only [inferInternal.eq_2, inferInternal.eq_3, inferInternal.eq_4, inferInternal.eq_5,
+        Rec.Outcome.map] at hInfer ⊢
+      repeat split at hInfer
+      all_goals simp_all
 
 end Monotone
 
