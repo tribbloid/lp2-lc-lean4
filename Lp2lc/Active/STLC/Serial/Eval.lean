@@ -34,7 +34,7 @@ def map (f : α → β) : Bindings β := ⟨self.keys, f ∘ self.values⟩
 
 end Bindings
 
-set_option genSizeOf false in
+-- set_option genSizeOf false in
 /-- A source value together with the bindings captured when it was evaluated. -/
 structure ExeValue : Type 1 where
   n : Nat
