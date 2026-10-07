@@ -3,7 +3,6 @@ import «Lp2lc».Active.STLC.Serial.__Infer
 namespace Lp2lc.Active.STLC.AST
 
 open Lp2lc.Active.Util
-open Lp2lc.Active.STLC.AST
 
 variable {n} (trm : Trm n) (bindings : ExeBindings)
 
