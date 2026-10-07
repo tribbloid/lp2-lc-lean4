@@ -72,33 +72,30 @@ private theorem inferReplace (trm : Trm n)
         obtain ⟨bodyFuel, hTarget⟩ := ih (body.apply .only)
           (λ index => if index = n + 1 then some (.inr input) else source index)
           (λ index => if index = n + 1 then some (.inr input) else target index) output
-          (by intro index value hSource; split at hSource <;> simp_all; exact hRuntime index value hSource)
-          (by intro index inputTyp hSource; split at hSource <;> simp_all) hBody
+          (by intro index inputTyp; split <;> simp_all) hBody
         dsimp only [input] at hTarget
         exact ⟨bodyFuel + 1, by
           simp only [inferInternal.eq_3, hTarget, Rec.Outcome.map]
           rfl⟩
     | ref carrier under =>
       simp only [inferInternal.eq_4] at hInfer
-      cases hEntry : source under.sourceIndex with
-      | none => simp [hEntry] at hInfer
-      | some entry =>
-        cases entry with
-        | inl value =>
-          have hTarget := hRuntime under.sourceIndex value hEntry
-          exact ⟨fuel + 1, by simpa [inferInternal.eq_4, hTarget, hEntry] using hInfer⟩
-        | inr input =>
-          simp only [hEntry, Rec.Outcome.yield.injEq] at hInfer
-          have hType := Option.some.inj hInfer
-          subst typ
-          rcases hTypes under.sourceIndex input hEntry with hTarget | hTarget
-          · exact ⟨1, by simp [inferInternal.eq_4, hTarget]⟩
-          · obtain ⟨context, value, captured, valueFuel, hTarget, hValue⟩ := hTarget
-            exact ⟨valueFuel + 1, by simpa [inferInternal.eq_4, hTarget] using hValue⟩
+      have hFit : EntryFits (source under.sourceIndex) typ := by
+        cases hEntry : source under.sourceIndex <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
+        all_goals simp only [hEntry, EntryFits, Rec.Outcome.yield.injEq] at hInfer ⊢
+        all_goals first | (cases hInfer <;> rfl) | exact ⟨fuel, hInfer⟩ | exact Option.some.inj hInfer
+      have hTarget := hReplace under.sourceIndex typ hFit
+      cases hEntry : target under.sourceIndex <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
+      all_goals simp only [hEntry, EntryFits] at hTarget
+      all_goals
+        first
+        | contradiction
+        | (obtain ⟨valueFuel, hValue⟩ := hTarget
+           exact ⟨valueFuel + 1, by rw [inferInternal.eq_4, hEntry]; exact hValue⟩)
+        | exact ⟨1, by simp [inferInternal.eq_4, hEntry, hTarget]⟩
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := inferApplySuccess fn arg source fuel typ hInfer
-      obtain ⟨fnFuel, hFnTarget⟩ := ih fn source target (.TFn input typ) hRuntime hTypes hFn
-      obtain ⟨argFuel, hArgTarget⟩ := ih arg source target input hRuntime hTypes hArg
+      obtain ⟨fnFuel, hFnTarget⟩ := ih fn source target (.TFn input typ) hReplace hFn
+      obtain ⟨argFuel, hArgTarget⟩ := ih arg source target input hReplace hArg
       have hFnMore := Monotone.termInfer fn target fnFuel (max fnFuel argFuel) _
         (Nat.le_max_left _ _) hFnTarget
       have hArgMore := Monotone.termInfer arg target argFuel (max fnFuel argFuel) _
@@ -114,6 +111,7 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
     (hInfer : infer trm bindings inferFuel = .yield (some typ)) :
     (eval trm bindings).isSemiDecidable (λ result =>
       ∃ valueFuel, infer result.value.asTrm result.captured valueFuel = .yield (some typ)) := by
+  intro evalFuel
   induction evalFuel generalizing n trm bindings inferFuel typ with
   | zero => trivial
   | succ evalFuel ih =>
@@ -131,7 +129,7 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
           exact ⟨inferFuel, by simpa [infer, inferInternal.eq_4, hBinding, Option.map] using hInfer⟩
       | apply fn arg =>
         obtain ⟨input, hFn, hArg⟩ := inferApplySuccess fn arg
-          (λ index => (bindings index).map .inl) inferFuel typ hInfer
+          (Option.map .inl ∘ bindings) inferFuel typ hInfer
         have hFnSafety := ih fn bindings inferFuel (.TFn input typ) hFn
         have hArgSafety := ih arg bindings inferFuel input hArg
         cases hFnEval : eval fn bindings evalFuel with
@@ -162,7 +160,7 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
                     simp only [hArgEval] at hArgSafety
                     obtain ⟨argInferFuel, hArgValue⟩ := hArgSafety
                     obtain ⟨fnOutput, hBody, hFnType⟩ :=
-                      inferFnSuccess annotation body (λ index => (captured index).map .inl)
+                      inferFnSuccess annotation body (Option.map .inl ∘ captured)
                         fnInferFuel (.TFn input typ) hFnValue
                     rcases Pre.AST.TFn.inj hFnType with ⟨hInput, hOutput⟩
                     subst fnOutput
@@ -171,17 +169,15 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
                       if index = context + 1 then some (.mk argContext argValue argCaptured) else captured index
                     obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace (body.apply .only)
                       (λ index => if index = context + 1 then some (.inr input) else (captured index).map .inl)
-                      (λ index => (bodyBindings index).map .inl) fnInferFuel typ
-                      (by intro index value hSource; split at hSource <;> simp_all [bodyBindings])
+                      (Option.map .inl ∘ bodyBindings) fnInferFuel typ
                       (by
                         intro index inputTyp hSource
-                        split at hSource
-                        · simp only [Option.some.injEq] at hSource
-                          have hType := Sum.inr.inj hSource
+                        by_cases hIndex : index = context + 1
+                        · simp only [hIndex, ite_eq_left, EntryFits] at hSource
                           subst inputTyp
-                          exact Or.inr ⟨argContext, argValue, argCaptured, argInferFuel,
-                            by simp [bodyBindings, *, Option.map], hArgValue⟩
-                        · cases hCaptured : captured index <;> simp [hCaptured, Option.map] at hSource)
+                          simp only [Function.comp_apply, bodyBindings, hIndex, ite_eq_left, Option.map, EntryFits]
+                          exact ⟨argInferFuel, hArgValue⟩
+                        · simpa [bodyBindings, hIndex] using hSource)
                       hBody
                     simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
                       ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
