@@ -41,28 +41,26 @@ private def mapRef {source : Parameters} {P Q} (under : source.Under P)
 
 mutual
 /-- Maps an AST to a different carrier while retaining its bytecode type and index encoding. -/
-@[simp] def AST.recarrier {P Q} {l} (self : Pre.AST P l)
-    (map : CarrierMap P Q) (unmapC : Q.TRef → P.TRef) : Pre.AST Q l :=
+@[simp] def AST.recarrier {P Q l} (self : Pre.AST P l) (map : CarrierMap P Q) : Pre.AST Q l :=
   match self with
   | .TLit => .TLit
-  | .TFn tIn tOut => .TFn (AST.recarrier tIn map unmapC) (AST.recarrier tOut map unmapC)
+  | .TFn tIn tOut => .TFn (AST.recarrier tIn map) (AST.recarrier tOut map)
   | .lit repr => by cases map; exact .lit repr
-  | .fn tIn body => .fn (AST.recarrier tIn map unmapC) (Binder.recarrier body map unmapC)
-  | .val value => .val (AST.recarrier value map unmapC)
-  | .apply fnTerm arg => .apply (AST.recarrier fnTerm map unmapC) (AST.recarrier arg map unmapC)
+  | .fn tIn body => .fn (AST.recarrier tIn map) (Binder.recarrier body map)
+  | .val value => .val (AST.recarrier value map)
+  | .apply fnTerm arg => .apply (AST.recarrier fnTerm map) (AST.recarrier arg map)
   | .ref carrier under => .ref (mapRef under map carrier) .same
 
 /-- Maps a binder's outer carriers while preserving its newest slot, bytecode type, and index encoding. -/
-@[simp] def Binder.recarrier {P Q} {l} (self : Pre.Binder P l)
-    (map : CarrierMap P Q) (unmapC : Q.TRef → P.TRef) : Pre.Binder Q l :=
-  match self with
-  | .mk body => by
-    have recurse := λ {Q} (map : CarrierMap P.Next Q) carrier => AST.recarrier (body carrier) map
-    cases map with
-    | mk mapC =>
-      exact .mk (λ carrier => recurse (.mk (Sum.map mapC id))
-        (Sum.map unmapC id carrier) (Sum.map unmapC id))
+@[simp] def Binder.recarrier {P Q l} (self : Pre.Binder P l) (map : CarrierMap P Q) : Pre.Binder Q l :=
+  match self, map with
+  | .mk body, .mk mapC => .mk (λ _ => AST.recarrier (body (.inr ())) (.mk (Sum.map mapC id)))
 end
+
+/-- Substitutes the newest structural slot after opening only at `.inr ()`. -/
+def Binder.apply {this : EnvBase} {l} (self : this.Binder l)
+    (carrier : this.UId) : this.AST l :=
+  AST.recarrier (Pre.Binder.apply self (.inr ())) (.mk (Sum.elim id (λ _ => carrier)))
 end EnvBase
 
 structure ExeEnv extends base : EnvBase where
