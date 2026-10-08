@@ -22,46 +22,51 @@ end
 
 def Val.asTrm {this : EnvBase} (v : this.Val) : this.Trm := .val v
 
-private def embedRef {source target : Parameters}
-    (under : source.Under target) (carrier : source.TRef)
-    (encoding : target.I = IndexEncoding.FreeOrUnit) : target.TRef := by
+private def embedRef {source target : Parameters} {B I1 : Type}
+    (under : source.Under target) (same : target = {B := B, I := IndexEncoding.FreeOrUnit, index := I1})
+    (carrier : source.TRef) : I1 := by
   cases under with
-  | same => exact carrier
-  | lower prev =>
-    have previous := embedRef prev carrier
-    rename_i p2
-    rcases p2 with ⟨byteCode, encoding2, index⟩
-    dsimp [Parameters.Next] at encoding
-    cases encoding
-    exact .inl (previous rfl)
+  | same => cases same; exact carrier
+  | @lower p2 prev =>
+    have recurse := λ {B I1} => embedRef (B := B) (I1 := I1) prev
+    rcases p2 with ⟨byteCode, encoding, index⟩
+    cases same
+    exact .inl (recurse rfl carrier)
 
 mutual
-/-- Maps an AST to a different carrier while retaining its bytecode type and index encoding. -/
-@[simp] def AST.recarrier {P} {I2} {l} (enc : P.I = IndexEncoding.FreeOrUnit)
-    (self : Pre.AST P l) (mapC : P.TRef → I2) (unmapC : I2 → P.TRef) :
-    Pre.AST {P with index := cast (congrArg IndexEncoding.Index enc).symm I2} l :=
+@[simp] private def mapAST {P} {I1 I2 : Type} {l}
+    (same : P = {P with I := IndexEncoding.FreeOrUnit, index := I1})
+    (self : Pre.AST P l) (mapC : I1 → I2) (unmapC : I2 → I1) :
+    Pre.AST {P with I := IndexEncoding.FreeOrUnit, index := I2} l :=
   match self with
   | .TLit => .TLit
-  | .TFn tIn tOut => .TFn (AST.recarrier enc tIn mapC unmapC) (AST.recarrier enc tOut mapC unmapC)
+  | .TFn tIn tOut => .TFn (mapAST same tIn mapC unmapC) (mapAST same tOut mapC unmapC)
   | .lit repr => .lit repr
-  | .fn tIn body => .fn (AST.recarrier enc tIn mapC unmapC) (Binder.recarrier enc body mapC unmapC)
-  | .val value => .val (AST.recarrier enc value mapC unmapC)
-  | .apply fnTerm arg => .apply (AST.recarrier enc fnTerm mapC unmapC) (AST.recarrier enc arg mapC unmapC)
-  | .ref carrier under => by
-    rcases P with ⟨byteCode, enc2, index⟩
-    cases enc
-    exact .ref (mapC (embedRef under carrier rfl)) .same
+  | .fn tIn body => .fn (mapAST same tIn mapC unmapC) (mapBinder same body mapC unmapC)
+  | .val value => .val (mapAST same value mapC unmapC)
+  | .apply fnTerm arg => .apply (mapAST same fnTerm mapC unmapC) (mapAST same arg mapC unmapC)
+  | .ref carrier under => .ref (mapC (embedRef under same carrier)) .same
 
-/-- Maps a binder's outer carriers while preserving its newest slot, bytecode type, and index encoding. -/
-@[simp] def Binder.recarrier {P} {I2} {l} (enc : P.I = IndexEncoding.FreeOrUnit)
-    (self : Pre.Binder P l) (mapC : P.TRef → I2) (unmapC : I2 → P.TRef) :
-    Pre.Binder {P with index := cast (congrArg IndexEncoding.Index enc).symm I2} l :=
+@[simp] private def mapBinder {P} {I1 I2 : Type} {l}
+    (same : P = {P with I := IndexEncoding.FreeOrUnit, index := I1})
+    (self : Pre.Binder P l) (mapC : I1 → I2) (unmapC : I2 → I1) :
+    Pre.Binder {P with I := IndexEncoding.FreeOrUnit, index := I2} l :=
   match self with
   | .mk body => by
-    have recurse := λ carrier enc => AST.recarrier (I2 := I2 ⊕ Unit) enc (body carrier)
-    rcases P with ⟨byteCode, enc2, index⟩
-    cases enc
-    exact .mk (λ carrier => recurse (Sum.map unmapC id carrier) rfl (Sum.map mapC id) (Sum.map unmapC id))
+    have recurse := λ same carrier => mapAST (I1 := I1 ⊕ Unit) (I2 := I2 ⊕ Unit) same (body carrier)
+    rcases P with ⟨byteCode, encoding, index⟩
+    cases same
+    exact .mk (λ carrier => recurse rfl (Sum.map unmapC id carrier) (Sum.map mapC id) (Sum.map unmapC id))
+end
+
+section variable {B I1 I2 : Type} {l}
+/-- Maps an AST to a different carrier while retaining its bytecode type and index encoding. -/
+@[simp] abbrev AST.recarrier :=
+  @mapAST {B := B, I := IndexEncoding.FreeOrUnit, index := I1} I1 I2 l rfl
+
+/-- Maps a binder's outer carriers while preserving its newest slot, bytecode type, and index encoding. -/
+@[simp] abbrev Binder.recarrier :=
+  @mapBinder {B := B, I := IndexEncoding.FreeOrUnit, index := I1} I1 I2 l rfl
 end
 end EnvBase
 
