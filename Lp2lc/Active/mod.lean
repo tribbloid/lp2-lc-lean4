@@ -16,9 +16,8 @@ import «Lp2lc».Active.STLC.Serial.__Infer
 import «Lp2lc».Active.STLC.Serial.__Infer_proof
 -- import «Lp2lc».Active.STLC.__Infer_umbral
 
+-- UId receipt execution and type inference.
 import «Lp2lc».Active.STLC.UId.Def
-
--- UId execution still contains an unfinished copy of the serial evaluator.
 -- import «Lp2lc».Active.STLC.UId.Eval
 
 -- import «Lp2lc».Active.DOT.DOTDef
