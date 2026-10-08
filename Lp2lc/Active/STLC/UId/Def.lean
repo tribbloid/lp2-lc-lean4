@@ -22,51 +22,46 @@ end
 
 def Val.asTrm {this : EnvBase} (v : this.Val) : this.Trm := .val v
 
-private def embedRef {source target : Parameters} {B I1 : Type}
-    (under : source.Under target) (same : target = {B := B, I := IndexEncoding.FreeOrUnit, index := I1})
-    (carrier : source.TRef) : I1 := by
+/-- A carrier map retains the bytecode type and FreeOrUnit encoding at both ends. -/
+inductive CarrierMap : (source : Parameters) → (target : Parameters) → Type 1 where
+| mk {B I1 I2} (mapC : I1 → I2) :
+    CarrierMap {B := B, I := IndexEncoding.FreeOrUnit, index := I1}
+      {B := B, I := IndexEncoding.FreeOrUnit, index := I2}
+
+private def mapRef {source : Parameters} {P Q} (under : source.Under P)
+    (map : CarrierMap P Q) (carrier : source.TRef) : Q.TRef := by
   cases under with
-  | same => cases same; exact carrier
+  | same => cases map with
+    | mk mapC => exact mapC carrier
   | @lower p2 prev =>
-    have recurse := λ {B I1} => embedRef (B := B) (I1 := I1) prev
-    rcases p2 with ⟨byteCode, encoding, index⟩
-    cases same
-    exact .inl (recurse rfl carrier)
+    have recurse := λ {Q} (map : CarrierMap p2 Q) => mapRef prev map carrier
+    rcases p2 with ⟨⟨byteCode⟩, encoding, index⟩
+    cases map with
+    | mk mapC => exact recurse (.mk (λ carrier => mapC (.inl carrier)))
 
 mutual
-@[simp] private def mapAST {P} {I1 I2 : Type} {l}
-    (same : P = {P with I := IndexEncoding.FreeOrUnit, index := I1})
-    (self : Pre.AST P l) (mapC : I1 → I2) (unmapC : I2 → I1) :
-    Pre.AST {P with I := IndexEncoding.FreeOrUnit, index := I2} l :=
+/-- Maps an AST to a different carrier while retaining its bytecode type and index encoding. -/
+@[simp] def AST.recarrier {P Q} {l} (self : Pre.AST P l)
+    (map : CarrierMap P Q) (unmapC : Q.TRef → P.TRef) : Pre.AST Q l :=
   match self with
   | .TLit => .TLit
-  | .TFn tIn tOut => .TFn (mapAST same tIn mapC unmapC) (mapAST same tOut mapC unmapC)
-  | .lit repr => .lit repr
-  | .fn tIn body => .fn (mapAST same tIn mapC unmapC) (mapBinder same body mapC unmapC)
-  | .val value => .val (mapAST same value mapC unmapC)
-  | .apply fnTerm arg => .apply (mapAST same fnTerm mapC unmapC) (mapAST same arg mapC unmapC)
-  | .ref carrier under => .ref (mapC (embedRef under same carrier)) .same
-
-@[simp] private def mapBinder {P} {I1 I2 : Type} {l}
-    (same : P = {P with I := IndexEncoding.FreeOrUnit, index := I1})
-    (self : Pre.Binder P l) (mapC : I1 → I2) (unmapC : I2 → I1) :
-    Pre.Binder {P with I := IndexEncoding.FreeOrUnit, index := I2} l :=
-  match self with
-  | .mk body => by
-    have recurse := λ same carrier => mapAST (I1 := I1 ⊕ Unit) (I2 := I2 ⊕ Unit) same (body carrier)
-    rcases P with ⟨byteCode, encoding, index⟩
-    cases same
-    exact .mk (λ carrier => recurse rfl (Sum.map unmapC id carrier) (Sum.map mapC id) (Sum.map unmapC id))
-end
-
-section variable {B I1 I2 : Type} {l}
-/-- Maps an AST to a different carrier while retaining its bytecode type and index encoding. -/
-@[simp] abbrev AST.recarrier :=
-  @mapAST {B := B, I := IndexEncoding.FreeOrUnit, index := I1} I1 I2 l rfl
+  | .TFn tIn tOut => .TFn (AST.recarrier tIn map unmapC) (AST.recarrier tOut map unmapC)
+  | .lit repr => by cases map; exact .lit repr
+  | .fn tIn body => .fn (AST.recarrier tIn map unmapC) (Binder.recarrier body map unmapC)
+  | .val value => .val (AST.recarrier value map unmapC)
+  | .apply fnTerm arg => .apply (AST.recarrier fnTerm map unmapC) (AST.recarrier arg map unmapC)
+  | .ref carrier under => .ref (mapRef under map carrier) .same
 
 /-- Maps a binder's outer carriers while preserving its newest slot, bytecode type, and index encoding. -/
-@[simp] abbrev Binder.recarrier :=
-  @mapBinder {B := B, I := IndexEncoding.FreeOrUnit, index := I1} I1 I2 l rfl
+@[simp] def Binder.recarrier {P Q} {l} (self : Pre.Binder P l)
+    (map : CarrierMap P Q) (unmapC : Q.TRef → P.TRef) : Pre.Binder Q l :=
+  match self with
+  | .mk body => by
+    have recurse := λ {Q} (map : CarrierMap P.Next Q) carrier => AST.recarrier (body carrier) map
+    cases map with
+    | mk mapC =>
+      exact .mk (λ carrier => recurse (.mk (Sum.map mapC id))
+        (Sum.map unmapC id carrier) (Sum.map unmapC id))
 end
 end EnvBase
 
