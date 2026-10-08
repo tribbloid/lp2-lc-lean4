@@ -7,7 +7,7 @@ structure IndexEncoding : Type 2 where
   getTRef (index : Index) : URef
   inc (index : Index) : Index -- TODO: for intrinsically typed AST binder this should be "Index -> Typ -> Index"
 
-namespace Indices
+namespace IndexEncoding
 
 /-- Naive PHOAS binding using an unknown type directly as input; `inc` does nothing. -/
 abbrev Free : IndexEncoding := {Index := Type, getTRef := id, inc := λ T => T}
@@ -31,7 +31,7 @@ abbrev Serial : IndexEncoding := {
   inc := λ t => ⟨t.down + 1⟩
 }
 
-end Indices
+end IndexEncoding
 
 structure Parameters extends HasByteCode where
   I: IndexEncoding
