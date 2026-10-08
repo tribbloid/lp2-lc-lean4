@@ -10,7 +10,7 @@ namespace EnvBase
 
 -- FreeOrUnit is chosen to make verifying binder uniformity easier.
 abbrev P (this : EnvBase) (I : Type := this.UId) : Parameters :=
-  {B := String, I := Indices.FreeOrUnit, index := I}
+  {B := String, I := IndexEncoding.FreeOrUnit, index := I}
 
 section variable (this : EnvBase)
 abbrev AST (l : Label) (I : Type := this.UId) := Pre.AST (this.P I) l
@@ -25,7 +25,7 @@ def Val.asTrm (v : this.Val) : this.Trm := .val v
 
 private def embedRef {source target : Parameters}
     (under : source.Under target) (carrier : source.TRef)
-    (encoding : target.I = Indices.FreeOrUnit) : target.TRef := by
+    (encoding : target.I = IndexEncoding.FreeOrUnit) : target.TRef := by
   cases under with
   | same => exact carrier
   | lower prev =>
@@ -40,8 +40,8 @@ mutual
 /-- Maps an AST to a different carrier. -/
 @[simp]
 def AST.recarrier {P : Parameters} {I2 : Type} {l} (self : Pre.AST P l)
-    (mapC : P.TRef → I2) (unmapC : I2 → P.TRef) (encoding : P.I = Indices.FreeOrUnit) :
-    Pre.AST {P with I := Indices.FreeOrUnit, index := I2} l :=
+    (mapC : P.TRef → I2) (unmapC : I2 → P.TRef) (encoding : P.I = IndexEncoding.FreeOrUnit) :
+    Pre.AST {P with I := IndexEncoding.FreeOrUnit, index := I2} l :=
   match self with
   | .TLit => .TLit
   | .TFn tIn tOut => .TFn (AST.recarrier tIn mapC unmapC encoding) (AST.recarrier tOut mapC unmapC encoding)
@@ -54,8 +54,8 @@ def AST.recarrier {P : Parameters} {I2 : Type} {l} (self : Pre.AST P l)
 /-- Maps the outer carriers of a binder while preserving its newest slot. -/
 @[simp]
 def Binder.recarrier {P : Parameters} {I2 : Type} {l} (self : Pre.Binder P l)
-    (mapC : P.TRef → I2) (unmapC : I2 → P.TRef) (encoding : P.I = Indices.FreeOrUnit) :
-    Pre.Binder {P with I := Indices.FreeOrUnit, index := I2} l :=
+    (mapC : P.TRef → I2) (unmapC : I2 → P.TRef) (encoding : P.I = IndexEncoding.FreeOrUnit) :
+    Pre.Binder {P with I := IndexEncoding.FreeOrUnit, index := I2} l :=
   match self with
   | .mk body => by
     have recurse := λ carrier => AST.recarrier (I2 := I2 ⊕ Unit) (body carrier)

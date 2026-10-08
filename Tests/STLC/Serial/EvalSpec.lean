@@ -26,7 +26,7 @@ example : literalResult (AST.eval Trm.primitiveTrueFnOnFalse knownBindings 2) = 
 example : literalResult (AST.eval Trm.Malformed.idFnOnFalse2 knownBindings 3) = some "false" := rfl
 
 example : literalResult (AST.eval
-    (.ref (P' := { B := String, I := Indices.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)) : Trm 3)
+    (.ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)) : Trm 3)
     (NatBindings.empty.set 1 outerValue) 1) = some "outer" := rfl
 
 example : AST.eval Trm.vFalse .empty 0 = .outOfFuel := rfl

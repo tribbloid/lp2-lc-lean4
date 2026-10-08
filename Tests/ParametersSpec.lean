@@ -3,12 +3,12 @@ import «Lp2lc».Active.Parameters
 namespace Tests.STLC.ParametersSpec
 
 open Lp2lc.Active.Util
-open Indices (FreeOrUnit)
+open IndexEncoding (FreeOrUnit)
 
 section next
 
 -- Rule: do not change order
-private abbrev p0 : Parameters := { B := String, I := Indices.Serial, index := ⟨0⟩ }
+private abbrev p0 : Parameters := { B := String, I := IndexEncoding.Serial, index := ⟨0⟩ }
 
 example : p0.Next.index.down = 1 := rfl
 example : p0.Next.Next.index.down = 2 := rfl

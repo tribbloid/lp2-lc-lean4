@@ -3,7 +3,7 @@ import «Lp2lc».Active.STLC.Hash
 namespace Tests.STLC.HashSpec
 
 open Lean (Json toJson)
-open Lp2lc.Active.Util.Indices.SerialProxy (only)
+open Lp2lc.Active.Util.IndexEncoding.SerialProxy (only)
 open Lp2lc.Active.Util Lp2lc.Active.STLC
 
 section hash
