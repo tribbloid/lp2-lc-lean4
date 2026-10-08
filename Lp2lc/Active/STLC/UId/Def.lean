@@ -8,7 +8,7 @@ structure EnvBase where
 
 namespace EnvBase
 
--- FreeOrUnit is chosen to make verifying binder uniformity easier.
+-- UId contract: open binders only at .inr (); substitute that slot structurally.
 abbrev P (this : EnvBase) (I : Type := this.UId) : Parameters :=
   {B := String, I := IndexEncoding.FreeOrUnit, index := I}
 
