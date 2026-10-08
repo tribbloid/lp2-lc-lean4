@@ -20,8 +20,7 @@ abbrev Trm := this.AST .trm
 abbrev Typ := this.AST .typ
 end
 
-section variable {this : EnvBase}
-def Val.asTrm (v : this.Val) : this.Trm := .val v
+def Val.asTrm {this : EnvBase} (v : this.Val) : this.Trm := .val v
 
 private def embedRef {source target : Parameters}
     (under : source.Under target) (carrier : source.TRef)
@@ -37,33 +36,36 @@ private def embedRef {source target : Parameters}
     exact .inl (previous rfl)
 
 mutual
-/-- Maps an AST to a different carrier. -/
-@[simp]
-def AST.recarrier {P : Parameters} {I2 : Type} {l} (self : Pre.AST P l)
-    (mapC : P.TRef → I2) (unmapC : I2 → P.TRef) (encoding : P.I = IndexEncoding.FreeOrUnit) :
+@[simp] private def mapAST {P} {I2} {l} (enc : P.I = IndexEncoding.FreeOrUnit)
+    (self : Pre.AST P l) (mapC : P.TRef → I2) (unmapC : I2 → P.TRef) :
     Pre.AST {P with I := IndexEncoding.FreeOrUnit, index := I2} l :=
   match self with
   | .TLit => .TLit
-  | .TFn tIn tOut => .TFn (AST.recarrier tIn mapC unmapC encoding) (AST.recarrier tOut mapC unmapC encoding)
+  | .TFn tIn tOut => .TFn (mapAST enc tIn mapC unmapC) (mapAST enc tOut mapC unmapC)
   | .lit repr => .lit repr
-  | .fn tIn body => .fn (AST.recarrier tIn mapC unmapC encoding) (Binder.recarrier body mapC unmapC encoding)
-  | .val value => .val (AST.recarrier value mapC unmapC encoding)
-  | .apply fnTerm arg => .apply (AST.recarrier fnTerm mapC unmapC encoding) (AST.recarrier arg mapC unmapC encoding)
-  | .ref carrier under => .ref (mapC (embedRef under carrier encoding)) .same
+  | .fn tIn body => .fn (mapAST enc tIn mapC unmapC) (mapBinder enc body mapC unmapC)
+  | .val value => .val (mapAST enc value mapC unmapC)
+  | .apply fnTerm arg => .apply (mapAST enc fnTerm mapC unmapC) (mapAST enc arg mapC unmapC)
+  | .ref carrier under => .ref (mapC (embedRef under carrier enc)) .same
 
-/-- Maps the outer carriers of a binder while preserving its newest slot. -/
-@[simp]
-def Binder.recarrier {P : Parameters} {I2 : Type} {l} (self : Pre.Binder P l)
-    (mapC : P.TRef → I2) (unmapC : I2 → P.TRef) (encoding : P.I = IndexEncoding.FreeOrUnit) :
+@[simp] private def mapBinder {P} {I2} {l} (enc : P.I = IndexEncoding.FreeOrUnit)
+    (self : Pre.Binder P l) (mapC : P.TRef → I2) (unmapC : I2 → P.TRef) :
     Pre.Binder {P with I := IndexEncoding.FreeOrUnit, index := I2} l :=
   match self with
   | .mk body => by
-    have recurse := λ carrier => AST.recarrier (I2 := I2 ⊕ Unit) (body carrier)
-    rcases P with ⟨byteCode, encoding2, index⟩
-    cases encoding
-    exact .mk (λ carrier => recurse (Sum.map unmapC id carrier) (Sum.map mapC id) (Sum.map unmapC id) rfl)
+    have recurse := λ carrier enc => mapAST (I2 := I2 ⊕ Unit) enc (body carrier)
+    rcases P with ⟨byteCode, enc2, index⟩
+    cases enc
+    exact .mk (λ carrier => recurse (Sum.map unmapC id carrier) rfl (Sum.map mapC id) (Sum.map unmapC id))
 end
-end
+
+/-- Maps an AST to a different carrier with fixed String bytecode and FreeOrUnit encoding. -/
+@[simp] abbrev AST.recarrier {I1 I2 : Type} {l} :=
+  @mapAST (P ⟨I1⟩) I2 l rfl
+
+/-- Maps a binder's outer carriers while preserving its newest slot and fixed encoding. -/
+@[simp] abbrev Binder.recarrier {I1 I2 : Type} {l} :=
+  @mapBinder (P ⟨I1⟩) I2 l rfl
 end EnvBase
 
 structure ExeEnv extends base : EnvBase where
