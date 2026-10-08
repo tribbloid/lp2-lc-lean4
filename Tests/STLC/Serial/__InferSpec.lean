@@ -23,7 +23,7 @@ private def fnBindings : ExeBindings := (NatBindings.empty.set 0 fnValue).set 1 
 
 private def mixedBindings : ExeBindings := fnBindings.set 1 literalValue
 
-private def innerRef : Trm 1 := .ref (P' := { B := String, I := .Serial, index := ⟨1⟩ }) .only .same
+private def innerRef : Trm 1 := .ref (P' := { B := String, I := Indices.Serial, index := ⟨1⟩ }) .only .same
 
 #guard vFalse.infer.shouldYieldsBool 1 .TLit
 
