@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.UId.InferDef
+import «Lp2lc».Active.STLC.UId.__Infer
 import «Lp2lc».Active.STLC.UId.Eval
 
 namespace Lp2lc.Active.STLC

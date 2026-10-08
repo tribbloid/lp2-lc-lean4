@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.UId.SyntaxDef
+import «Lp2lc».Active.STLC.UId.Def
 
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
