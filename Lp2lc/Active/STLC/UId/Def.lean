@@ -27,7 +27,7 @@ section variable {this : EnvBase}
 
 def Val.asTrm {this : EnvBase} (v : this.Val) : this.Trm := .val v
 
-/-- map an AST to use a different carrier -/
+/-- Maps an AST to a different carrier. -/
 @[simp]
 def AST.recarrier {l} (self : this.AST l) (I2: Type) : this.AST I2 l :=
   match self with
