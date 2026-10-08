@@ -29,8 +29,8 @@ end Val
 structure ExeValue : Type 2 where
   n : Nat
   value : Val n
-  captured : Bindings ExeValue
+  captured : NatBindings ExeValue
 
-abbrev ExeBindings := Bindings ExeValue -- append-only
+abbrev ExeBindings := NatBindings ExeValue -- append-only
 
 end STLC

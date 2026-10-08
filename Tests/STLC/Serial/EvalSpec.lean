@@ -15,7 +15,7 @@ private def literalResult (result : Rec.Outcome (Option ExeValue)) : Option Stri
 
 private def outerValue : ExeValue :=
   .mk 0 (.lit "outer") .empty
-private def knownBindings : ExeBindings := (Bindings.empty.set 0 outerValue).set 1 outerValue
+private def knownBindings : ExeBindings := (NatBindings.empty.set 0 outerValue).set 1 outerValue
 
 example : literalResult (AST.eval Trm.primitiveIdFnOnFalse .empty 2) = some "false" := rfl
 example : literalResult (AST.eval Trm.get1stOnTuple .empty 3) = some "false" := rfl
@@ -27,7 +27,7 @@ example : literalResult (AST.eval Trm.Malformed.idFnOnFalse2 knownBindings 3) = 
 
 example : literalResult (AST.eval
     (.ref (P' := { B := String, I := .Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)) : Trm 3)
-    (Bindings.empty.set 1 outerValue) 1) = some "outer" := rfl
+    (NatBindings.empty.set 1 outerValue) 1) = some "outer" := rfl
 
 example : AST.eval Trm.vFalse .empty 0 = .outOfFuel := rfl
 example : AST.eval Trm.Malformed.primitiveApply .empty 2 = .yield none := rfl

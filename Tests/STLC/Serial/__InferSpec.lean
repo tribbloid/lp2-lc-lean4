@@ -17,9 +17,9 @@ private def literalValue : ExeValue := .mk 0 (.lit bTrue) .empty
 private def fnValue : ExeValue :=
   .mk 0 (.fn .TLit (.mk (λ proxy => .ref proxy .same))) .empty
 
-private def literalBindings : ExeBindings := Bindings.empty.set 0 literalValue
+private def literalBindings : ExeBindings := NatBindings.empty.set 0 literalValue
 
-private def fnBindings : ExeBindings := (Bindings.empty.set 0 fnValue).set 1 fnValue
+private def fnBindings : ExeBindings := (NatBindings.empty.set 0 fnValue).set 1 fnValue
 
 private def mixedBindings : ExeBindings := fnBindings.set 1 literalValue
 
@@ -76,7 +76,7 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := .Serial, index :
 
 #guard (AST.infer (.apply FreeCapture.directRef primitiveIdFn) fnBindings).shouldFailBool 4
 
-#guard match FreeCapture.capturedRef.eval (Bindings.empty.set 0 literalValue) 1 with
+#guard match FreeCapture.capturedRef.eval (NatBindings.empty.set 0 literalValue) 1 with
   | .yield (some closure) =>
     let bindings := mixedBindings.set 1 closure
     (innerRef.infer bindings).shouldYieldsBool 4 (.TFn .TLit .TLit) &&

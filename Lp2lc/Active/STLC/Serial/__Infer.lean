@@ -5,7 +5,7 @@ namespace AST
 
 abbrev ValOrTyp := ExeValue ⊕ Typ -- Inference at a breakpoint accepts runtime values or types.
 
-abbrev BuildBindings := Bindings ValOrTyp -- append-only
+abbrev BuildBindings := NatBindings ValOrTyp -- append-only
 
 /-- Convert `Typ n` to `Typ 0`, preserving its structure without consuming inference fuel. -/
 def resolveType {n} (self : Typ n) : Typ :=
