@@ -9,7 +9,7 @@ import «Lp2lc».Active.STLC.STLCDef
 For an outer carrier `C`, a binder extends references to `C ⊕ Unit`: `.inl outer` retains an outer
 reference, and `.inr ()` denotes the newest bound slot. Nested binders repeat this extension, giving
 `(C ⊕ Unit) ⊕ Unit` at the next depth. References may retain an earlier source context through an
-`Under` witness; carrier transport embeds them into the target context's reference carrier.
+`Under` witness; carrier transport maps them into the target context's reference carrier.
 -/
 
 namespace Lp2lc.Active.STLC
