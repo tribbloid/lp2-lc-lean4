@@ -2,7 +2,7 @@ import «Lp2lc».Active.Util
 
 namespace Lp2lc.Active.Util
 
-structure Indices : Type 2 where
+structure IndexEncoding : Type 2 where
   Index : Type 1
   getTRef (index : Index) : URef
   inc (index : Index) : Index -- TODO: for intrinsically typed AST binder this should be "Index -> Typ -> Index"
@@ -10,7 +10,7 @@ structure Indices : Type 2 where
 namespace Indices
 
 /-- Naive PHOAS binding using an unknown type directly as input; `inc` does nothing. -/
-abbrev Free : Indices := {Index := Type, getTRef := id, inc := λ T => T}
+abbrev Free : IndexEncoding := {Index := Type, getTRef := id, inc := λ T => T}
 
 /--
 Every new binder mixes in a tagged Unit.
@@ -18,14 +18,14 @@ At first the binder body may lack uniformity. It has to be verified first in sem
 
 substitute (body (.inr .unit)) v == body (.inl v)
  -/
-abbrev FreeOrUnit : Indices := {Index := Type, getTRef := id, inc := λ T => T ⊕ Unit}
+abbrev FreeOrUnit : IndexEncoding := {Index := Type, getTRef := id, inc := λ T => T ⊕ Unit}
 
 /-- A proxy whose type records a lexical context slot. -/
 inductive SerialProxy : Nat → URef where
 | only {C : Nat} : SerialProxy C
 
 /-- De Bruijn serial: index is fixed and incremental for every binder position-/
-abbrev Serial : Indices := {
+abbrev Serial : IndexEncoding := {
   Index := ULift.{1} Nat
   getTRef := λ t => SerialProxy t.down
   inc := λ t => ⟨t.down + 1⟩
@@ -34,7 +34,7 @@ abbrev Serial : Indices := {
 end Indices
 
 structure Parameters extends HasByteCode where
-  I: Indices
+  I: IndexEncoding
   index: I.Index
 
 namespace Parameters
