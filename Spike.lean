@@ -1,1 +1,1 @@
-import «Spike».package
+import «Spike».mod

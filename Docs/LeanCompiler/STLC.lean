@@ -1,1 +1,1 @@
-import «LeanCompiler».STLC.package
+import «LeanCompiler».STLC.mod

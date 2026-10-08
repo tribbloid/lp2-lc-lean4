@@ -1,1 +1,1 @@
-import «Phoas».package
+import «Phoas».mod

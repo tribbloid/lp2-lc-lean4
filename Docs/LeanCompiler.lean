@@ -1,1 +1,1 @@
-import «LeanCompiler».package
+import «LeanCompiler».mod
