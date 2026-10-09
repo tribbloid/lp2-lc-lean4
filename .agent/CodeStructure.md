@@ -6,7 +6,7 @@
     - Lean source code:
         - `<module-name>Def.lean`: definitions, types, and supporting data structures.
         - `Proof.lean`: theorems and proofs.
-        - `package.lean`: module aggregator; active imports compile modules, while import comments record
+        - `mod.lean`: module aggregator; active imports compile modules, while import comments record
               disabled modules.
     - Markdown documents:
         - `TODO.md`: problems irrelevant to the current task that can be addressed later.

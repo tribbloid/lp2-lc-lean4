@@ -42,9 +42,9 @@ Opening the callback at `.inl receipt` could expose nonuniform behavior. Instead
 that receipt into the canonical body's bound slot. The callback never receives the receipt being
 substituted, so these operations do not require uniformity across its other possible inputs.
 
-Under this opening contract, the binder has the same operational role as the stored first-order body
-in `STLCv4_FreeOrUnit`. The shared function type still permits arbitrary callbacks; equivalence here
-concerns canonical bodies and structural substitution, not equality at every callback input.
+Under this opening contract, a binder represents its fixed canonical body together with structural
+substitution. The shared function type still permits arbitrary callbacks; equivalence here concerns
+canonical bodies and structural substitution, not equality at every callback input.
 -/
 abbrev Binder (l : Label) (I : Type := this.UId) := Pre.Binder (this.P I) l
 abbrev Val := this.AST .val
