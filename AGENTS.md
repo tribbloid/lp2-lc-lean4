@@ -49,15 +49,14 @@ Tests/AGENTS.md are not exhaustive.
 
 #### Do
 
-- Core proof and calculus modules should move executable checks to `Tests`. Tutorial/demo modules may contain `example`,
-      `#eval`, `#check`, or `#rfl` commands when those commands are the point of the demonstration.
+- Core proof and calculus modules should move executable checks to `Tests`. Tutorial/demo modules may contain `example`, `#eval`, `#check`, or `#rfl` commands when those commands are the point of the demonstration.
 - Function definitions (including type and case constructors) should:
     - Use binder/parameter style if applicable instead of arrow style.
     - Name all arguments.
-- Do not repeat pattern-match conditions; keep them as short as possible.
 - Multiple functions with the same namespace prefix should be grouped into as few explicit namespace blocks as possible.
 - If multiple functions in a namespace block can be shortened with shared section variables, they should be.
 - Shorten function calls with dot notation when possible.
+- Inline trivial functions or wrappers that are used only once.
 - Every permanent (non-temporary) Lean file must be mentioned in its module aggregator with either:
     - an import clause (`import XXX`), or
     - an import comment (`-- import XXX`).
@@ -67,10 +66,9 @@ Tests/AGENTS.md are not exhaustive.
 - Do not add `unsafe`, `noncomputable`, or `partial` declarations/blocks.
 - Do not introduce axioms without an explicit request.
 - Do not write multiple cases in pattern matching in 1 line; each case should be in its own line starting with `|`.
-- Do not add compiler public API for an already-defined feature (e.g. type-checking, evaluation). Each feature should
-      have only one public definition.
+- Do not add compiler public API for an already-defined feature (e.g. type-checking, evaluation). Each feature should have only one public definition.
 - Do not overuse generic universes when fixed levels suffice (`Prop`, `Type`, `Type 1`, `Type 2`).
-- Do not write trivial, short wrapper function: its body should be inlined.
+- Do not repeat pattern-match conditions; keep them as short as possible.
 - Do not export definition, only open at callsite.
 - Do not write unnecessary arguments at call sites.
 - Do not create Lean file with `.` in file name.
