@@ -3,37 +3,44 @@ import «Lp2lc».Active.STLC.UId.Eval
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
-/-- Compile-time minting is limited to the type view of the shared receipt table. -/
+/-- Compile-time minting accepts types or canonical values without requiring an executable environment. -/
 class BuildEnv (refs : UIdRefs) where
-  uid2typ : refs.uid2both.Lesser refs.UId refs.base.Typ
-  uid2typCtx : KVEquiv uid2typ.toKVRefs
-  typeOnly : uid2typ.upcastV.toFun = Sum.inr
+  uid2bothCtx : KVEquiv (⟨λ receipt => Sum.map id (Quot.mk _) (refs.uid2both.get receipt)⟩ :
+    KVRefs refs.UId (refs.base.Typ ⊕ Quot (EnvBase.Val.Same (base := refs.base))))
 
 namespace EnvBase.Trm
 
-/-- Infers from shared values or types without executing values or minting value receipts.
+/-- Infers runtime terms without executing values; lexical build bindings may contain values or types.
 
-Binders open only at `.inr ()`; the minted type receipt replaces that structural slot.
-Every recursive inference consumes predecessor fuel, including a shared value lookup.
+Bindings retain their origin: left receipts belong to lexical build slots, while right receipts are
+runtime references. Binders open only at `.inr ()` and bind that slot to the minted type receipt without
+merging it with free references. Stored values are inferred with runtime references only.
 -/
-def infer {refs : UIdRefs} [env : BuildEnv refs] (self : refs.base.Trm) : RecOpt refs.base.Typ
+def infer {refs : UIdRefs} [env : BuildEnv refs] (self : refs.base.Trm) : RecOpt refs.base.Typ :=
+  visit self Sum.inr
+where
+  visit {base : EnvBase} (self : base.Trm) (bindings : base.UId → refs.UId ⊕ refs.UId) : RecOpt refs.base.Typ
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
     | .val (.lit _) => .yield (some .TLit)
     | .val (.fn tIn body) =>
-      let receipt := env.uid2typ.upcastK (env.uid2typCtx.inv tIn)
-      (infer (EnvBase.Binder.apply body receipt) fuel).map (Option.map (.TFn tIn))
+      let input := AST.recarrier tIn (.mk (Sum.elim id id ∘ bindings))
+      let receipt := env.uid2bothCtx.inv (.inl input)
+      (visit (base := ⟨base.UId ⊕ Unit⟩) (Pre.Binder.apply body (.inr ()))
+        (Sum.elim bindings (λ _ => .inl receipt)) fuel).map (Option.map (.TFn input))
     | .apply fnTerm arg =>
-      match infer fnTerm fuel, infer arg fuel with
+      match visit fnTerm bindings fuel, visit arg bindings fuel with
       | .yield (some (.TFn tIn tOut)), .yield (some argTyp) =>
         .yield (if argTyp ≤ tIn then some tOut else none)
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
     | .ref carrier under =>
-      match refs.uid2both.get (mapRef under (.mk id) carrier) with
-      | .inl value => infer value.asTrm fuel
-      | .inr typ => .yield (some typ)
+      let origin := mapRef under (.mk bindings) carrier
+      match refs.uid2both.get (origin.elim id id), origin with
+      | .inl typ, .inl _ => .yield (some typ)
+      | .inl _, .inr _ => .yield none
+      | .inr value, _ => visit value.asTrm Sum.inr fuel
 
 end EnvBase.Trm
 end Lp2lc.Active.STLC
