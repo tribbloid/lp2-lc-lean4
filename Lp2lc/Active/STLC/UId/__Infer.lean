@@ -5,7 +5,7 @@ open Lp2lc.Active.Util
 
 /-- Compile-time minting is limited to the type view of the shared receipt table. -/
 class BuildEnv (refs : UIdRefs) where
-  TypId : Type
+  TypId : Type -- TODO: remove, should always be refs.UId
   uid2typ : refs.uid2any.Lesser TypId refs.base.Typ
   uid2typCtx : KVEquiv uid2typ.toKVRefs
   typeOnly : uid2typ.upcastV.toFun = Sum.inr
