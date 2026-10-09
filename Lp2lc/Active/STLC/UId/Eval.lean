@@ -17,10 +17,9 @@ A raw `KVEquiv` on functional values would require equality at every callback in
 UId's canonical-opening contract. The equivalence therefore stores canonical-value observations.
 -/
 class ExeEnv (refs : UIdRefs) where
-  ValId : Type -- TODO: remove, should always be refs.UId
-  uid2val : refs.uid2any.Lesser ValId refs.base.Val
+  uid2val : refs.uid2any.Lesser refs.UId refs.base.Val
   uid2valCtx : KVEquiv (⟨λ receipt => Quot.mk _ (uid2val.get receipt)⟩ :
-    KVRefs ValId (Quot (EnvBase.Val.Same (base := refs.base))))
+    KVRefs refs.UId (Quot (EnvBase.Val.Same (base := refs.base))))
   valueOnly : uid2val.upcastV.toFun = Sum.inl
 
 namespace EnvBase.Trm
