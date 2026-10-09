@@ -5,7 +5,7 @@ open Lp2lc.Active.Util
 
 /-- Compile-time minting is limited to the type view of the shared receipt table. -/
 class BuildEnv (refs : UIdRefs) where
-  uid2typ : refs.uid2any.Lesser refs.UId refs.base.Typ
+  uid2typ : refs.uid2both.Lesser refs.UId refs.base.Typ
   uid2typCtx : KVEquiv uid2typ.toKVRefs
   typeOnly : uid2typ.upcastV.toFun = Sum.inr
 
@@ -31,7 +31,7 @@ def infer {refs : UIdRefs} [env : BuildEnv refs] (self : refs.base.Trm) : RecOpt
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
     | .ref carrier under =>
-      match refs.uid2any.get (mapRef under (.mk id) carrier) with
+      match refs.uid2both.get (mapRef under (.mk id) carrier) with
       | .inl value => infer value.asTrm fuel
       | .inr typ => .yield (some typ)
 

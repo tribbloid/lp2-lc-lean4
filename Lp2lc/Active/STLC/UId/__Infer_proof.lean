@@ -12,7 +12,7 @@ structure RuntimeContext (refs : UIdRefs) where
   base : EnvBase
   values : KVRefs base.UId base.Val
   embed : base.UId → refs.UId
-  compatible : ∀ receipt, (refs.uid2any.get (embed receipt)).elim
+  compatible : ∀ receipt, (refs.uid2both.get (embed receipt)).elim
     (λ value => Val.Same value (AST.recarrier (values.get receipt) (.mk embed))) (λ _ => False)
 
 section variable {refs : UIdRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
@@ -187,7 +187,7 @@ private theorem inferMonotone (trm : refs.base.Trm) (less more : Nat)
         all_goals simpa only [hf, ha, ih _ _ _ le hf, ih _ _ _ le ha] using h
       | ref carrier under =>
         rw [infer] at h ⊢
-        cases lookup : refs.uid2any.get (mapRef under (.mk id) carrier) with
+        cases lookup : refs.uid2both.get (mapRef under (.mk id) carrier) with
         | inl value =>
           simp only [lookup] at h ⊢
           exact ih _ _ _ le h
@@ -290,7 +290,7 @@ private theorem inferReplace {base : EnvBase} {trm : base.Trm}
         simp [hRefl]⟩
 
 private theorem mintedTypeLookup (typ : refs.base.Typ) :
-    refs.uid2any.get (build.uid2typ.upcastK (build.uid2typCtx.inv typ)) = .inr typ := by
+    refs.uid2both.get (build.uid2typ.upcastK (build.uid2typCtx.inv typ)) = .inr typ := by
   have lookup := build.uid2typ.equivariance (build.uid2typCtx.inv typ)
   rw [build.typeOnly, build.uid2typCtx.rightInv] at lookup
   exact lookup.symm
@@ -308,7 +308,7 @@ private theorem contextExtendCompatible {refs : UIdRefs} [exe : ExeEnv refs]
       | .inl outer => AST.recarrier (context.values.get outer) (.mk Sum.inl)
       | .inr () => AST.recarrier sourceValue (.mk Sum.inl)⟩
     let embed : base.UId → refs.UId := Sum.elim context.embed (λ _ => receipt)
-    ∀ carrier, (refs.uid2any.get (embed carrier)).elim
+    ∀ carrier, (refs.uid2both.get (embed carrier)).elim
       (λ found => Val.Same found (AST.recarrier (values.get carrier) (.mk embed))) (λ _ => False) := by
   dsimp only
   intro carrier
@@ -366,7 +366,7 @@ private theorem inferEvalSource (context : RuntimeContext refs) (trm : context.b
           mapRefComp under (.mk id) (.mk context.embed) carrier
         simp only [AST.recarrier, mapped, eval.eq_4, mapRef, id]
         have compatible := context.compatible receipt
-        cases lookup : refs.uid2any.get (context.embed receipt) with
+        cases lookup : refs.uid2both.get (context.embed receipt) with
         | inr annotation => simp only [lookup, Sum.elim] at compatible
         | inl value =>
           simp only [AST.recarrier, mapped, infer.eq_5, mapRef, id, lookup] at hInfer

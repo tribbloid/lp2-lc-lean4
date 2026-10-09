@@ -50,6 +50,9 @@ abbrev Binder (l : Label) (I : Type := this.UId) := Pre.Binder (this.P I) l
 abbrev Val := this.AST .val
 abbrev Trm := this.AST .trm
 abbrev Typ := this.AST .typ
+
+abbrev TypOrVal := this.Typ ⊕ this.Val
+
 end
 
 def Val.asTrm {this : EnvBase} (v : this.Val) : this.Trm := .val v
@@ -57,6 +60,6 @@ end EnvBase
 
 /-- One read-only receipt view shared by compile-time type lookup and runtime value lookup. -/
 structure UIdRefs extends base : EnvBase where
-  uid2any : KVRefs UId (base.Val ⊕ base.Typ)
+  uid2both : KVRefs UId (base.TypOrVal)
 
 end Lp2lc.Active.STLC
