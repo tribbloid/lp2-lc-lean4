@@ -1,5 +1,4 @@
-import «Lp2lc».Active.STLC.UId.InferDef
-import «Lp2lc».Active.STLC.UId.Eval
+import «Lp2lc».Active.STLC.UId.__Infer
 
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util EnvBase EnvBase.Trm
