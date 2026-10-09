@@ -305,8 +305,10 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
                 simpa only [eval.eq_3, hFnEval, hArgEval] using
                   ih (Binder.apply body receipt) bodyFuel typ hRuntimeBody
 
+namespace Fundamental
+
 /-- Successful runtime inference excludes evaluation rejection and preserves the result's type. -/
-theorem fundamental (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
+theorem main (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
     (hInfer : trm.infer fuel = .yield (some typ)) : Safety trm typ := by
   intro evalFuel
   have safe := inferEvalSafety trm fuel typ hInfer evalFuel
@@ -316,6 +318,8 @@ theorem fundamental (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
     obtain ⟨valueFuel, typed⟩ := safe
     exact ⟨valueFuel, by rw [typed]; exact (rfl : typ ≤ typ)⟩
   · trivial
+
+end Fundamental
 
 end
 end Lp2lc.Active.STLC
