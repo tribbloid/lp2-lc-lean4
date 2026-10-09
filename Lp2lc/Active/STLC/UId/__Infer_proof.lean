@@ -55,8 +55,7 @@ private theorem recarrierComp {P Q R l} (self : Pre.AST P l)
   | mk body ih =>
     rename_i Q R first second
     cases first with
-    | @mk B C D first =>
-      cases second with
+    | @mk B C D first => cases second with
       | @mk _ _ E second =>
         change Pre.Binder.mk (P := {B := B, I := IndexEncoding.FreeOrUnit, index := E})
           (λ _ => AST.recarrier (AST.recarrier (body (.inr ()))
@@ -71,36 +70,27 @@ private theorem recarrierComp {P Q R l} (self : Pre.AST P l)
   | TLit => cases first; cases second; rfl
   | lit repr => cases first; cases second; rfl
   | TFn tIn tOut ihIn ihOut =>
-    cases first with
-    | mk first =>
-      cases second with
-      | mk second =>
-        simp only [AST.recarrier]
-        rw [ihIn (.mk first) (.mk second), ihOut (.mk first) (.mk second)]
+    cases first; cases second
+    rename_i _ _ _ first _ second
+    simp only [AST.recarrier]
+    rw [ihIn (.mk first) (.mk second), ihOut (.mk first) (.mk second)]
   | fn tIn body ihIn ihBody =>
-    cases first with
-    | mk first =>
-      cases second with
-      | mk second =>
-        simp only [AST.recarrier]
-        rw [ihIn (.mk first) (.mk second), ihBody (.mk first) (.mk second)]
+    cases first; cases second
+    rename_i _ _ _ first _ second
+    simp only [AST.recarrier]
+    rw [ihIn (.mk first) (.mk second), ihBody (.mk first) (.mk second)]
   | val value ih =>
-    cases first with
-    | mk first =>
-      cases second with
-      | mk second =>
-        exact congrArg Pre.AST.val (ih (.mk first) (.mk second))
+    cases first; cases second
+    rename_i _ _ _ first _ second
+    exact congrArg Pre.AST.val (ih (.mk first) (.mk second))
   | apply fn arg ihFn ihArg =>
-    cases first with
-    | mk first =>
-      cases second with
-      | mk second =>
-        simp only [AST.recarrier]
-        rw [ihFn (.mk first) (.mk second), ihArg (.mk first) (.mk second)]
+    cases first; cases second
+    rename_i _ _ _ first _ second
+    simp only [AST.recarrier]
+    rw [ihFn (.mk first) (.mk second), ihArg (.mk first) (.mk second)]
   | ref carrier under =>
     cases first with
-    | mk first =>
-      cases second with
+    | mk first => cases second with
       | mk second =>
         exact congrArg (λ carrier => Pre.AST.ref carrier .same)
           (mapRefComp under (.mk first) (.mk second) carrier).symm
@@ -189,28 +179,18 @@ private theorem inferMonotone (trm : refs.base.Trm) (less more : Nat)
               (build.uid2typ.upcastK (build.uid2typCtx.inv tIn))) less with
           | outOfFuel => simp [hb, Rec.Outcome.map] at h
           | yield inferred =>
-            have hm := ih (trm := EnvBase.Binder.apply body
-              (build.uid2typ.upcastK (build.uid2typCtx.inv tIn)))
-              (more := more) (result := inferred) le hb
-            simpa only [hb, hm] using h
+            simpa only [hb, ih _ _ _ le hb] using h
       | apply fnTerm arg =>
         rw [infer] at h ⊢
-        cases hf : infer fnTerm less with
-        | outOfFuel =>
-          cases ha : infer arg less <;> simp [hf, ha] at h
-        | yield fnType =>
-          cases ha : infer arg less with
-          | outOfFuel => simp [hf, ha] at h
-          | yield argType =>
-            have hfm := ih (trm := fnTerm) (more := more) (result := fnType) le hf
-            have ham := ih (trm := arg) (more := more) (result := argType) le ha
-            simpa only [hf, ha, hfm, ham] using h
+        cases hf : infer fnTerm less <;> cases ha : infer arg less
+        all_goals try (simp [hf, ha] at h)
+        all_goals simpa only [hf, ha, ih _ _ _ le hf, ih _ _ _ le ha] using h
       | ref carrier under =>
         rw [infer] at h ⊢
         cases lookup : refs.uid2any.get (mapRef under (.mk id) carrier) with
         | inl value =>
           simp only [lookup] at h ⊢
-          exact ih (trm := value.asTrm) (more := more) (result := result) le h
+          exact ih _ _ _ le h
         | inr typ => simpa only [lookup] using h
 
 private theorem inferCanonical (trm : refs.base.Trm) (fuel : Nat) :
@@ -251,15 +231,11 @@ private theorem inferFnSuccess {annotation : refs.base.Typ} {body : refs.base.Bi
     ∃ output, infer (Binder.apply body (build.uid2typ.upcastK (build.uid2typCtx.inv annotation))) fuel =
       .yield (some output) ∧ typ = .TFn annotation output := by
   rw [infer.eq_3] at hInfer
-  cases hBody : infer (Binder.apply body (build.uid2typ.upcastK (build.uid2typCtx.inv annotation))) fuel with
-  | outOfFuel => rw [hBody] at hInfer; cases hInfer
-  | yield result =>
-    cases result with
-    | none => rw [hBody] at hInfer; cases hInfer
-    | some output =>
-      rw [hBody] at hInfer
-      have equality : Pre.AST.TFn annotation output = typ := Option.some.inj (Rec.Outcome.yield.inj hInfer)
-      exact ⟨output, rfl, equality.symm⟩
+  rcases hBody : infer (Binder.apply body (build.uid2typ.upcastK (build.uid2typCtx.inv annotation))) fuel
+      with (_ | output) | _ <;> rw [hBody] at hInfer
+  · cases hInfer
+  · exact ⟨output, rfl, (Option.some.inj (Rec.Outcome.yield.inj hInfer)).symm⟩
+  · cases hInfer
 
 /-- Preserve successful inference when every source receipt remains inferable at its type. -/
 private theorem inferReplace {base : EnvBase} {trm : base.Trm}
@@ -292,24 +268,16 @@ private theorem inferReplace {base : EnvBase} {trm : base.Trm}
             | inr slot => exact ⟨sourceFuel, hSource⟩) hBody
         exact ⟨bodyFuel + 1, by
           simp only [AST.recarrier, infer.eq_3]
-          rw [← inputEqual, applyRecarrier]
-          change (infer (AST.recarrier (Pre.Binder.apply body (.inr ()))
-            (.mk (Sum.elim second (λ _ => receipt)))) bodyFuel).map
-              (Option.map (Pre.AST.TFn (AST.recarrier annotation (.mk first)))) = _
-          rw [hTarget]
+          rw [← inputEqual, applyRecarrier, hTarget]
           rfl⟩
     | ref carrier under =>
       have mapped : mapRef under (.mk first) carrier = first (mapRef under (.mk id) carrier) :=
         mapRefComp under (.mk id) (.mk first) carrier
       have mappedTarget : mapRef under (.mk second) carrier = second (mapRef under (.mk id) carrier) :=
         mapRefComp under (.mk id) (.mk second) carrier
-      change infer (.ref (mapRef under (.mk first) carrier) .same) (fuel + 1) = _ at hInfer
-      rw [mapped] at hInfer
+      simp only [AST.recarrier, mapped] at hInfer
       obtain ⟨targetFuel, hTarget⟩ := hReplace (mapRef under (.mk id) carrier) typ (fuel + 1) hInfer
-      exact ⟨targetFuel, by
-        change infer (.ref (mapRef under (.mk second) carrier) .same) targetFuel = _
-        rw [mappedTarget]
-        exact hTarget⟩
+      exact ⟨targetFuel, by simpa only [AST.recarrier, mappedTarget] using hTarget⟩
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
@@ -346,20 +314,12 @@ private theorem contextExtendCompatible {refs : UIdRefs} [exe : ExeEnv refs]
   intro carrier
   cases carrier with
   | inl outer =>
-    change (refs.uid2any.get (context.embed outer)).elim
-      (λ found => Val.Same found (AST.recarrier
-        (AST.recarrier (context.values.get outer) (.mk Sum.inl))
-        (.mk (Sum.elim context.embed (λ _ =>
-          exe.uid2val.upcastK (exe.uid2valCtx.inv (Quot.mk _ value))))))) (λ _ => False)
+    dsimp only [Sum.elim]
     rw [transportPreserved (context.values.get outer) Sum.inl _ context.embed (λ _ => rfl)]
     exact context.compatible outer
   | inr slot =>
     cases slot
-    change (refs.uid2any.get
-      (exe.uid2val.upcastK (exe.uid2valCtx.inv (Quot.mk _ value)))).elim
-      (λ found => Val.Same found (AST.recarrier (AST.recarrier sourceValue (.mk Sum.inl))
-        (.mk (Sum.elim context.embed (λ _ =>
-          exe.uid2val.upcastK (exe.uid2valCtx.inv (Quot.mk _ value))))))) (λ _ => False)
+    dsimp only [Sum.elim]
     have lookup := exe.uid2val.equivariance (exe.uid2valCtx.inv (Quot.mk _ value))
     rw [exe.valueOnly] at lookup
     rw [← lookup]
@@ -374,12 +334,7 @@ private theorem mintedValueInfer (value : refs.base.Val) {fuel : Nat} {typ : ref
       .yield (some typ) := by
   have lookup := exe.uid2val.equivariance (exe.uid2valCtx.inv (Quot.mk _ value))
   rw [exe.valueOnly] at lookup
-  rw [infer.eq_5]
-  change (match refs.uid2any.get (exe.uid2val.upcastK (exe.uid2valCtx.inv (Quot.mk _ value))) with
-    | .inl value => infer value.asTrm fuel
-    | .inr typ => .yield (some typ)) = _
-  rw [← lookup]
-  change infer (exe.uid2val.get (exe.uid2valCtx.inv (Quot.mk _ value))).asTrm fuel = _
+  simp only [infer.eq_5, mapRef, id, ← lookup]
   rw [inferValueSame _ value (mintedValueSame value)]
   exact hInfer
 
@@ -409,150 +364,107 @@ private theorem inferEvalSource (context : RuntimeContext refs) (trm : context.b
         let receipt := mapRef under (.mk id) carrier
         have mapped : mapRef under (.mk context.embed) carrier = context.embed receipt :=
           mapRefComp under (.mk id) (.mk context.embed) carrier
-        change infer (.ref (mapRef under (.mk context.embed) carrier) .same) (inferFuel + 1) = _ at hInfer
-        change (match eval (.ref (mapRef under (.mk context.embed) carrier) .same) (evalFuel + 1) with
-          | .outOfFuel => True
-          | .yield none => False
-          | .yield (some value) => _)
-        rw [mapped, eval.eq_4]
-        simp only [mapRef, id]
+        simp only [AST.recarrier, mapped, eval.eq_4, mapRef, id]
         have compatible := context.compatible receipt
         cases lookup : refs.uid2any.get (context.embed receipt) with
-        | inr annotation =>
-          simp only [lookup, Sum.elim] at compatible
+        | inr annotation => simp only [lookup, Sum.elim] at compatible
         | inl value =>
-          rw [mapped, infer.eq_5] at hInfer
-          change (match refs.uid2any.get (context.embed receipt) with
-            | .inl value => infer value.asTrm inferFuel
-            | .inr typ => .yield (some typ)) = _ at hInfer
-          rw [lookup] at hInfer
+          simp only [AST.recarrier, mapped, infer.eq_5, mapRef, id, lookup] at hInfer
           exact ⟨context, id, (λ _ => rfl), context.values.get receipt,
             (by simpa only [lookup, Sum.elim] using compatible), inferFuel, hInfer⟩
       | apply fn arg =>
         obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
         have safeFn := ih context fn inferFuel (.TFn input typ) hFn
-        cases fnEval : eval (AST.recarrier fn (.mk context.embed)) evalFuel with
-        | outOfFuel =>
-          cases eval (AST.recarrier arg (.mk context.embed)) evalFuel <;>
-            simp [AST.recarrier, eval.eq_3, fnEval]
-        | yield fnResult =>
-          cases fnResult with
-          | none => simp [fnEval] at safeFn
-          | some fnValue =>
-            simp only [fnEval] at safeFn
-            obtain ⟨fnContext, fnExtend, fnPreserves, sourceFn, fnSame, fnFuel, fnInfer⟩ := safeFn
+        rcases fnEval : eval (AST.recarrier fn (.mk context.embed)) evalFuel with (_ | fnValue) | _
+        · simp [fnEval] at safeFn
+        · simp only [fnEval] at safeFn
+          obtain ⟨fnContext, fnExtend, fnPreserves, sourceFn, fnSame, fnFuel, fnInfer⟩ := safeFn
+          cases fnFuel with
+          | zero => simp [infer] at fnInfer
+          | succ fnFuel =>
             cases fnValue with
             | lit repr =>
-              cases fnFuel with
-              | zero => simp [infer] at fnInfer
-              | succ fnFuel =>
-                simp only [Val.asTrm, infer.eq_2, Rec.Outcome.yield.injEq] at fnInfer
-                cases fnInfer
+              simp only [Val.asTrm, infer.eq_2, Rec.Outcome.yield.injEq] at fnInfer
+              cases fnInfer
             | fn annotation body =>
-              cases fnFuel with
-              | zero => simp [infer] at fnInfer
-              | succ fnFuel =>
-                obtain ⟨output, hBody, fnType⟩ := inferFnSuccess fnInfer
-                obtain ⟨inputEqual, outputEqual⟩ := Pre.AST.TFn.inj fnType
-                subst annotation
-                subst output
-                cases sourceFn with
-                | lit repr =>
-                  change AST.recarrier (.fn input body) (.mk id) =
-                    AST.recarrier (AST.recarrier (.lit repr) (.mk fnContext.embed)) (.mk id) at fnSame
-                  cases fnSame
-                | fn sourceAnnotation sourceBody =>
-                  have bodyEqual := sameFnApply fnContext.embed fnSame
-                  let liftedArg : fnContext.base.Trm := AST.recarrier arg (.mk fnExtend)
-                  have argTransport : AST.recarrier liftedArg (.mk fnContext.embed) =
-                      AST.recarrier arg (.mk context.embed) :=
-                    transportPreserved arg fnExtend fnContext.embed context.embed fnPreserves
-                  have argInfer : infer (AST.recarrier liftedArg (.mk fnContext.embed)) inferFuel =
-                      .yield (some input) := by rw [argTransport]; exact hArg
-                  have safeArg := ih fnContext liftedArg inferFuel input argInfer
-                  rw [argTransport] at safeArg
-                  cases argEval : eval (AST.recarrier arg (.mk context.embed)) evalFuel with
-                  | outOfFuel => simp [AST.recarrier, eval.eq_3, fnEval, argEval]
-                  | yield argResult =>
-                    cases argResult with
-                    | none => simp [argEval] at safeArg
-                    | some argValue =>
-                      simp only [argEval] at safeArg
-                      obtain ⟨argContext, argExtend, argPreserves, sourceArg, argSame, argFuel, argTyped⟩ := safeArg
-                      let receipt := exe.uid2val.upcastK (exe.uid2valCtx.inv (Quot.mk _ argValue))
-                      let extendedBase : EnvBase := ⟨argContext.base.UId ⊕ Unit⟩
-                      let extendedValues : KVRefs extendedBase.UId extendedBase.Val := ⟨λ carrier =>
+              obtain ⟨output, hBody, fnType⟩ := inferFnSuccess fnInfer
+              obtain ⟨inputEqual, outputEqual⟩ := Pre.AST.TFn.inj fnType
+              subst annotation
+              subst output
+              cases sourceFn with
+              | lit repr =>
+                simp only [Val.Same, AST.recarrier] at fnSame
+                cases fnSame
+              | fn sourceAnnotation sourceBody =>
+                have bodyEqual := sameFnApply fnContext.embed fnSame
+                let liftedArg : fnContext.base.Trm := AST.recarrier arg (.mk fnExtend)
+                have argTransport : AST.recarrier liftedArg (.mk fnContext.embed) =
+                    AST.recarrier arg (.mk context.embed) :=
+                  transportPreserved arg fnExtend fnContext.embed context.embed fnPreserves
+                have safeArg := ih fnContext liftedArg inferFuel input (by rw [argTransport]; exact hArg)
+                rw [argTransport] at safeArg
+                rcases argEval : eval (AST.recarrier arg (.mk context.embed)) evalFuel with (_ | argValue) | _
+                · simp [argEval] at safeArg
+                · simp only [argEval] at safeArg
+                  obtain ⟨argContext, argExtend, argPreserves, sourceArg, argSame, argFuel, argTyped⟩ := safeArg
+                  let receipt := exe.uid2val.upcastK (exe.uid2valCtx.inv (Quot.mk _ argValue))
+                  let extended : RuntimeContext refs :=
+                    { base := ⟨argContext.base.UId ⊕ Unit⟩
+                      values := ⟨λ carrier =>
                         match carrier with
                         | .inl outer => AST.recarrier (argContext.values.get outer) (.mk Sum.inl)
                         | .inr () => AST.recarrier sourceArg (.mk Sum.inl)⟩
-                      let extendedEmbed : extendedBase.UId → refs.UId := Sum.elim argContext.embed (λ _ => receipt)
-                      let extended : RuntimeContext refs :=
-                        ⟨extendedBase, extendedValues, extendedEmbed,
-                          contextExtendCompatible argContext sourceArg argValue argSame⟩
-                      let sourceTerm := Pre.Binder.apply sourceBody (.inr ())
-                      let bodyTerm : extended.base.Trm := AST.recarrier sourceTerm (.mk (Sum.map argExtend id))
-                      have bodyTransport : AST.recarrier bodyTerm (.mk extended.embed) =
-                          AST.recarrier sourceTerm (.mk (Sum.elim fnContext.embed (λ _ => receipt))) :=
-                        transportPreserved sourceTerm (Sum.map argExtend id) extended.embed _ (by
-                          intro carrier
-                          cases carrier with
-                          | inl outer => exact argPreserves outer
-                          | inr slot => rfl)
-                      let typeReceipt := build.uid2typ.upcastK (build.uid2typCtx.inv input)
-                      have typedBody : infer (AST.recarrier sourceTerm
-                          (.mk (Sum.elim fnContext.embed (λ _ => typeReceipt)))) fnFuel = .yield (some typ) := by
-                        rw [← bodyEqual typeReceipt]
-                        exact hBody
-                      obtain ⟨bodyFuel, runtimeBody⟩ := inferReplace
-                        (base := ⟨fnContext.base.UId ⊕ Unit⟩) (trm := sourceTerm)
-                        (second := Sum.elim fnContext.embed (λ _ => receipt))
-                        (by
-                          intro carrier inferred sourceFuel hSource
-                          cases carrier with
-                          | inl outer => exact ⟨sourceFuel, hSource⟩
-                          | inr slot =>
-                            cases sourceFuel with
-                            | zero => simp [infer] at hSource
-                            | succ sourceFuel =>
-                              rw [infer.eq_5] at hSource
-                              change (match refs.uid2any.get typeReceipt with
-                                | .inl value => infer value.asTrm sourceFuel
-                                | .inr typ => .yield (some typ)) = _ at hSource
-                              rw [mintedTypeLookup input] at hSource
-                              have inferredEqual : input = inferred := Option.some.inj (Rec.Outcome.yield.inj hSource)
-                              subst inferred
-                              exact ⟨argFuel + 1, mintedValueInfer argValue argTyped⟩) typedBody
-                      have bodyInfer : infer (AST.recarrier bodyTerm (.mk extended.embed)) bodyFuel =
-                          .yield (some typ) := by rw [bodyTransport]; exact runtimeBody
-                      have safeBody := ih extended bodyTerm bodyFuel typ bodyInfer
-                      have bodyEvalTransport : Binder.apply body receipt =
-                          AST.recarrier bodyTerm (.mk extended.embed) :=
-                        (bodyEqual receipt).trans bodyTransport.symm
-                      change (match eval (.apply (AST.recarrier fn (.mk context.embed))
-                          (AST.recarrier arg (.mk context.embed))) (evalFuel + 1) with
-                        | .outOfFuel => True
-                        | .yield none => False
-                        | .yield (some value) => _)
-                      rw [eval.eq_3, fnEval, argEval]
-                      change (match eval (Binder.apply body receipt) evalFuel with
-                        | .outOfFuel => True
-                        | .yield none => False
-                        | .yield (some value) => _)
-                      rw [bodyEvalTransport]
-                      cases bodyEval : eval (AST.recarrier bodyTerm (.mk extended.embed)) evalFuel with
-                      | outOfFuel => trivial
-                      | yield bodyResult =>
-                        cases bodyResult with
-                        | none => simp [bodyEval] at safeBody
-                        | some result =>
-                          simp only [bodyEval] at safeBody
-                          obtain ⟨target, bodyExtend, bodyPreserves, sourceResult, resultSame,
-                            resultFuel, resultTyped⟩ := safeBody
-                          refine ⟨target, (λ receipt => bodyExtend (.inl (argExtend (fnExtend receipt)))),
-                            ?_, sourceResult, resultSame, resultFuel, resultTyped⟩
-                          intro outer
-                          rw [bodyPreserves]
-                          exact (argPreserves (fnExtend outer)).trans (fnPreserves outer)
+                      embed := Sum.elim argContext.embed (λ _ => receipt)
+                      compatible := contextExtendCompatible argContext sourceArg argValue argSame }
+                  let sourceTerm := Pre.Binder.apply sourceBody (.inr ())
+                  let bodyTerm : extended.base.Trm := AST.recarrier sourceTerm (.mk (Sum.map argExtend id))
+                  have bodyTransport : AST.recarrier bodyTerm (.mk extended.embed) =
+                      AST.recarrier sourceTerm (.mk (Sum.elim fnContext.embed (λ _ => receipt))) :=
+                    transportPreserved sourceTerm (Sum.map argExtend id) extended.embed _ (by
+                      intro carrier
+                      cases carrier with
+                      | inl outer => exact argPreserves outer
+                      | inr slot => rfl)
+                  let typeReceipt := build.uid2typ.upcastK (build.uid2typCtx.inv input)
+                  change infer (AST.recarrier (Pre.Binder.apply body (.inr ()))
+                    (.mk (Sum.elim id (λ _ => typeReceipt)))) fnFuel = _ at hBody
+                  obtain ⟨bodyFuel, runtimeBody⟩ := inferReplace
+                    (base := ⟨refs.UId ⊕ Unit⟩) (trm := Pre.Binder.apply body (.inr ()))
+                    (second := Sum.elim id (λ _ => receipt))
+                    (by
+                      intro carrier inferred sourceFuel hSource
+                      cases carrier with
+                      | inl outer => exact ⟨sourceFuel, hSource⟩
+                      | inr slot =>
+                        cases sourceFuel with
+                        | zero => simp [infer] at hSource
+                        | succ sourceFuel =>
+                          simp only [infer.eq_5, mapRef, id, Sum.elim, typeReceipt,
+                            mintedTypeLookup input] at hSource
+                          have inferredEqual : input = inferred := Option.some.inj (Rec.Outcome.yield.inj hSource)
+                          subst inferred
+                          exact ⟨argFuel + 1, mintedValueInfer argValue argTyped⟩) hBody
+                  change infer (Binder.apply body receipt) bodyFuel = _ at runtimeBody
+                  have bodyEvalTransport : Binder.apply body receipt =
+                      AST.recarrier bodyTerm (.mk extended.embed) :=
+                    (bodyEqual receipt).trans bodyTransport.symm
+                  have safeBody := ih extended bodyTerm bodyFuel typ (by rw [← bodyEvalTransport]; exact runtimeBody)
+                  simp only [AST.recarrier, eval.eq_3, fnEval, argEval]
+                  rw [bodyEvalTransport]
+                  rcases bodyEval : eval (AST.recarrier bodyTerm (.mk extended.embed)) evalFuel with (_ | result) | _
+                  · simp [bodyEval] at safeBody
+                  · simp only [bodyEval] at safeBody
+                    obtain ⟨target, bodyExtend, bodyPreserves, sourceResult, resultSame,
+                      resultFuel, resultTyped⟩ := safeBody
+                    refine ⟨target, (λ receipt => bodyExtend (.inl (argExtend (fnExtend receipt)))),
+                      ?_, sourceResult, resultSame, resultFuel, resultTyped⟩
+                    intro outer
+                    rw [bodyPreserves]
+                    exact (argPreserves (fnExtend outer)).trans (fnPreserves outer)
+                  · trivial
+                · simp [AST.recarrier, eval.eq_3, fnEval, argEval]
+        · cases eval (AST.recarrier arg (.mk context.embed)) evalFuel <;>
+            simp [AST.recarrier, eval.eq_3, fnEval]
 
 /-- Successful inference makes the same transported runtime source term safe.
 
@@ -564,15 +476,12 @@ theorem fundamental (context : RuntimeContext refs) (trm : context.base.Trm)
     Safety (AST.recarrier trm (.mk context.embed)) typ := by
   intro evalFuel
   have safe := inferEvalSource context trm fuel typ hInfer evalFuel
-  cases result : eval (AST.recarrier trm (.mk context.embed)) evalFuel with
-  | outOfFuel => trivial
-  | yield value =>
-    cases value with
-    | none => simp [result] at safe
-    | some value =>
-      simp only [result] at safe
-      obtain ⟨_, _, _, _, _, valueFuel, typed⟩ := safe
-      exact ⟨valueFuel, by rw [typed]; exact (rfl : typ ≤ typ)⟩
+  rcases result : eval (AST.recarrier trm (.mk context.embed)) evalFuel with (_ | value) | _
+  · simp [result] at safe
+  · simp only [result] at safe
+    obtain ⟨_, _, _, _, _, valueFuel, typed⟩ := safe
+    exact ⟨valueFuel, by rw [typed]; exact (rfl : typ ≤ typ)⟩
+  · trivial
 
 end
 end Lp2lc.Active.STLC
