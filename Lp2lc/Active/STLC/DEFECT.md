@@ -39,3 +39,32 @@ hypothetical bindings.
 The public safety theorem covers arbitrary evaluation fuel. Successful inference excludes completed evaluation
 rejection; every evaluated closure admits successful inference of the original type in its captured environment.
 Evaluation may exhaust its fuel, and successful inference does not assert eventual evaluation termination.
+
+## UId scoped-origin soundness audit
+
+No counterexample or inconsistent premise was found for the ordinary-term `fundamental` statement in
+[UId/__Infer_proof.lean](UId/__Infer_proof.lean). Independent compiled examples import only
+[UId/__Infer.lean](UId/__Infer.lean) and its definitions, without using the conjecture or its proof scaffold.
+
+Public inference starts every free reference as a runtime origin. A minted type receipt is therefore rejected when
+used freely, while the corresponding newest lexical slot infers its type. Giving a free reference the same receipt
+as that slot does not merge their origins. Nested binders retain their outer lexical slots, including ancestor
+references carried by `Under` witnesses.
+
+Stored values restart inference under runtime origins. The audit checked direct and nested stored functions that
+capture a type-only receipt, including a stored function reached beneath a lexical binder. Each rejects rather than
+inheriting the hypothetical argument binding. Valid literal references still infer without an executable environment.
+
+Mixed build minting and runtime value minting preserve canonical observations. Canonically equal callbacks have the
+same inferred outcome at every fuel and the same build receipt, even when their unused callback inputs differ. The
+runtime value embedding is essential: its key map cannot fix a shared minted type receipt. Neither environment
+requires that key map to be the identity, and the audit made no such extra assumption.
+
+Literal inference and evaluation require one fuel unit. A stored literal reference requires two units for inference
+and one for evaluation. Identity-function inference requires two units, its literal application requires three, and
+evaluation of that application requires two. The predecessor budgets exhaust fuel as expected. Type-only runtime
+references and literal callees reject; successful nested lexical examples infer the expected function types.
+
+These are kernel-checked bounded examples under the existing environment contracts, not a construction of a concrete
+receipt store or a substitute for the general soundness proof. No project axiom, `sorry`, `unsafe`, `noncomputable`, or
+`partial` declaration was introduced in the audit.
