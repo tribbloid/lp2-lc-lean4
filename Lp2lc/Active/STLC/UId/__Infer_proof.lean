@@ -3,6 +3,25 @@ import «Lp2lc».Active.STLC.UId.__Infer
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util Root Root.Trm
 
+/-- Runtime references and their stored values are valid; lexical binder slots are admitted separately. -/
+inductive RuntimeRefs (refs : UIdRefs) : {base : Root} →
+    (base.UId → refs.UId ⊕ Unit) → base.Trm → Prop where
+  | lit {base origins repr} : RuntimeRefs refs (base := base) origins (.val (.lit repr))
+  | fn {base : Root} {origins annotation} {body : base.Binder .trm} :
+      RuntimeRefs refs (base := ⟨base.UId ⊕ Unit⟩) (Sum.elim origins (λ _ => .inr ()))
+        (Pre.Binder.apply body (.inr ())) →
+      RuntimeRefs refs (base := base) origins (.val (.fn annotation body))
+  | apply {base origins fn arg} :
+      RuntimeRefs refs (base := base) origins fn → RuntimeRefs refs origins arg →
+      RuntimeRefs refs origins (.apply fn arg)
+  | bound {base origins carrier under} :
+      origins (mapRef under carrier) = .inr () →
+      RuntimeRefs refs (base := base) origins (.ref carrier under)
+  | value {base origins carrier under receipt value} :
+      origins (mapRef under carrier) = .inl receipt → refs.uid2both.get receipt = .inr value →
+      RuntimeRefs refs Sum.inl value.val.asTrm →
+      RuntimeRefs refs (base := base) origins (.ref carrier under)
+
 namespace Fundamental
 
 section variable {refs : UIdRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
@@ -34,7 +53,7 @@ private theorem typRecarrierId {base : Root} (typ : base.Typ) :
     exact congr (congrArg Pre.AST.TFn (typRecarrierId input)) (typRecarrierId output)
 termination_by sizeOf typ
 
-private theorem typRecarrierComp {source middle target : Root} (typ : source.Typ)
+private theorem recarrierComp {source middle target : Root} {l} (typ : source.AST l)
     (first : source.UId → middle.UId) (second : middle.UId → target.UId) :
     AST.recarrier (AST.recarrier typ first) second =
       AST.recarrier typ (second ∘ first) := by
@@ -45,55 +64,24 @@ private theorem typRecarrierComp {source middle target : Root} (typ : source.Typ
       (typRecarrierComp output first second)
 termination_by sizeOf typ
 
-private theorem inferTransport {source target : Root} (trm : source.Trm)
-    (map : source.UId → target.UId) (bindings : target.UId → refs.UId ⊕ refs.UId) (fuel : Nat) :
-    infer.visit (AST.recarrier trm map) bindings fuel =
-      infer.visit trm (bindings ∘ map) fuel := by
-  induction fuel generalizing source target trm map bindings with
-  | zero => rfl
-  | succ fuel ih =>
-    cases trm with
-    | val value =>
-      cases value with
-      | lit repr => rfl
-      | fn annotation body =>
-        cases body
-        rename_i body
-        change infer.visit (.val (.fn (AST.recarrier annotation map)
-            (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map map id))))) bindings (fuel + 1) = _
-        simp only [infer.visit.eq_3, Pre.Binder.apply, Pre.Binder.mk]
-        rw [typRecarrierComp, ih (body (.inr ())) (Sum.map map id)]
-        congr 2
-        funext carrier
-        cases carrier <;> rfl
-    | apply fn arg =>
-      change infer.visit (.apply (AST.recarrier fn map) (AST.recarrier arg map)) bindings (fuel + 1) = _
-      simp only [infer.visit.eq_4, ih]
-    | ref carrier under =>
-      change infer.visit (.ref (map (mapRef under carrier)) .same) bindings (fuel + 1) = _
-      rfl
-
 private theorem mintedTypeLookup (typ : refs.base.Typ) :
     refs.uid2both.get (build.uid2bothCtx.inv (.inl typ)) = .inl typ := by
   exact build.uid2bothCtx.rightInv (.inl typ)
 
-private theorem inferApplySuccess {base : Root} {fn arg : base.Trm}
-    {bindings : base.UId → refs.UId ⊕ refs.UId} {fuel : Nat} {typ : refs.base.Typ}
-    (hInfer : infer.visit (.apply fn arg) bindings (fuel + 1) = .yield (some typ)) :
-    ∃ input, infer.visit fn bindings fuel = .yield (some (.TFn input typ)) ∧
-      infer.visit arg bindings fuel = .yield (some input) := by
+private theorem inferApplySuccess {fn arg : refs.base.Trm} {fuel : Nat} {typ : refs.base.Typ}
+    (hInfer : infer (.apply fn arg) (fuel + 1) = .yield (some typ)) :
+    ∃ input, infer fn fuel = .yield (some (.TFn input typ)) ∧
+      infer arg fuel = .yield (some input) := by
   simp only [infer.visit.eq_4] at hInfer
   repeat split at hInfer
   all_goals simp_all [LE.le]
   all_goals injection hInfer; subst_vars; exact ⟨_, rfl, rfl⟩
 
-private theorem inferFnSuccess {base : Root} {annotation : base.Typ} {body : base.Binder .trm}
-    {bindings : base.UId → refs.UId ⊕ refs.UId} {fuel : Nat} {typ : refs.base.Typ}
-    (hInfer : infer.visit (.val (.fn annotation body)) bindings (fuel + 1) = .yield (some typ)) :
-    let input := AST.recarrier annotation (Sum.elim id id ∘ bindings)
-    ∃ output, infer.visit (base := ⟨base.UId ⊕ Unit⟩) (Pre.Binder.apply body (.inr ()))
-        (Sum.elim bindings (λ _ => .inl (build.uid2bothCtx.inv (.inl input)))) fuel = .yield (some output) ∧
-      typ = .TFn input output := by
+private theorem inferFnSuccess {annotation : refs.base.Typ} {body : refs.base.Binder .trm}
+    {fuel : Nat} {typ : refs.base.Typ}
+    (hInfer : infer (.val (.fn annotation body)) (fuel + 1) = .yield (some typ)) :
+    ∃ output, infer (Binder.apply body (build.uid2bothCtx.inv (.inl annotation))) fuel = .yield (some output) ∧
+      typ = .TFn annotation output := by
   dsimp only
   rcases hBody : infer.visit (base := ⟨base.UId ⊕ Unit⟩) (Pre.Binder.apply body (.inr ()))
       (Sum.elim bindings (λ _ => .inl (build.uid2bothCtx.inv
@@ -104,12 +92,12 @@ private theorem inferFnSuccess {base : Root} {annotation : base.Typ} {body : bas
   exact ⟨output, rfl, rfl⟩
 
 private theorem inferReplace {base : Root} {trm : base.Trm}
-    {first second : base.UId → refs.UId ⊕ refs.UId} {fuel : Nat} {typ : refs.base.Typ}
+    {first second : base.UId → refs.UId} {fuel : Nat} {typ : refs.base.Typ}
     (hReplace : ∀ receipt inferred sourceFuel,
-      infer.visit (.ref receipt .same) first sourceFuel = .yield (some inferred) →
-        ∃ targetFuel, infer.visit (.ref receipt .same) second targetFuel = .yield (some inferred))
-    (hInfer : infer.visit trm first fuel = .yield (some typ)) :
-    ∃ targetFuel, infer.visit trm second targetFuel = .yield (some typ) := by
+      infer (.ref (first receipt) .same) sourceFuel = .yield (some inferred) →
+        ∃ targetFuel, infer (.ref (second receipt) .same) targetFuel = .yield (some inferred))
+    (hInfer : infer (AST.recarrier trm first) fuel = .yield (some typ)) :
+    ∃ targetFuel, infer (AST.recarrier trm second) targetFuel = .yield (some typ) := by
   induction fuel generalizing base trm first second typ with
   | zero => simp [infer.visit] at hInfer
   | succ fuel ih =>
@@ -172,9 +160,11 @@ private theorem mintedValueInfer (value : refs.base.Val) {fuel : Nat} {typ : ref
   exact (inferTransport value.asTrm id Sum.inr fuel).trans hInfer
 
 private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : refs.base.Typ)
+    (runtime : RuntimeRefs refs Sum.inl trm)
     (hInfer : infer trm inferFuel = .yield (some typ)) :
     (eval trm).isSemiDecidable (λ result =>
-      ∃ valueFuel, infer result.asTrm valueFuel = .yield (some typ)) := by
+      ∃ valueFuel, infer result.asTrm valueFuel = .yield (some typ) ∧
+        RuntimeRefs refs Sum.inl result.asTrm) := by
   intro evalFuel
   induction evalFuel generalizing trm inferFuel typ with
   | zero => trivial
@@ -246,6 +236,7 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
 
 /-- Successful runtime inference excludes evaluation rejection and preserves the result's type. -/
 theorem main (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
+    (runtime : RuntimeRefs refs Sum.inl trm)
     (hInfer : trm.infer fuel = .yield (some typ)) : Safety trm typ := by
   intro evalFuel
   have safe := inferEvalSafety trm fuel typ hInfer evalFuel
