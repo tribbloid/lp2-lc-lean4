@@ -55,15 +55,15 @@ private theorem inferTransport {source target : Root} (trm : source.Trm)
       cases value with
       | lit repr => rfl
       | fn annotation body =>
-        cases body with
-        | mk body =>
-          change infer.visit (.val (.fn (AST.recarrier annotation map)
-              (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map map id))))) bindings (fuel + 1) = _
-          simp only [infer.visit.eq_3, Pre.Binder.apply]
-          rw [typRecarrierComp, ih (body (.inr ())) (Sum.map map id)]
-          congr 2
-          funext carrier
-          cases carrier <;> rfl
+        cases body
+        rename_i body
+        change infer.visit (.val (.fn (AST.recarrier annotation map)
+            (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map map id))))) bindings (fuel + 1) = _
+        simp only [infer.visit.eq_3, Pre.Binder.apply, Pre.Binder.mk]
+        rw [typRecarrierComp, ih (body (.inr ())) (Sum.map map id)]
+        congr 2
+        funext carrier
+        cases carrier <;> rfl
     | apply fn arg =>
       change infer.visit (.apply (AST.recarrier fn map) (AST.recarrier arg map)) bindings (fuel + 1) = _
       simp only [infer.visit.eq_4, ih]
