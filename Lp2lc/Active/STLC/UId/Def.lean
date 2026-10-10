@@ -21,7 +21,7 @@ structure Root where
 
 namespace Root
 
-/-- Syntax parameters for carrier `I`, initially `this.UId`, with `String` literals and `FreeOrUnit`.
+/-- Syntax parameters for this root's receipt carrier, with `String` literals and `FreeOrUnit`.
 
 UId binders are opened only at `.inr ()`; receipts replace that slot by structural substitution.
 -/
