@@ -87,9 +87,7 @@ where
       change AST.recarrier.visit (AST.recarrier.visit (body (.inr ())) rfl (Sum.map first id))
         rfl (Sum.map second id) = _
       refine (ihBody rfl (Sum.map first id) (Sum.map second id)).trans ?_
-      congr 1
-      funext reference
-      cases reference <;> rfl
+      exact congrArg (AST.recarrier.visit (body (.inr ())) rfl) (Sum.map_comp_map second id first id)
     | val value ih => exact congrArg Pre.AST.val (ih encoding first second)
     | apply fn arg ihFn ihArg =>
       exact congr (congrArg Pre.AST.apply (ihFn encoding first second)) (ihArg encoding first second)
@@ -112,7 +110,7 @@ private theorem inferCanonical (trm : refs.base.Trm) (fuel : Nat) :
           (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map id id))))) (fuel + 1) = _
         rw [typRecarrierId]
         simp only [infer.eq_3, Binder.apply, Pre.Binder.apply, Pre.Binder.mk]
-        rw [recarrierComp, mapSlot]
+        rw [recarrierComp, Sum.elim_comp_map, Function.id_comp, Function.comp_id]
     | apply fn arg =>
       change infer (.apply (AST.recarrier fn id) (AST.recarrier arg id)) (fuel + 1) = _
       simp only [infer.eq_4, ih]
@@ -165,7 +163,7 @@ private theorem inferReplace {base : Root} {trm : base.Trm}
         let receipt := build.uid2bothCtx.inv (.inl input)
         change infer (AST.recarrier (AST.recarrier (body (.inr ())) (Sum.map first id))
           (Sum.elim id (λ _ => receipt))) fuel = _ at hBody
-        rw [recarrierComp, mapSlot] at hBody
+        rw [recarrierComp, Sum.elim_comp_map, Function.id_comp, Function.comp_id] at hBody
         obtain ⟨bodyFuel, hTarget⟩ := ih
           (base := ⟨base.UId ⊕ Unit⟩) (trm := body (.inr ()))
           (first := Sum.elim first (λ _ => receipt))
@@ -180,7 +178,7 @@ private theorem inferReplace {base : Root} {trm : base.Trm}
             (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map second id))))) (bodyFuel + 1) = _
           rw [infer.eq_3, ← inputEqual]
           simp only [Binder.apply, Pre.Binder.apply, Pre.Binder.mk]
-          rw [recarrierComp, mapSlot, hTarget]
+          rw [recarrierComp, Sum.elim_comp_map, Function.id_comp, Function.comp_id, hTarget]
           rfl⟩
     | ref carrier under =>
       exact hReplace (mapRef under carrier) typ (fuel + 1) hInfer
@@ -236,7 +234,7 @@ private theorem mintedValueInfer (value : refs.base.Val) {fuel : Nat} {typ : ref
     (hInfer : infer value.asTrm fuel = .yield (some typ)) :
     infer (.ref (exe.uid2val (canonicalVal value)).val .same) (fuel + 1) =
       .yield (some typ) := by
-  simp only [infer.eq_5, mapRef, mintedValueLookup]
+  simp only [infer.eq_5, mapRef, (exe.uid2val (canonicalVal value)).property]
   exact (inferCanonical value.asTrm fuel).trans hInfer
 
 private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : refs.base.Typ)
@@ -291,7 +289,7 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
                 rcases Pre.AST.TFn.inj hFnType with ⟨hInput, hOutput⟩
                 subst fnOutput
                 rw [← hInput] at hBody
-                let receipt := (exe.uid2valCtx.inv (canonicalVal argValue)).val
+                let receipt := (exe.uid2val (canonicalVal argValue)).val
                 obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace
                   (second := Sum.elim id (λ _ => receipt))
                   (by
@@ -302,7 +300,7 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
                       cases sourceFuel with
                       | zero => cases hSource
                       | succ sourceFuel =>
-                        simp only [infer.eq_5, mapRef, Sum.elim, mintedTypeLookup] at hSource
+                        simp only [infer.eq_5, mapRef, Sum.elim, KVEquiv.rightInv] at hSource
                         have equality := Option.some.inj (Rec.Outcome.yield.inj hSource)
                         subst inferred
                         exact ⟨argInferFuel + 1, mintedValueInfer argValue hArgValue⟩) hBody
@@ -317,7 +315,7 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
                       | bound bound => cases bound
                       | value origin lookup runtime => exact .value origin lookup runtime
                     | inr slot =>
-                      exact .value rfl (mintedValueLookup argValue)
+                      exact .value rfl (exe.uid2val (canonicalVal argValue)).property
                         (runtimeReplace id (λ _ runtime => runtime) runtimeArgValue)
                 simpa only [eval.eq_3, hFnEval, hArgEval] using
                   ih (Binder.apply body receipt) bodyFuel typ hRuntimeBody hBodyTarget
