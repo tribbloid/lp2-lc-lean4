@@ -3,10 +3,6 @@ import «Lp2lc».Active.STLC.UId.Eval
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
-/-- Compile-time minting accepts types or canonical values without requiring an executable environment. -/
-class BuildEnv (refs : UIdRefs) where
-  uid2bothCtx : KVEquiv refs.uid2both
-
 namespace Root.Trm
 
 /-- Infers terms from shared type or value receipts without executing values.

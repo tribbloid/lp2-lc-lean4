@@ -96,15 +96,6 @@ where
     | ref carrier under => rfl
     | _ body ih => exact ih _ _ _ _
 
-private theorem mintedTypeLookup (typ : refs.base.Typ) :
-    refs.uid2both.get (build.uid2bothCtx.inv (.inl typ)) = .inl typ := by
-  exact build.uid2bothCtx.rightInv (.inl typ)
-
-private theorem mapSlot {C I} (map : C → I) (receipt : I) :
-    Sum.elim id (λ (_ : Unit) => receipt) ∘ Sum.map map id = Sum.elim map (λ _ => receipt) := by
-  funext carrier
-  cases carrier <;> rfl
-
 private theorem inferCanonical (trm : refs.base.Trm) (fuel : Nat) :
     infer (AST.recarrier trm id) fuel = infer trm fuel := by
   induction fuel generalizing trm with
@@ -241,15 +232,9 @@ private theorem runtimeReplace {source target : Root} {trm : source.Trm}
 
 variable [exe : ExeEnv refs]
 
-omit build in
-private theorem mintedValueLookup (value : refs.base.Val) :
-    refs.uid2both.get (exe.uid2valCtx.inv (canonicalVal value)).val = .inr (canonicalVal value) :=
-    (Sum.inr_getRight _ _).symm.trans
-      (congrArg Sum.inr (exe.uid2valCtx.rightInv (canonicalVal value)))
-
 private theorem mintedValueInfer (value : refs.base.Val) {fuel : Nat} {typ : refs.base.Typ}
     (hInfer : infer value.asTrm fuel = .yield (some typ)) :
-    infer (.ref (exe.uid2valCtx.inv (canonicalVal value)).val .same) (fuel + 1) =
+    infer (.ref (exe.uid2val (canonicalVal value)).val .same) (fuel + 1) =
       .yield (some typ) := by
   simp only [infer.eq_5, mapRef, mintedValueLookup]
   exact (inferCanonical value.asTrm fuel).trans hInfer

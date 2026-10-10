@@ -3,14 +3,6 @@ import «Lp2lc».Active.STLC.UId.Infra
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
-/-- Runtime receipts identify values by their canonical structural syntax.
-
-`Root.Binder.apply` already supplies uniform receipt substitution through its fixed `.inr ()` body.
-This context represents those canonical observations with ordinary Lean equality on structural values.
--/
-class ExeEnv (refs : UIdRefs) where
-  uid2valCtx : KVEquiv refs.uid2val
-
 namespace Root.Trm
 
 /-- Evaluates through shared value receipts and structurally substitutes the minted argument.
@@ -26,7 +18,7 @@ def eval {refs : UIdRefs} [exe : ExeEnv refs] (self : refs.base.Trm) : RecOpt re
     | .apply fnTerm arg =>
       match eval fnTerm fuel, eval arg fuel with
       | .yield (some (.fn _ body)), .yield (some arg) =>
-        eval (Root.Binder.apply body (exe.uid2valCtx.inv (Root.canonicalVal arg))) fuel
+        eval (Root.Binder.apply body (exe.uid2val (Root.canonicalVal arg))) fuel
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
     | .ref carrier under =>

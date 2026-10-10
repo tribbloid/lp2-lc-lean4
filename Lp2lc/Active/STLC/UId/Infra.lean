@@ -74,12 +74,16 @@ end Root
 structure UIdRefs extends base : Root where
   uid2both : KVRefs UId base.TypOrVal
 
-namespace UIdRefs
+/-- Compile-time minting accepts types or canonical values without requiring an executable environment. -/
+class BuildEnv (refs : UIdRefs) where
+  uid2bothCtx : KVEquiv refs.uid2both
 
-/-- Runtime receipts select the value summand of the shared lookup by their type. -/
-def uid2val (this : UIdRefs) : KVRefs {receipt : this.UId // (this.uid2both.get receipt).isRight}
-    this.base.CanonicalVal :=
-  ⟨λ receipt => (this.uid2both.get receipt.val).getRight receipt.property⟩
+/-- Runtime minting certifies shared lookup of the requested canonical structural value. -/
+class ExeEnv (refs : UIdRefs) where
+  uid2val (value : refs.base.CanonicalVal) :
+    {receipt : refs.UId // refs.uid2both.get receipt = .inr value}
 
-end UIdRefs
+instance {refs} [build : BuildEnv refs] : ExeEnv refs where
+  uid2val value := ⟨build.uid2bothCtx.inv (.inr value), build.uid2bothCtx.rightInv _⟩
+
 end Lp2lc.Active.STLC
