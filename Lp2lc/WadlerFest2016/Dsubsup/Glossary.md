@@ -271,7 +271,8 @@ Conventions:
 ## Canonical Form Inversions and Preservation Helpers
 
 - Name: `typing_inv_abs` → `typing_inv_abs`
-    - Meaning: Inversion of `typing [] (abs S1 e1) T` against `sub [] T (all U1 U2)` yields parameter subtyping and body typing.
+    - Meaning: Inversion of `typing [] (abs S1 e1) T` against `sub [] T (all U1 U2)` yields parameter subtyping and body
+      typing.
 
 - Name: `typing_through_subst1` → `typing_through_subst1`
     - Meaning: One-binding specialization of typing through substitution in empty environment.

@@ -106,11 +106,14 @@ Coverage Table (synchronized with current Proof.lean)
 
 Notes
 
-- This list follows the current order in Proof.lean, which preserves the Coq order (sections and lemma sequence), splitting mutual statements where appropriate.
+- This list follows the current order in Proof.lean, which preserves the Coq order (sections and lemma sequence),
+  splitting mutual statements where appropriate.
 - All proofs remain `sorry` by design (scaffold phase). No axioms are present in this file.
 
 TODO
 
-- If new lemmas are added to Proof.lean, append corresponding rows here immediately (maintaining order) and mark proven=no.
+- If new lemmas are added to Proof.lean, append corresponding rows here immediately (maintaining order) and mark
+  proven=no.
 - If statement names change, update the table to stay in sync.
-- When proofs are discharged later, flip proven to yes and, per project rule, move completed proofs into Lp2lc/Active/Fsub.lean while retaining statement ownership here.
+- When proofs are discharged later, flip proven to yes and, per project rule, move completed proofs into
+  Lp2lc/Active/Fsub.lean while retaining statement ownership here.

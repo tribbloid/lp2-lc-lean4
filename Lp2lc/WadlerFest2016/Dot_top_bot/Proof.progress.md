@@ -123,4 +123,5 @@ Columns:
 
 Notes:
 
-- Maintain original order as in Coq where possible; this table currently covers the subset scaffolded in `Proof.lean`. More entries will be appended as scaffolding proceeds across the file.
+- Maintain original order as in Coq where possible; this table currently covers the subset scaffolded in `Proof.lean`.
+  More entries will be appended as scaffolding proceeds across the file.

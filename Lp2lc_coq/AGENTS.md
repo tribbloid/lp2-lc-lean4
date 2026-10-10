@@ -2,7 +2,9 @@
 
 ## Project Overview
 
-This is a Coq formalization project working with formal type theory, specifically focused on DOT calculus (Dependent Object Types) and F-sub (System F with subtyping). The project contains multiple formalization attempts and related work on type systems.
+This is a Coq formalization project working with formal type theory, specifically focused on DOT calculus (Dependent
+Object Types) and F-sub (System F with subtyping). The project contains multiple formalization attempts and related work
+on type systems.
 
 ## Project Structure
 

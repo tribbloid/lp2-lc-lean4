@@ -12,9 +12,11 @@ type symbols with their subtype lattice, which:
     type B >: A
     ```
 
-    is perfectly valid but contains circular definition, it is only expressed in AST because different nodes are discovered to be the same thing later.
+is perfectly valid but contains circular definition, it is only expressed in AST because different nodes are discovered
+to be the same thing later.
 
-Fortunately, it is impossible to define type alias outside object in DOT, and it only become a type alias when explicitly invoked, this means the most complex subtype lattice only needs to be defined inside an object, e.g.:
+Fortunately, it is impossible to define type alias outside object in DOT, and it only become a type alias when
+explicitly invoked, this means the most complex subtype lattice only needs to be defined inside an object, e.g.:
 
 ```scala
 trait T1 {

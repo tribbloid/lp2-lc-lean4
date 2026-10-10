@@ -1,7 +1,7 @@
 # Dsub Theorem Glossary
 
-This glossary explains the theorems and lemmas in `Lp2lc_coq/Active/Dsub.v` and their Lean counterparts in `Lp2lc/Active/Dsub/Proof.lean`.
-For split ports, Lean uses `_t` (type) and `_e` (term) suffixes.
+This glossary explains the theorems and lemmas in `Lp2lc_coq/Active/Dsub.v` and their Lean counterparts in
+`Lp2lc/Active/Dsub/Proof.lean`. For split ports, Lean uses `_t` (type) and `_e` (term) suffixes.
 
 - Coverage
     - [x] All Coq lemmas/theorems from `Lp2lc_coq/Active/Dsub.v`
@@ -11,7 +11,8 @@ For split ports, Lean uses `_t` (type) and `_e` (term) suffixes.
 
 - **`open_rec_lc_core` / `open_rec_lc_core_t` / `open_rec_lc_core_e`**
     - Full name: Opening recursion locally closed core
-    - Meaning: If two openings at distinct indices coincide, the original object equals its opening at the second index. Basis for opening-commutation.
+    - Meaning: If two openings at distinct indices coincide, the original object equals its opening at the second index.
+      Basis for opening-commutation.
 
 - **`open_rec_lc` / `open_rec_lc_t` / `open_rec_lc_e`**
     - Full name: Opening preserves locally closed forms
@@ -131,7 +132,8 @@ For split ports, Lean uses `_t` (type) and `_e` (term) suffixes.
 
 - **`sub_has_regular` / `sub_regular` / `has_regular` / `has_regular_e`**
     - Full name: Regularity of subtyping/has
-    - Meaning: From `sub`/`has`, derive `okt E` and `wft` of involved types (and that the subject is a value or variable for `has`).
+    - Meaning: From `sub`/`has`, derive `okt E` and `wft` of involved types (and that the subject is a value or variable
+      for `has`).
 
 - **`typing_regular`**
     - Full name: Regularity of typing
@@ -193,7 +195,8 @@ For split ports, Lean uses `_t` (type) and `_e` (term) suffixes.
 
 - **`psub` (inductive) / `psub_sub` / `psub_reflexivity`**
     - Full name: Pseudo-subtyping and its link to `sub`
-    - Meaning: A closed-style subtyping used in progress/preservation; it implies `sub` and is reflexive on well-formed types.
+    - Meaning: A closed-style subtyping used in progress/preservation; it implies `sub` and is reflexive on well-formed
+      types.
 
 - **`possible_types` (inductive)**
     - Full name: Possible types for a value/term
@@ -221,7 +224,8 @@ For split ports, Lean uses `_t` (type) and `_e` (term) suffixes.
 
 - **`typing_inv_abs`**
     - Full name: Inversion for abstractions
-    - Meaning: From `typing [] (abs S1 e1) T` and `sub [] T (∀ U1. U2)`, get parameter subtyping and body typing obligations.
+    - Meaning: From `typing [] (abs S1 e1) T` and `sub [] T (∀ U1. U2)`, get parameter subtyping and body typing
+      obligations.
 
 - **`canonical_form_abs` / `canonical_form_mem`**
     - Full name: Canonical forms lemmas
@@ -236,7 +240,8 @@ For split ports, Lean uses `_t` (type) and `_e` (term) suffixes.
 - **`preservation_result`**
     - Full name: Preservation
     - Meaning: If `typing [] e T` and `red e e'`, then `typing [] e' T`.
-    - Why soundness: Along with Progress, it ensures types are invariant under computation, preventing type errors during execution.
+    - Why soundness: Along with Progress, it ensures types are invariant under computation, preventing type errors
+      during execution.
 
 - **`progress_result`**
     - Full name: Progress
@@ -249,6 +254,8 @@ For split ports, Lean uses `_t` (type) and `_e` (term) suffixes.
 
 ## Lean-specific scaffolds mapped to Coq
 
-- Open/subst splits: `open_rec_lc_core_t/e`, `open_rec_lc_t/e`, `subst_open_rec_t/e`, `subst_lc_t/e` mirror Coq mutual lemmas.
-- Env helpers: `binds_weaken`, `okt_strengthen`, `map_subst_t_id` correspond to Coq `binds_weaken` (used inside proofs), strengthening (common env lemma), and `map_subst_id`.
+- Open/subst splits: `open_rec_lc_core_t/e`, `open_rec_lc_t/e`, `subst_open_rec_t/e`, `subst_lc_t/e` mirror Coq mutual
+  lemmas.
+- Env helpers: `binds_weaken`, `okt_strengthen`, `map_subst_t_id` correspond to Coq `binds_weaken` (used inside proofs),
+  strengthening (common env lemma), and `map_subst_id`.
 - All other Lean theorems retain Coq names with minor list-based env notation changes (`&` ↔ `++`).

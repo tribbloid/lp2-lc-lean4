@@ -4,7 +4,8 @@
 
 - both eval & infer use AST that can refer to everything
 - a single function to produce a bundle of both results:
-- since DOT has (mutual) recursion, there is no guarantee that their execution are identical at low level, but they must be related. (this is also a reason that fn type should always carry types of both input & output)
+- since DOT has (mutual) recursion, there is no guarantee that their execution are identical at low level, but they must
+  be related. (this is also a reason that fn type should always carry types of both input & output)
 
 ```lean
 structure Parallel
@@ -17,7 +18,8 @@ structure Parallel
 
 - the last member is multiple values related to a type, with their safety proof
 
-The vulnerability of forging Val from Typ UId is thwarted not by using different UId types (UIdEquiv can get/inv Parallel directly), but by **tracking lineage/dependency of construction**
+The vulnerability of forging Val from Typ UId is thwarted not by using different UId types (UIdEquiv can get/inv
+Parallel directly), but by **tracking lineage/dependency of construction**
 
 - when constructing val, typ is invisible ()
 - when constructing typ, val is invisible (cannot see result of execution iin compiletime)
@@ -32,9 +34,11 @@ specialization. The tradeoff notes below describe the earlier PHOAS encoding.
 PHOAS definition have many contradicting traits that makes it difficult to be used in proof:
 
 - idiomatic form is always invariant: "recarrier" is impossible
-- contravariant form (where .ref is flexible) => AST {TrmOrTyp} <:< AST {Trm} is absurd: AST.ref {TrmOrTyp} can't reify to value
+- contravariant form (where .ref is flexible) => AST {TrmOrTyp} <:< AST {Trm} is absurd: AST.ref {TrmOrTyp} can't reify
+  to value
 - covariant form (where .lam is flexible) => AST {Trm} <:< AST {TrmOrTyp} works but demand parametricity of AST.lam body
-    - this parametricity is built-in if AST.lam body is generated from expression with de Bruijn variable, this again make "recarrier" & proof very long, negating all advantages
+    - this parametricity is built-in if AST.lam body is generated from expression with de Bruijn variable, this again
+      make "recarrier" & proof very long, negating all advantages
 
 ## Verdicts
 

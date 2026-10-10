@@ -5,7 +5,8 @@ This file tracks definitions, inductives, and operations mirrored from Coq
 
 Conventions
 
-- Coq names are preserved when possible. Lean uses `Trm`, `Typ`, `openTRec/openERec`, `openT/openE`, `fvT/fvE`, `substT/substE`, etc.
+- Coq names are preserved when possible. Lean uses `Trm`, `Typ`, `openTRec/openERec`, `openT/openE`, `fvT/fvE`,
+  `substT/substE`, etc.
 - Environments are `Env := List (Var × Typ)` with `Okt` for well-formedness.
 - `ok : Env → Prop` is provided abstractly by `Lp2lc.Active.Shared`.
 
@@ -32,6 +33,7 @@ Coverage Table (scaffold)
 
 Notes
 
-- Locally nameless operations are implemented (mutual recursions) to allow expressing statements; proofs live in `Proof.lean`.
+- Locally nameless operations are implemented (mutual recursions) to allow expressing statements; proofs live in
+  `Proof.lean`.
 - `Wft`, `Wfe`, `Sub`, `Has` remain abstract (axioms) to keep this file definitional-only.
 - Additions will be made incrementally if new Coq constructs are needed.
