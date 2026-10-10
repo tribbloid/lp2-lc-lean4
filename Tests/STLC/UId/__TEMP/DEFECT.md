@@ -1,19 +1,23 @@
-# Raw functional values cannot have a total receipt inverse
+# Raw callback equality and contracted UId application
 
-[RawValInverse.lean](RawValInverse.lean) derives `False` from `KVEquiv` on the current unrestricted UId value family.
+`Root.Binder.apply` opens a fixed body at `.inr ()` and structurally substitutes its receipt.
+This contract supplies uniform receipt substitution by construction. The diagnostic below concerns
+literal equality of unrestricted raw callbacks, beyond the observations made by UId operations.
+
+[RawValInverse.lean](RawValInverse.lean) derives `False` from a hypothetical `KVEquiv` on all raw `Root.Val` values.
 It uses only `rightInv`; `leftInv`, classical choice, new axioms, and proof placeholders are unnecessary.
+Its receipt-sensitive callback selects the opposite body constructor after consulting the supplied lookup.
+The observer invokes that callback directly at `.inl receipt`, which bypasses `Root.Binder.apply`.
+Applying the raw inverse law at the diagonal value's receipt forces a Boolean to equal its negation.
 
-A function value can inspect its callback input `.inl receipt`, decode that receipt through the supplied lookup,
-and select the opposite body constructor. Applying the inverse law to this diagonal value and observing its
-callback at its own receipt forces a Boolean to equal its negation. The canonical `.inr ()` body remains fixed.
+That conditional raw-equality result is not a counterexample to contracted UId application.
+The callback's `.inr ()` branch remains fixed, so `Root.Binder.apply` structurally substitutes only that branch.
+The diagnostic establishes a scope distinction between raw callback equality and the binding semantics;
+it does not establish that UId needs an additional uniformity condition.
 
-Restricting runtime operations to canonical opening cannot justify raw value equality in `KVEquiv.rightInv`.
-A structural binder stores syntax and has no callback that can inspect this receipt. A quotient-free repair
-must use structural values or limit the admitted value family to canonical values before declaring the
-ordinary `KVEquiv` contract.
+The normalization examples show how the image `{value // ∃ source, AST.recarrier source id = value}`
+represents canonical observations using ordinary Lean equality. This concerns the equivalence law's value
+representation; uniform receipt substitution is already supplied by `Root.Binder.apply`.
 
-The normalization observation in the same test confirms that arbitrary behavior at `.inl receipt` is erased.
-The image `{value // ∃ source, AST.recarrier source id = value}` therefore admits the canonical observation
-rather than the original callback. Constructing membership requires only the source and reflexivity.
-Deriving runtime receipts from the shared lookup's right summand fixes the payload tag by construction;
-an arbitrary `Lesser.upcastV` cannot provide that guarantee without an additional premise.
+Runtime receipt tagging is a separate property: deriving receipts from the shared lookup's right summand
+fixes the value tag by construction, replacing the premise needed for an arbitrary `Lesser.upcastV`.

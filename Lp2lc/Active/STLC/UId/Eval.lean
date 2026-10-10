@@ -5,8 +5,8 @@ open Lp2lc.Active.Util
 
 /-- Runtime receipts identify values by their canonical structural syntax.
 
-Unrestricted callbacks can inspect their input receipts, so a total inverse for raw functional
-values is inconsistent. A quotient-free context therefore needs a canonical structural representation.
+`Root.Binder.apply` already supplies uniform receipt substitution through its fixed `.inr ()` body.
+This context represents those canonical observations with ordinary Lean equality on structural values.
 -/
 class ExeEnv (refs : UIdRefs) where
   uid2valCtx : KVEquiv refs.uid2val
