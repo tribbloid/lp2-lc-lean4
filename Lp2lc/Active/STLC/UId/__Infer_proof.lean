@@ -233,13 +233,8 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
       cases trm with
       | val value => exact ⟨inferFuel + 1, hInfer, runtime⟩
       | ref carrier under =>
-        cases runtime with
-        | bound bound => cases bound
-        | value origin lookup runtime =>
-          have lookup := (congrArg refs.uid2both.get (Sum.inl.inj origin)).trans lookup
-          simp only [infer.eq_5, lookup] at hInfer
-          simp only [eval.eq_4, lookup]
-          exact ⟨inferFuel, hInfer, runtime⟩
+        cases runtime <;> simp_all [infer.eq_5, eval.eq_4]
+        exact ⟨inferFuel, hInfer⟩
       | apply fn arg =>
         cases runtime
         rename_i runtimeFn runtimeArg
@@ -252,53 +247,40 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
           cases eval arg evalFuel <;> simp [eval.eq_3, hFnEval]
         case yield.some fnValue =>
           obtain ⟨⟨fnInferFuel, hFnValue⟩, runtimeFnValue⟩ := hFnSafety
-          cases fnInferFuel with
-          | zero => simp [infer] at hFnValue
-          | succ fnInferFuel =>
-            cases fnValue with
-            | lit repr =>
-              simp only [Val.asTrm, infer.eq_2, Rec.Outcome.yield.injEq] at hFnValue
-              cases Option.some.inj hFnValue
-            | fn annotation body =>
-              cases hArgEval : eval arg evalFuel <;> try cases ‹Option refs.base.Val›
-              all_goals simp [hArgEval] at hArgSafety
-              case outOfFuel => simp [eval.eq_3, hFnEval, hArgEval]
-              case yield.some argValue =>
-                obtain ⟨⟨argInferFuel, hArgValue⟩, runtimeArgValue⟩ := hArgSafety
-                obtain ⟨fnOutput, hBody, hFnType⟩ := inferFnSuccess hFnValue
-                rcases Pre.AST.TFn.inj hFnType with ⟨hInput, hOutput⟩
-                subst fnOutput
-                rw [← hInput] at hBody
-                let receipt := (exe.uid2val (canonicalVal argValue)).val
-                obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace
-                  (second := Sum.elim id (λ _ => receipt))
-                  (by
-                    intro carrier inferred sourceFuel hSource
-                    cases carrier with
-                    | inl outer => exact ⟨sourceFuel, hSource⟩
-                    | inr slot =>
-                      cases sourceFuel with
-                      | zero => cases hSource
-                      | succ sourceFuel =>
-                        simp only [infer.eq_5, mapRef, Sum.elim, KVEquiv.rightInv] at hSource
-                        have equality := Option.some.inj (Rec.Outcome.yield.inj hSource)
-                        subst inferred
-                        exact ⟨argInferFuel + 1, mintedValueInfer argValue hArgValue⟩) hBody
-                have hRuntimeBody : RuntimeRefs refs Sum.inl (Binder.apply body receipt) := by
-                  cases runtimeFnValue with
-                  | fn runtimeBody =>
-                    apply runtimeReplace (Sum.elim id (λ _ => receipt)) ?_ runtimeBody
-                    intro carrier runtime
-                    cases carrier with
-                    | inl outer =>
-                      cases runtime with
-                      | bound bound => cases bound
-                      | value origin lookup runtime => exact .value origin lookup runtime
-                    | inr slot =>
-                      exact .value rfl (exe.uid2val (canonicalVal argValue)).property
-                        (runtimeReplace id (λ _ runtime => runtime) runtimeArgValue)
-                simpa only [eval.eq_3, hFnEval, hArgEval] using
-                  ih (Binder.apply body receipt) bodyFuel typ hRuntimeBody hBodyTarget
+          cases fnInferFuel <;> (try cases fnValue) <;> simp [Val.asTrm, infer.eq_1, infer.eq_2] at hFnValue
+          case succ.lit => cases Option.some.inj hFnValue
+          case succ.fn fnInferFuel annotation body =>
+            cases hArgEval : eval arg evalFuel <;> try cases ‹Option refs.base.Val›
+            all_goals simp [hArgEval] at hArgSafety
+            case outOfFuel => simp [eval.eq_3, hFnEval, hArgEval]
+            case yield.some argValue =>
+              obtain ⟨⟨argInferFuel, hArgValue⟩, runtimeArgValue⟩ := hArgSafety
+              obtain ⟨fnOutput, hBody, hFnType⟩ := inferFnSuccess hFnValue
+              rcases Pre.AST.TFn.inj hFnType with ⟨rfl, rfl⟩
+              let receipt := (exe.uid2val (canonicalVal argValue)).val
+              obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace
+                (second := Sum.elim id (λ _ => receipt))
+                (by
+                  intro carrier inferred sourceFuel hSource
+                  cases carrier with
+                  | inl outer => exact ⟨sourceFuel, hSource⟩
+                  | inr slot =>
+                    cases sourceFuel <;> simp [infer, mapRef, Sum.elim] at hSource
+                    cases hSource
+                    exact ⟨argInferFuel + 1, mintedValueInfer argValue hArgValue⟩) hBody
+              have hRuntimeBody : RuntimeRefs refs Sum.inl (Binder.apply body receipt) := by
+                cases runtimeFnValue with
+                | fn runtimeBody =>
+                  apply runtimeReplace (Sum.elim id (λ _ => receipt)) ?_ runtimeBody
+                  intro carrier runtime
+                  cases carrier with
+                  | inl outer =>
+                    cases runtime <;> solve_by_elim [RuntimeRefs.value]
+                  | inr slot =>
+                    exact .value rfl (exe.uid2val (canonicalVal argValue)).property
+                      (runtimeReplace id (λ _ runtime => runtime) runtimeArgValue)
+              simpa only [eval.eq_3, hFnEval, hArgEval] using
+                ih (Binder.apply body receipt) bodyFuel _ hRuntimeBody hBodyTarget
 
 /-- Successful runtime inference excludes evaluation rejection and preserves the result's type. -/
 theorem main (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
