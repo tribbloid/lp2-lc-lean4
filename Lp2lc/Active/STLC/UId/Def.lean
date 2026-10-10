@@ -20,16 +20,16 @@ structure Root where
   UId : Type
 
 namespace Root
+section variable (this : Root)
 
 /-- Syntax parameters for this root's receipt carrier, with `String` literals and `FreeOrUnit`.
 
 UId binders are opened only at `.inr ()`; receipts replace that slot by structural substitution.
 -/
-abbrev P (this : Root) (I : Type := this.UId) : Parameters :=
-  {B := String, I := IndexEncoding.FreeOrUnit, index := I}
+abbrev P : Parameters :=
+  {B := String, I := IndexEncoding.FreeOrUnit, index := this.UId}
 
-section variable (this : Root)
-abbrev AST (l : Label) (I : Type := this.UId) := Pre.AST (this.P I) l
+abbrev AST (l : Label) := Pre.AST this.P l
 
 /-- A binder with uniform receipt substitution through its canonical structural body.
 
@@ -38,7 +38,7 @@ summand at `.inr ()`, then substitutes receipts into that fixed body structurall
 nested binders. The stored callback is internal construction data and must not be consumed as a
 nonuniform function. Instantiate UId syntax with `Root.Binder.apply`.
 -/
-abbrev Binder (l : Label) (I : Type := this.UId) := Pre.Binder (this.P I) l
+abbrev Binder (l : Label) := Pre.Binder this.P l
 abbrev Val := this.AST .val
 abbrev Trm := this.AST .trm
 abbrev Typ := this.AST .typ
