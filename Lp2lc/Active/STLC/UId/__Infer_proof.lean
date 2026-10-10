@@ -58,12 +58,8 @@ where
       AST.recarrier.visit (AST.recarrier.visit self encoding first) rfl second =
         AST.recarrier.visit self encoding (second ∘ first) := by
     induction self using Pre.AST.rec
-        (motive_1 := λ P l body => ∀ (encoding : P.Next.I = .FreeOrUnit)
+        (motive_1 := λ P l body => ∀ carrier (encoding : P.Next.I = .FreeOrUnit)
           {I J} (first : P.Next.TRef → I) (second : I → J),
-          let carrier : P.Next.TRef := by
-            rcases P with ⟨B, _, _⟩
-            cases encoding
-            exact .inr ()
           AST.recarrier.visit (AST.recarrier.visit (Pre.Binder.apply body carrier) encoding first) rfl second =
             AST.recarrier.visit (Pre.Binder.apply body carrier) encoding (second ∘ first))
         generalizing I J with
@@ -72,8 +68,7 @@ where
       exact congr (congrArg Pre.AST.TFn (ihInput encoding first second)) (ihOutput encoding first second)
     | lit repr => rfl
     | @fn P annotation body ihInput ihBody =>
-      cases body
-      rename_i body
+      rcases body with ⟨body⟩
       rcases P with ⟨B, _, _⟩
       cases encoding
       change Pre.AST.fn _ (.mk (λ _ => _)) = Pre.AST.fn _ (.mk (λ _ => _))
@@ -82,7 +77,7 @@ where
       funext carrier
       change AST.recarrier.visit (AST.recarrier.visit (body (.inr ())) rfl (Sum.map first id))
         rfl (Sum.map second id) = _
-      refine (ihBody rfl (Sum.map first id) (Sum.map second id)).trans ?_
+      refine (ihBody (.inr ()) rfl (Sum.map first id) (Sum.map second id)).trans ?_
       exact congrArg (AST.recarrier.visit (body (.inr ())) rfl) (Sum.map_comp_map second id first id)
     | val value ih => exact congrArg Pre.AST.val (ih encoding first second)
     | apply fn arg ihFn ihArg =>
