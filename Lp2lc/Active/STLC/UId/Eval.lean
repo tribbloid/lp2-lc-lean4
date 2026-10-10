@@ -10,7 +10,7 @@ namespace Root.Trm
 Type-only receipts are rejected. Every recursive call consumes predecessor fuel; the callback
 receives only `.inr ()`, never the runtime receipt being substituted into its canonical body.
 -/
-def eval {refs : UIdRefs} [exe : ExeEnv refs] (self : refs.base.Trm) : RecOpt refs.base.Val
+def eval {refs : UIdRefs} [build : BuildEnv refs] (self : refs.base.Trm) : RecOpt refs.base.Val
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
@@ -18,18 +18,18 @@ def eval {refs : UIdRefs} [exe : ExeEnv refs] (self : refs.base.Trm) : RecOpt re
     | .apply fnTerm arg =>
       match eval fnTerm fuel, eval arg fuel with
       | .yield (some (.fn _ body)), .yield (some arg) =>
-        eval (Root.Binder.apply body (exe.uid2val (Root.canonicalVal arg))) fuel
+        eval (Root.Binder.apply body (build.uid2val arg)) fuel
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
     | .ref carrier under =>
       match refs.uid2both.get (mapRef under carrier) with
       | .inl _ => .yield none
-      | .inr value => .yield (some value.val)
+      | .inr value => .yield (some value)
 
 namespace Monotone
 
 /-- Evaluation preserves every completed result, including rejection, when fuel increases. -/
-theorem termEval {refs : UIdRefs} [exe : ExeEnv refs] (trm : refs.base.Trm) :
+theorem termEval {refs : UIdRefs} [build : BuildEnv refs] (trm : refs.base.Trm) :
     trm.eval.Monotone := by
   intro less more result hFuel hEval
   induction less generalizing trm more result with

@@ -58,30 +58,22 @@ supplies `.inr ()` solely to obtain the body in the extended context.
 def Binder.apply {l} (self : this.Binder l) (carrier : this.UId) :=
   AST.recarrier (Pre.Binder.apply self (.inr ())) (Sum.elim id (λ _ => carrier))
 
-/-- Values in the image of structural normalization, with unused callback inputs erased. -/
-abbrev CanonicalVal (this : Root) :=
-  {value : this.Val // ∃ source : this.Val, AST.recarrier source id = value}
-
-/-- Admits a raw value by normalizing its canonical binder bodies. -/
-def canonicalVal (value : this.Val) : this.CanonicalVal :=
-  ⟨AST.recarrier value id, value, rfl⟩
-
 end Root
 
 /-- One read-only receipt view shared by compile-time type lookup and runtime value lookup. -/
 structure UIdRefs extends base : Root where
-  uid2both : KVRefs UId (base.Typ ⊕ base.CanonicalVal)
+  uid2both : KVRefs UId (base.Typ ⊕ base.Val)
 
-/-- Compile-time minting accepts types or canonical values without requiring an executable environment. -/
+/-- The shared inverse mints both compile-time type and runtime value receipts. -/
 class BuildEnv (refs : UIdRefs) where
   uid2bothCtx : KVEquiv refs.uid2both
 
-/-- Runtime minting certifies shared lookup of the requested canonical structural value. -/
-class ExeEnv (refs : UIdRefs) where
-  uid2val (value : refs.base.CanonicalVal) :
-    {receipt : refs.UId // refs.uid2both.get receipt = .inr value}
+/-- Mints a runtime receipt through the same equivalence used to mint compile-time type receipts. -/
+def BuildEnv.uid2val {refs : UIdRefs} (self : BuildEnv refs) (value : refs.base.Val) :
+    {receipt : refs.UId // refs.uid2both.get receipt = .inr value} :=
+  ⟨self.uid2bothCtx.inv (.inr value), self.uid2bothCtx.rightInv _⟩
 
-instance {refs} [build : BuildEnv refs] : ExeEnv refs where
-  uid2val value := ⟨build.uid2bothCtx.inv (.inr value), build.uid2bothCtx.rightInv _⟩
+/-- Compatibility name for the runtime view of the shared build environment. -/
+abbrev ExeEnv (refs : UIdRefs) := BuildEnv refs
 
 end Lp2lc.Active.STLC

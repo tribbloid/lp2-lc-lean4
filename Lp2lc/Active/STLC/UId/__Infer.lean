@@ -26,7 +26,7 @@ def infer {refs : UIdRefs} [env : BuildEnv refs] (self : refs.base.Trm) : RecOpt
     | .ref carrier under =>
       match refs.uid2both.get (mapRef under carrier) with
       | .inl typ => .yield (some typ)
-      | .inr value => infer value.val.asTrm fuel
+      | .inr value => infer value.asTrm fuel
 
 namespace Monotone
 
