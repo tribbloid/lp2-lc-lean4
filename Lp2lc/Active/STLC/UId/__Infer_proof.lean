@@ -18,10 +18,10 @@ inductive RuntimeRefs (refs : UIdRefs) : {base : Root} →
       RuntimeRefs refs (base := base) origins (.ref carrier under)
   | value {base origins carrier under receipt value}
       (origin : origins (mapRef under carrier) = .inl receipt) (lookup : refs.uid2both.get receipt = .inr value)
-      (runtime : RuntimeRefs refs Sum.inl value.val.asTrm) :
+      (runtime : RuntimeRefs refs Sum.inl value.asTrm) :
       RuntimeRefs refs (base := base) origins (.ref carrier under)
 
-section variable {refs : UIdRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
+section variable {refs : UIdRefs} [build : BuildEnv refs]
 
 /-- Every completed evaluation succeeds, and its value can be inferred at the claimed type. -/
 def Safety (trm : refs.base.Trm) (typ : refs.base.Typ) : Prop :=
@@ -208,11 +208,9 @@ private theorem runtimeReplace {source target : Root} {trm : source.Trm}
   | bound bound => exact hReplace _ (.bound bound)
   | value origin lookup runtime ih => exact hReplace _ (.value origin lookup runtime)
 
-variable [exe : ExeEnv refs]
-
 private theorem mintedValueInfer (value : refs.base.Val) {fuel : Nat} {typ : refs.base.Typ}
     (hInfer : infer value.asTrm fuel = .yield (some typ)) :
-    infer (.ref (exe.uid2val (canonicalVal value)).val .same) (fuel + 1) =
+    infer (.ref (build.uid2val value).val .same) (fuel + 1) =
       .yield (some typ) := by
   simp only [infer.eq_5, mapRef, (exe.uid2val (canonicalVal value)).property]
   exact (inferCanonical value.asTrm fuel).trans hInfer
