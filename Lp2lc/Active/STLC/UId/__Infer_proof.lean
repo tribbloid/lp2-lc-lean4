@@ -5,21 +5,20 @@ open Lp2lc.Active.Util Root Root.Trm
 
 /-- Runtime references and their stored values are valid; lexical binder slots are admitted separately. -/
 inductive RuntimeRefs (refs : UIdRefs) : {base : Root} →
-    (base.UId → refs.UId ⊕ Unit) → base.Trm → Prop where
+    (origins : base.UId → refs.UId ⊕ Unit) → (trm : base.Trm) → Prop where
   | lit {base origins repr} : RuntimeRefs refs (base := base) origins (.val (.lit repr))
-  | fn {base : Root} {origins annotation} {body : base.Binder .trm} :
-      RuntimeRefs refs (base := ⟨base.UId ⊕ Unit⟩) (Sum.elim origins (λ _ => .inr ()))
-        (Pre.Binder.apply body (.inr ())) →
+  | fn {base : Root} {origins annotation} {body : base.Binder .trm}
+      (runtime : RuntimeRefs refs (base := ⟨base.UId ⊕ Unit⟩) (Sum.elim origins (λ _ => .inr ()))
+        (Pre.Binder.apply body (.inr ()))) :
       RuntimeRefs refs (base := base) origins (.val (.fn annotation body))
-  | apply {base origins fn arg} :
-      RuntimeRefs refs (base := base) origins fn → RuntimeRefs refs origins arg →
+  | apply {base origins fn arg}
+      (runtimeFn : RuntimeRefs refs (base := base) origins fn) (runtimeArg : RuntimeRefs refs origins arg) :
       RuntimeRefs refs origins (.apply fn arg)
-  | bound {base origins carrier under} :
-      origins (mapRef under carrier) = .inr () →
+  | bound {base origins carrier under} (origin : origins (mapRef under carrier) = .inr ()) :
       RuntimeRefs refs (base := base) origins (.ref carrier under)
-  | value {base origins carrier under receipt value} :
-      origins (mapRef under carrier) = .inl receipt → refs.uid2both.get receipt = .inr value →
-      RuntimeRefs refs Sum.inl value.val.asTrm →
+  | value {base origins carrier under receipt value}
+      (origin : origins (mapRef under carrier) = .inl receipt) (lookup : refs.uid2both.get receipt = .inr value)
+      (runtime : RuntimeRefs refs Sum.inl value.val.asTrm) :
       RuntimeRefs refs (base := base) origins (.ref carrier under)
 
 namespace Fundamental
