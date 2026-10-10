@@ -37,19 +37,15 @@ section variable {refs : UIdRefs} [build : BuildEnv refs]
 private theorem typRecarrier {source target : Root} (typ : source.Typ)
     (first second : source.UId → target.UId) :
     AST.recarrier typ first = AST.recarrier typ second := by
-  cases typ with
-  | TLit => rfl
-  | TFn input output =>
-    change Pre.AST.TFn _ _ = Pre.AST.TFn _ _
-    exact congr (congrArg Pre.AST.TFn (typRecarrier input first second)) (typRecarrier output first second)
+  cases typ <;> try rfl
+  change Pre.AST.TFn _ _ = Pre.AST.TFn _ _
+  exact congr (congrArg Pre.AST.TFn (typRecarrier _ first second)) (typRecarrier _ first second)
 termination_by sizeOf typ
 
 private theorem typRecarrierId {base : Root} (typ : base.Typ) :
     AST.recarrier typ id = typ := by
-  cases typ with
-  | TLit => rfl
-  | TFn input output =>
-    exact congr (congrArg Pre.AST.TFn (typRecarrierId input)) (typRecarrierId output)
+  cases typ <;> try rfl
+  exact congr (congrArg Pre.AST.TFn (typRecarrierId _)) (typRecarrierId _)
 termination_by sizeOf typ
 
 private theorem recarrierComp {source middle target : Root} {l} (self : source.AST l)
@@ -135,10 +131,8 @@ private theorem inferFnSuccess {annotation : refs.base.Typ} {body : refs.base.Bi
       typ = .TFn annotation output := by
   rcases hBody : infer (Binder.apply body (build.uid2bothCtx.inv (.inl annotation))) fuel with
       (_ | output) | _
-  all_goals simp only [infer.eq_3, hBody, Rec.Outcome.map, Option.map,
-    Rec.Outcome.yield.injEq] at hInfer
-  all_goals try cases hInfer
-  exact ⟨output, rfl, rfl⟩
+  all_goals simp [infer.eq_3, hBody, Rec.Outcome.map, Option.map] at hInfer
+  exact ⟨output, rfl, Option.some.inj hInfer.symm⟩
 
 private theorem inferReplace {base : Root} {trm : base.Trm}
     {first second : base.UId → refs.UId} {fuel : Nat} {typ : refs.base.Typ}
@@ -193,8 +187,7 @@ private theorem inferReplace {base : Root} {trm : base.Trm}
       exact ⟨max fnFuel argFuel + 1, by
         change infer (.apply (AST.recarrier fn second) (AST.recarrier arg second)) _ = _
         simp only [infer.eq_4, hFnMore, hArgMore]
-        have hRefl : input ≤ input := rfl
-        simp [hRefl]⟩
+        exact congrArg Rec.Outcome.yield (ite_eq_left (rfl : input ≤ input))⟩
 
 omit build in
 private theorem runtimeReplace {source target : Root} {trm : source.Trm}
@@ -213,12 +206,8 @@ private theorem runtimeReplace {source target : Root} {trm : source.Trm}
     cases carrier with
     | inl outer =>
       have original : RuntimeRefs refs origins (.ref outer .same) := by
-        cases runtime with
-        | bound bound => exact .bound bound
-        | value origin lookup runtime => exact .value origin lookup runtime
-      cases hReplace outer original with
-      | bound bound => exact .bound bound
-      | value origin lookup runtime => exact .value origin lookup runtime
+        cases runtime <;> solve_by_elim [RuntimeRefs.bound, RuntimeRefs.value]
+      cases hReplace outer original <;> solve_by_elim [RuntimeRefs.bound, RuntimeRefs.value]
     | inr slot => exact .bound rfl
   | apply fn arg ihFn ihArg => exact .apply (ihFn map hReplace) (ihArg map hReplace)
   | bound bound => exact hReplace _ (.bound bound)
@@ -323,11 +312,9 @@ theorem main (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
   intro evalFuel
   have safe := inferEvalSafety trm fuel typ runtime hInfer evalFuel
   rcases result : eval trm evalFuel with (_ | value) | _
-  · simp [result] at safe
-  · simp only [result] at safe
-    obtain ⟨valueFuel, typed, _⟩ := safe
-    exact ⟨valueFuel, by rw [typed]; exact (rfl : typ ≤ typ)⟩
-  · trivial
+  all_goals simp only [result, Bool.false_eq_true] at safe ⊢
+  obtain ⟨valueFuel, typed, _⟩ := safe
+  exact ⟨valueFuel, by rw [typed]; exact (rfl : typ ≤ typ)⟩
 
 end
 
