@@ -53,26 +53,86 @@ private theorem typRecarrierId {base : Root} (typ : base.Typ) :
     exact congr (congrArg Pre.AST.TFn (typRecarrierId input)) (typRecarrierId output)
 termination_by sizeOf typ
 
-private theorem recarrierComp {source middle target : Root} {l} (typ : source.AST l)
+private theorem recarrierComp {source middle target : Root} {l} (self : source.AST l)
     (first : source.UId → middle.UId) (second : middle.UId → target.UId) :
-    AST.recarrier (AST.recarrier typ first) second =
-      AST.recarrier typ (second ∘ first) := by
-  cases typ with
-  | TLit => rfl
-  | TFn input output =>
-    exact congr (congrArg Pre.AST.TFn (typRecarrierComp input first second))
-      (typRecarrierComp output first second)
-termination_by sizeOf typ
+    AST.recarrier (AST.recarrier self first) second =
+      AST.recarrier self (second ∘ first) := visit self rfl first second
+where
+  visit {P l I J} (self : Pre.AST P l) (encoding : P.I = .FreeOrUnit)
+      (first : P.TRef → I) (second : I → J) :
+      AST.recarrier.visit (AST.recarrier.visit self encoding first) rfl second =
+        AST.recarrier.visit self encoding (second ∘ first) := by
+    induction self using Pre.AST.rec
+        (motive_1 := λ P l body => ∀ (encoding : P.Next.I = .FreeOrUnit)
+          {I J} (first : P.Next.TRef → I) (second : I → J),
+          let carrier : P.Next.TRef := by
+            rcases P with ⟨B, _, _⟩
+            cases encoding
+            exact .inr ()
+          AST.recarrier.visit (AST.recarrier.visit (Pre.Binder.apply body carrier) encoding first) rfl second =
+            AST.recarrier.visit (Pre.Binder.apply body carrier) encoding (second ∘ first))
+        generalizing I J with
+    | TLit => rfl
+    | TFn input output ihInput ihOutput =>
+      exact congr (congrArg Pre.AST.TFn (ihInput encoding first second)) (ihOutput encoding first second)
+    | lit repr => rfl
+    | @fn P annotation body ihInput ihBody =>
+      cases body
+      rename_i body
+      rcases P with ⟨B, _, _⟩
+      cases encoding
+      change Pre.AST.fn _ (.mk (λ _ => _)) = Pre.AST.fn _ (.mk (λ _ => _))
+      rw [ihInput rfl first second]
+      congr 2
+      funext carrier
+      change AST.recarrier.visit (AST.recarrier.visit (body (.inr ())) rfl (Sum.map first id))
+        rfl (Sum.map second id) = _
+      refine (ihBody rfl (Sum.map first id) (Sum.map second id)).trans ?_
+      congr 1
+      funext reference
+      cases reference <;> rfl
+    | val value ih => exact congrArg Pre.AST.val (ih encoding first second)
+    | apply fn arg ihFn ihArg =>
+      exact congr (congrArg Pre.AST.apply (ihFn encoding first second)) (ihArg encoding first second)
+    | ref carrier under => rfl
+    | _ body ih => exact ih _ _ _ _
 
 private theorem mintedTypeLookup (typ : refs.base.Typ) :
     refs.uid2both.get (build.uid2bothCtx.inv (.inl typ)) = .inl typ := by
   exact build.uid2bothCtx.rightInv (.inl typ)
 
+private theorem mapSlot {C I} (map : C → I) (receipt : I) :
+    Sum.elim id (λ (_ : Unit) => receipt) ∘ Sum.map map id = Sum.elim map (λ _ => receipt) := by
+  funext carrier
+  cases carrier <;> rfl
+
+private theorem inferCanonical (trm : refs.base.Trm) (fuel : Nat) :
+    infer (AST.recarrier trm id) fuel = infer trm fuel := by
+  induction fuel generalizing trm with
+  | zero => rfl
+  | succ fuel ih =>
+    cases trm with
+    | val value =>
+      cases value with
+      | lit repr => rfl
+      | fn annotation body =>
+        cases body
+        rename_i body
+        change infer (.val (.fn (AST.recarrier annotation id)
+          (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map id id))))) (fuel + 1) = _
+        rw [typRecarrierId]
+        simp only [infer.eq_3, Binder.apply, Pre.Binder.apply, Pre.Binder.mk]
+        rw [recarrierComp, mapSlot]
+    | apply fn arg =>
+      change infer (.apply (AST.recarrier fn id) (AST.recarrier arg id)) (fuel + 1) = _
+      simp only [infer.eq_4, ih]
+    | ref carrier under => rfl
+
 private theorem inferApplySuccess {fn arg : refs.base.Trm} {fuel : Nat} {typ : refs.base.Typ}
     (hInfer : infer (.apply fn arg) (fuel + 1) = .yield (some typ)) :
     ∃ input, infer fn fuel = .yield (some (.TFn input typ)) ∧
       infer arg fuel = .yield (some input) := by
-  simp only [infer.visit.eq_4] at hInfer
+  simp only [infer.eq_4] at hInfer
   repeat split at hInfer
   all_goals simp_all [LE.le]
   all_goals injection hInfer; subst_vars; exact ⟨_, rfl, rfl⟩
@@ -82,11 +142,9 @@ private theorem inferFnSuccess {annotation : refs.base.Typ} {body : refs.base.Bi
     (hInfer : infer (.val (.fn annotation body)) (fuel + 1) = .yield (some typ)) :
     ∃ output, infer (Binder.apply body (build.uid2bothCtx.inv (.inl annotation))) fuel = .yield (some output) ∧
       typ = .TFn annotation output := by
-  dsimp only
-  rcases hBody : infer.visit (base := ⟨base.UId ⊕ Unit⟩) (Pre.Binder.apply body (.inr ()))
-      (Sum.elim bindings (λ _ => .inl (build.uid2bothCtx.inv
-        (.inl (AST.recarrier annotation (Sum.elim id id ∘ bindings)))))) fuel with (_ | output) | _
-  all_goals simp only [infer.visit.eq_3, hBody, Rec.Outcome.map, Option.map,
+  rcases hBody : infer (Binder.apply body (build.uid2bothCtx.inv (.inl annotation))) fuel with
+      (_ | output) | _
+  all_goals simp only [infer.eq_3, hBody, Rec.Outcome.map, Option.map,
     Rec.Outcome.yield.injEq] at hInfer
   all_goals try cases hInfer
   exact ⟨output, rfl, rfl⟩
@@ -99,65 +157,103 @@ private theorem inferReplace {base : Root} {trm : base.Trm}
     (hInfer : infer (AST.recarrier trm first) fuel = .yield (some typ)) :
     ∃ targetFuel, infer (AST.recarrier trm second) targetFuel = .yield (some typ) := by
   induction fuel generalizing base trm first second typ with
-  | zero => simp [infer.visit] at hInfer
+  | zero => simp [infer] at hInfer
   | succ fuel ih =>
     cases trm with
     | val value =>
       cases value with
       | lit repr => exact ⟨1, hInfer⟩
       | fn annotation body =>
+        cases body
+        rename_i body
+        change infer (.val (.fn (AST.recarrier annotation first)
+          (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map first id))))) (fuel + 1) = _ at hInfer
         obtain ⟨output, hBody, hType⟩ := inferFnSuccess hInfer
         subst typ
-        have inputEqual := typRecarrier annotation (Sum.elim id id ∘ first) (Sum.elim id id ∘ second)
-        let input := AST.recarrier annotation (Sum.elim id id ∘ first)
+        have inputEqual := typRecarrier annotation first second
+        let input := AST.recarrier annotation first
         let receipt := build.uid2bothCtx.inv (.inl input)
+        change infer (AST.recarrier (AST.recarrier (body (.inr ())) (Sum.map first id))
+          (Sum.elim id (λ _ => receipt))) fuel = _ at hBody
+        rw [recarrierComp, mapSlot] at hBody
         obtain ⟨bodyFuel, hTarget⟩ := ih
-          (base := ⟨base.UId ⊕ Unit⟩) (trm := Pre.Binder.apply body (.inr ()))
-          (first := Sum.elim first (λ _ => .inl receipt))
-          (second := Sum.elim second (λ _ => .inl receipt))
+          (base := ⟨base.UId ⊕ Unit⟩) (trm := body (.inr ()))
+          (first := Sum.elim first (λ _ => receipt))
+          (second := Sum.elim second (λ _ => receipt))
           (by
             intro carrier inferred sourceFuel hSource
             cases carrier with
-            | inl outer =>
-              have original : infer.visit (base := base) (.ref outer .same) first sourceFuel =
-                  .yield (some inferred) := (inferTransport (source := base) (target := ⟨base.UId ⊕ Unit⟩)
-                (.ref (P' := base.P) outer .same) Sum.inl
-                (Sum.elim first (λ _ => .inl receipt)) sourceFuel).symm.trans hSource
-              obtain ⟨targetFuel, hTarget⟩ := hReplace outer inferred sourceFuel original
-              exact ⟨targetFuel, (inferTransport (source := base) (target := ⟨base.UId ⊕ Unit⟩)
-                (.ref (P' := base.P) outer .same) Sum.inl
-                (Sum.elim second (λ _ => .inl receipt)) targetFuel).trans hTarget⟩
-            | inr slot => exact ⟨sourceFuel, by cases sourceFuel <;> exact hSource⟩) hBody
+            | inl outer => exact hReplace outer inferred sourceFuel hSource
+            | inr slot => exact ⟨sourceFuel, hSource⟩) hBody
         exact ⟨bodyFuel + 1, by
-          rw [infer.visit.eq_3, ← inputEqual, hTarget]
+          change infer (.val (.fn (AST.recarrier annotation second)
+            (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map second id))))) (bodyFuel + 1) = _
+          rw [infer.eq_3, ← inputEqual]
+          simp only [Binder.apply, Pre.Binder.apply, Pre.Binder.mk]
+          rw [recarrierComp, mapSlot, hTarget]
           rfl⟩
     | ref carrier under =>
-      have canonical := (inferTransport (.ref carrier under) id first (fuel + 1)).trans hInfer
-      obtain ⟨targetFuel, hTarget⟩ := hReplace (mapRef under carrier) typ (fuel + 1) canonical
-      exact ⟨targetFuel, (inferTransport (.ref carrier under) id second targetFuel).symm.trans hTarget⟩
+      exact hReplace (mapRef under carrier) typ (fuel + 1) hInfer
     | apply fn arg =>
+      change infer (.apply (AST.recarrier fn first) (AST.recarrier arg first)) (fuel + 1) = _ at hInfer
       obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
       obtain ⟨argFuel, hArgTarget⟩ := ih hReplace hArg
-      have hFnMore := Monotone.inferVisit fn second fnFuel (max fnFuel argFuel) _ (Nat.le_max_left _ _) hFnTarget
-      have hArgMore := Monotone.inferVisit arg second argFuel (max fnFuel argFuel) _ (Nat.le_max_right _ _) hArgTarget
+      have hFnMore := Monotone.termInfer (AST.recarrier fn second) fnFuel (max fnFuel argFuel) _
+        (Nat.le_max_left _ _) hFnTarget
+      have hArgMore := Monotone.termInfer (AST.recarrier arg second) argFuel (max fnFuel argFuel) _
+        (Nat.le_max_right _ _) hArgTarget
       exact ⟨max fnFuel argFuel + 1, by
-        simp only [infer.visit.eq_4, hFnMore, hArgMore]
+        change infer (.apply (AST.recarrier fn second) (AST.recarrier arg second)) _ = _
+        simp only [infer.eq_4, hFnMore, hArgMore]
         have hRefl : input ≤ input := rfl
         simp [hRefl]⟩
 
+omit build in
+private theorem runtimeReplace {source target : Root} {trm : source.Trm}
+    {first : source.UId → refs.UId ⊕ Unit} {second : target.UId → refs.UId ⊕ Unit}
+    (map : source.UId → target.UId)
+    (hReplace : ∀ receipt, RuntimeRefs refs first (.ref receipt .same) →
+      RuntimeRefs refs second (.ref (map receipt) .same))
+    (runtime : RuntimeRefs refs first trm) : RuntimeRefs refs second (AST.recarrier trm map) := by
+  induction runtime generalizing target with
+  | lit => exact .lit
+  | @fn base origins annotation body runtime ih =>
+    cases body
+    rename_i body
+    change RuntimeRefs refs second (.val (.fn (AST.recarrier annotation map)
+      (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map map id)))))
+    apply RuntimeRefs.fn
+    apply ih (Sum.map map id)
+    intro carrier runtime
+    cases carrier with
+    | inl outer =>
+      have original : RuntimeRefs refs origins (.ref outer .same) := by
+        cases runtime with
+        | bound bound => exact .bound bound
+        | value origin lookup runtime => exact .value origin lookup runtime
+      cases hReplace outer original with
+      | bound bound => exact .bound bound
+      | value origin lookup runtime => exact .value origin lookup runtime
+    | inr slot => exact .bound rfl
+  | apply fn arg ihFn ihArg => exact .apply (ihFn map hReplace) (ihArg map hReplace)
+  | bound bound => exact hReplace _ (.bound bound)
+  | value origin lookup runtime ih => exact hReplace _ (.value origin lookup runtime)
+
 variable [exe : ExeEnv refs]
+
+omit build in
+private theorem mintedValueLookup (value : refs.base.Val) :
+    refs.uid2both.get (exe.uid2valCtx.inv (canonicalVal value)).val = .inr (canonicalVal value) :=
+    (Sum.inr_getRight _ _).symm.trans
+      (congrArg Sum.inr (exe.uid2valCtx.rightInv (canonicalVal value)))
 
 private theorem mintedValueInfer (value : refs.base.Val) {fuel : Nat} {typ : refs.base.Typ}
     (hInfer : infer value.asTrm fuel = .yield (some typ)) :
     infer (.ref (exe.uid2valCtx.inv (canonicalVal value)).val .same) (fuel + 1) =
       .yield (some typ) := by
-  have lookup : refs.uid2both.get (exe.uid2valCtx.inv (canonicalVal value)).val =
-      .inr (canonicalVal value) :=
-    (Sum.inr_getRight _ _).symm.trans
-      (congrArg Sum.inr (exe.uid2valCtx.rightInv (canonicalVal value)))
-  simp only [infer, infer.visit.eq_5, mapRef, Sum.elim, id, lookup]
-  exact (inferTransport value.asTrm id Sum.inr fuel).trans hInfer
+  simp only [infer.eq_5, mapRef, mintedValueLookup]
+  exact (inferCanonical value.asTrm fuel).trans hInfer
 
 private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : refs.base.Typ)
     (runtime : RuntimeRefs refs Sum.inl trm)
@@ -170,80 +266,88 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
   | zero => trivial
   | succ evalFuel ih =>
     cases inferFuel with
-    | zero => simp [infer, infer.visit] at hInfer
+    | zero => simp [infer] at hInfer
     | succ inferFuel =>
       cases trm with
-      | val value => exact ⟨inferFuel + 1, hInfer⟩
+      | val value => exact ⟨inferFuel + 1, hInfer, runtime⟩
       | ref carrier under =>
-        cases lookup : refs.uid2both.get (mapRef under carrier) with
-        | inl input =>
-          simp only [infer, infer.visit.eq_5, Sum.elim, id, lookup] at hInfer
-          cases hInfer
-        | inr value =>
-          simp only [infer, infer.visit.eq_5, Sum.elim, id, lookup] at hInfer
+        cases runtime with
+        | bound bound => cases bound
+        | value origin lookup runtime =>
+          have lookup := (congrArg refs.uid2both.get (Sum.inl.inj origin)).trans lookup
+          simp only [infer.eq_5, lookup] at hInfer
           simp only [eval.eq_4, lookup]
-          exact ⟨inferFuel, hInfer⟩
+          exact ⟨inferFuel, hInfer, runtime⟩
       | apply fn arg =>
+        cases runtime
+        rename_i runtimeFn runtimeArg
         obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
-        have hFnSafety := ih fn inferFuel (.TFn input typ) hFn
-        have hArgSafety := ih arg inferFuel input hArg
+        have hFnSafety := ih fn inferFuel (.TFn input typ) runtimeFn hFn
+        have hArgSafety := ih arg inferFuel input runtimeArg hArg
         cases hFnEval : eval fn evalFuel <;> try cases ‹Option refs.base.Val›
         all_goals simp [hFnEval] at hFnSafety
         case outOfFuel =>
           cases eval arg evalFuel <;> simp [eval.eq_3, hFnEval]
         case yield.some fnValue =>
-          obtain ⟨fnInferFuel, hFnValue⟩ := hFnSafety
+          obtain ⟨⟨fnInferFuel, hFnValue⟩, runtimeFnValue⟩ := hFnSafety
           cases fnInferFuel with
-          | zero => simp [infer, infer.visit] at hFnValue
+          | zero => simp [infer] at hFnValue
           | succ fnInferFuel =>
             cases fnValue with
             | lit repr =>
-              simp only [Val.asTrm, infer, infer.visit.eq_2, Rec.Outcome.yield.injEq] at hFnValue
+              simp only [Val.asTrm, infer.eq_2, Rec.Outcome.yield.injEq] at hFnValue
               cases Option.some.inj hFnValue
             | fn annotation body =>
               cases hArgEval : eval arg evalFuel <;> try cases ‹Option refs.base.Val›
               all_goals simp [hArgEval] at hArgSafety
               case outOfFuel => simp [eval.eq_3, hFnEval, hArgEval]
               case yield.some argValue =>
-                obtain ⟨argInferFuel, hArgValue⟩ := hArgSafety
+                obtain ⟨⟨argInferFuel, hArgValue⟩, runtimeArgValue⟩ := hArgSafety
                 obtain ⟨fnOutput, hBody, hFnType⟩ := inferFnSuccess hFnValue
-                have annotationId : AST.recarrier annotation (Sum.elim id id ∘ Sum.inr) = annotation :=
-                  typRecarrierId annotation
-                rw [annotationId] at hFnType hBody
                 rcases Pre.AST.TFn.inj hFnType with ⟨hInput, hOutput⟩
                 subst fnOutput
                 rw [← hInput] at hBody
                 let receipt := (exe.uid2valCtx.inv (canonicalVal argValue)).val
                 obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace
-                  (second := Sum.inr ∘ Sum.elim id (λ _ => receipt))
+                  (second := Sum.elim id (λ _ => receipt))
                   (by
                     intro carrier inferred sourceFuel hSource
                     cases carrier with
-                    | inl outer => exact ⟨sourceFuel, by cases sourceFuel <;> exact hSource⟩
+                    | inl outer => exact ⟨sourceFuel, hSource⟩
                     | inr slot =>
                       cases sourceFuel with
                       | zero => cases hSource
                       | succ sourceFuel =>
-                        simp only [infer.visit.eq_5, mapRef, Sum.elim, mintedTypeLookup, id] at hSource
+                        simp only [infer.eq_5, mapRef, Sum.elim, mintedTypeLookup] at hSource
                         have equality := Option.some.inj (Rec.Outcome.yield.inj hSource)
                         subst inferred
                         exact ⟨argInferFuel + 1, mintedValueInfer argValue hArgValue⟩) hBody
-                have hRuntimeBody : infer (Binder.apply body receipt) bodyFuel = .yield (some typ) :=
-                  (inferTransport (Pre.Binder.apply body (.inr ())) (Sum.elim id (λ _ => receipt))
-                    Sum.inr bodyFuel).trans hBodyTarget
+                have hRuntimeBody : RuntimeRefs refs Sum.inl (Binder.apply body receipt) := by
+                  cases runtimeFnValue with
+                  | fn runtimeBody =>
+                    apply runtimeReplace (Sum.elim id (λ _ => receipt)) ?_ runtimeBody
+                    intro carrier runtime
+                    cases carrier with
+                    | inl outer =>
+                      cases runtime with
+                      | bound bound => cases bound
+                      | value origin lookup runtime => exact .value origin lookup runtime
+                    | inr slot =>
+                      exact .value rfl (mintedValueLookup argValue)
+                        (runtimeReplace id (λ _ runtime => runtime) runtimeArgValue)
                 simpa only [eval.eq_3, hFnEval, hArgEval] using
-                  ih (Binder.apply body receipt) bodyFuel typ hRuntimeBody
+                  ih (Binder.apply body receipt) bodyFuel typ hRuntimeBody hBodyTarget
 
 /-- Successful runtime inference excludes evaluation rejection and preserves the result's type. -/
 theorem main (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
     (runtime : RuntimeRefs refs Sum.inl trm)
     (hInfer : trm.infer fuel = .yield (some typ)) : Safety trm typ := by
   intro evalFuel
-  have safe := inferEvalSafety trm fuel typ hInfer evalFuel
+  have safe := inferEvalSafety trm fuel typ runtime hInfer evalFuel
   rcases result : eval trm evalFuel with (_ | value) | _
   · simp [result] at safe
   · simp only [result] at safe
-    obtain ⟨valueFuel, typed⟩ := safe
+    obtain ⟨valueFuel, typed, _⟩ := safe
     exact ⟨valueFuel, by rw [typed]; exact (rfl : typ ≤ typ)⟩
   · trivial
 
