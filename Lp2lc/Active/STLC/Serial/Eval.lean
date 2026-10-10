@@ -22,8 +22,10 @@ def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt ExeValue
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
 
+namespace Monotone
+
 /-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
-theorem termEvalMonotone {n} (trm) (bindings : ExeBindings) :
+theorem termEval {n} (trm) (bindings : ExeBindings) :
     (eval (n := n) trm bindings).Monotone := by
   intro less more result hFuel hEval
   induction less generalizing n trm bindings more result with
@@ -35,6 +37,8 @@ theorem termEvalMonotone {n} (trm) (bindings : ExeBindings) :
     all_goals
       repeat split at hEval
       all_goals simp_all
+
+end Monotone
 
 end AST
 

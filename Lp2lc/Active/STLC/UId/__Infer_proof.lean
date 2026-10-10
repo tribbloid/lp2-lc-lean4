@@ -3,6 +3,8 @@ import «Lp2lc».Active.STLC.UId.__Infer
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util Root Root.Trm
 
+namespace Fundamental
+
 section variable {refs : UIdRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
 
 /-- Every completed evaluation succeeds, and its value can be inferred at the claimed type. -/
@@ -70,25 +72,6 @@ private theorem inferTransport {source target : Root} (trm : source.Trm)
     | ref carrier under =>
       change infer.visit (.ref (map (mapRef under carrier)) .same) bindings (fuel + 1) = _
       rfl
-
-private theorem inferMonotone {base : Root} (trm : base.Trm)
-    (bindings : base.UId → refs.UId ⊕ refs.UId) (less more : Nat)
-    (result : Option refs.base.Typ) (le : less ≤ more)
-    (h : infer.visit trm bindings less = .yield result) :
-    infer.visit trm bindings more = .yield result := by
-  induction less generalizing base trm bindings more result with
-  | zero => simp [infer.visit] at h
-  | succ less ih =>
-    cases more with
-    | zero => omega
-    | succ more =>
-      have le := Nat.le_of_succ_le_succ le
-      cases trm <;> try cases ‹Pre.AST _ .val›
-      all_goals
-        simp only [infer.visit.eq_2, infer.visit.eq_3, infer.visit.eq_4, infer.visit.eq_5,
-          Rec.Outcome.map] at h ⊢
-        repeat split at h
-        all_goals simp_all
 
 private theorem mintedTypeLookup (typ : refs.base.Typ) :
     refs.uid2both.get (build.uid2bothCtx.inv (.inl typ)) = .inl typ := by
@@ -168,8 +151,8 @@ private theorem inferReplace {base : Root} {trm : base.Trm}
       obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
       obtain ⟨argFuel, hArgTarget⟩ := ih hReplace hArg
-      have hFnMore := inferMonotone fn second fnFuel (max fnFuel argFuel) _ (Nat.le_max_left _ _) hFnTarget
-      have hArgMore := inferMonotone arg second argFuel (max fnFuel argFuel) _ (Nat.le_max_right _ _) hArgTarget
+      have hFnMore := Monotone.inferVisit fn second fnFuel (max fnFuel argFuel) _ (Nat.le_max_left _ _) hFnTarget
+      have hArgMore := Monotone.inferVisit arg second argFuel (max fnFuel argFuel) _ (Nat.le_max_right _ _) hArgTarget
       exact ⟨max fnFuel argFuel + 1, by
         simp only [infer.visit.eq_4, hFnMore, hArgMore]
         have hRefl : input ≤ input := rfl
@@ -261,8 +244,6 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
                 simpa only [eval.eq_3, hFnEval, hArgEval] using
                   ih (Binder.apply body receipt) bodyFuel typ hRuntimeBody
 
-namespace Fundamental
-
 /-- Successful runtime inference excludes evaluation rejection and preserves the result's type. -/
 theorem main (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
     (hInfer : trm.infer fuel = .yield (some typ)) : Safety trm typ := by
@@ -275,7 +256,8 @@ theorem main (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
     exact ⟨valueFuel, by rw [typed]; exact (rfl : typ ≤ typ)⟩
   · trivial
 
+end
+
 end Fundamental
 
-end
 end Lp2lc.Active.STLC

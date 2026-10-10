@@ -41,5 +41,34 @@ where
       | .inl _, .inr _ => .yield none
       | .inr value, _ => visit value.val.asTrm Sum.inr fuel
 
+namespace Monotone
+
+variable {refs : UIdRefs} [build : BuildEnv refs]
+
+theorem inferVisit {base : Root} (trm : base.Trm)
+    (bindings : base.UId → refs.UId ⊕ refs.UId) (less more : Nat)
+    (result : Option refs.base.Typ) (le : less ≤ more)
+    (h : infer.visit trm bindings less = .yield result) :
+    infer.visit trm bindings more = .yield result := by
+  induction less generalizing base trm bindings more result with
+  | zero => simp [infer.visit] at h
+  | succ less ih =>
+    cases more with
+    | zero => omega
+    | succ more =>
+      have le := Nat.le_of_succ_le_succ le
+      cases trm <;> try cases ‹Pre.AST _ .val›
+      all_goals
+        simp only [infer.visit.eq_2, infer.visit.eq_3, infer.visit.eq_4, infer.visit.eq_5,
+          Rec.Outcome.map] at h ⊢
+        repeat split at h
+        all_goals simp_all
+
+/-- Runtime inference preserves every completed result when fuel increases. -/
+theorem termInfer (trm : refs.base.Trm) : trm.infer.Monotone := by
+  exact inferVisit trm Sum.inr
+
+end Monotone
+
 end Root.Trm
 end Lp2lc.Active.STLC

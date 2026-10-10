@@ -34,5 +34,23 @@ def eval {refs : UIdRefs} [exe : ExeEnv refs] (self : refs.base.Trm) : RecOpt re
       | .inl _ => .yield none
       | .inr value => .yield (some value.val)
 
+namespace Monotone
+
+/-- Evaluation preserves every completed result, including rejection, when fuel increases. -/
+theorem termEval {refs : UIdRefs} [exe : ExeEnv refs] (trm : refs.base.Trm) :
+    trm.eval.Monotone := by
+  intro less more result hFuel hEval
+  induction less generalizing trm more result with
+  | zero => simp [eval] at hEval
+  | succ fuel ih =>
+    cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
+    replace hFuel := Nat.le_of_succ_le_succ hFuel
+    cases trm <;> simp only [eval.eq_2, eval.eq_3, eval.eq_4] at hEval ⊢
+    all_goals
+      repeat split at hEval
+      all_goals simp_all
+
+end Monotone
+
 end Root.Trm
 end Lp2lc.Active.STLC

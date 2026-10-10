@@ -63,6 +63,11 @@ theorem termInfer (trm : Trm n)
       repeat split at hInfer
       all_goals simp_all
 
+/-- Runtime inference preserves every completed result when fuel increases. -/
+theorem termInferRuntime (trm : Trm n) (bindings : ExeBindings := .empty) :
+    (trm.infer bindings).Monotone := by
+  exact termInfer trm (bindings.map .inl)
+
 end Monotone
 
 end AST
