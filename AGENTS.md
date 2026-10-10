@@ -156,7 +156,7 @@ Some Lean symbols can be inferred by the compiler automatically and should be be
 Before starting to work on code, actively enforce the following guardrails on every document you read; apply corrections
 in one or more preceding git commits if necessary:
 
-- Indentation is 4 spaces (as in @.markdownlint.json), continuation indentation is 6 spaces.
+- Indentation is 4 spaces (as in @.markdownlint.jsonc), continuation indentation is 6 spaces.
 - Hard wrap is 120 characters. The only exceptions are table and markup sections which can be longer.
 - Duplicated or contradicting information should be merged or deleted.
 - Inconsistent or dangling references should be fixed.
