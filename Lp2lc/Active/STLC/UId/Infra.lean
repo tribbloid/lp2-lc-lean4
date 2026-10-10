@@ -5,6 +5,9 @@ open Lp2lc.Active.Util
 
 namespace Root
 
+-- File-private structural view; consume the construction callback only at `.inr ()`.
+@[match_pattern] private abbrev canonicalBinderPattern := @Pre.Binder.mk
+
 /-- Resolves an ancestor reference into the current carrier before shared receipt lookup. -/
 def mapRef {source P : Parameters} (under : source.Under P) (carrier : source.TRef)
     (encoding : P.I = .FreeOrUnit := by rfl) : P.TRef := by
@@ -33,7 +36,7 @@ where
     | .TLit => .TLit
     | .TFn tIn tOut => .TFn (visit tIn encoding map) (visit tOut encoding map)
     | .lit repr => .lit repr
-    | .fn tIn (.mk body) => by
+    | .fn tIn (canonicalBinderPattern body) => by
       have input := visit tIn encoding map
       have recurse := λ {I} carrier => visit (I := I) (body carrier)
       rcases P with ⟨⟨B⟩, indexEncoding, index⟩

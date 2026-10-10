@@ -19,7 +19,12 @@ mutual
 
 /-- A binder introduces the next lexical context for its body. -/
 inductive Binder : Parameters → Label → UAST where
-| mk {P} (body : P.Next.TRef → AST P.Next l) : Binder P l
+    /-- Internal construction callback; do not consume it as a nonuniform function.
+
+    Use `Binder.apply` under the index encoding's opening contract. UId opens only at `.inr ()`
+    and substitutes receipts structurally; serial binders receive their sole context proxy.
+    -/
+| private body {P} (callback : P.Next.TRef → AST P.Next l) : Binder P l
 
 /-- Source type, value, and term syntax.
 
@@ -44,11 +49,12 @@ inductive AST : Parameters → Label → UAST where
 namespace Binder
 -- All theorems about Binder should be here, e.g. parametricity, lift relation
 
+/-- Constructs a binder whose body is consumed under its index encoding's opening contract. -/
+def mk {P l} (body : P.Next.TRef → AST P.Next l) : Binder P l := .body body
+
 /-- Opens a binder body with the supplied reference receipt. -/
-def apply {P : Parameters} {l : Label} (self : Binder P l)
-    (carrier : P.Next.TRef) : AST P.Next l :=
-  match self with
-  | .mk body => body carrier
+def apply {P l} (self : Binder P l) (carrier : P.Next.TRef) : AST P.Next l := match self with
+  | .body callback => callback carrier
 
 end Binder
 

@@ -10,6 +10,9 @@ namespace Lp2lc.Active.STLC
 open Lean (Json)
 open Lp2lc.Active.Util
 
+-- File-private structural view; the caller supplies its encoding's sole context proxy.
+@[match_pattern] private abbrev serialBinderPattern := @Pre.Binder.mk
+
 /--
 Canonical JSON signature of syntax: a single tree traversal that both
 signature equality and hashing delegate to. Reference indices and bytecode values are
@@ -24,7 +27,7 @@ private def visit {P : Parameters} {l} (self : Pre.AST P l)
   | .TFn tIn tOut =>
     .arr #["fn", visit tIn get sigC sigB, visit tOut get sigC sigB]
   | .lit repr => .arr #["lit", sigB repr]
-  | .fn tIn (.mk body) =>
+  | .fn tIn (serialBinderPattern body) =>
     .arr #["lam", visit (body (get P.Next.index)) get sigC sigB, visit tIn get sigC sigB]
   | .val v => .arr #["val", visit v get sigC sigB]
   | .apply fnTerm arg =>
