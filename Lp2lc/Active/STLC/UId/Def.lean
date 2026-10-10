@@ -3,7 +3,7 @@ import «Lp2lc».Active.STLC.STLCDef
 /-!
 # UId syntax with structural binder slots
 
-`EnvBase` fixes the carrier of free reference receipts. Its syntax uses `String` literals and the
+`Root` fixes the carrier of free reference receipts. Its syntax uses `String` literals and the
 `FreeOrUnit` encoding, with separate `.typ`, `.val`, and `.trm` families in the shared `Pre.AST`.
 
 For an outer carrier `C`, a binder extends references to `C ⊕ Unit`: `.inl outer` retains an outer
@@ -15,20 +15,20 @@ reference, and `.inr ()` denotes the newest bound slot. Nested binders repeat th
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
-structure EnvBase where
+structure Root where
   /-- Free reference receipt carrier, extended with a structural `Unit` slot beneath each binder. -/
   UId : Type
 
-namespace EnvBase
+namespace Root
 
 /-- Syntax parameters for carrier `I`, initially `this.UId`, with `String` literals and `FreeOrUnit`.
 
 UId binders are opened only at `.inr ()`; receipts replace that slot by structural substitution.
 -/
-abbrev P (this : EnvBase) (I : Type := this.UId) : Parameters :=
+abbrev P (this : Root) (I : Type := this.UId) : Parameters :=
   {B := String, I := IndexEncoding.FreeOrUnit, index := I}
 
-section variable (this : EnvBase)
+section variable (this : Root)
 abbrev AST (l : Label) (I : Type := this.UId) := Pre.AST (this.P I) l
 
 /-- A shared functional binder interpreted through its canonical structural body.
@@ -55,11 +55,11 @@ abbrev TypOrVal := this.Typ ⊕ this.Val
 
 end
 
-def Val.asTrm {this : EnvBase} (v : this.Val) : this.Trm := .val v
-end EnvBase
+def Val.asTrm {this : Root} (v : this.Val) : this.Trm := .val v
+end Root
 
 /-- One read-only receipt view shared by compile-time type lookup and runtime value lookup. -/
-structure UIdRefs extends base : EnvBase where
+structure UIdRefs extends base : Root where
   uid2both : KVRefs UId (base.TypOrVal)
 
 end Lp2lc.Active.STLC

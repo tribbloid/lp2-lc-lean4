@@ -1,48 +1,45 @@
 import «Lp2lc».Active.STLC.UId.Def
 
-namespace Lp2lc.Active.STLC.EnvBase
+namespace Lp2lc.Active.STLC.Root
 open Lp2lc.Active.Util
 
-/-- A carrier map retains the bytecode type and FreeOrUnit encoding at both ends. -/
-inductive CarrierMap : (source : Parameters) → (target : Parameters) → Type 1 where
-| mk {B I1 I2} (mapC : I1 → I2) :
-    CarrierMap {B := B, I := IndexEncoding.FreeOrUnit, index := I1}
-      {B := B, I := IndexEncoding.FreeOrUnit, index := I2}
-
-/-- Resolves an ancestor reference into the target carrier before shared receipt lookup. -/
-def mapRef {source : Parameters} {P Q} (under : source.Under P)
-    (map : CarrierMap P Q) (carrier : source.TRef) : Q.TRef := by
+/-- Resolves an ancestor reference into the current carrier before shared receipt lookup. -/
+def mapRef {source P : Parameters} (under : source.Under P) (carrier : source.TRef)
+    (encoding : P.I = .FreeOrUnit := by rfl) : P.TRef := by
   cases under with
-  | same => cases map with
-    | mk mapC => exact mapC carrier
+  | same => exact carrier
   | @lower p2 prev =>
-    have recurse := λ {Q} (map : CarrierMap p2 Q) => mapRef prev map carrier
-    rcases p2 with ⟨⟨byteCode⟩, encoding, index⟩
-    cases map with
-    | mk mapC => exact recurse (.mk (λ carrier => mapC (.inl carrier)))
+    have recurse := mapRef prev carrier encoding
+    rcases p2 with ⟨⟨B⟩, I, index⟩
+    cases encoding
+    exact .inl recurse
 
-mutual
-/-- Maps an AST to a different carrier while retaining its bytecode type and index encoding. -/
-@[simp] def AST.recarrier {P Q l} (self : Pre.AST P l) (map : CarrierMap P Q) : Pre.AST Q l :=
-  match self with
-  | .TLit => .TLit
-  | .TFn tIn tOut => .TFn (AST.recarrier tIn map) (AST.recarrier tOut map)
-  | .lit repr => by cases map; exact .lit repr
-  | .fn tIn body => .fn (AST.recarrier tIn map) (Binder.recarrier body map)
-  | .val value => .val (AST.recarrier value map)
-  | .apply fnTerm arg => .apply (AST.recarrier fnTerm map) (AST.recarrier arg map)
-  | .ref carrier under => .ref (mapRef under map carrier) .same
+/-- Changes an AST's reference carrier while retaining its bytecode type and index encoding.
 
-/-- Maps a binder's outer references while preserving its newest structural slot.
-
-Opens the source callback only at `.inr ()` and maps that fixed body using `Sum.map mapC id`.
-The rebuilt callback returns the mapped body for every input. Preserving the right `Unit` summand
-keeps the newest slot available for later substitution and makes a backward carrier map unnecessary.
+Opens source callbacks only at `.inr ()` and maps their fixed bodies using `Sum.map map id`.
+The rebuilt callbacks return the mapped body for every input. Preserving the right `Unit` summand
+keeps the newest slots available for later substitution and makes a backward carrier map unnecessary.
+The local visitor keeps the shared syntax indices general for structural recursion.
 -/
-@[simp] def Binder.recarrier {P Q l} (self : Pre.Binder P l) (map : CarrierMap P Q) : Pre.Binder Q l :=
-  match self, map with
-  | .mk body, .mk mapC => .mk (λ _ => AST.recarrier (body (.inr ())) (.mk (Sum.map mapC id)))
-end
+@[simp] def AST.recarrier {this : Root} {I l} (self : this.AST l)
+    (map : this.UId → I) : (⟨I⟩ : Root).AST l :=
+  visit self rfl map
+where
+  visit {P l I} (self : Pre.AST P l) (encoding : P.I = .FreeOrUnit)
+      (map : P.TRef → I) : Pre.AST {P with I := .FreeOrUnit, index := I} l :=
+    match self with
+    | .TLit => .TLit
+    | .TFn tIn tOut => .TFn (visit tIn encoding map) (visit tOut encoding map)
+    | .lit repr => .lit repr
+    | .fn tIn (.mk body) => by
+      have input := visit tIn encoding map
+      have recurse := λ {I} carrier => visit (I := I) (body carrier)
+      rcases P with ⟨⟨B⟩, indexEncoding, index⟩
+      cases encoding
+      exact .fn input (.mk (λ _ => recurse (.inr ()) rfl (Sum.map map id)))
+    | .val value => .val (visit value encoding map)
+    | .apply fnTerm arg => .apply (visit fnTerm encoding map) (visit arg encoding map)
+    | .ref carrier under => .ref (map (mapRef under carrier encoding)) .same
 
 /-- Instantiates a UId binder by substituting a receipt into its canonical structural body.
 
@@ -50,11 +47,11 @@ After opening only at `.inr ()`, the reference map sends `.inl outer` to `outer`
 `carrier`, returning syntax in the original context. Beneath nested binders, carrier transport
 preserves their newest slots while substituting references to this outer slot.
 
-Use `EnvBase.Binder.apply` to instantiate UId syntax. Its call to the shared raw `Pre.Binder.apply`
+Use `Root.Binder.apply` to instantiate UId syntax. Its call to the shared raw `Pre.Binder.apply`
 supplies `.inr ()` solely to obtain the body in the extended context.
 -/
-def Binder.apply {this : EnvBase} {l} (self : this.Binder l)
+def Binder.apply {this : Root} {l} (self : this.Binder l)
     (carrier : this.UId) : this.AST l :=
-  AST.recarrier (Pre.Binder.apply self (.inr ())) (.mk (Sum.elim id (λ _ => carrier)))
+  AST.recarrier (Pre.Binder.apply self (.inr ())) (Sum.elim id (λ _ => carrier))
 
-end Lp2lc.Active.STLC.EnvBase
+end Lp2lc.Active.STLC.Root

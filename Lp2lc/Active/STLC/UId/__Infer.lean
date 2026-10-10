@@ -6,9 +6,9 @@ open Lp2lc.Active.Util
 /-- Compile-time minting accepts types or canonical values without requiring an executable environment. -/
 class BuildEnv (refs : UIdRefs) where
   uid2bothCtx : KVEquiv (⟨λ receipt => Sum.map id (Quot.mk _) (refs.uid2both.get receipt)⟩ :
-    KVRefs refs.UId (refs.base.Typ ⊕ Quot (EnvBase.Val.Same (base := refs.base))))
+    KVRefs refs.UId (refs.base.Typ ⊕ Quot (Root.Val.Same (base := refs.base))))
 
-namespace EnvBase.Trm
+namespace Root.Trm
 
 /-- Infers runtime terms without executing values; lexical build bindings may contain values or types.
 
@@ -19,13 +19,13 @@ merging it with free references. Stored values are inferred with runtime referen
 def infer {refs : UIdRefs} [env : BuildEnv refs] (self : refs.base.Trm) : RecOpt refs.base.Typ :=
   visit self Sum.inr
 where
-  visit {base : EnvBase} (self : base.Trm) (bindings : base.UId → refs.UId ⊕ refs.UId) : RecOpt refs.base.Typ
+  visit {base : Root} (self : base.Trm) (bindings : base.UId → refs.UId ⊕ refs.UId) : RecOpt refs.base.Typ
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
     | .val (.lit _) => .yield (some .TLit)
     | .val (.fn tIn body) =>
-      let input := AST.recarrier tIn (.mk (Sum.elim id id ∘ bindings))
+      let input := AST.recarrier tIn (Sum.elim id id ∘ bindings)
       let receipt := env.uid2bothCtx.inv (.inl input)
       (visit (base := ⟨base.UId ⊕ Unit⟩) (Pre.Binder.apply body (.inr ()))
         (Sum.elim bindings (λ _ => .inl receipt)) fuel).map (Option.map (.TFn input))
@@ -36,11 +36,11 @@ where
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
     | .ref carrier under =>
-      let origin := mapRef under (.mk bindings) carrier
+      let origin := bindings (mapRef under carrier)
       match refs.uid2both.get (origin.elim id id), origin with
       | .inl typ, .inl _ => .yield (some typ)
       | .inl _, .inr _ => .yield none
       | .inr value, _ => visit value.asTrm Sum.inr fuel
 
-end EnvBase.Trm
+end Root.Trm
 end Lp2lc.Active.STLC
