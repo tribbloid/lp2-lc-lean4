@@ -4,9 +4,10 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
 namespace Root
+variable {this : Root}
 
 -- File-private structural view; consume the construction callback only at `.inr ()`.
-@[match_pattern] private abbrev canonicalBinderPattern := @Pre.Binder.mk
+@[match_pattern] private abbrev bind := @Pre.Binder.mk
 
 /-- Resolves an ancestor reference into the current carrier before shared receipt lookup. -/
 def mapRef {source P : Parameters} (under : source.Under P) (carrier : source.TRef)
@@ -26,8 +27,7 @@ The rebuilt callbacks return the mapped body for every input. Preserving the rig
 keeps the newest slots available for later substitution and makes a backward carrier map unnecessary.
 The local visitor keeps the shared syntax indices general for structural recursion.
 -/
-@[simp] def AST.recarrier {this : Root} {I l} (self : this.AST l)
-    (map : this.UId → I) : (⟨I⟩ : Root).AST l :=
+@[simp] def AST.recarrier {I l} (self : this.AST l) (map : this.UId → I) : (⟨I⟩ : Root).AST l :=
   visit self rfl map
 where
   visit {P l I} (self : Pre.AST P l) (encoding : P.I = .FreeOrUnit)
@@ -36,10 +36,10 @@ where
     | .TLit => .TLit
     | .TFn tIn tOut => .TFn (visit tIn encoding map) (visit tOut encoding map)
     | .lit repr => .lit repr
-    | .fn tIn (canonicalBinderPattern body) => by
+    | .fn tIn (bind body) => by
       have input := visit tIn encoding map
       have recurse := λ {I} carrier => visit (I := I) (body carrier)
-      rcases P with ⟨⟨B⟩, indexEncoding, index⟩
+      rcases P with ⟨B, _, _⟩
       cases encoding
       exact .fn input (.mk (λ _ => recurse (.inr ()) rfl (Sum.map map id)))
     | .val value => .val (visit value encoding map)
@@ -55,8 +55,7 @@ preserves their newest slots while substituting references to this outer slot.
 Use `Root.Binder.apply` to instantiate UId syntax. Its call to the shared raw `Pre.Binder.apply`
 supplies `.inr ()` solely to obtain the body in the extended context.
 -/
-def Binder.apply {this : Root} {l} (self : this.Binder l)
-    (carrier : this.UId) : this.AST l :=
+def Binder.apply {l} (self : this.Binder l) (carrier : this.UId) :=
   AST.recarrier (Pre.Binder.apply self (.inr ())) (Sum.elim id (λ _ => carrier))
 
 /-- Values in the image of structural normalization, with unused callback inputs erased. -/
@@ -64,7 +63,7 @@ abbrev CanonicalVal (this : Root) :=
   {value : this.Val // ∃ source : this.Val, AST.recarrier source id = value}
 
 /-- Admits a raw value by normalizing its canonical binder bodies. -/
-def canonicalVal {this : Root} (value : this.Val) : this.CanonicalVal :=
+def canonicalVal (value : this.Val) : this.CanonicalVal :=
   ⟨AST.recarrier value id, value, rfl⟩
 
 abbrev TypOrVal (this : Root) := this.Typ ⊕ this.CanonicalVal

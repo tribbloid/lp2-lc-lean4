@@ -24,7 +24,7 @@ inductive Binder : Parameters → Label → UAST where
     Use `Binder.apply` under the index encoding's opening contract. UId opens only at `.inr ()`
     and substitutes receipts structurally; serial binders receive their sole context proxy.
     -/
-| private body {P} (callback : P.Next.TRef → AST P.Next l) : Binder P l
+| private body {P} (body : P.Next.TRef → AST P.Next l) : Binder P l
 
 /-- Source type, value, and term syntax.
 
@@ -50,11 +50,11 @@ namespace Binder
 -- All theorems about Binder should be here, e.g. parametricity, lift relation
 
 /-- Constructs a binder whose body is consumed under its index encoding's opening contract. -/
-def mk {P l} (body : P.Next.TRef → AST P.Next l) : Binder P l := .body body
+def mk := @body
 
 /-- Opens a binder body with the supplied reference receipt. -/
-def apply {P l} (self : Binder P l) (carrier : P.Next.TRef) : AST P.Next l := match self with
-  | .body callback => callback carrier
+def apply {P l} (self : Binder P l) (carrier) := match self with
+  | .body code => code carrier
 
 end Binder
 

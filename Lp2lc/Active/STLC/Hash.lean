@@ -11,7 +11,7 @@ open Lean (Json)
 open Lp2lc.Active.Util
 
 -- File-private structural view; the caller supplies its encoding's sole context proxy.
-@[match_pattern] private abbrev serialBinderPattern := @Pre.Binder.mk
+@[match_pattern] private abbrev bind := @Pre.Binder.mk
 
 /--
 Canonical JSON signature of syntax: a single tree traversal that both
@@ -19,25 +19,24 @@ signature equality and hashing delegate to. Reference indices and bytecode value
 injected through caller-supplied signature functions, so wildcard or
 content-based comparators are expressed by their canonical image.
 -/
-private def visit {P : Parameters} {l} (self : Pre.AST P l)
-    (get : ∀ index, ({P with index := index}).TRef)
-    (sigC : P.I.Index → Json) (sigB : P.B → Json) : Json :=
+private def visit {P l} (self : Pre.AST P l) (get : ∀ index, P.I.getTRef index)
+    (sig : P.I.Index ⊕ P.B → Json) : Json :=
   match self with
   | .TLit => "primitive"
   | .TFn tIn tOut =>
-    .arr #["fn", visit tIn get sigC sigB, visit tOut get sigC sigB]
-  | .lit repr => .arr #["lit", sigB repr]
-  | .fn tIn (serialBinderPattern body) =>
-    .arr #["lam", visit (body (get P.Next.index)) get sigC sigB, visit tIn get sigC sigB]
-  | .val v => .arr #["val", visit v get sigC sigB]
+    .arr #["fn", visit tIn get sig, visit tOut get sig]
+  | .lit repr => .arr #["lit", sig (.inr repr)]
+  | .fn tIn (bind body) =>
+    .arr #["lam", visit (body (get P.Next.index)) get sig, visit tIn get sig]
+  | .val v => .arr #["val", visit v get sig]
   | .apply fnTerm arg =>
-    .arr #["apply", visit fnTerm get sigC sigB, visit arg get sigC sigB]
-  | .ref _ under => .arr #["ref", sigC under.sourceIndex]
+    .arr #["apply", visit fnTerm get sig, visit arg get sig]
+  | .ref _ under => .arr #["ref", sig (.inl under.sourceIndex)]
 
 /-- JSON signature of concrete serial syntax. -/
 def astToJson {n l} (self : AST n l)
     (sigC : Nat → Json) (sigB : String → Json) : Json :=
-  visit self (λ _ => .only) (λ index => sigC index.down) sigB
+  visit self (λ _ => .only) (Sum.elim (sigC ∘ ULift.down) sigB)
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
 def astBEq {n l} (a b : AST n l)
