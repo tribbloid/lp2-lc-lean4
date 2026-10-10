@@ -8,6 +8,12 @@
     "MD010": true,
     "MD011": true,
     "MD012": true,
+    // "MD013": {
+    //     "line_length": 120,
+    //     "heading_line_length": 120,
+    //     "code_block_line_length": 120,
+    //     "tables": false
+    // },
     "MD014": true,
     "MD018": true,
     "MD019": true,
