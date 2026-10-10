@@ -21,8 +21,6 @@ inductive RuntimeRefs (refs : UIdRefs) : {base : Root} →
       (runtime : RuntimeRefs refs Sum.inl value.val.asTrm) :
       RuntimeRefs refs (base := base) origins (.ref carrier under)
 
-namespace Fundamental
-
 section variable {refs : UIdRefs} [build : BuildEnv refs] [exe : ExeEnv refs]
 
 /-- Every completed evaluation succeeds, and its value can be inferred at the claimed type. -/
@@ -31,6 +29,8 @@ def Safety (trm : refs.base.Trm) (typ : refs.base.Typ) : Prop :=
     (λ value => value.asTrm.infer.isDecidable (λ inferred => inferred ≤ typ))
 
 end
+
+namespace Fundamental
 
 section variable {refs : UIdRefs} [build : BuildEnv refs]
 

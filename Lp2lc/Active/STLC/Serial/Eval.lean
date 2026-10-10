@@ -3,7 +3,6 @@ import «Lp2lc».Active.STLC.Serial.Def
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
-
 namespace AST
 
 /-- Evaluate using the caller's bindings. Every recursive resolution consumes one unit of fuel. -/

@@ -43,16 +43,16 @@ structure Greater (K2 V2) extends KVRefs K V2 where
   upcastV : Embedding V V2 -- distinguishes views made with different value embeddings
   equivariance : ∀ (receipt : K), get receipt = upcastV (this.get receipt)
 
-structure HasEv (K : URef) where
-  ev : K → Prop -- a subtype of UId with extra contract
+-- structure HasEv (K : URef) where
+--   ev : K → Prop -- a subtype of UId with extra contract
 
-namespace HasEv
-section variable (this: HasEv K)
+-- namespace HasEv
+-- section variable (this: HasEv K)
 
-def UId := {x : K // this.ev x}
+-- def UId := {x : K // this.ev x}
 
-end
-end HasEv
+-- end
+-- end HasEv
 
 structure Lesser (K2 V2) extends KVRefs K2 V2 where
   upcastK : Embedding K2 K
