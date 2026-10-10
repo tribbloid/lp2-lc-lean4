@@ -94,6 +94,13 @@ where
     | ref carrier under => rfl
     | _ body ih => exact ih _ _ _ _
 
+private theorem recarrierFn {source target : Root} (annotation : source.Typ) (body : source.Binder .trm)
+    (map : source.UId → target.UId) :
+    AST.recarrier (.val (.fn annotation body)) map = .val (.fn (AST.recarrier annotation map)
+      (.mk (λ _ => AST.recarrier (Pre.Binder.apply body (.inr ())) (Sum.map map id)))) := by
+  cases body
+  rfl
+
 private theorem inferCanonical (trm : refs.base.Trm) (fuel : Nat) :
     infer (AST.recarrier trm id) fuel = infer trm fuel := by
   induction fuel generalizing trm with
@@ -104,11 +111,7 @@ private theorem inferCanonical (trm : refs.base.Trm) (fuel : Nat) :
       cases value with
       | lit repr => rfl
       | fn annotation body =>
-        cases body
-        rename_i body
-        change infer (.val (.fn (AST.recarrier annotation id)
-          (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map id id))))) (fuel + 1) = _
-        rw [typRecarrierId]
+        rw [recarrierFn, typRecarrierId]
         simp only [infer.eq_3, Binder.apply, Pre.Binder.apply, Pre.Binder.mk]
         rw [recarrierComp, Sum.elim_comp_map, Function.id_comp, Function.comp_id]
     | apply fn arg =>
@@ -152,20 +155,17 @@ private theorem inferReplace {base : Root} {trm : base.Trm}
       cases value with
       | lit repr => exact ⟨1, hInfer⟩
       | fn annotation body =>
-        cases body
-        rename_i body
-        change infer (.val (.fn (AST.recarrier annotation first)
-          (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map first id))))) (fuel + 1) = _ at hInfer
+        rw [recarrierFn] at hInfer
         obtain ⟨output, hBody, hType⟩ := inferFnSuccess hInfer
         subst typ
         have inputEqual := typRecarrier annotation first second
         let input := AST.recarrier annotation first
         let receipt := build.uid2bothCtx.inv (.inl input)
-        change infer (AST.recarrier (AST.recarrier (body (.inr ())) (Sum.map first id))
+        change infer (AST.recarrier (AST.recarrier (Pre.Binder.apply body (.inr ())) (Sum.map first id))
           (Sum.elim id (λ _ => receipt))) fuel = _ at hBody
         rw [recarrierComp, Sum.elim_comp_map, Function.id_comp, Function.comp_id] at hBody
         obtain ⟨bodyFuel, hTarget⟩ := ih
-          (base := ⟨base.UId ⊕ Unit⟩) (trm := body (.inr ()))
+          (base := ⟨base.UId ⊕ Unit⟩) (trm := Pre.Binder.apply body (.inr ()))
           (first := Sum.elim first (λ _ => receipt))
           (second := Sum.elim second (λ _ => receipt))
           (by
@@ -174,10 +174,9 @@ private theorem inferReplace {base : Root} {trm : base.Trm}
             | inl outer => exact hReplace outer inferred sourceFuel hSource
             | inr slot => exact ⟨sourceFuel, hSource⟩) hBody
         exact ⟨bodyFuel + 1, by
-          change infer (.val (.fn (AST.recarrier annotation second)
-            (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map second id))))) (bodyFuel + 1) = _
-          rw [infer.eq_3, ← inputEqual]
-          simp only [Binder.apply, Pre.Binder.apply, Pre.Binder.mk]
+          rw [recarrierFn, infer.eq_3, ← inputEqual]
+          change (infer (AST.recarrier (AST.recarrier (Pre.Binder.apply body (.inr ())) (Sum.map second id))
+            (Sum.elim id (λ _ => receipt))) bodyFuel).map _ = _
           rw [recarrierComp, Sum.elim_comp_map, Function.id_comp, Function.comp_id, hTarget]
           rfl⟩
     | ref carrier under =>
@@ -207,10 +206,7 @@ private theorem runtimeReplace {source target : Root} {trm : source.Trm}
   induction runtime generalizing target with
   | lit => exact .lit
   | @fn base origins annotation body runtime ih =>
-    cases body
-    rename_i body
-    change RuntimeRefs refs second (.val (.fn (AST.recarrier annotation map)
-      (.mk (λ _ => AST.recarrier (body (.inr ())) (Sum.map map id)))))
+    rw [recarrierFn]
     apply RuntimeRefs.fn
     apply ih (Sum.map map id)
     intro carrier runtime
