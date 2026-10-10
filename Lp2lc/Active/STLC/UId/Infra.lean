@@ -66,13 +66,11 @@ abbrev CanonicalVal (this : Root) :=
 def canonicalVal (value : this.Val) : this.CanonicalVal :=
   ⟨AST.recarrier value id, value, rfl⟩
 
-abbrev TypOrVal (this : Root) := this.Typ ⊕ this.CanonicalVal
-
 end Root
 
 /-- One read-only receipt view shared by compile-time type lookup and runtime value lookup. -/
 structure UIdRefs extends base : Root where
-  uid2both : KVRefs UId base.TypOrVal
+  uid2both : KVRefs UId (base.Typ ⊕ base.CanonicalVal)
 
 /-- Compile-time minting accepts types or canonical values without requiring an executable environment. -/
 class BuildEnv (refs : UIdRefs) where
