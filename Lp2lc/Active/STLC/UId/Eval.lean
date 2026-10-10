@@ -3,24 +3,13 @@ import «Lp2lc».Active.STLC.UId.Infra
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
-namespace Root.Val
+/-- Runtime receipts identify values by their canonical structural syntax.
 
-/-- Value identity observes only canonical binder bodies, including beneath nested binders. -/
-def Same {base : Root} (left right : base.Val) : Prop :=
-  AST.recarrier left id = AST.recarrier right id
-
-end Root.Val
-
-/-- Runtime minting is limited to values; receipt identity ignores unused callback inputs.
-
-A raw `KVEquiv` on functional values would require equality at every callback input, contradicting
-UId's canonical-opening contract. The equivalence therefore stores canonical-value observations.
+Unrestricted callbacks can inspect their input receipts, so a total inverse for raw functional
+values is inconsistent. A quotient-free context therefore needs a canonical structural representation.
 -/
 class ExeEnv (refs : UIdRefs) where
-  uid2val : refs.uid2both.Lesser refs.UId refs.base.Val
-  uid2valCtx : KVEquiv (⟨λ receipt => Quot.mk _ (uid2val.get receipt)⟩ :
-    KVRefs refs.UId (Quot (Root.Val.Same (base := refs.base))))
-  valueOnly : uid2val.upcastV.toFun = Sum.inr
+  uid2valCtx : KVEquiv refs.uid2val
 
 namespace Root.Trm
 
@@ -37,14 +26,13 @@ def eval {refs : UIdRefs} [exe : ExeEnv refs] (self : refs.base.Trm) : RecOpt re
     | .apply fnTerm arg =>
       match eval fnTerm fuel, eval arg fuel with
       | .yield (some (.fn _ body)), .yield (some arg) =>
-        let receipt := exe.uid2val.upcastK (exe.uid2valCtx.inv (Quot.mk _ arg))
-        eval (Root.Binder.apply body receipt) fuel
+        eval (Root.Binder.apply body (exe.uid2valCtx.inv (Root.canonicalVal arg))) fuel
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
     | .ref carrier under =>
       match refs.uid2both.get (mapRef under carrier) with
       | .inl _ => .yield none
-      | .inr value => .yield (some value)
+      | .inr value => .yield (some value.val)
 
 end Root.Trm
 end Lp2lc.Active.STLC

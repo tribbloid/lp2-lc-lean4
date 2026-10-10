@@ -1,7 +1,9 @@
 import «Lp2lc».Active.STLC.UId.Def
 
-namespace Lp2lc.Active.STLC.Root
+namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
+
+namespace Root
 
 /-- Resolves an ancestor reference into the current carrier before shared receipt lookup. -/
 def mapRef {source P : Parameters} (under : source.Under P) (carrier : source.TRef)
@@ -54,4 +56,28 @@ def Binder.apply {this : Root} {l} (self : this.Binder l)
     (carrier : this.UId) : this.AST l :=
   AST.recarrier (Pre.Binder.apply self (.inr ())) (Sum.elim id (λ _ => carrier))
 
-end Lp2lc.Active.STLC.Root
+/-- Values in the image of structural normalization, with unused callback inputs erased. -/
+abbrev CanonicalVal (this : Root) :=
+  {value : this.Val // ∃ source : this.Val, AST.recarrier source id = value}
+
+/-- Admits a raw value by normalizing its canonical binder bodies. -/
+def canonicalVal {this : Root} (value : this.Val) : this.CanonicalVal :=
+  ⟨AST.recarrier value id, value, rfl⟩
+
+abbrev TypOrVal (this : Root) := this.Typ ⊕ this.CanonicalVal
+
+end Root
+
+/-- One read-only receipt view shared by compile-time type lookup and runtime value lookup. -/
+structure UIdRefs extends base : Root where
+  uid2both : KVRefs UId base.TypOrVal
+
+namespace UIdRefs
+
+/-- Runtime receipts select the value summand of the shared lookup by their type. -/
+def uid2val (this : UIdRefs) : KVRefs {receipt : this.UId // (this.uid2both.get receipt).isRight}
+    this.base.CanonicalVal :=
+  ⟨λ receipt => (this.uid2both.get receipt.val).getRight receipt.property⟩
+
+end UIdRefs
+end Lp2lc.Active.STLC

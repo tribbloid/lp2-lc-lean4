@@ -90,25 +90,9 @@ private theorem inferMonotone {base : Root} (trm : base.Trm)
         repeat split at h
         all_goals simp_all
 
-private theorem inferValueSame (left right : refs.base.Val) (same : Val.Same left right) (fuel : Nat) :
-    infer left.asTrm fuel = infer right.asTrm fuel := by
-  have canonical (value : refs.base.Val) :
-      infer (.val (AST.recarrier value id)) fuel = infer value.asTrm fuel :=
-    inferTransport value.asTrm id Sum.inr fuel
-  exact (canonical left).symm.trans
-    ((congrArg (λ value : refs.base.Val => infer value.asTrm fuel) same).trans (canonical right))
-
 private theorem mintedTypeLookup (typ : refs.base.Typ) :
     refs.uid2both.get (build.uid2bothCtx.inv (.inl typ)) = .inl typ := by
-  have mint := build.uid2bothCtx.rightInv (.inl typ)
-  change Sum.map id (Quot.mk (Val.Same (base := refs.base)))
-    (refs.uid2both.get (build.uid2bothCtx.inv (.inl typ))) = .inl typ at mint
-  cases lookup : refs.uid2both.get (build.uid2bothCtx.inv (.inl typ)) with
-  | inl found =>
-    rw [lookup] at mint
-    change (Sum.inl found : refs.base.Typ ⊕ Quot (Val.Same (base := refs.base))) = .inl typ at mint
-    exact congrArg Sum.inl (Sum.inl.inj mint)
-  | inr value => simp [lookup, Sum.map, Sum.elim, Function.comp] at mint
+  exact build.uid2bothCtx.rightInv (.inl typ)
 
 private theorem inferApplySuccess {base : Root} {fn arg : base.Trm}
     {bindings : base.UId → refs.UId ⊕ refs.UId} {fuel : Nat} {typ : refs.base.Typ}
@@ -195,16 +179,14 @@ variable [exe : ExeEnv refs]
 
 private theorem mintedValueInfer (value : refs.base.Val) {fuel : Nat} {typ : refs.base.Typ}
     (hInfer : infer value.asTrm fuel = .yield (some typ)) :
-    infer (.ref (exe.uid2val.upcastK (exe.uid2valCtx.inv (Quot.mk _ value))) .same) (fuel + 1) =
+    infer (.ref (exe.uid2valCtx.inv (canonicalVal value)).val .same) (fuel + 1) =
       .yield (some typ) := by
-  have lookup := exe.uid2val.equivariance (exe.uid2valCtx.inv (Quot.mk _ value))
-  rw [exe.valueOnly] at lookup
-  have typed := congrArg
-    (Quot.lift (λ value : refs.base.Val => infer value.asTrm fuel)
-      (λ left right same => inferValueSame left right same fuel))
-    (exe.uid2valCtx.rightInv (Quot.mk _ value))
-  simp only [infer, infer.visit.eq_5, mapRef, Sum.elim, id, ← lookup]
-  exact typed.trans hInfer
+  have lookup : refs.uid2both.get (exe.uid2valCtx.inv (canonicalVal value)).val =
+      .inr (canonicalVal value) :=
+    (Sum.inr_getRight _ _).symm.trans
+      (congrArg Sum.inr (exe.uid2valCtx.rightInv (canonicalVal value)))
+  simp only [infer, infer.visit.eq_5, mapRef, Sum.elim, id, lookup]
+  exact (inferTransport value.asTrm id Sum.inr fuel).trans hInfer
 
 private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : refs.base.Typ)
     (hInfer : infer trm inferFuel = .yield (some typ)) :
@@ -258,7 +240,7 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
                 rcases Pre.AST.TFn.inj hFnType with ⟨hInput, hOutput⟩
                 subst fnOutput
                 rw [← hInput] at hBody
-                let receipt := exe.uid2val.upcastK (exe.uid2valCtx.inv (Quot.mk _ argValue))
+                let receipt := (exe.uid2valCtx.inv (canonicalVal argValue)).val
                 obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace
                   (second := Sum.inr ∘ Sum.elim id (λ _ => receipt))
                   (by

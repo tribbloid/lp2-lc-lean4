@@ -5,8 +5,7 @@ open Lp2lc.Active.Util
 
 /-- Compile-time minting accepts types or canonical values without requiring an executable environment. -/
 class BuildEnv (refs : UIdRefs) where
-  uid2bothCtx : KVEquiv (⟨λ receipt => Sum.map id (Quot.mk _) (refs.uid2both.get receipt)⟩ :
-    KVRefs refs.UId (refs.base.Typ ⊕ Quot (Root.Val.Same (base := refs.base))))
+  uid2bothCtx : KVEquiv refs.uid2both
 
 namespace Root.Trm
 
@@ -40,7 +39,7 @@ where
       match refs.uid2both.get (origin.elim id id), origin with
       | .inl typ, .inl _ => .yield (some typ)
       | .inl _, .inr _ => .yield none
-      | .inr value, _ => visit value.asTrm Sum.inr fuel
+      | .inr value, _ => visit value.val.asTrm Sum.inr fuel
 
 end Root.Trm
 end Lp2lc.Active.STLC

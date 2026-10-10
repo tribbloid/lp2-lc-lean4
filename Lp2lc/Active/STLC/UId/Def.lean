@@ -51,15 +51,9 @@ abbrev Val := this.AST .val
 abbrev Trm := this.AST .trm
 abbrev Typ := this.AST .typ
 
-abbrev TypOrVal := this.Typ ⊕ this.Val
-
 end
 
 def Val.asTrm {this : Root} (v : this.Val) : this.Trm := .val v
 end Root
-
-/-- One read-only receipt view shared by compile-time type lookup and runtime value lookup. -/
-structure UIdRefs extends base : Root where
-  uid2both : KVRefs UId (base.TypOrVal)
 
 end Lp2lc.Active.STLC
