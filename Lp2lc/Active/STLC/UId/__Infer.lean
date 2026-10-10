@@ -38,15 +38,13 @@ theorem termInfer (trm : refs.base.Trm) : trm.infer.Monotone := by
   induction less generalizing trm more result with
   | zero => simp [infer] at h
   | succ less ih =>
-    cases more with
-    | zero => omega
-    | succ more =>
-      have le := Nat.le_of_succ_le_succ le
-      cases trm <;> try cases ‹Pre.AST _ .val›
-      all_goals
-        simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5, Rec.Outcome.map] at h ⊢
-        repeat split at h
-        all_goals simp_all
+    cases more <;> try omega
+    have le := Nat.le_of_succ_le_succ le
+    cases trm <;> try cases ‹Pre.AST _ .val›
+    all_goals
+      simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5, Rec.Outcome.map] at h ⊢
+      repeat split at h
+      all_goals simp_all
 
 end Monotone
 

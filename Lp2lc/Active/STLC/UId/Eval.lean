@@ -35,7 +35,7 @@ theorem termEval {refs : UIdRefs} [exe : ExeEnv refs] (trm : refs.base.Trm) :
   induction less generalizing trm more result with
   | zero => simp [eval] at hEval
   | succ fuel ih =>
-    cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
+    cases more <;> try omega
     replace hFuel := Nat.le_of_succ_le_succ hFuel
     cases trm <;> simp only [eval.eq_2, eval.eq_3, eval.eq_4] at hEval ⊢
     all_goals
