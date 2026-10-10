@@ -12,12 +12,11 @@ namespace IndexEncoding
 /-- Naive PHOAS binding using an unknown type directly as input; `inc` does nothing. -/
 abbrev Free : IndexEncoding := {Index := Type, getTRef := id, inc := λ T => T}
 
-/--
-Every new binder mixes in a tagged Unit.
-At first the binder body may lack uniformity. It has to be verified first in semantics:
+/-- Each binder adds a tagged `Unit` slot.
 
-substitute (body (.inr .unit)) v == body (.inl v)
- -/
+UId semantics opens only that contractible slot at `.inr ()` and substitutes receipts structurally.
+The stored callback is internal syntax construction data; do not consume it as a nonuniform function.
+-/
 abbrev FreeOrUnit : IndexEncoding := {Index := Type, getTRef := id, inc := λ T => T ⊕ Unit}
 
 /-- A proxy whose type records a lexical context slot. -/

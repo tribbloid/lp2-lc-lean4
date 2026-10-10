@@ -31,20 +31,12 @@ abbrev P (this : Root) (I : Type := this.UId) : Parameters :=
 section variable (this : Root)
 abbrev AST (l : Label) (I : Type := this.UId) := Pre.AST (this.P I) l
 
-/-- A shared functional binder interpreted through its canonical structural body.
+/-- A binder with uniform receipt substitution through its canonical structural body.
 
-The stored callback has type `P.Next.TRef → Pre.AST P.Next l`. For outer carrier `C`, its input
-carrier is `C ⊕ Unit`, but UId operations contract the allowed opening to the right `Unit` summand:
-the sole argument supplied is `.inr ()`. The syntax consumed by these operations is therefore the
-fixed body `body (.inr ())`; this convention is repeated beneath nested binders.
-
-Opening the callback at `.inl receipt` could expose nonuniform behavior. Instead, UId substitutes
-that receipt into the canonical body's bound slot. The callback never receives the receipt being
-substituted, so these operations do not require uniformity across its other possible inputs.
-
-Under this opening contract, a binder represents its fixed canonical body together with structural
-substitution. The shared function type still permits arbitrary callbacks; equivalence here concerns
-canonical bodies and structural substitution, not equality at every callback input.
+For outer carrier `C`, the next context is `C ⊕ Unit`. UId opens only the contractible right
+summand at `.inr ()`, then substitutes receipts into that fixed body structurally, including beneath
+nested binders. The stored callback is internal construction data and must not be consumed as a
+nonuniform function. Instantiate UId syntax with `Root.Binder.apply`.
 -/
 abbrev Binder (l : Label) (I : Type := this.UId) := Pre.Binder (this.P I) l
 abbrev Val := this.AST .val
