@@ -16,6 +16,10 @@ import «Lp2lc».Active.STLC.Serial.__Infer
 import «Lp2lc».Active.STLC.Serial.__Infer_proof
 -- import «Lp2lc».Active.STLC.__Infer_umbral
 
+-- Independent semantic typing and executable expected-type checking.
+import «Lp2lc».Active.STLC.Serial.__SemType
+import «Lp2lc».Active.STLC.Serial.__SemType_proof
+
 -- UId receipt execution and type inference.
 import «Lp2lc».Active.STLC.UId.Def
 import «Lp2lc».Active.STLC.UId.Infra
