@@ -91,31 +91,27 @@ When working on an issue that contains multiple subtasks:
 - Each subtask should have its own independent git commit. When you complete one, commit immediately.
 - Typo or underspecified part in documentation/comment should be corrected and committed before actual work start.
 - Each subtask should be classified into one of the following categories:
-    - **Refactoring/Cleanup** enforces code format and compliance without meaningful changes. DO NOT introduce or update
-      type signatures, definitions, or proofs (even if missing or `sorry`). Preserve the existing code structure.
+
+    - **Refactoring/Cleanup** enforces code format and compliance without meaningful changes. DO NOT introduce or update type signatures, definitions, or proofs (even if missing or `sorry`). Preserve the existing code structure.
     - **Conjecturing** defines or revises proposition/type definitions, including those needed to state a proposition.
         - Only add proofs with `sorry` as a placeholder.
-        - Strive for shorter abstractions. If a revision makes code longer (not comment), STOP IMMEDIATELY, commit the
-      code, and ask for approval.
+        - Strive for shorter abstractions. If a revision makes code longer (not comment), STOP IMMEDIATELY, commit the code, and ask for approval.
         - DO NOT add definitions that repeat implementations or cases; use shared abstractions.
     - **Proving/Discharging/Refuting** proves an existing proposition.
         - DO NOT remove or modify any type or proposition.
         - Introduce new lemmas only if they help prove the main theorem.
-        - Before proving, launch subagent(s) to try to refute the theorem by writing a refutation in `Tests` and
-      explaining it in `DEFECT.md`:
-            - The set of axioms is inconsistent and can be used to construct `False`.
-            - The theorem has a counterexample.
-        - Introduce no new `sorry` in the final proof.
+        - Before proving the theorem, use subagent(s) to check that it is:
+            - not vacuous, tautological, or trivial.
+            - not false with clear counterexample(s).
+            - not inconsistent with contradicting axioms & conditions that can be used to construct `False`.
+        - if the above check fails:
+            - add a new entry into `DEFECT.md` (with a formal refutation lean file under `__TEMP` if applicable) to elaborate.
     - **Example/Demo/Test/Benchmark** writes examples or tests for existing definitions in `Tests`.
         - DO NOT write or update production code unless it is a demo allowed by the guardrails above.
         - Theorems and lemmas are self-contained and erased at runtime; they need no test cases.
-- If one requested change would otherwise combine a **Conjecture Revision** with **Proving/Discharge**, always split it
-      into two ordered subtasks and commits:
-    1. First, make a **Conjecture Revision** commit containing only the proposition/type definitions and required
-      statement-signature revisions. This scaffolding commit may temporarily fail to compile solely because its
-      dependent proofs are stale.
-    2. Second, make a **Proving/Discharge** commit containing the dependent proof revisions and restore a successful
-      build.
+- If one requested change would otherwise combine a **Conjecture Revision** with **Proving/Discharge**, always split it into two ordered subtasks and commits:
+  1. First, make a **Conjecture Revision** commit containing only the proposition/type definitions and required statement-signature revisions. This scaffolding commit may temporarily fail to compile solely because its dependent proofs are stale.
+  2. Second, make a **Proving/Discharge** commit containing the dependent proof revisions and restore a successful build.
 
 ### Source Code Style
 
