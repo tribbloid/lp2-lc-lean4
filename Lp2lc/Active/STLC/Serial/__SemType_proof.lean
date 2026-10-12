@@ -4,36 +4,6 @@ namespace Lp2lc.Active.STLC.AST.Semantic
 
 open Lp2lc.Active.Util
 
-namespace Monotone
-
-/-- Typing evidence remains valid when the fuel bound increases. -/
-theorem termCheck {n} (trm : Trm n) (bindings : CompilerBindings) -- FIXME: move into __SemType
-    {less more : Nat} {typ : Typ} (hFuel : less ≤ more)
-    (hType : semType trm bindings less typ) : semType trm bindings more typ := by
-  induction less generalizing n trm bindings more typ with
-  | zero => simp [semType, checkInternal, Rec.Outcome.getOrElse] at hType
-  | succ fuel ih =>
-    cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
-    replace hFuel := Nat.le_of_succ_le_succ hFuel
-    cases trm with
-    | val value =>
-      cases value with
-      | lit repr => exact hType
-      | fn annotation body =>
-        cases typ <;> simp only [semType, checkInternal, Rec.Outcome.getOrElse] at hType ⊢
-        exact ⟨hType.1, ih _ _ hFuel hType.2⟩
-    | ref carrier under =>
-      simp only [semType, checkInternal, Rec.Outcome.getOrElse] at hType ⊢
-      cases hEntry : bindings under.sourceIndex.down <;>
-        (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
-      all_goals simp only [hEntry] at hType ⊢
-      all_goals first | exact hType | exact ih _ _ hFuel hType
-    | apply fn arg =>
-      obtain ⟨input, hFn, hArg⟩ := hType
-      exact ⟨input, ih _ _ hFuel hFn, ih _ _ hFuel hArg⟩
-
-end Monotone
-
 namespace Fundamental
 
 variable {n} (trm : Trm n) (bindings : ExeBindings)
