@@ -56,7 +56,6 @@ theorem termInfer (trm : refs.base.Trm) : trm.infer.Monotone := by
       simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5, Rec.Outcome.map] at h ⊢
       repeat split at h
       all_goals simp_all
-      all_goals exact λ impossible => (impossible rfl).elim
 
 end Monotone
 

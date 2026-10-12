@@ -39,7 +39,7 @@ private theorem typRecarrier {source target : Root} (typ : source.Typ)
     AST.recarrier typ first = AST.recarrier typ second := by
   cases typ <;> try rfl
   change Pre.AST.TFn _ _ = Pre.AST.TFn _ _
-  exact congr (congrArg Pre.AST.TFn (typRecarrier _ first second)) (typRecarrier _ first second)
+  congr 1 <;> exact typRecarrier _ first second
 termination_by sizeOf typ
 
 private theorem recarrierComp {source middle target : Root} {l} (self : source.AST l)
@@ -56,12 +56,8 @@ where
           {I J} (first : P.Next.TRef → I) (second : I → J),
           AST.recarrier.visit (AST.recarrier.visit (Pre.Binder.apply body carrier) encoding first) rfl second =
             AST.recarrier.visit (Pre.Binder.apply body carrier) encoding (second ∘ first))
-        generalizing I J with
-    | TLit => rfl
-    | TFn input output ihInput ihOutput =>
-      exact congr (congrArg Pre.AST.TFn (ihInput encoding first second)) (ihOutput encoding first second)
-    | lit repr => rfl
-    | @fn P annotation body ihInput ihBody =>
+        generalizing I J
+    case fn P annotation body ihInput ihBody =>
       rcases body with ⟨body⟩
       rcases P with ⟨B, _, _⟩
       cases encoding
@@ -73,11 +69,7 @@ where
         rfl (Sum.map second id) = _
       refine (ihBody (.inr ()) rfl (Sum.map first id) (Sum.map second id)).trans ?_
       exact congrArg (AST.recarrier.visit (body (.inr ())) rfl) (Sum.map_comp_map second id first id)
-    | val value ih => exact congrArg Pre.AST.val (ih encoding first second)
-    | apply fn arg ihFn ihArg =>
-      exact congr (congrArg Pre.AST.apply (ihFn encoding first second)) (ihArg encoding first second)
-    | ref carrier under => rfl
-    | _ body ih => exact ih _ _ _ _
+    all_goals simp_all [Pre.Binder.apply, AST.recarrier.visit] <;> constructor <;> rfl
 
 private theorem recarrierFn {source target : Root} (annotation : source.Typ) (body : source.Binder .trm)
     (map : source.UId → target.UId) :
@@ -92,18 +84,18 @@ private theorem inferApplySuccess {fn arg : refs.base.Trm} {fuel : Nat} {typ : r
       infer arg fuel = .yield (some input) := by
   simp only [infer.eq_4] at hInfer
   repeat split at hInfer
-  all_goals simp_all
-  all_goals injection hInfer; subst_vars; exact ⟨_, rfl, rfl⟩
+  all_goals simp_all [LE.le]
+  all_goals cases hInfer; exact ⟨_, rfl, rfl⟩
 
 private theorem inferFnSuccess {annotation : refs.base.Typ} {body : refs.base.Binder .trm}
     {fuel : Nat} {typ : refs.base.Typ}
     (hInfer : infer (.val (.fn annotation body)) (fuel + 1) = .yield (some typ)) :
     ∃ output, infer (Binder.apply body (build.uid2bothCtx.inv (.inl annotation))) fuel = .yield (some output) ∧
       typ = .TFn annotation output := by
-  rcases hBody : infer (Binder.apply body (build.uid2bothCtx.inv (.inl annotation))) fuel with
-      (_ | output) | _
-  all_goals simp [infer.eq_3, hBody, Rec.Outcome.map, Option.map] at hInfer
-  exact ⟨output, rfl, Option.some.inj hInfer.symm⟩
+  simp only [infer.eq_3, Rec.Outcome.map, Option.map] at hInfer
+  repeat split at hInfer
+  all_goals simp_all
+  all_goals cases hInfer; exact ⟨_, rfl, rfl⟩
 
 private theorem inferReplace {base : Root} {trm : base.Trm}
     {first second : base.UId → refs.UId} {fuel : Nat} {typ : refs.base.Typ}
@@ -157,8 +149,8 @@ private theorem inferReplace {base : Root} {trm : base.Trm}
         (Nat.le_max_right _ _) hArgTarget
       exact ⟨max fnFuel argFuel + 1, by
         change infer (.apply (AST.recarrier fn second) (AST.recarrier arg second)) _ = _
-        simp only [infer.eq_4, hFnMore, hArgMore]
-        exact congrArg Rec.Outcome.yield (ite_eq_left (rfl : input = input))⟩
+        simp only [infer.eq_4, hFnMore, hArgMore, LE.le,
+          ite_eq_left (rfl : input = input)]⟩
 
 omit build in
 private theorem runtimeReplace {source target : Root} {trm : source.Trm}
