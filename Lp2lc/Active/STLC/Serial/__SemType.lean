@@ -5,18 +5,6 @@ namespace Lp2lc.Active.STLC.AST.Semantic
 
 open Lp2lc.Active.Util
 
--- /-- A semantic function must safely handle every argument of its input type.
--- Annotations are hints: the evaluator ignores them, so this relation does too.
--- -/
--- def ValueHasType (typ : Typ) (value : ExeValue) : Prop :=
---   match typ, value with
---   | .TLit, .mk _ (.lit _) _ => True
---   | .TFn input output, .mk context (.fn _ body) captured =>
---     ∀ argument, ValueHasType input argument →
---       (eval (body.apply .only) (captured.set (context + 1) argument)).isSemiDecidable
---         (ValueHasType output)
---   | _, _ => False
-
 /-- Fuel-bounded expected-type checking with runtime values or hypothetical types. -/
 def checkInternal {n} (self : Trm n) (typ : Typ)
     (bindings : CompilerBindings := .empty) : Rec Prop := λ fuel =>
