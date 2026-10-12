@@ -36,7 +36,7 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
   all_goals try cases hInfer
   all_goals exact ⟨_, rfl, rfl⟩
 
-private def EntryFits (entry : Option ValOrTyp) (typ : Typ) : Prop :=
+private def entryFits (entry : Option ValOrTyp) (typ : Typ) : Prop :=
   match entry with
   | none => False
   | some (.inr input) => input = typ
@@ -45,7 +45,7 @@ private def EntryFits (entry : Option ValOrTyp) (typ : Typ) : Prop :=
 
 private theorem inferReplace {trm : Trm n}
     {source target : CompilerBindings} {fuel : Nat} {typ : Typ}
-    (hReplace : ∀ index typ, EntryFits (source index) typ → EntryFits (target index) typ)
+    (hReplace : ∀ index typ, entryFits (source index) typ → entryFits (target index) typ)
     (hInfer : inferInternal trm source fuel = .yield (some typ)) :
     ∃ targetFuel, inferInternal trm target targetFuel = .yield (some typ) := by
   induction fuel generalizing n trm source target typ with
@@ -66,13 +66,13 @@ private theorem inferReplace {trm : Trm n}
         exact ⟨bodyFuel + 1, by simp only [inferInternal.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
     | ref carrier under =>
       simp only [inferInternal.eq_4] at hInfer
-      have hFit : EntryFits (source under.sourceIndex.down) typ := by
+      have hFit : entryFits (source under.sourceIndex.down) typ := by
         cases hEntry : source under.sourceIndex.down <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
-        all_goals simp only [hEntry, EntryFits, Rec.Outcome.yield.injEq] at hInfer ⊢
+        all_goals simp only [hEntry, entryFits, Rec.Outcome.yield.injEq] at hInfer ⊢
         all_goals first | (cases hInfer <;> rfl) | exact ⟨fuel, hInfer⟩ | exact Option.some.inj hInfer
       have hTarget := hReplace under.sourceIndex.down typ hFit
       cases hEntry : target under.sourceIndex.down <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
-      all_goals simp only [hEntry, EntryFits] at hTarget
+      all_goals simp only [hEntry, entryFits] at hTarget
       all_goals
         first
         | contradiction
@@ -141,11 +141,11 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
                   let bodyBindings := captured.set (context + 1) (.mk argContext argValue argCaptured)
                   obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace (target := bodyBindings.map .inl)
                     (by
-                      have typedArg : EntryFits (some (.inl (.mk _ argValue argCaptured))) input :=
+                      have typedArg : entryFits (some (.inl (.mk _ argValue argCaptured))) input :=
                         ⟨argInferFuel, hArgValue⟩
                       intro index inputTyp hSource
                       simp only [bodyBindings, NatBindings.getMap, NatBindings.set, List.lookup] at hSource ⊢
-                      split at hSource <;> simp_all [EntryFits])
+                      split at hSource <;> simp_all [entryFits])
                     hBody
                   simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
                     ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget

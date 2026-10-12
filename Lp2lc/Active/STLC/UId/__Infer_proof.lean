@@ -4,27 +4,27 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util Root Root.Trm
 
 /-- Runtime references and their stored values are valid; lexical binder slots are admitted separately. -/
-inductive RuntimeRefs (refs : UIdRefs) : {base : Root} →
+inductive runtimeRefs (refs : UIdRefs) : {base : Root} →
     (origins : base.UId → refs.UId ⊕ Unit) → (trm : base.Trm) → Prop where
-  | lit {base origins repr} : RuntimeRefs refs (base := base) origins (.val (.lit repr))
+  | lit {base origins repr} : runtimeRefs refs (base := base) origins (.val (.lit repr))
   | fn {base : Root} {origins annotation} {body : base.Binder .trm}
-      (runtime : RuntimeRefs refs (base := ⟨base.UId ⊕ Unit⟩) (Sum.elim origins (λ _ => .inr ()))
+      (runtime : runtimeRefs refs (base := ⟨base.UId ⊕ Unit⟩) (Sum.elim origins (λ _ => .inr ()))
         (Pre.Binder.apply body (.inr ()))) :
-      RuntimeRefs refs (base := base) origins (.val (.fn annotation body))
+      runtimeRefs refs (base := base) origins (.val (.fn annotation body))
   | apply {base origins fn arg}
-      (runtimeFn : RuntimeRefs refs (base := base) origins fn) (runtimeArg : RuntimeRefs refs origins arg) :
-      RuntimeRefs refs origins (.apply fn arg)
+      (runtimeFn : runtimeRefs refs (base := base) origins fn) (runtimeArg : runtimeRefs refs origins arg) :
+      runtimeRefs refs origins (.apply fn arg)
   | bound {base origins carrier under} (origin : origins (mapRef under carrier) = .inr ()) :
-      RuntimeRefs refs (base := base) origins (.ref carrier under)
+      runtimeRefs refs (base := base) origins (.ref carrier under)
   | value {base origins carrier under receipt value}
       (origin : origins (mapRef under carrier) = .inl receipt) (lookup : refs.uid2both.get receipt = .inr value)
-      (runtime : RuntimeRefs refs Sum.inl value.asTrm) :
-      RuntimeRefs refs (base := base) origins (.ref carrier under)
+      (runtime : runtimeRefs refs Sum.inl value.asTrm) :
+      runtimeRefs refs (base := base) origins (.ref carrier under)
 
 section variable {refs : UIdRefs} [build : BuildEnv refs]
 
 /-- Every completed evaluation succeeds, and its value can be inferred at the claimed type. -/
-def Safety (trm : refs.base.Trm) (typ : refs.base.Typ) : Prop :=
+def safety (trm : refs.base.Trm) (typ : refs.base.Typ) : Prop :=
   trm.eval.isSemiDecidable
     (λ value => value.asTrm.infer.isDecidable (λ inferred => inferred ≤ typ))
 
@@ -164,21 +164,21 @@ omit build in
 private theorem runtimeReplace {source target : Root} {trm : source.Trm}
     {first : source.UId → refs.UId ⊕ Unit} {second : target.UId → refs.UId ⊕ Unit}
     (map : source.UId → target.UId)
-    (hReplace : ∀ receipt, RuntimeRefs refs first (.ref receipt .same) →
-      RuntimeRefs refs second (.ref (map receipt) .same))
-    (runtime : RuntimeRefs refs first trm) : RuntimeRefs refs second (AST.recarrier trm map) := by
+    (hReplace : ∀ receipt, runtimeRefs refs first (.ref receipt .same) →
+      runtimeRefs refs second (.ref (map receipt) .same))
+    (runtime : runtimeRefs refs first trm) : runtimeRefs refs second (AST.recarrier trm map) := by
   induction runtime generalizing target with
   | lit => exact .lit
   | @fn base origins annotation body runtime ih =>
     rw [recarrierFn]
-    apply RuntimeRefs.fn
+    apply runtimeRefs.fn
     apply ih (Sum.map map id)
     intro carrier runtime
     cases carrier with
     | inl outer =>
-      have original : RuntimeRefs refs origins (.ref outer .same) := by
-        cases runtime <;> solve_by_elim [RuntimeRefs.bound, RuntimeRefs.value]
-      cases hReplace outer original <;> solve_by_elim [RuntimeRefs.bound, RuntimeRefs.value]
+      have original : runtimeRefs refs origins (.ref outer .same) := by
+        cases runtime <;> solve_by_elim [runtimeRefs.bound, runtimeRefs.value]
+      cases hReplace outer original <;> solve_by_elim [runtimeRefs.bound, runtimeRefs.value]
     | inr slot => exact .bound rfl
   | apply fn arg ihFn ihArg => exact .apply (ihFn map hReplace) (ihArg map hReplace)
   | bound bound => exact hReplace _ (.bound bound)
@@ -192,11 +192,11 @@ private theorem mintedValueInfer (value : refs.base.Val) {fuel : Nat} {typ : ref
   exact hInfer
 
 private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : refs.base.Typ)
-    (runtime : RuntimeRefs refs Sum.inl trm)
+    (runtime : runtimeRefs refs Sum.inl trm)
     (hInfer : infer trm inferFuel = .yield (some typ)) :
     (eval trm).isSemiDecidable (λ result =>
       ∃ valueFuel, infer result.asTrm valueFuel = .yield (some typ) ∧
-        RuntimeRefs refs Sum.inl result.asTrm) := by
+        runtimeRefs refs Sum.inl result.asTrm) := by
   intro evalFuel
   induction evalFuel generalizing trm inferFuel typ with
   | zero => trivial
@@ -242,14 +242,14 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
                     cases sourceFuel <;> simp [infer, mapRef, Sum.elim] at hSource
                     cases hSource
                     exact ⟨argInferFuel + 1, mintedValueInfer argValue hArgValue⟩) hBody
-              have hRuntimeBody : RuntimeRefs refs Sum.inl (Binder.apply body receipt) := by
+              have hRuntimeBody : runtimeRefs refs Sum.inl (Binder.apply body receipt) := by
                 cases runtimeFnValue with
                 | fn runtimeBody =>
                   apply runtimeReplace (Sum.elim id (λ _ => receipt)) ?_ runtimeBody
                   intro carrier runtime
                   cases carrier with
                   | inl outer =>
-                    cases runtime <;> solve_by_elim [RuntimeRefs.value]
+                    cases runtime <;> solve_by_elim [runtimeRefs.value]
                   | inr slot =>
                     exact .value rfl (build.uid2val argValue).property runtimeArgValue
               simpa only [eval.eq_3, hFnEval, hArgEval] using
@@ -257,8 +257,8 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
 
 /-- Successful runtime inference excludes evaluation rejection and preserves the result's type. -/
 theorem main (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
-    (runtime : RuntimeRefs refs Sum.inl trm)
-    (hInfer : trm.infer fuel = .yield (some typ)) : Safety trm typ := by
+    (runtime : runtimeRefs refs Sum.inl trm)
+    (hInfer : trm.infer fuel = .yield (some typ)) : safety trm typ := by
   intro evalFuel
   have safe := inferEvalSafety trm fuel typ runtime hInfer evalFuel
   rcases result : eval trm evalFuel with (_ | value) | _

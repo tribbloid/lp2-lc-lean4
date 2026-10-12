@@ -12,7 +12,7 @@ section variable [refs : HasUId2Any] [env : BuildEnv refs]
 
 structure SafetyOf (trm : AST.Trm refs.Parameters) where
   typ : AST.Typ refs.Parameters
-  -- safety : Safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
+  -- safety : safety trm typ -- TODO: this lemma has been temporarily disabled. Enable it later.
 
 abbrev Compilation (trm : AST.Trm refs.Parameters) :=
   Rec.OutcomeOpt (SafetyOf trm) -- one observation of the semi-decidability of executing term
@@ -23,7 +23,7 @@ structure Objective (trm : AST.Trm refs.Parameters) (fuel : Nat) : Type 2 where
   sameInfer : compilation.map (Option.map SafetyOf.typ) = trm.infer fuel
 
 /-- Mirrors term inference while preserving its selected-fuel correspondence. -/
-def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fuel :=
+def inferProve (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fuel :=
   match fuel with
   | 0 => ⟨.outOfFuel, rfl⟩
   | fuel + 1 =>
@@ -31,7 +31,7 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
     | .val (.lit _) => ⟨.yield (some ⟨.TLit⟩), rfl⟩
     | .val (fn body tIn) =>
       let receipt := env.uid2typCtx.inv tIn
-      let result := infer_prove (body.apply receipt) fuel
+      let result := inferProve (body.apply receipt) fuel
       ⟨result.compilation.map
           (Option.map (λ safety => ⟨.TFn tIn safety.typ⟩)), by
         change _ = ((body.apply receipt).infer fuel).map (Option.map (AST.TFn tIn))
@@ -39,8 +39,8 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
         cases result.compilation <;>
           simp [Rec.Outcome.map, Function.comp_def]⟩
     | .apply fnTerm arg =>
-      let fnResult := infer_prove fnTerm fuel
-      let argResult := infer_prove arg fuel
+      let fnResult := inferProve fnTerm fuel
+      let argResult := inferProve arg fuel
       let applyResult (fnType argType : Rec.Outcome (Option (AST.Typ refs.Parameters))) :
           Rec.Outcome (Option (AST.Typ refs.Parameters)) :=
         match fnType, argType with
@@ -88,10 +88,10 @@ def infer_prove (trm : AST.Trm refs.Parameters) (fuel : Nat) : Objective trm fue
       cases h : refs.uid2any.get receipt with
       | inl value =>
         let original := value.asTrm
-        let result := infer_prove original fuel
+        let result := inferProve original fuel
         exact ⟨result.compilation.map (Option.map (λ safety => ⟨safety.typ⟩)), by
-          rw [show (AST.ref receipt).infer (fuel + 1) = original.infer fuel by
-            simp [AST.infer, h, original]]
+          rw [((by simp [AST.infer, h, original]) :
+            (AST.ref receipt).infer (fuel + 1) = original.infer fuel)]
           rw [← result.sameInfer]
           cases result.compilation <;>
             simp [Rec.Outcome.map, Function.comp_def]⟩
