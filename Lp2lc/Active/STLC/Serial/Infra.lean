@@ -1,6 +1,8 @@
-import «Lp2lc».Active.STLC.STLCDef
+import «Lp2lc».Active.STLC.Serial.Def
 
 namespace Lp2lc.Active.STLC
+
+open Lp2lc.Active.Util
 
 abbrev ValOrTyp := ExeValue ⊕ Typ -- Inference at a breakpoint accepts runtime values or types.
 

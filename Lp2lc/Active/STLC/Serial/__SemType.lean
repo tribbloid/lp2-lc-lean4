@@ -1,4 +1,5 @@
 import «Lp2lc».Active.STLC.Serial.Eval
+import «Lp2lc».Active.STLC.Serial.Infra
 
 namespace Lp2lc.Active.STLC.AST.Semantic
 
@@ -25,9 +26,9 @@ def checkInternal {n} (self : Trm n) (typ : Typ)
 
 def check {n} (self : Trm n) (typ : Typ)
     (bindings : ExeBindings := .empty) : Rec Prop :=
-  self.checkInternal (exeBindings.map .inl)
+  checkInternal self typ (bindings.map .inl)
 
 def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ: Typ) : Prop :=
-  self.checkInternal typ bindings fuel
+  (checkInternal self typ bindings fuel).getOrElse False
 
 end Lp2lc.Active.STLC.AST.Semantic
