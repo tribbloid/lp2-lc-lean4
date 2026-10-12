@@ -5,15 +5,6 @@ open Lp2lc.Active.Util
 
 namespace Root.Trm
 
-@[instance_reducible]
-local instance typDecidableEq {base : Root} : DecidableEq base.Typ
-  | .TLit, .TLit => isTrue rfl
-  | .TLit, .TFn _ _
-  | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
-  | .TFn a b, .TFn c d =>
-    @decidable_of_iff' _ _ (Pre.AST.TFn.injEq a b c d).to_iff
-      (@instDecidableAnd _ _ (typDecidableEq a c) (typDecidableEq b d))
-
 /-- Infers terms from shared type or value receipts without executing values.
 
 Binders substitute the receipt for their annotated input type into the canonical structural body.
