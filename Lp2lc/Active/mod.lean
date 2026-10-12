@@ -16,7 +16,7 @@ import «Lp2lc».Active.STLC.Serial.__Infer
 import «Lp2lc».Active.STLC.Serial.__Infer_proof
 -- import «Lp2lc».Active.STLC.__Infer_umbral
 
--- Independent semantic typing and executable expected-type checking.
+-- Fuel-bounded semantic typing and expected-type checking.
 import «Lp2lc».Active.STLC.Serial.__SemType
 import «Lp2lc».Active.STLC.Serial.__SemType_proof
 

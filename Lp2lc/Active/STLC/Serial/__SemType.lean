@@ -16,10 +16,7 @@ open Lp2lc.Active.Util
 --         (ValueHasType output)
 --   | _, _ => False
 
-/-- Executable, sound search for a supplied type; no principal type is computed.
-`inputs` supplies finite application witnesses, each checked against both operands.
-`false` means this search failed, not that the full semantic specification is false.
--/
+/-- Fuel-bounded expected-type checking with runtime values or hypothetical types. -/
 def checkInternal {n} (self : Trm n) (typ : Typ)
     (bindings : CompilerBindings := .empty) : Rec Prop := λ fuel =>
   match fuel with
