@@ -1,12 +1,20 @@
 import «Lp2lc».Active.STLC.UId.Eval
-import «Lp2lc».Active.STLC.Serial.__Infer
 
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
 namespace Root.Trm
 
-local instance {P} : DecidableEq (Pre.AST P .typ) := AST.typDecidableLE
+local instance {P} : LE (Pre.AST P .typ) := ⟨Eq⟩
+
+@[instance_reducible]
+local instance typDecidableLE {P} : DecidableLE (Pre.AST P .typ)
+  | .TLit, .TLit => isTrue rfl
+  | .TLit, .TFn _ _
+  | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
+  | .TFn a b, .TFn c d =>
+    @decidable_of_iff' _ _ (Pre.AST.TFn.injEq a b c d).to_iff
+      (@instDecidableAnd _ _ (typDecidableLE a c) (typDecidableLE b d))
 
 /-- Infers terms from shared type or value receipts without executing values.
 
@@ -23,7 +31,7 @@ def infer {refs : UIdRefs} [env : BuildEnv refs] (self : refs.base.Trm) : RecOpt
     | .apply fnTerm arg =>
       match infer fnTerm fuel, infer arg fuel with
       | .yield (some (.TFn tIn tOut)), .yield (some argTyp) =>
-        .yield (if argTyp = tIn then some tOut else none)
+        .yield (if argTyp ≤ tIn then some tOut else none)
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
     | .ref carrier under =>
