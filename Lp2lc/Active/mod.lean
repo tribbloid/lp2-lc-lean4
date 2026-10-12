@@ -18,6 +18,7 @@ import «Lp2lc».Active.STLC.Serial.__Infer_proof
 
 -- Fuel-bounded semantic typing and expected-type checking.
 import «Lp2lc».Active.STLC.Serial.__SemType
+import «Lp2lc».Active.STLC.Serial.__SemType_proof
 
 -- UId receipt execution and type inference.
 import «Lp2lc».Active.STLC.UId.Def
