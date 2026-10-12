@@ -58,24 +58,6 @@ def apply {P l} (self : Binder P l) (carrier) := match self with
 
 end Binder
 
-namespace AST
-variable {P : Parameters}
-
-/-- Current STLC subtyping coincides with structural type equality. -/
-instance typLE : LE (AST P .typ) := ⟨Eq⟩
-
-/-- Decides the current structural subtyping relation. -/
-@[instance_reducible]
-instance typDecidableLE : DecidableLE (AST P .typ)
-  | .TLit, .TLit => isTrue rfl
-  | .TLit, .TFn _ _
-  | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
-  | .TFn a b, .TFn c d =>
-    @decidable_of_iff' _ _ (TFn.injEq a b c d).to_iff
-      (@instDecidableAnd _ _ (typDecidableLE a c) (typDecidableLE b d))
-
-end AST
-
 end Pre
 
 end Lp2lc.Active.STLC

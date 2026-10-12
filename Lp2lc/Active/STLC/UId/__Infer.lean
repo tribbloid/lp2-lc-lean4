@@ -5,6 +5,15 @@ open Lp2lc.Active.Util
 
 namespace Root.Trm
 
+@[instance_reducible]
+local instance typDecidableEq {base : Root} : DecidableEq base.Typ
+  | .TLit, .TLit => isTrue rfl
+  | .TLit, .TFn _ _
+  | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
+  | .TFn a b, .TFn c d =>
+    @decidable_of_iff' _ _ (Pre.AST.TFn.injEq a b c d).to_iff
+      (@instDecidableAnd _ _ (typDecidableEq a c) (typDecidableEq b d))
+
 /-- Infers terms from shared type or value receipts without executing values.
 
 Binders substitute the receipt for their annotated input type into the canonical structural body.
@@ -20,7 +29,7 @@ def infer {refs : UIdRefs} [env : BuildEnv refs] (self : refs.base.Trm) : RecOpt
     | .apply fnTerm arg =>
       match infer fnTerm fuel, infer arg fuel with
       | .yield (some (.TFn tIn tOut)), .yield (some argTyp) =>
-        .yield (if argTyp ≤ tIn then some tOut else none)
+        .yield (if argTyp = tIn then some tOut else none)
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
     | .ref carrier under =>

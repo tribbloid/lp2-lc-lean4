@@ -10,7 +10,7 @@ namespace Fundamental
 
 def safety (typ : Typ) : Prop :=
   (trm.eval bindings).isSemiDecidable (λ result =>
-    (result.value.asTrm.infer result.captured).isDecidable (λ inferred => inferred ≤ typ))
+    (result.value.asTrm.infer result.captured).isDecidable (λ inferred => inferred = typ))
 
 private theorem inferApplySuccess {fn arg : Trm n}
     {entries : CompilerBindings} {fuel : Nat} {typ : Typ}

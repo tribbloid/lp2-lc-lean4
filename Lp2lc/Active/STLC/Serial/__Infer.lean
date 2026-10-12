@@ -2,8 +2,22 @@ import «Lp2lc».Active.STLC.Serial.Eval
 import «Lp2lc».Active.STLC.Serial.Infra
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
-namespace AST
 
+namespace AST
+variable {P : Parameters}
+
+/-- Current STLC subtyping coincides with structural type equality. -/
+local instance typLE : LE (Pre.AST P .typ) := ⟨Eq⟩
+
+/-- Decides the current structural subtyping relation. -/
+@[instance_reducible]
+local instance typDecidableLE : DecidableLE (Pre.AST P .typ)
+  | .TLit, .TLit => isTrue rfl
+  | .TLit, .TFn _ _
+  | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
+  | .TFn a b, .TFn c d =>
+    @decidable_of_iff' _ _ (Pre.AST.TFn.injEq a b c d).to_iff
+      (@instDecidableAnd _ _ (typDecidableLE a c) (typDecidableLE b d))
 
 /-- Convert `Typ n` to `Typ 0`, preserving its structure without consuming inference fuel. -/
 def resolveType {n} (self : Typ n) : Typ :=

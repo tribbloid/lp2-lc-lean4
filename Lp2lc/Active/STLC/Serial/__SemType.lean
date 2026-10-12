@@ -16,26 +16,24 @@ private def closeType {n} (self : Typ n) : Typ :=
 Application quantifies over its domain; no principal type is selected.
 -/
 def checkInternal {n} (self : Trm n) (typ : Typ)
-    (bindings : CompilerBindings := .empty) : Rec Prop := λ fuel =>
-  match fuel with
+    (bindings : CompilerBindings := .empty) : Rec Prop
   | 0 => .yield False
   | fuel + 1 =>
-    .yield (match self with
-      | .val (.lit _) => .TLit ≤ typ
-      | .val (.fn annotation body) =>
-        match typ with
-        | .TLit => False
-        | .TFn input output =>
-          closeType annotation = input ∧
-            (checkInternal (body.apply .only) output
-              (bindings.set (n + 1) (.inr input)) fuel).getOrElse False
-      | .ref _ under =>
+    .yield (match self, typ with
+      | .val (.lit _), .TLit => True
+      | .val (.lit _), .TFn _ _
+      | .val (.fn _ _), .TLit => False
+      | .val (.fn annotation body), .TFn input output =>
+        closeType annotation = input ∧
+          (checkInternal (body.apply .only) output
+            (bindings.set (n + 1) (.inr input)) fuel).getOrElse False
+      | .ref _ under, _ =>
         match bindings under.sourceIndex.down with
         | some (.inl (.mk _ value captured)) =>
           (checkInternal value.asTrm typ (captured.map .inl) fuel).getOrElse False
-        | some (.inr bound) => bound ≤ typ
+        | some (.inr bound) => bound = typ
         | none => False
-      | .apply fn arg =>
+      | .apply fn arg, _ =>
         ∃ input, (checkInternal fn (.TFn input typ) bindings fuel).getOrElse False ∧
           (checkInternal arg input bindings fuel).getOrElse False)
 
