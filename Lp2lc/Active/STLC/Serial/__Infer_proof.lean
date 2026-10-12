@@ -19,7 +19,7 @@ private theorem inferApplySuccess {fn arg : Trm n}
       inferInternal arg entries fuel = .yield (some input) := by
   simp only [inferInternal.eq_5] at hInfer
   repeat split at hInfer
-  all_goals simp_all [LE.le]
+  all_goals simp_all
   all_goals injection hInfer; subst_vars; exact ⟨_, rfl, rfl⟩
 
 private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
@@ -89,8 +89,7 @@ private theorem inferReplace {trm : Trm n}
         (Nat.le_max_right _ _) hArgTarget
       exact ⟨max fnFuel argFuel + 1, by
         simp only [inferInternal.eq_5, hFnMore, hArgMore]
-        have hRefl : input ≤ input := rfl
-        simp [hRefl]⟩
+        exact congrArg Rec.Outcome.yield (ite_eq_left (rfl : input = input))⟩
 
 /-- Successful inference excludes evaluation rejection and preserves the inferred type of every result. -/
 theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
@@ -159,7 +158,7 @@ theorem main (fuel : Nat) (typ : Typ)
   cases result : trm.eval bindings evalFuel <;> (try cases ‹Option ExeValue›) <;> (try cases ‹ExeValue›) <;>
     simp_all
   obtain ⟨valueFuel, typed⟩ := safe
-  exact ⟨valueFuel, by rw [typed]; exact (rfl : typ ≤ typ)⟩
+  exact ⟨valueFuel, by rw [typed]⟩
 
 /--
 If compilation succeeds, the term must be safe.

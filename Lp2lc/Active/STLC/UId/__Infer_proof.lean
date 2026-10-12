@@ -92,7 +92,7 @@ private theorem inferApplySuccess {fn arg : refs.base.Trm} {fuel : Nat} {typ : r
       infer arg fuel = .yield (some input) := by
   simp only [infer.eq_4] at hInfer
   repeat split at hInfer
-  all_goals simp_all [LE.le]
+  all_goals simp_all
   all_goals injection hInfer; subst_vars; exact ⟨_, rfl, rfl⟩
 
 private theorem inferFnSuccess {annotation : refs.base.Typ} {body : refs.base.Binder .trm}
@@ -158,7 +158,7 @@ private theorem inferReplace {base : Root} {trm : base.Trm}
       exact ⟨max fnFuel argFuel + 1, by
         change infer (.apply (AST.recarrier fn second) (AST.recarrier arg second)) _ = _
         simp only [infer.eq_4, hFnMore, hArgMore]
-        exact congrArg Rec.Outcome.yield (ite_eq_left (rfl : input ≤ input))⟩
+        exact congrArg Rec.Outcome.yield (ite_eq_left (rfl : input = input))⟩
 
 omit build in
 private theorem runtimeReplace {source target : Root} {trm : source.Trm}
@@ -264,7 +264,7 @@ theorem main (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
   rcases result : eval trm evalFuel with (_ | value) | _
   all_goals simp only [result, Bool.false_eq_true] at safe ⊢
   obtain ⟨valueFuel, typed, _⟩ := safe
-  exact ⟨valueFuel, by rw [typed]; exact (rfl : typ ≤ typ)⟩
+  exact ⟨valueFuel, by rw [typed]⟩
 
 end
 

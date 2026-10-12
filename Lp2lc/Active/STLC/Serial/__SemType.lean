@@ -58,7 +58,7 @@ theorem termCheck {n} (trm : Trm n) (bindings : CompilerBindings)
     cases trm with
     | val value =>
       cases value with
-      | lit repr => exact hType
+      | lit repr => cases typ <;> exact hType
       | fn annotation body =>
         cases typ <;> simp only [semType, checkInternal, Rec.Outcome.getOrElse] at hType ⊢
         exact ⟨hType.1, ih _ _ hFuel hType.2⟩

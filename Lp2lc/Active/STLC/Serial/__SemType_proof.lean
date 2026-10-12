@@ -31,7 +31,7 @@ private theorem checkReplace {trm : Trm n}
     cases trm with
     | val value =>
       cases value with
-      | lit repr => exact ⟨1, hType⟩
+      | lit repr => cases typ <;> exact ⟨1, hType⟩
       | fn annotation body =>
         cases typ with
         | TLit => exact False.elim hType
@@ -58,7 +58,7 @@ private theorem checkReplace {trm : Trm n}
         | (obtain ⟨valueFuel, hValue⟩ := hTarget
            exact ⟨valueFuel + 1, by
              simpa only [semType, checkInternal, Rec.Outcome.getOrElse, hEntry] using hValue⟩)
-        | exact ⟨1, by simpa only [semType, checkInternal, Rec.Outcome.getOrElse, hEntry, LE.le] using hTarget⟩
+        | exact ⟨1, by simpa only [semType, checkInternal, Rec.Outcome.getOrElse, hEntry] using hTarget⟩
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := hType
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
@@ -100,7 +100,7 @@ theorem main (fuel : Nat) (typ : Typ)
           | succ fnFuel =>
             cases fnValue with
             | lit repr =>
-              simp [Val.asTrm, semType, checkInternal, Rec.Outcome.getOrElse, LE.le] at hFnValue
+              simp [Val.asTrm, semType, checkInternal, Rec.Outcome.getOrElse] at hFnValue
             | fn annotation body =>
               cases hArgEval : eval arg bindings evalFuel <;>
                 (try cases ‹Option ExeValue›) <;> (try cases ‹ExeValue›)
