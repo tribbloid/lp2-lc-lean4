@@ -70,11 +70,9 @@ instance typDecidableLE : DecidableLE (AST P .typ)
   | .TLit, .TLit => isTrue rfl
   | .TLit, .TFn _ _
   | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
-  | .TFn leftIn leftOut, .TFn rightIn rightOut =>
-    match typDecidableLE leftIn rightIn, typDecidableLE leftOut rightOut with
-    | isTrue inputEqual, isTrue outputEqual => isTrue (inputEqual ▸ outputEqual ▸ rfl)
-    | isFalse notEqual, _ => isFalse (λ equality => notEqual (by cases equality; rfl))
-    | _, isFalse notEqual => isFalse (λ equality => notEqual (by cases equality; rfl))
+  | .TFn a b, .TFn c d =>
+    @decidable_of_iff' _ _ (TFn.injEq a b c d).to_iff
+      (@instDecidableAnd _ _ (typDecidableLE a c) (typDecidableLE b d))
 
 end AST
 
