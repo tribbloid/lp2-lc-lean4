@@ -130,10 +130,9 @@ When working on an issue that contains multiple subtasks:
 
 #### Definitions
 
-- Use camelCase for definitions and functions that yield values.
-- Use camelCase for inductive cases and constructors.
-- Use PascalCase for types, propositions, properties, type constructors, and predicates that yield `Type`/`Type
-      u`/`Prop`/`Sort u`.
+- Use camelCase for terms inhabiting `Type 0` or below (e.g. value, function, proposition, predicate, proof)
+- Use camelCase for case and constructor.
+- Use PascalCase for terms inhabiting `Type 1` or above (e.g. type, type constructor, sort).
 
 #### Omission
 
