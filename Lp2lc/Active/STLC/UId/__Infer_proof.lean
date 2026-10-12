@@ -221,7 +221,7 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
           cases eval arg evalFuel <;> simp [eval.eq_3, hFnEval]
         case yield.some fnValue =>
           obtain ⟨⟨fnInferFuel, hFnValue⟩, runtimeFnValue⟩ := hFnSafety
-          cases fnInferFuel <;> (try cases fnValue) <;> simp [Val.asTrm, infer.eq_1, infer.eq_2] at hFnValue
+          cases fnInferFuel <;> (try cases fnValue) <;> simp [Root.Val.asTrm, infer.eq_1, infer.eq_2] at hFnValue
           case succ.lit => cases Option.some.inj hFnValue
           case succ.fn fnInferFuel annotation body =>
             cases hArgEval : eval arg evalFuel <;> try cases ‹Option refs.base.Val›
