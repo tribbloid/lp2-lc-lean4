@@ -9,9 +9,15 @@ variable {P : Parameters}
 /-- Current STLC subtyping coincides with structural type equality. -/
 local instance typLE : LE (Pre.AST P .typ) := ⟨Eq⟩
 
-/-- Decides the current structural subtyping relation. -/
+/-- Decides structural subtyping by source type equality for every carrier. -/
 @[instance_reducible]
-local instance typDecidableLE : DecidableLE (Pre.AST P .typ) := Pre.AST.typDecidableEq
+local instance typDecidableLE : DecidableLE (Pre.AST P .typ)
+  | .TLit, .TLit => isTrue rfl
+  | .TLit, .TFn _ _
+  | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
+  | .TFn a b, .TFn c d =>
+    @decidable_of_iff' _ _ (Pre.AST.TFn.injEq a b c d).to_iff
+      (@instDecidableAnd _ _ (typDecidableLE a c) (typDecidableLE b d))
 
 /-- Convert `Typ n` to `Typ 0`, preserving its structure without consuming inference fuel. -/
 def resolveType {n} (self : Typ n) : Typ :=

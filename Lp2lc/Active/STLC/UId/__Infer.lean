@@ -1,9 +1,12 @@
 import «Lp2lc».Active.STLC.UId.Eval
+import «Lp2lc».Active.STLC.Serial.__Infer
 
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
 namespace Root.Trm
+
+local instance {P} : DecidableEq (Pre.AST P .typ) := AST.typDecidableLE
 
 /-- Infers terms from shared type or value receipts without executing values.
 

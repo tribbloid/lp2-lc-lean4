@@ -46,20 +46,6 @@ inductive AST : Parameters → Label → UAST where
     (under : P'.Under P) : AST P .trm
  end
 
-namespace AST
-
-/-- Decides structural equality of source types for every carrier. -/
-@[instance_reducible]
-instance typDecidableEq {P} : DecidableEq (AST P .typ)
-  | .TLit, .TLit => isTrue rfl
-  | .TLit, .TFn _ _
-  | .TFn _ _, .TLit => isFalse (λ equality => nomatch equality)
-  | .TFn a b, .TFn c d =>
-    @decidable_of_iff' _ _ (TFn.injEq a b c d).to_iff
-      (@instDecidableAnd _ _ (typDecidableEq a c) (typDecidableEq b d))
-
-end AST
-
 namespace Binder
 -- All theorems about Binder should be here, e.g. parametricity, lift relation
 
