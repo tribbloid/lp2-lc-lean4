@@ -13,7 +13,7 @@ def safety (typ : Typ) : Prop :=
     (result.value.asTrm.infer result.captured).isDecidable (λ inferred => inferred ≤ typ))
 
 private theorem inferApplySuccess {fn arg : Trm n}
-    {entries : BuildBindings} {fuel : Nat} {typ : Typ}
+    {entries : CompilerBindings} {fuel : Nat} {typ : Typ}
     (hInfer : inferInternal (.apply fn arg) entries (fuel + 1) = .yield (some typ)) :
     ∃ input, inferInternal fn entries fuel = .yield (some (.TFn input typ)) ∧
       inferInternal arg entries fuel = .yield (some input) := by
@@ -23,7 +23,7 @@ private theorem inferApplySuccess {fn arg : Trm n}
   all_goals injection hInfer; subst_vars; exact ⟨_, rfl, rfl⟩
 
 private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
-    {entries : BuildBindings} {fuel : Nat} {typ : Typ}
+    {entries : CompilerBindings} {fuel : Nat} {typ : Typ}
     (hInfer : inferInternal (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
     let input := resolveType annotation
     ∃ output, inferInternal (body.apply .only)
@@ -44,7 +44,7 @@ private def EntryFits (entry : Option ValOrTyp) (typ : Typ) : Prop :=
     ∃ fuel, inferInternal value.asTrm (captured.map .inl) fuel = .yield (some typ)
 
 private theorem inferReplace {trm : Trm n}
-    {source target : BuildBindings} {fuel : Nat} {typ : Typ}
+    {source target : CompilerBindings} {fuel : Nat} {typ : Typ}
     (hReplace : ∀ index typ, EntryFits (source index) typ → EntryFits (target index) typ)
     (hInfer : inferInternal trm source fuel = .yield (some typ)) :
     ∃ targetFuel, inferInternal trm target targetFuel = .yield (some typ) := by

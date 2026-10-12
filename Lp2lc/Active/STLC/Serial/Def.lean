@@ -23,7 +23,6 @@ def asTrm (self : Val n) : Trm n := .val self
 
 end Val
 
-
 -- set_option genSizeOf false in
 /-- A source value together with the bindings captured when it was evaluated. -/
 structure ExeValue : Type 2 where

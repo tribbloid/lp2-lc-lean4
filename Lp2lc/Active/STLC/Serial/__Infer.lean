@@ -3,9 +3,6 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 namespace AST
 
-abbrev ValOrTyp := ExeValue ⊕ Typ -- Inference at a breakpoint accepts runtime values or types.
-
-abbrev BuildBindings := NatBindings ValOrTyp -- append-only
 
 /-- Convert `Typ n` to `Typ 0`, preserving its structure without consuming inference fuel. -/
 def resolveType {n} (self : Typ n) : Typ :=
@@ -14,7 +11,7 @@ def resolveType {n} (self : Typ n) : Typ :=
   | .TFn tIn tOut => .TFn (resolveType tIn) (resolveType tOut)
 
 /-- Infer using runtime values or hypothetical types, resolving runtime values in their captured environments. -/
-def inferInternal {n} (self : Trm n) (bindings : BuildBindings) : RecOpt Typ := λ fuel =>
+def inferInternal {n} (self : Trm n) (bindings : CompilerBindings) : RecOpt Typ := λ fuel =>
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -38,9 +35,12 @@ def inferInternal {n} (self : Trm n) (bindings : BuildBindings) : RecOpt Typ := 
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
 
-/-- Infer using runtime values only, resolving each captured value to its type. -/
+/-- Infer using runtime values only, resolving each captured value to its type. -/ -- TODO: remove this? too trivial
 def infer {n} (self : Trm n) (exeBindings : ExeBindings := .empty) : RecOpt Typ :=
   self.inferInternal (exeBindings.map .inl)
+
+def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ: Typ) :=
+  self.inferInternal bindings fuel = .yield (.some typ)
 
 variable {n : Nat}
 
@@ -48,7 +48,7 @@ namespace Monotone
 
 /-- Every completed inference result, including rejection, is preserved when fuel increases. -/
 theorem termInfer (trm : Trm n)
-    (bindings : BuildBindings) :
+    (bindings : CompilerBindings) :
     (inferInternal trm bindings).Monotone := by
   intro less more result hFuel hInfer
   induction less generalizing n trm bindings more result with
