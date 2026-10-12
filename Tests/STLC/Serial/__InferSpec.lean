@@ -1,4 +1,5 @@
 import «Lp2lc».Active.STLC.Serial.__Infer
+import «Lp2lc».Active.STLC.Hash
 import «Tests».STLC.TrmDemo
 
 namespace Tests.STLC.Sanity
@@ -10,7 +11,8 @@ open Lp2lc.Active.STLC
 
 section infer
 
-local instance : BEq Typ := ⟨λ first second => decide (first ≤ second)⟩
+local instance : BEq Typ :=
+  ⟨λ first second => astBEq first second (λ _ => .null) (λ _ => .null)⟩
 
 private def literalValue : ExeValue := .mk 0 (.lit bTrue) .empty
 
