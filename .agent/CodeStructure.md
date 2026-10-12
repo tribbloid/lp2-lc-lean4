@@ -14,5 +14,5 @@
               before the main task starts. Link to a self-contained counterexample or demo if possible, such as:
             - Inconsistent hypotheses that imply `False`.
             - Refutable or unprovable conjectures with counterexamples.
-        - `Glossary.md`: contains a list of major theorems with short explanations of their purpose.
+        - `Glossary.md`: contains a list of major theorems with remarks of their purpose.
 - Code shared between modules should be in `/Lp2lc/Active`.

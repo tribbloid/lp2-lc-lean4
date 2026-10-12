@@ -7,7 +7,7 @@ open Lp2lc.Active.Util
 namespace Monotone
 
 /-- Typing evidence remains valid when the fuel bound increases. -/
-theorem termCheck {n} (trm : Trm n) (bindings : CompilerBindings)
+theorem termCheck {n} (trm : Trm n) (bindings : CompilerBindings) -- FIXME: move into __SemType
     {less more : Nat} {typ : Typ} (hFuel : less ≤ more)
     (hType : semType trm bindings less typ) : semType trm bindings more typ := by
   induction less generalizing n trm bindings more typ with
