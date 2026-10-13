@@ -1,4 +1,3 @@
-import «Lp2lc».Active.STLC.Serial.Eval
 import «Lp2lc».Active.STLC.Serial.Infra
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
