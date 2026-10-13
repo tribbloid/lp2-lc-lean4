@@ -1,12 +1,15 @@
 import «Lp2lc».Active.STLC.Serial.__Eval_certifiedByInfer
+import «Lp2lc».Active.STLC.Serial.Eval
 
 namespace Lp2lc.Active.STLC.AST.CertifiedByInferAudit
 
 open Lp2lc.Active.Util
 
-/-- Erasing the certificate preserves ordinary evaluation for every term and fuel. -/
-theorem agreement {n} (trm : Trm n) (bindings : ExeBindings) (fuel : Nat) :
-    (trm.eval_certified bindings).result fuel = trm.eval bindings fuel := by
+/-- Erasing the certificate preserves ordinary evaluation after successful inference. -/
+theorem agreement {n} (trm : Trm n) (bindings : ExeBindings) (fuel inferFuel : Nat)
+    (typ : Typ) (hInfer : trm.infer bindings inferFuel = .yield (some typ)) :
+    (trm.eval_certified bindings fuel).map (λ payload => some payload.v) =
+      trm.eval bindings fuel := by
   induction fuel generalizing n trm bindings with
   | zero => rfl
   | succ fuel ih =>

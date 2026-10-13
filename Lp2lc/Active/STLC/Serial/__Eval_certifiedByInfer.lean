@@ -6,22 +6,16 @@ open Lp2lc.Active.Util
 
 namespace CertifiedByInfer
 
-/-- An evaluation outcome paired with safety under the existing inference rule.
+/-- A returned value paired with safety under the existing inference rule.
 
-Successful inference excludes rejection and preserves the type of every returned
-value in its captured environment. Evaluation may still exhaust its fuel.
+Successful inference preserves the type of the returned value in its captured environment.
 -/
-structure Result {n} (trm : Trm n) (bindings : ExeBindings) where
-  result : RecOpt ExeValue
-  safe : ∀ inferFuel typ, trm.infer bindings inferFuel = .yield (some typ) →
-    result.isSemiDecidable (λ v =>
-      (v.value.asTrm.infer v.captured).isDecidable (λ inferred => inferred = typ))
-
 structure ResultV2Payload {n} (trm : Trm n) (bindings : ExeBindings) where
   v : ExeValue
   safe : ∀ inferFuel typ, trm.infer bindings inferFuel = .yield (some typ) →
       (v.value.asTrm.infer v.captured).isDecidable (λ inferred => inferred = typ)
 
+/-- Fuel-bounded certified evaluation may still exhaust its fuel. -/
 abbrev ResultV2 {n} (trm : Trm n) (bindings : ExeBindings) := Rec (ResultV2Payload trm bindings)
 
 variable {n fuel : Nat} {typ : Typ} {entries : CompilerBindings}
@@ -110,12 +104,12 @@ open CertifiedByInfer
 
 /-- Evaluate with an erased safety proof constructed at every recursive step.
 
-The result contains both the ordinary outcome and its certificate. No typing
+Each yielded payload contains the value and its certificate. No typing
 witness is needed to run evaluation; `safe` applies to any successful inference
 of the original term, with an independent inference fuel budget.
 -/
 def eval_certified {n} (self : Trm n) (bindings : ExeBindings := .empty) :
-    CertifiedByInfer.Result self bindings := by
+    CertifiedByInfer.ResultV2 self bindings := by
   let run : (fuel : Nat) → { result : Rec.OutcomeOpt ExeValue //
       ∀ inferFuel typ, self.infer bindings inferFuel = .yield (some typ) →
         match result with
