@@ -8,8 +8,8 @@ open Tests.STLC.Sanity
 
 section eval_certified
 
-private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty) : RecOpt ExeValue :=
-  (trm.eval_certified bindings).result
+private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty) : RecOpt ExeValue := λ fuel =>
+  (trm.eval_certified bindings fuel).map (λ payload => some payload.v)
 
 private def literalEval {n} (trm : Trm n) (bindings : ExeBindings := .empty) : RecOpt String := λ fuel =>
   (erasedEval trm bindings fuel).map (Option.bind · (λ value =>
@@ -40,12 +40,12 @@ private def higherOrderApplication : Trm :=
 -- The caller's slot zero holds a function; the applied closure captured a literal there.
 #guard (literalEval (.apply Trm.FreeCapture.directRef Trm.vTrue) callerBindings).shouldYieldsBool 2 "outer"
 
-#guard (match (Trm.primitiveIdFn.eval_certified .empty).result 1 with
-    | .yield (some (.mk _ (.fn _ _) _)) => true
+#guard (match Trm.primitiveIdFn.eval_certified .empty 1 with
+    | .yield ⟨.mk _ (.fn _ _) _, _⟩ => true
     | _ => false)
 
-#guard (match (AST.eval_certified (.apply Trm.get1st Trm.vFalse) .empty).result 2 with
-    | .yield (some (.mk _ (.fn _ _) captured)) =>
+#guard (match AST.eval_certified (.apply Trm.get1st Trm.vFalse) .empty 2 with
+    | .yield ⟨.mk _ (.fn _ _) captured, _⟩ =>
       match captured 1 with
       | some (.mk _ (.lit repr) _) => repr == "false"
       | _ => false
@@ -55,10 +55,10 @@ private def higherOrderApplication : Trm :=
     (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)) : Trm 3)
     (NatBindings.empty.set 1 outerValue)).shouldYieldsBool 1 "outer"
 
-#guard (erasedEval Trm.Malformed.primitiveApply).shouldFailBool 2
-#guard (erasedEval Trm.FreeCapture.directRef).shouldFailBool 1
-example : (Trm.vFalse.eval_certified .empty).result 0 = .outOfFuel := rfl
-example : (AST.eval_certified (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empty).result 2 = .outOfFuel := rfl
+example : Trm.Malformed.primitiveApply.eval_certified .empty 2 = .outOfFuel := rfl
+example : Trm.FreeCapture.directRef.eval_certified .empty 1 = .outOfFuel := rfl
+example : Trm.vFalse.eval_certified .empty 0 = .outOfFuel := rfl
+example : AST.eval_certified (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empty 2 = .outOfFuel := rfl
 
 -- Evaluation remains independent of inference acceptance, as in the original evaluator.
 #guard Trm.Malformed.idFnOnFalse2.infer.shouldFailBool 4
@@ -66,6 +66,7 @@ example : (AST.eval_certified (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empt
 
 #check_failure AST.CertifiedByInfer.inferReplace
 #check_failure AST.CertifiedByInfer.inferMonotone
+#check_failure AST.CertifiedByInfer.Result
 
 end eval_certified
 
