@@ -17,6 +17,13 @@ structure Result {n} (trm : Trm n) (bindings : ExeBindings) where
     result.isSemiDecidable (λ v =>
       (v.value.asTrm.infer v.captured).isDecidable (λ inferred => inferred = typ))
 
+structure ResultV2Payload {n} (trm : Trm n) (bindings : ExeBindings) where
+  v : ExeValue
+  safe : ∀ inferFuel typ, trm.infer bindings inferFuel = .yield (some typ) →
+      (v.value.asTrm.infer v.captured).isDecidable (λ inferred => inferred = typ)
+
+abbrev ResultV2 {n} (trm : Trm n) (bindings : ExeBindings) := Rec (ResultV2Payload trm bindings)
+
 variable {n fuel : Nat} {typ : Typ} {entries : CompilerBindings}
 
 private theorem lookupMap {α β} (bindings : NatBindings α) (f : α → β) (index : Nat) :
