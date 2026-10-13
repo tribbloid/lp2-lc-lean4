@@ -26,7 +26,7 @@ private theorem checkReplace {trm : Trm n}
     (hType : semType trm source fuel typ) :
     ∃ targetFuel, semType trm target targetFuel typ := by
   induction fuel generalizing n trm source target typ with
-  | zero => simp [semType, checkInternal, Rec.Outcome.getOrElse] at hType
+  | zero => simp [semType, check, Rec.Outcome.getOrElse] at hType
   | succ fuel ih =>
     cases trm with
     | val value =>
@@ -42,7 +42,7 @@ private theorem checkReplace {trm : Trm n}
             (by intro index inputTyp; simp only [NatBindings.set, List.lookup]; split <;> simp_all) hBody
           exact ⟨bodyFuel + 1, hInput, hTarget⟩
     | ref carrier under =>
-      simp only [semType, checkInternal, Rec.Outcome.getOrElse] at hType
+      simp only [semType, check, Rec.Outcome.getOrElse] at hType
       have hFit : entryFits (source under.sourceIndex.down) typ := by
         cases hEntry : source under.sourceIndex.down <;>
           (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
@@ -57,8 +57,8 @@ private theorem checkReplace {trm : Trm n}
         | contradiction
         | (obtain ⟨valueFuel, hValue⟩ := hTarget
            exact ⟨valueFuel + 1, by
-             simpa only [semType, checkInternal, Rec.Outcome.getOrElse, hEntry] using hValue⟩)
-        | exact ⟨1, by simpa only [semType, checkInternal, Rec.Outcome.getOrElse, hEntry] using hTarget⟩
+             simpa only [semType, check, Rec.Outcome.getOrElse, hEntry] using hValue⟩)
+        | exact ⟨1, by simpa only [semType, check, Rec.Outcome.getOrElse, hEntry] using hTarget⟩
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := hType
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
@@ -75,13 +75,13 @@ theorem main (fuel : Nat) (typ : Typ)
   | zero => trivial
   | succ evalFuel ih =>
     cases fuel with
-    | zero => simp [semType, checkInternal, Rec.Outcome.getOrElse] at hType
+    | zero => simp [semType, check, Rec.Outcome.getOrElse] at hType
     | succ fuel =>
       cases trm with
       | val value => exact ⟨fuel + 1, hType⟩
       | ref carrier under =>
         cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeValue›)
-        all_goals simp only [semType, checkInternal, Rec.Outcome.getOrElse,
+        all_goals simp only [semType, check, Rec.Outcome.getOrElse,
           NatBindings.getMap, hBinding, Option.map, eval.eq_3] at hType ⊢
         all_goals first | contradiction | exact ⟨fuel, hType⟩
       | apply fn arg =>
@@ -96,11 +96,11 @@ theorem main (fuel : Nat) (typ : Typ)
         case yield.some.mk context fnValue captured =>
           obtain ⟨fnFuel, hFnValue⟩ := hFnSafety
           cases fnFuel with
-          | zero => simp [semType, checkInternal, Rec.Outcome.getOrElse] at hFnValue
+          | zero => simp [semType, check, Rec.Outcome.getOrElse] at hFnValue
           | succ fnFuel =>
             cases fnValue with
             | lit repr =>
-              simp [Val.asTrm, semType, checkInternal, Rec.Outcome.getOrElse] at hFnValue
+              simp [Val.asTrm, semType, check, Rec.Outcome.getOrElse] at hFnValue
             | fn annotation body =>
               cases hArgEval : eval arg bindings evalFuel <;>
                 (try cases ‹Option ExeValue›) <;> (try cases ‹ExeValue›)

@@ -15,7 +15,7 @@ private def closeType {n} (self : Typ n) : Typ :=
 
 Application quantifies over its domain; no principal type is selected.
 -/
-def checkInternal {n} (self : Trm n) (typ : Typ)
+def check {n} (self : Trm n) (typ : Typ)
     (bindings : CompilerBindings := .empty) : Rec Prop
   | 0 => .yield False
   | fuel + 1 =>
@@ -25,24 +25,20 @@ def checkInternal {n} (self : Trm n) (typ : Typ)
       | .val (.fn _ _), .TLit => False
       | .val (.fn annotation body), .TFn input output =>
         closeType annotation = input ∧
-          (checkInternal (body.apply .only) output
+          (check (body.apply .only) output
             (bindings.set (n + 1) (.inr input)) fuel).getOrElse False
       | .ref _ under, _ =>
         match bindings under.sourceIndex.down with
         | some (.inl (.mk _ value captured)) =>
-          (checkInternal value.asTrm typ (captured.map .inl) fuel).getOrElse False
+          (check value.asTrm typ (captured.map .inl) fuel).getOrElse False
         | some (.inr bound) => bound = typ
         | none => False
       | .apply fn arg, _ =>
-        ∃ input, (checkInternal fn (.TFn input typ) bindings fuel).getOrElse False ∧
-          (checkInternal arg input bindings fuel).getOrElse False)
-
-def check {n} (self : Trm n) (typ : Typ)
-    (bindings : ExeBindings := .empty) : Rec Prop :=
-  checkInternal self typ (bindings.map .inl)
+        ∃ input, (check fn (.TFn input typ) bindings fuel).getOrElse False ∧
+          (check arg input bindings fuel).getOrElse False)
 
 def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ: Typ) : Prop :=
-  (checkInternal self typ bindings fuel).getOrElse False
+  (check self typ bindings fuel).getOrElse False
 
 namespace Monotone
 
@@ -51,7 +47,7 @@ theorem termCheck {n} (trm : Trm n) (bindings : CompilerBindings)
     {less more : Nat} {typ : Typ} (hFuel : less ≤ more)
     (hType : semType trm bindings less typ) : semType trm bindings more typ := by
   induction less generalizing n trm bindings more typ with
-  | zero => simp [semType, checkInternal, Rec.Outcome.getOrElse] at hType
+  | zero => simp [semType, check, Rec.Outcome.getOrElse] at hType
   | succ fuel ih =>
     cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
     replace hFuel := Nat.le_of_succ_le_succ hFuel
@@ -60,10 +56,10 @@ theorem termCheck {n} (trm : Trm n) (bindings : CompilerBindings)
       cases value with
       | lit repr => cases typ <;> exact hType
       | fn annotation body =>
-        cases typ <;> simp only [semType, checkInternal, Rec.Outcome.getOrElse] at hType ⊢
+        cases typ <;> simp only [semType, check, Rec.Outcome.getOrElse] at hType ⊢
         exact ⟨hType.1, ih _ _ hFuel hType.2⟩
     | ref carrier under =>
-      simp only [semType, checkInternal, Rec.Outcome.getOrElse] at hType ⊢
+      simp only [semType, check, Rec.Outcome.getOrElse] at hType ⊢
       cases hEntry : bindings under.sourceIndex.down <;>
         (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
       all_goals simp only [hEntry] at hType ⊢
