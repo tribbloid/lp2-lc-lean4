@@ -14,6 +14,7 @@ import «Lp2lc».Active.STLC.Serial.Eval
 import «Lp2lc».Active.STLC.Serial.__Infer
 -- import «Lp2lc».Active.STLC.__Infer_umbralV1
 import «Lp2lc».Active.STLC.Serial.__Infer_proof
+import «Lp2lc».Active.STLC.Serial.__Eval_certifiedByInfer
 -- import «Lp2lc».Active.STLC.__Infer_umbral
 
 -- Fuel-bounded semantic typing and expected-type checking.
