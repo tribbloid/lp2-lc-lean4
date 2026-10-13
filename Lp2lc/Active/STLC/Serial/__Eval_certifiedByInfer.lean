@@ -45,22 +45,7 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
     (try cases ‹Option Typ›) <;> simp_all [inferInternal.eq_3, Rec.Outcome.map, Option.map]
   exact ⟨_, rfl, (Option.some.inj hInfer).symm⟩
 
--- Certification derives its inference facts locally, including fuel transport.
-private theorem inferMonotone (trm : Trm n) (bindings : CompilerBindings) :
-    (trm.inferInternal bindings).Monotone := by
-  intro less more result hFuel hInfer
-  induction less generalizing n trm bindings more result with
-  | zero => cases hInfer
-  | succ fuel ih =>
-    cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
-    replace hFuel := Nat.le_of_succ_le_succ hFuel
-    cases trm <;> try cases ‹Val n›
-    all_goals
-      simp only [inferInternal.eq_2, inferInternal.eq_3, inferInternal.eq_4, inferInternal.eq_5,
-        Rec.Outcome.map] at hInfer ⊢
-      repeat split at hInfer
-      all_goals simp_all
-
+-- Certification reuses inference monotonicity and derives its other inference facts locally.
 private def entryFits (entry : Option ValOrTyp) (typ : Typ) : Prop :=
   match entry with
   | none => False
@@ -104,9 +89,9 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
       obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
       obtain ⟨argFuel, hArgTarget⟩ := ih hReplace hArg
-      have hFnMore := inferMonotone fn target fnFuel (max fnFuel argFuel) _
+      have hFnMore := Monotone.termInfer fn target fnFuel (max fnFuel argFuel) _
         (Nat.le_max_left _ _) hFnTarget
-      have hArgMore := inferMonotone arg target argFuel (max fnFuel argFuel) _
+      have hArgMore := Monotone.termInfer arg target argFuel (max fnFuel argFuel) _
         (Nat.le_max_right _ _) hArgTarget
       exact ⟨max fnFuel argFuel + 1, by
         simp only [inferInternal.eq_5, hFnMore, hArgMore]
