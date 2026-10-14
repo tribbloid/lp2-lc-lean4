@@ -8,11 +8,17 @@ open Tests.STLC.Sanity
 
 section eval_certified
 
-private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty) : RecOpt ExeValue := λ fuel =>
-  (trm.eval_certified bindings fuel).map (λ payload => some payload.v)
+-- The test adapter infers first, independently of the exact evaluation budget.
+private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty)
+    (inferFuel : Nat := 8) : RecOpt ExeValue :=
+  match hInfer : trm.infer bindings inferFuel with
+  | .yield (some _) => λ fuel =>
+      (trm.eval_certified bindings hInfer fuel).map (λ payload => some payload.v)
+  | .yield none => λ _ => .yield none
+  | .outOfFuel => λ _ => .outOfFuel
 
 private def literalEval {n} (trm : Trm n) (bindings : ExeBindings := .empty) : RecOpt String := λ fuel =>
-  (erasedEval trm bindings fuel).map (Option.bind · (λ value =>
+  (erasedEval trm bindings 8 fuel).map (Option.bind · (λ value =>
     match value.value with
     | .lit repr => some repr
     | .fn _ _ => none))
@@ -40,12 +46,12 @@ private def higherOrderApplication : Trm :=
 -- The caller's slot zero holds a function; the applied closure captured a literal there.
 #guard (literalEval (.apply Trm.FreeCapture.directRef Trm.vTrue) callerBindings).shouldYieldsBool 2 "outer"
 
-#guard (match Trm.primitiveIdFn.eval_certified .empty 1 with
-    | .yield ⟨.mk _ (.fn _ _) _, _⟩ => true
+#guard (match erasedEval Trm.primitiveIdFn .empty 2 1 with
+    | .yield (some (.mk _ (.fn _ _) _)) => true
     | _ => false)
 
-#guard (match AST.eval_certified (.apply Trm.get1st Trm.vFalse) .empty 2 with
-    | .yield ⟨.mk _ (.fn _ _) captured, _⟩ =>
+#guard (match erasedEval (.apply Trm.get1st Trm.vFalse) .empty 4 2 with
+    | .yield (some (.mk _ (.fn _ _) captured)) =>
       match captured 1 with
       | some (.mk _ (.lit repr) _) => repr == "false"
       | _ => false
@@ -55,18 +61,20 @@ private def higherOrderApplication : Trm :=
     (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)) : Trm 3)
     (NatBindings.empty.set 1 outerValue)).shouldYieldsBool 1 "outer"
 
-example : Trm.Malformed.primitiveApply.eval_certified .empty 2 = .outOfFuel := rfl
-example : Trm.FreeCapture.directRef.eval_certified .empty 1 = .outOfFuel := rfl
-example : Trm.vFalse.eval_certified .empty 0 = .outOfFuel := rfl
-example : AST.eval_certified (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empty 2 = .outOfFuel := rfl
+example : Trm.vFalse.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 0 = .outOfFuel := rfl
 
--- Evaluation remains independent of inference acceptance, as in the original evaluator.
+-- Rejected terms cannot supply the evaluator's inference-success premise.
 #guard Trm.Malformed.idFnOnFalse2.infer.shouldFailBool 4
-#guard (literalEval Trm.Malformed.idFnOnFalse2).shouldYieldsBool 3 "false"
+#check_failure Trm.Malformed.primitiveApply.eval_certified .empty (inferFuel := 2) (typ := .TLit) rfl 2
+#check_failure Trm.FreeCapture.directRef.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 1
+#check_failure Trm.Malformed.idFnOnFalse2.eval_certified .empty (inferFuel := 4) (typ := .TLit) rfl 3
+#check_failure AST.eval_certified (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empty
+  (inferFuel := 4) (typ := .TLit) rfl 2
 
 #check_failure AST.CertifiedByInfer.inferReplace
 #check_failure AST.CertifiedByInfer.inferMonotone
-#check_failure AST.CertifiedByInfer.Result
+#check_failure AST.CertifiedByInfer.evalInternal
+#check AST.CertifiedByInfer.Result
 
 end eval_certified
 
