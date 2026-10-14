@@ -10,13 +10,13 @@ namespace CertifiedByInfer
 
 Successful inference preserves the type of the returned value in its captured environment.
 -/
-structure ResultV2Payload {n} (trm : Trm n) (bindings : ExeBindings) where
+structure ResultPayload {n} (trm : Trm n) (bindings : ExeBindings) where
   v : ExeValue
   safe : ∀ inferFuel typ, trm.infer bindings inferFuel = .yield (some typ) →
       (v.value.asTrm.infer v.captured).isDecidable (λ inferred => inferred = typ)
 
 /-- Fuel-bounded certified evaluation may still exhaust its fuel. -/
-abbrev ResultV2 {n} (trm : Trm n) (bindings : ExeBindings) := Rec (ResultV2Payload trm bindings)
+abbrev Result {n} (trm : Trm n) (bindings : ExeBindings) := Rec (ResultPayload trm bindings)
 
 variable {n fuel : Nat} {typ : Typ} {entries : CompilerBindings}
 
@@ -116,7 +116,7 @@ witness is needed to run evaluation; `safe` applies to any successful inference
 of the original term, with an independent inference fuel budget.
 -/
 def eval_certified {n} (self : Trm n) (bindings : ExeBindings := .empty) :
-    CertifiedByInfer.ResultV2 self bindings := λ fuel =>
+    Result self bindings := λ fuel =>
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
