@@ -19,7 +19,12 @@ variable {n fuel : Nat} {typ : Typ} {entries : CompilerBindings}
 private theorem inferWitness {self : RecOpt Typ} {condition : Typ → Prop}
     (hInfer : self.isDecidable condition) (hZero : self 0 = .outOfFuel) :
     ∃ fuel typ, self (fuel + 1) = .yield (some typ) ∧ condition typ := by
-  sorry
+  obtain ⟨fuel, hInfer⟩ := hInfer
+  cases fuel with
+  | zero => simp_all
+  | succ fuel =>
+    cases hResult : self (fuel + 1) <;> (try cases ‹Option Typ›) <;> simp_all
+    exact ⟨fuel, _, hResult, hInfer⟩
 
 private theorem inferApplySuccess {fn arg : Trm n}
     (hInfer : inferInternal (.apply fn arg) entries (fuel + 1) = .yield (some typ)) :
@@ -68,19 +73,13 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
           (by intro index inputTyp; simp only [NatBindings.set, List.lookup]; split <;> simp_all) hBody
         exact ⟨bodyFuel + 1, by simp only [inferInternal.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
     | ref carrier under =>
-      simp only [inferInternal.eq_4] at hInfer
-      have hTarget := hReplace under.sourceIndex.down typ (by
-        cases hEntry : source under.sourceIndex.down <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
-        all_goals simp only [hEntry, entryFits, Rec.Outcome.yield.injEq] at hInfer ⊢
-        all_goals first | (cases hInfer <;> rfl) | exact ⟨fuel, hInfer⟩ | exact Option.some.inj hInfer)
-      cases hEntry : target under.sourceIndex.down <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
-      all_goals simp only [hEntry, entryFits] at hTarget
-      all_goals
-        first
-        | contradiction
-        | (obtain ⟨valueFuel, hValue⟩ := hTarget
-           exact ⟨valueFuel + 1, by rw [inferInternal.eq_4, hEntry]; exact hValue⟩)
-        | exact ⟨1, by simp [inferInternal.eq_4, hEntry, hTarget]⟩
+      obtain ⟨targetFuel, hTarget⟩ := hReplace under.sourceIndex.down typ
+        ⟨fuel, by
+          simp only [inferInternal.eq_4] at hInfer
+          split at hInfer <;> simp_all⟩
+      exact ⟨targetFuel + 1, by
+        simp only [inferInternal.eq_4]
+        split <;> simp_all [entryFits]⟩
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
@@ -91,7 +90,7 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
         (Nat.le_max_right _ _) hArgTarget
       exact ⟨max fnFuel argFuel + 1, by
         simp only [inferInternal.eq_5, hFnMore, hArgMore]
-        exact congrArg Rec.Outcome.yield (ite_eq_left (rfl : input = input))⟩
+        exact congrArg _ (ite_eq_left (rfl : input = input))⟩
 
 /-- Each recursive call accepts successful inference and yields an unconditionally certified value. -/
 private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) (condition : Typ → Prop)
@@ -105,38 +104,49 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) (condition 
     | .ref _ under =>
       match hBinding : bindings under.sourceIndex.down with
       | none => False.elim (by
-          obtain ⟨inferFuel, typ, hInfer, _⟩ := inferWitness hInfer
-          cases inferFuel with
-          | zero => cases hInfer
-          | succ inferFuel =>
-            simp only [infer, inferInternal.eq_4, lookupMap, hBinding, Option.map] at hInfer
-            cases hInfer)
-      | some (.mk context value captured) => .yield ⟨.mk context value captured, by
           obtain ⟨inferFuel, hInfer⟩ := hInfer
-          cases inferFuel with
-          | zero => cases hInfer
-          | succ inferFuel =>
-            exact ⟨inferFuel, by
-              simpa only [infer, inferInternal.eq_4, lookupMap, hBinding, Option.map] using hInfer⟩⟩
+          cases inferFuel <;> simp [infer, inferInternal, NatBindings.getMap, hBinding] at hInfer)
+      | some (.mk context value captured) => .yield ⟨.mk context value captured, by
+          obtain ⟨inferFuel, typ, hInfer, hCondition⟩ := inferWitness hInfer rfl
+          simp only [infer, inferInternal.eq_4, NatBindings.getMap, hBinding, Option.map] at hInfer
+          exact ⟨inferFuel, by simp only [infer, hInfer]; exact hCondition⟩⟩
     | .apply fn arg =>
       let fnCondition := λ fnTyp => ∃ input output, fnTyp = .TFn input output ∧
         (infer arg bindings).isDecidable (λ inferred => inferred = input) ∧ condition output
-      have fnTyped := inferFunction hInfer
+      have fnTyped : (infer fn bindings).isDecidable fnCondition := by
+        obtain ⟨inferFuel, typ, hInfer, hCondition⟩ := inferWitness hInfer rfl
+        obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
+        exact ⟨inferFuel, by
+          simp only [infer, hFn]
+          exact ⟨input, typ, rfl, ⟨inferFuel, by simp only [infer, hArg]; rfl⟩, hCondition⟩⟩
       (evalInternal fn bindings fnCondition fnTyped fuel).flatMap (λ fnResult =>
         match fnResult with
         | ⟨.mk _ (.lit _) _, fnSafe⟩ => False.elim (by
-            obtain ⟨fnFuel, _, hFn, input, output, rfl, _, _⟩ := inferWitness fnSafe
-            cases fnFuel with
-            | zero => cases hFn
-            | succ fnFuel =>
-              simp only [infer, Val.asTrm, inferInternal.eq_2, Rec.Outcome.yield.injEq] at hFn
-              cases Option.some.inj hFn)
+            obtain ⟨fnFuel, _, hFn, input, output, rfl, _, _⟩ := inferWitness fnSafe rfl
+            simp [infer, Val.asTrm, inferInternal] at hFn
+            cases Option.some.inj hFn)
         | ⟨.mk context (.fn annotation body) captured, fnSafe⟩ =>
-          have fnFacts := inferFunctionValue arg bindings condition
-            (by simpa only [fnCondition, Val.asTrm] using fnSafe)
+          have fnFacts : (infer arg bindings).isDecidable (λ inferred => inferred = resolveType annotation) ∧
+              (inferInternal (body.apply .only)
+                ((captured.map .inl).set (context + 1) (.inr (resolveType annotation)))).isDecidable condition := by
+            obtain ⟨fnFuel, _, hFn, input, output, rfl, hArg, hCondition⟩ := inferWitness fnSafe rfl
+            obtain ⟨fnOutput, hBody, hFnType⟩ := inferFnSuccess hFn
+            rcases Pre.AST.TFn.inj hFnType with ⟨rfl, rfl⟩
+            exact ⟨hArg, ⟨fnFuel, by simp only [hBody]; exact hCondition⟩⟩
           (evalInternal arg bindings _ fnFacts.1 fuel).flatMap (λ argResult =>
             let bodyBindings := captured.set (context + 1) argResult.val
-            have bodyTyped := inferBody fnFacts.2 argResult.property
+            have bodyTyped : (infer (body.apply .only) bodyBindings).isDecidable condition := by
+              rcases argResult with ⟨⟨argContext, argValue, argCaptured⟩, argSafe⟩
+              obtain ⟨bodyFuel, output, hBody, hCondition⟩ := inferWitness fnFacts.2 rfl
+              obtain ⟨argInferFuel, _, hArg, rfl⟩ := inferWitness argSafe rfl
+              obtain ⟨targetFuel, hTarget⟩ := inferReplace (target := bodyBindings.map .inl)
+                (by
+                  have typedArg : entryFits (some (.inl (.mk _ argValue argCaptured))) (resolveType annotation) :=
+                    ⟨argInferFuel + 1, hArg⟩
+                  intro index inputTyp hSource
+                  simp only [bodyBindings, NatBindings.getMap, NatBindings.set, List.lookup] at hSource ⊢
+                  split at hSource <;> simp_all [entryFits]) hBody
+              exact ⟨targetFuel, by simp only [infer, hTarget]; exact hCondition⟩
             evalInternal (body.apply .only) bodyBindings condition bodyTyped fuel))
 
 end CertifiedByInfer
