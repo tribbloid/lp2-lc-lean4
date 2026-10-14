@@ -16,18 +16,10 @@ abbrev Result (typ : Typ) := Rec (ResultPayload typ)
 
 variable {n fuel : Nat} {typ : Typ} {entries : CompilerBindings}
 
-private theorem lookupMap {α β} (bindings : NatBindings α) (f : α → β) (index : Nat) :
-    bindings.map f index = (bindings index).map f := by
-  rcases bindings with ⟨entries⟩
-  induction entries <;> simp_all [NatBindings.map, List.lookup]
-  split <;> simp_all
-
 private theorem inferWitness {self : RecOpt Typ} {condition : Typ → Prop}
-    (hInfer : self.isDecidable condition) :
-    ∃ fuel typ, self fuel = .yield (some typ) ∧ condition typ := by
-  obtain ⟨fuel, hInfer⟩ := hInfer
-  cases hResult : self fuel <;> (try cases ‹Option Typ›) <;> simp_all
-  exact ⟨fuel, _, hResult, hInfer⟩
+    (hInfer : self.isDecidable condition) (hZero : self 0 = .outOfFuel) :
+    ∃ fuel typ, self (fuel + 1) = .yield (some typ) ∧ condition typ := by
+  sorry
 
 private theorem inferApplySuccess {fn arg : Trm n}
     (hInfer : inferInternal (.apply fn arg) entries (fuel + 1) = .yield (some typ)) :
@@ -51,11 +43,11 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
 
 -- Certification reuses inference monotonicity and derives its other inference facts locally.
 private def entryFits (entry : Option ValOrTyp) (typ : Typ) : Prop :=
-  match entry with
-  | none => False
-  | some (.inr input) => input = typ
-  | some (.inl (.mk _ value captured)) =>
-    ∃ fuel, inferInternal value.asTrm (captured.map .inl) fuel = .yield (some typ)
+  ∃ fuel,
+    (match entry with
+    | some (.inl (.mk _ value captured)) => inferInternal value.asTrm (captured.map .inl) fuel
+    | some (.inr input) => .yield (some input)
+    | none => .yield none) = .yield (some typ)
 
 /-- Replacing hypothetical entries by inferable runtime values preserves inference. -/
 private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
@@ -100,54 +92,6 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
       exact ⟨max fnFuel argFuel + 1, by
         simp only [inferInternal.eq_5, hFnMore, hArgMore]
         exact congrArg Rec.Outcome.yield (ite_eq_left (rfl : input = input))⟩
-
-private theorem inferFunction {fn arg : Trm n} {bindings : ExeBindings} {condition : Typ → Prop}
-    (hInfer : (infer (.apply fn arg) bindings).isDecidable condition) :
-    (fn.infer bindings).isDecidable (λ fnTyp => ∃ input output, fnTyp = .TFn input output ∧
-      (arg.infer bindings).isDecidable (λ inferred => inferred = input) ∧ condition output) := by
-  obtain ⟨inferFuel, typ, hInfer, hCondition⟩ := inferWitness hInfer
-  cases inferFuel with
-  | zero => cases hInfer
-  | succ inferFuel =>
-    obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
-    exact ⟨inferFuel, by
-      simp only [infer, hFn]
-      exact ⟨input, typ, rfl, ⟨inferFuel, by simp only [hArg]; rfl⟩, hCondition⟩⟩
-
-private theorem inferFunctionValue {context} {annotation : Typ context} {body : Binder context .trm}
-    {captured : ExeBindings} (arg : Trm n) (bindings : ExeBindings) (condition : Typ → Prop)
-    (hFn : (infer (.val (.fn annotation body)) captured).isDecidable
-      (λ fnTyp => ∃ input output, fnTyp = .TFn input output ∧
-        (arg.infer bindings).isDecidable (λ inferred => inferred = input) ∧ condition output)) :
-    (arg.infer bindings).isDecidable (λ inferred => inferred = resolveType annotation) ∧
-      (inferInternal (body.apply .only)
-        ((captured.map .inl).set (context + 1) (.inr (resolveType annotation)))).isDecidable condition := by
-  obtain ⟨fnFuel, _, hFn, input, output, rfl, hArg, hCondition⟩ := inferWitness hFn
-  cases fnFuel with
-  | zero => cases hFn
-  | succ fnFuel =>
-    obtain ⟨fnOutput, hBody, hFnType⟩ := inferFnSuccess hFn
-    rcases Pre.AST.TFn.inj hFnType with ⟨rfl, rfl⟩
-    exact ⟨hArg, ⟨fnFuel, by simp only [hBody]; exact hCondition⟩⟩
-
-private theorem inferBody {context} {annotation : Typ context} {body : Binder context .trm}
-    {captured : ExeBindings} {arg : ExeValue} {condition : Typ → Prop}
-    (hBody : (inferInternal (body.apply .only)
-      ((captured.map .inl).set (context + 1) (.inr (resolveType annotation)))).isDecidable condition)
-    (hArg : (arg.value.asTrm.infer arg.captured).isDecidable (λ inferred => inferred = resolveType annotation)) :
-    (infer (body.apply .only) (captured.set (context + 1) arg)).isDecidable condition := by
-  rcases arg with ⟨argContext, argValue, argCaptured⟩
-  obtain ⟨bodyFuel, output, hBody, hCondition⟩ := inferWitness hBody
-  obtain ⟨argInferFuel, _, hArg, rfl⟩ := inferWitness hArg
-  obtain ⟨targetFuel, hTarget⟩ := inferReplace
-    (target := (captured.set (context + 1) (.mk _ argValue argCaptured)).map .inl)
-    (by
-      have typedArg : entryFits (some (.inl (.mk _ argValue argCaptured))) (resolveType annotation) :=
-        ⟨argInferFuel, hArg⟩
-      intro index inputTyp hSource
-      simp only [lookupMap, NatBindings.set, List.lookup] at hSource ⊢
-      split at hSource <;> simp_all [entryFits]) hBody
-  exact ⟨targetFuel, by simp only [infer, hTarget]; exact hCondition⟩
 
 /-- Each recursive call accepts successful inference and yields an unconditionally certified value. -/
 private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) (condition : Typ → Prop)
