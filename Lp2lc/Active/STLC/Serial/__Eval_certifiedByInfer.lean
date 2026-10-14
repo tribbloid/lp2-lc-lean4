@@ -6,17 +6,13 @@ open Lp2lc.Active.Util
 
 namespace CertifiedByInfer
 
-/-- A returned value paired with safety under the existing inference rule.
-
-Successful inference preserves the type of the returned value in its captured environment.
--/
-structure ResultPayload {n} (trm : Trm n) (bindings : ExeBindings) where
+/-- A returned value certified at the caller's independently inferred type. -/
+structure ResultPayload (typ : Typ) where
   v : ExeValue
-  safe : ∀ inferFuel typ, trm.infer bindings inferFuel = .yield (some typ) →
-      (v.value.asTrm.infer v.captured).isDecidable (λ inferred => inferred = typ)
+  safe : (v.value.asTrm.infer v.captured).isDecidable (λ inferred => inferred = typ)
 
 /-- Fuel-bounded certified evaluation may still exhaust its fuel. -/
-abbrev Result {n} (trm : Trm n) (bindings : ExeBindings) := Rec (ResultPayload trm bindings)
+abbrev Result (typ : Typ) := Rec (ResultPayload typ)
 
 variable {n fuel : Nat} {typ : Typ} {entries : CompilerBindings}
 
@@ -26,12 +22,10 @@ private theorem lookupMap {α β} (bindings : NatBindings α) (f : α → β) (i
   induction entries <;> simp_all [NatBindings.map, List.lookup]
   split <;> simp_all
 
-private theorem inferWitness {trm : Trm n} {bindings : ExeBindings}
-    (hInfer : (trm.infer bindings).isDecidable (λ inferred => inferred = typ)) :
-    ∃ fuel, trm.infer bindings fuel = .yield (some typ) := by
-  obtain ⟨fuel, hInfer⟩ := hInfer
-  cases hResult : trm.infer bindings fuel <;> (try cases ‹Option Typ›) <;> simp_all
-  exact ⟨fuel, hResult⟩
+private theorem inferWitness {self : RecOpt Typ} {condition : Typ → Prop}
+    (hInfer : self.isDecidable condition) :
+    ∃ fuel typ, self fuel = .yield (some typ) ∧ condition typ := by
+  sorry
 
 private theorem inferApplySuccess {fn arg : Trm n}
     (hInfer : inferInternal (.apply fn arg) entries (fuel + 1) = .yield (some typ)) :
@@ -105,64 +99,20 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
         simp only [inferInternal.eq_5, hFnMore, hArgMore]
         exact congrArg Rec.Outcome.yield (ite_eq_left (rfl : input = input))⟩
 
+/-- Each recursive call accepts successful inference and yields an unconditionally certified value. -/
+private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) (condition : Typ → Prop)
+    (hInfer : (self.infer bindings).isDecidable condition) :
+    Rec {v : ExeValue // (v.value.asTrm.infer v.captured).isDecidable condition} := by
+  sorry
+
 end CertifiedByInfer
 
 open CertifiedByInfer
 
-/-- Evaluate with an erased safety proof constructed at every recursive step.
-
-Each yielded payload contains the value and its certificate. No typing
-witness is needed to run evaluation; `safe` applies to any successful inference
-of the original term, with an independent inference fuel budget.
--/
-def eval_certified {n} (self : Trm n) (bindings : ExeBindings := .empty) :
-    Result self bindings := λ fuel =>
-  match fuel with
-  | 0 => .outOfFuel
-  | fuel + 1 =>
-    match self with
-    | .val value => .yield ⟨.mk n value bindings, by
-        intro inferFuel typ hInfer
-        exact ⟨inferFuel, by simp only [Val.asTrm, hInfer]; rfl⟩⟩
-    | .ref _ under =>
-      match hBinding : bindings under.sourceIndex.down with
-      | none => .outOfFuel
-      | some (.mk context value captured) => .yield ⟨.mk context value captured, by
-          intro inferFuel typ hInfer
-          cases inferFuel with
-          | zero => cases hInfer
-          | succ inferFuel =>
-            simp only [infer, inferInternal.eq_4, lookupMap, hBinding, Option.map] at hInfer
-            exact ⟨inferFuel, by simp only [infer, hInfer]; rfl⟩⟩
-    | .apply fn arg =>
-      (eval_certified fn bindings fuel).flatMap (λ fnResult =>
-        (eval_certified arg bindings fuel).flatMap (λ argResult =>
-          match fnResult with
-          | ⟨.mk _ (.lit _) _, _⟩ => .outOfFuel
-          | ⟨.mk context (.fn annotation body) captured, fnSafe⟩ =>
-            let bodyBindings := captured.set (context + 1) argResult.v
-            (eval_certified (body.apply .only) bodyBindings fuel).map (λ bodyResult => ⟨bodyResult.v, by
-              intro inferFuel typ hInfer
-              cases inferFuel with
-              | zero => cases hInfer
-              | succ inferFuel =>
-                rcases argResult with ⟨⟨argContext, argValue, argCaptured⟩, argSafe⟩
-                obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
-                obtain ⟨fnFuel, hFnValue⟩ := inferWitness (fnSafe inferFuel (.TFn input typ) hFn)
-                obtain ⟨argInferFuel, hArgValue⟩ := inferWitness (argSafe inferFuel input hArg)
-                cases fnFuel with
-                | zero => cases hFnValue
-                | succ fnFuel =>
-                  obtain ⟨fnOutput, hBody, hFnType⟩ := inferFnSuccess hFnValue
-                  rcases Pre.AST.TFn.inj hFnType with ⟨rfl, rfl⟩
-                  obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace
-                    (target := bodyBindings.map .inl)
-                    (by
-                      have typedArg : entryFits (some (.inl (.mk _ argValue argCaptured)))
-                          (resolveType annotation) := ⟨argInferFuel, hArgValue⟩
-                      intro index inputTyp hSource
-                      simp only [bodyBindings, lookupMap, NatBindings.set, List.lookup] at hSource ⊢
-                      split at hSource <;> simp_all [entryFits]) hBody
-                  exact bodyResult.safe bodyFuel _ hBodyTarget⟩)))
+/-- Evaluate an independently inferred term with an erased safety proof at every recursive step. -/
+def eval_certified {n} (self : Trm n) (bindings : ExeBindings := .empty)
+    {inferFuel : Nat} {typ : Typ}
+    (hInfer : self.infer bindings inferFuel = .yield (some typ)) : Result typ := by
+  sorry
 
 end Lp2lc.Active.STLC.AST
