@@ -95,7 +95,7 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
 /-- Each recursive call accepts successful inference and yields an unconditionally certified value. -/
 private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) (condition : Typ → Prop)
     (hInfer : (self.infer bindings).isDecidable condition) :
-    Rec {v : ExeValue // (v.value.asTrm.infer v.captured).isDecidable condition} := λ fuel =>
+    Rec (ConditionalVal condition) := λ fuel =>
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>

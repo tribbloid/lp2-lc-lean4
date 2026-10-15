@@ -13,7 +13,7 @@ private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty)
     (inferFuel : Nat := 8) : RecOpt ExeValue :=
   match hInfer : trm.infer bindings inferFuel with
   | .yield (some _) => λ fuel =>
-      (trm.eval_certified bindings hInfer fuel).map (λ payload => some payload.v)
+      (trm.eval_certified bindings hInfer fuel).map (λ payload => some payload.val)
   | .yield none => λ _ => .yield none
   | .outOfFuel => λ _ => .outOfFuel
 
