@@ -6,13 +6,13 @@ open Lp2lc.Active.Util
 
 namespace CertifiedByInfer
 
+abbrev ConditionalVal (condition : Typ -> Prop) := {v : ExeValue // (v.value.asTrm.infer v.captured).isDecidable condition}
+
 /-- A returned value certified at the caller's independently inferred type. -/
-structure ResultPayload (typ : Typ) where
-  v : ExeValue
-  safe : (v.value.asTrm.infer v.captured).isDecidable (λ inferred => inferred = typ)
+abbrev CertifiedVal (typ : Typ) := ConditionalVal (λ _t => _t = typ)
 
 /-- Fuel-bounded certified evaluation may still exhaust its fuel. -/
-abbrev Result (typ : Typ) := Rec (ResultPayload typ)
+abbrev Result (typ : Typ) := Rec (CertifiedVal typ)
 
 variable {n fuel : Nat} {typ : Typ} {entries : CompilerBindings}
 
