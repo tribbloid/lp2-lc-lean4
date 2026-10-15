@@ -34,17 +34,17 @@ private def higherOrderApplication : Trm :=
   .apply (.apply higherOrderId Trm.primitiveIdFn) Trm.vFalse
 
 -- Exact evaluation budgets include the one-less-budget exhaustion check.
-#guard (literalEval Trm.vFalse).shouldYieldsBool 1 "false"
-#guard (literalEval Trm.primitiveIdFnOnFalse).shouldYieldsBool 2 "false"
-#guard (literalEval Trm.get1stOnTuple).shouldYieldsBool 3 "false"
-#guard (literalEval Trm.get2ndOnTuple).shouldYieldsBool 3 "true"
-#guard (literalEval Trm.primitiveTrueFnOnFalse).shouldYieldsBool 2 "true"
-#guard (literalEval higherOrderApplication).shouldYieldsBool 3 "false"
-#guard (literalEval Trm.FreeCapture.directRef capturedBindings).shouldYieldsBool 1 "outer"
-#guard (literalEval Trm.FreeCapture.capturedRefOnFalse capturedBindings).shouldYieldsBool 2 "outer"
+#guard (literalEval Trm.vFalse).shouldYields 1 "false"
+#guard (literalEval Trm.primitiveIdFnOnFalse).shouldYields 2 "false"
+#guard (literalEval Trm.get1stOnTuple).shouldYields 3 "false"
+#guard (literalEval Trm.get2ndOnTuple).shouldYields 3 "true"
+#guard (literalEval Trm.primitiveTrueFnOnFalse).shouldYields 2 "true"
+#guard (literalEval higherOrderApplication).shouldYields 3 "false"
+#guard (literalEval Trm.FreeCapture.directRef capturedBindings).shouldYields 1 "outer"
+#guard (literalEval Trm.FreeCapture.capturedRefOnFalse capturedBindings).shouldYields 2 "outer"
 
 -- The caller's slot zero holds a function; the applied closure captured a literal there.
-#guard (literalEval (.apply Trm.FreeCapture.directRef Trm.vTrue) callerBindings).shouldYieldsBool 2 "outer"
+#guard (literalEval (.apply Trm.FreeCapture.directRef Trm.vTrue) callerBindings).shouldYields 2 "outer"
 
 #guard (match erasedEval Trm.primitiveIdFn .empty 2 1 with
     | .yield (some (.mk _ (.fn _ _) _)) => true
@@ -59,12 +59,12 @@ private def higherOrderApplication : Trm :=
 
 #guard (literalEval (.ref
     (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)) : Trm 3)
-    (NatBindings.empty.set 1 outerValue)).shouldYieldsBool 1 "outer"
+    (NatBindings.empty.set 1 outerValue)).shouldYields 1 "outer"
 
 example : Trm.vFalse.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 0 = .outOfFuel := rfl
 
 -- Rejected terms cannot supply the evaluator's inference-success premise.
-#guard Trm.Malformed.idFnOnFalse2.infer.shouldFailBool 4
+#guard Trm.Malformed.idFnOnFalse2.infer.shouldFail 4
 #check_failure Trm.Malformed.primitiveApply.eval_certified .empty (inferFuel := 2) (typ := .TLit) rfl 2
 #check_failure Trm.FreeCapture.directRef.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 1
 #check_failure Trm.Malformed.idFnOnFalse2.eval_certified .empty (inferFuel := 4) (typ := .TLit) rfl 3
