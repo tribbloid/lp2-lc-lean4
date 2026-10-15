@@ -88,13 +88,7 @@ theorem agreement {n} (trm : Trm n) (bindings : ExeBindings) (fuel inferFuel : N
     (typ : Typ) (hInfer : trm.infer bindings inferFuel = .yield (some typ)) :
     (trm.eval_certified bindings hInfer fuel).map (λ payload => some payload.val) =
       trm.eval bindings fuel := by
-  let accepted : (trm.infer bindings).isDecidable (λ inferred => inferred = typ) :=
-    ⟨inferFuel, by simp only [hInfer]; rfl⟩
-  have hAgreement := outcomeAgreement trm bindings (λ inferred => inferred = typ) accepted fuel
-  change ((evalCore trm bindings _ accepted fuel).map
-    (λ result => (⟨result.val, result.property⟩ : CertifiedByInfer.CertifiedVal typ))).map _ = _
-  cases hResult : evalCore trm bindings _ accepted fuel <;>
-    simpa only [hResult, Rec.Outcome.map] using hAgreement
+  exact outcomeAgreement trm bindings _ ⟨inferFuel, by simp only [hInfer]; rfl⟩ fuel
 
 #print axioms eval_certified
 #print axioms agreement
