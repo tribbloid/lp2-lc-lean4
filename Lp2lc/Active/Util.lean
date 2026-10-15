@@ -212,8 +212,7 @@ abbrev shouldYields (fuelBudget : Nat) (expectedV : T) [BEq T] : Prop :=
     | .yield (some value), .outOfFuel => value == expectedV
     | _, _ => false) = true
 
-example (fuelBudget : Nat) (expectedV : T) [BEq T] :
-    Decidable (self.shouldYields fuelBudget expectedV) := inferInstance
+example [BEq T] (n v) : Decidable (self.shouldYields n v) := inferInstance
 
 /--
 Whether `self` needs exactly `fuelBudget` fuel to deterministically fail.
@@ -226,7 +225,7 @@ abbrev shouldFail (fuelBudget : Nat) : Prop :=
     | .yield none, .outOfFuel => true
     | _, _ => false) = true
 
-example (fuelBudget : Nat) : Decidable (self.shouldFail fuelBudget) := inferInstance
+example (n) : Decidable (self.shouldFail n) := inferInstance
 
 end
 end RecOpt
