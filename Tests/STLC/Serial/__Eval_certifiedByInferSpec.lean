@@ -60,7 +60,7 @@ private def higherOrderApplication : Trm :=
 #guard (literalEval (.ref
     (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)) : Trm 3)
     (NatBindings.empty.set 1 outerValue)).shouldYields 1 "outer"
-
+applyPrimitive
 example : Trm.vFalse.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 0 = .outOfFuel := rfl
 
 -- Rejected terms cannot supply the evaluator's inference-success premise.

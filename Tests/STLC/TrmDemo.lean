@@ -78,16 +78,16 @@ end TypeHinted
 
 namespace Malformed
 
-def applyIdFnOnItself : AST 0 .trm :=
+def WrongTypeIdFnOnItself : AST 0 .trm :=
   .apply primitiveIdFn primitiveIdFn
 
-def idFnOnFalse2 : AST 0 .trm :=
-  .apply applyIdFnOnItself vFalse
+def WrongTypeIdFnOnFalse2 : AST 0 .trm :=
+  .apply WrongTypeIdFnOnItself vFalse
 
-def primitiveApply : AST 0 .trm :=
+def applyLit1 : AST 0 .trm :=
   .apply vFalse vTrue
 
-def apply1 : AST 0 .trm :=
+def applyLit2 : AST 0 .trm :=
   .apply (.apply primitiveIdFn vFalse) vTrue
 
 end Malformed

@@ -31,7 +31,7 @@ example : literalResult (AST.eval
 
 example : AST.eval Trm.vFalse .empty 0 = .outOfFuel := rfl
 example : AST.eval Trm.Malformed.primitiveApply .empty 2 = .yield none := rfl
-example : AST.eval (.ref Trm.FreeCapture.freeSlot .same : Trm 0) .empty 1 = .yield none := rfl
+example : AST.eval applyPrimitiveot .same : Trm 0) .empty 1 = .yield none := rfl
 example : AST.eval (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empty 2 = .outOfFuel := rfl
 example : literalResult (AST.eval Trm.primitiveIdFnOnFalse knownBindings 2) = some "false" := rfl
 

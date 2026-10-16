@@ -90,11 +90,11 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard Malformed.idFnOnFalse2.infer.shouldFail 4
 
-#guard Malformed.apply1.infer.shouldFail 4
+#guard applyLit2.infer.shouldFail 4
 
 #guard Malformed.primitiveApply.infer.shouldFail 2
 
-end infer
+end infapplyPrimitive
 
 end Trm
 
