@@ -4,6 +4,7 @@ namespace Lp2lc.Active.GDOT
 
 open Lp2lc.Active.Util
 
+-- FIXME: more explanation will be required, particularly for revisions
 -- Original gDOT: https://github.com/Blaisorblade/dot-iris/blob/v1.0/theories/Dot/syn/syn.v
 inductive Label where
 | typ
@@ -22,6 +23,7 @@ mutual
 inductive Binder : Parameters → Label → Type 2 where
 | private body {P} (body : P.Next.TRef → AST P.Next l) : Binder P l
 
+-- TODO: to conform to old format, related syntax elements (e.g. .TFn and .fn) should be next to each other
 /-- Raw gDOT syntax; member names are strings, distinct from family tags. -/
 inductive AST : Parameters → Label → Type 2 where
 | TLit {P} : AST P .typ -- primitive bytecode
@@ -29,6 +31,8 @@ inductive AST : Parameters → Label → Type 2 where
 | TBot {P} : AST P .typ
 | TAnd {P} (left right : AST P .typ) : AST P .typ
 | TOr {P} (left right : AST P .typ) : AST P .typ
+-- TODO: do we need "TLater" in a type system without mutability and state-tracking?
+-- this won't be used with iris framework, and planned semantic functions will be fuel-guarded
 | TLater {P} (typ : AST P .typ) : AST P .typ -- ▷ T
 | TFn {P} (tIn : AST P .typ) (tOut : Binder P .typ) : AST P .typ -- ∀ x : S. T
 | TRec {P} (body : Binder P .typ) : AST P .typ -- μ x. T
@@ -47,16 +51,21 @@ inductive AST : Parameters → Label → Type 2 where
 | val {P} (value : AST P .val) : AST P .trm
 | apply {P} (fn arg : AST P .trm) : AST P .trm
 | proj {P} (base : AST P .trm) (name : String) : AST P .trm
+-- TODO: why are skip & cond required? "cond" in particular should be curried fn/primitive
 | skip {P} (term : AST P .trm) : AST P .trm -- coerce e
 | cond {P} (test yes no : AST P .trm) : AST P .trm
 
 | pathVal {P} (value : AST P .val) : AST P .path
 | pathSel {P} (base : AST P .path) (name : String) : AST P .path
+
 | typeDef {P} (typ : AST P .typ) : AST P .member
-| typeStamp {P} (env : AST P .values) (stamp : Nat) : AST P .member
+| typeStamp {P} (env : AST P .values) (stamp : Nat) : AST P .member --TODO: what is this?
 | pathDef {P} (path : AST P .path) : AST P .member
+
 | nil {P} : AST P .members
 | cons {P} (name : String) (member : AST P .member) (rest : AST P .members) : AST P .members
+
+-- TODO: why do we need both .members and .values?
 | nilValues {P} : AST P .values
 | consValues {P} (value : AST P .val) (rest : AST P .values) : AST P .values
 
