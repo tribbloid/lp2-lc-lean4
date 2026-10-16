@@ -60,7 +60,7 @@ example : True := by
 
 end eval
 
-section compilerCapability
+section compilerCapability -- FIXME: useless now, remove
 
 variable [refs : HasUId2Any] [build : BuildEnv refs]
 
