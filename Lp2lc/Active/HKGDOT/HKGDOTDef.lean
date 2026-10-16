@@ -43,6 +43,8 @@ inductive AST : Parameters → Label → Type 2 where
 | KPi {P} (tIn : AST P .typ) (body : Binder P .kind) : AST P .kind -- Π x : S. K
 
 | lit {P} (repr : P.B) : AST P .val
+-- A unary primitive may return another function value, so application supports currying.
+| primitive {P} (op : P.B → AST P .val) : AST P .val
 | fn {P} (body : Binder P .trm) : AST P .val
 | obj {P} (body : Binder P .members) : AST P .val
 | ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val
@@ -51,8 +53,6 @@ inductive AST : Parameters → Label → Type 2 where
 | apply {P} (fn arg : AST P .trm) : AST P .trm
 | proj {P} (base : AST P .trm) (name : String) : AST P .trm
 | skip {P} (term : AST P .trm) : AST P .trm
-| unary {P} (op : P.B → P.B) (term : AST P .trm) : AST P .trm
-| binary {P} (op : P.B → P.B → P.B) (left right : AST P .trm) : AST P .trm
 | cond {P} (test yes no : AST P .trm) : AST P .trm
 
 | pathVal {P} (value : AST P .val) : AST P .path
