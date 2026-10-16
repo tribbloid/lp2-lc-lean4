@@ -5,6 +5,7 @@ namespace Lp2lc.Active.GDOT
 open Lp2lc.Active.Util
 
 -- Original gDOT: https://github.com/Blaisorblade/dot-iris/blob/v1.0/theories/Dot/syn/syn.v
+-- FIXME: we don't need to differentiate primitive type & data, they should all be `(P : Parameters).B` (B for bytecode)
 inductive Prim where
 | int
 | bool
@@ -13,6 +14,12 @@ inductive Literal where
 | int (value : Int)
 | bool (value : Bool)
 
+/-
+FIXME: we don't need to differentiate primitive operations (both unary & binary):
+
+- unary primitive operations can be `(P : Parameters).B -> (P : Parameters).B`
+- binary primitive operations can be it's curried version (.fn followed by primary operation)
+-/
 inductive BinOp where
 | add
 | sub
