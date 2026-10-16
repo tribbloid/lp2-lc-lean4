@@ -5,15 +5,6 @@ namespace Lp2lc.Active.GDOT
 open Lp2lc.Active.Util
 
 -- Original gDOT: https://github.com/Blaisorblade/dot-iris/blob/v1.0/theories/Dot/syn/syn.v
--- FIXME: we don't need to differentiate primitive type & data, they should all be `(P : Parameters).B` (B for bytecode)
-inductive Prim where
-| int
-| bool
-
-inductive Literal where
-| int (value : Int)
-| bool (value : Bool)
-
 /-
 FIXME: we don't need to differentiate primitive operations (both unary & binary):
 
@@ -48,7 +39,7 @@ inductive Binder : Parameters → Label → Type 2 where
 
 /-- Raw gDOT syntax; member names are strings, distinct from family tags. -/
 inductive AST : Parameters → Label → Type 2 where
-| TLit {P} (prim : Prim) : AST P .typ
+| TLit {P} : AST P .typ -- primitive bytecode
 | TTop {P} : AST P .typ
 | TBot {P} : AST P .typ
 | TAnd {P} (left right : AST P .typ) : AST P .typ
@@ -61,7 +52,7 @@ inductive AST : Parameters → Label → Type 2 where
 | TSel {P} (path : AST P .path) (name : String) : AST P .typ
 | TSingleton {P} (path : AST P .path) : AST P .typ
 
-| lit {P} (repr : Literal) : AST P .val
+| lit {P} (repr : P.B) : AST P .val
 | fn {P} (body : Binder P .trm) : AST P .val
 | obj {P} (body : Binder P .members) : AST P .val -- ν self. { ... }
 | ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val

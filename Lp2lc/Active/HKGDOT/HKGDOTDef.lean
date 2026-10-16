@@ -3,7 +3,7 @@ import «Lp2lc».Active.GDOT.GDOTDef
 namespace Lp2lc.Active.HKGDOT
 
 open Lp2lc.Active.Util
-open GDOT (Prim Literal BinOp)
+open GDOT (BinOp)
 
 -- HK-gDOT syntax from https://github.com/Blaisorblade/dot-iris/pull/302 (linked by #360).
 inductive Label where
@@ -26,7 +26,7 @@ inductive Binder : Parameters → Label → Type 2 where
 
 /-- Raw HK-gDOT syntax, with interval and dependent function kinds. -/
 inductive AST : Parameters → Label → Type 2 where
-| TLit {P} (prim : Prim) : AST P .typ
+| TLit {P} : AST P .typ -- primitive bytecode
 | TTop {P} : AST P .typ
 | TBot {P} : AST P .typ
 | TAnd {P} (left right : AST P .typ) : AST P .typ
@@ -43,7 +43,7 @@ inductive AST : Parameters → Label → Type 2 where
 | KInterval {P} (lower upper : AST P .typ) : AST P .kind -- L .. U
 | KPi {P} (tIn : AST P .typ) (body : Binder P .kind) : AST P .kind -- Π x : S. K
 
-| lit {P} (repr : Literal) : AST P .val
+| lit {P} (repr : P.B) : AST P .val
 | fn {P} (body : Binder P .trm) : AST P .val
 | obj {P} (body : Binder P .members) : AST P .val
 | ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val
