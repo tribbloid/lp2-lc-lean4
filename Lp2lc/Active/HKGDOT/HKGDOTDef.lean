@@ -1,9 +1,8 @@
-import «Lp2lc».Active.GDOT.GDOTDef
+import «Lp2lc».Active.Parameters
 
 namespace Lp2lc.Active.HKGDOT
 
 open Lp2lc.Active.Util
-open GDOT (BinOp)
 
 -- HK-gDOT syntax from https://github.com/Blaisorblade/dot-iris/pull/302 (linked by #360).
 inductive Label where
@@ -52,8 +51,8 @@ inductive AST : Parameters → Label → Type 2 where
 | apply {P} (fn arg : AST P .trm) : AST P .trm
 | proj {P} (base : AST P .trm) (name : String) : AST P .trm
 | skip {P} (term : AST P .trm) : AST P .trm
-| not {P} (term : AST P .trm) : AST P .trm
-| binary {P} (op : BinOp) (left right : AST P .trm) : AST P .trm
+| unary {P} (op : P.B → P.B) (term : AST P .trm) : AST P .trm
+| binary {P} (op : P.B → P.B → P.B) (left right : AST P .trm) : AST P .trm
 | cond {P} (test yes no : AST P .trm) : AST P .trm
 
 | pathVal {P} (value : AST P .val) : AST P .path

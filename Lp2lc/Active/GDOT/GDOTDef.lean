@@ -5,21 +5,6 @@ namespace Lp2lc.Active.GDOT
 open Lp2lc.Active.Util
 
 -- Original gDOT: https://github.com/Blaisorblade/dot-iris/blob/v1.0/theories/Dot/syn/syn.v
-/-
-FIXME: we don't need to differentiate primitive operations (both unary & binary):
-
-- unary primitive operations can be `(P : Parameters).B -> (P : Parameters).B`
-- binary primitive operations can be it's curried version (.fn followed by primary operation)
--/
-inductive BinOp where
-| add
-| sub
-| mul
-| div
-| lt
-| le
-| eq
-
 inductive Label where
 | typ
 | trm
@@ -61,8 +46,8 @@ inductive AST : Parameters → Label → Type 2 where
 | apply {P} (fn arg : AST P .trm) : AST P .trm
 | proj {P} (base : AST P .trm) (name : String) : AST P .trm
 | skip {P} (term : AST P .trm) : AST P .trm -- coerce e
-| not {P} (term : AST P .trm) : AST P .trm
-| binary {P} (op : BinOp) (left right : AST P .trm) : AST P .trm
+| unary {P} (op : P.B → P.B) (term : AST P .trm) : AST P .trm
+| binary {P} (op : P.B → P.B → P.B) (left right : AST P .trm) : AST P .trm
 | cond {P} (test yes no : AST P .trm) : AST P .trm
 
 | pathVal {P} (value : AST P .val) : AST P .path
