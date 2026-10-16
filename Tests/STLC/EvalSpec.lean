@@ -25,8 +25,8 @@ attribute [local simp] Binder.apply
 attribute [local simp] Trm.vFalse Trm.vTrue Trm.primitiveIdFn Trm.primitiveIdFnOnFalse
 attribute [local simp] Trm.get1st Trm.get2nd Trm.get1stOnTuple Trm.get2ndOnTuple
 attribute [local simp] Trm.primitiveTrueFn Trm.primitiveTrueFnOnFalse
-attribute [local simp] Trm.Malformed.applyIdFnOnItself Trm.Malformed.idFnOnFalse2
-attribute [local simp] Trm.Malformed.apply1 Trm.Malformed.primitiveApply Val.idFn
+attribute [local simp] Trm.Malformed.WrongTypeIdFnOnItself Trm.Malformed.WrongTypeIdFnOnFalse2
+attribute [local simp] Trm.Malformed.applyLit2 Trm.Malformed.applyLit1 Val.idFn
 attribute [local simp] Trm.FreeCapture.receipt Trm.FreeCapture.directRef Trm.FreeCapture.capturedRef
 attribute [local simp] Trm.FreeCapture.capturedRefOnFalse
 
@@ -38,13 +38,13 @@ attribute [local simp] Trm.FreeCapture.capturedRefOnFalse
 
 #guard Trm.get2ndOnTuple.eval.shouldYields 3 (.lit bTrue)
 
-#guard Trm.Malformed.applyIdFnOnItself.eval.shouldYields 2 Val.idFn
+#guard Trm.Malformed.WrongTypeIdFnOnItself.eval.shouldYields 2 Val.idFn
 
-#guard Trm.Malformed.idFnOnFalse2.eval.shouldYields 3 (.lit bFalse)
+#guard Trm.Malformed.WrongTypeIdFnOnFalse2.eval.shouldYields 3 (.lit bFalse)
 
-#guard Trm.Malformed.apply1.eval.shouldFail 3
+#guard Trm.Malformed.applyLit2.eval.shouldFail 3
 
-#guard Trm.Malformed.primitiveApply.eval.shouldFail 2
+#guard Trm.Malformed.applyLit1.eval.shouldFail 2
 
 example : True := by
   fail_if_success

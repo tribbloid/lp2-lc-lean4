@@ -86,15 +86,15 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
       (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 5 .TLit
   | _ => false
 
-#guard Malformed.applyIdFnOnItself.infer.shouldFail 3
+#guard Malformed.WrongTypeIdFnOnItself.infer.shouldFail 3
 
-#guard Malformed.idFnOnFalse2.infer.shouldFail 4
+#guard Malformed.WrongTypeIdFnOnFalse2.infer.shouldFail 4
 
-#guard applyLit2.infer.shouldFail 4
+#guard Malformed.applyLit2.infer.shouldFail 4
 
-#guard Malformed.primitiveApply.infer.shouldFail 2
+#guard Malformed.applyLit1.infer.shouldFail 2
 
-end infapplyPrimitive
+end infer
 
 end Trm
 

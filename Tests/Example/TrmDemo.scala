@@ -46,11 +46,11 @@ object TrmDemo extends Preamble {
   val apply1stOn2ndFnOnTuple: Boolean =
     apply1stOn2ndFn(idFn)(vFalse)
 
-  val applyidFnOnItself =
+  val WrongTypeIdFnOnItself =
     idFn(idFn)
 
-  val idFnOnFalse2: Boolean =
-    applyidFnOnItself(vFalse)
+  val WrongTypeIdFnOnFalse2: Boolean =
+    WrongTypeIdFnOnItself(vFalse)
 
   val primitiveTrueFn: Boolean => Boolean =
     _ => true
@@ -71,10 +71,10 @@ object TrmDemo extends Preamble {
 
   object Malformed {
 
-    lazy val primitiveApply: Boolean =
+    lazy val applyLit1: Boolean =
       vFalse.asInstanceOf[Boolean => Boolean](vTrue)
 
-    lazy val apply1: Boolean =
+    lazy val applyLit2: Boolean =
       idFn(vFalse).asInstanceOf[Boolean => Boolean](vTrue)
 
     lazy val primitiveFalseAsFn: Boolean => Boolean =

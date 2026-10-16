@@ -23,15 +23,15 @@ example : literalResult (AST.eval Trm.get2ndOnTuple .empty 3) = some "true" := r
 example : literalResult (AST.eval Trm.FreeCapture.directRef knownBindings 1) = some "outer" := rfl
 example : literalResult (AST.eval Trm.FreeCapture.capturedRefOnFalse knownBindings 2) = some "outer" := rfl
 example : literalResult (AST.eval Trm.primitiveTrueFnOnFalse knownBindings 2) = some "true" := rfl
-example : literalResult (AST.eval Trm.Malformed.idFnOnFalse2 knownBindings 3) = some "false" := rfl
+example : literalResult (AST.eval Trm.Malformed.WrongTypeIdFnOnFalse2 knownBindings 3) = some "false" := rfl
 
 example : literalResult (AST.eval
     (.ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)) : Trm 3)
     (NatBindings.empty.set 1 outerValue) 1) = some "outer" := rfl
 
 example : AST.eval Trm.vFalse .empty 0 = .outOfFuel := rfl
-example : AST.eval Trm.Malformed.primitiveApply .empty 2 = .yield none := rfl
-example : AST.eval applyPrimitiveot .same : Trm 0) .empty 1 = .yield none := rfl
+example : AST.eval Trm.Malformed.applyLit1 .empty 2 = .yield none := rfl
+example : AST.eval (.ref Trm.FreeCapture.freeSlot .same : Trm 0) .empty 1 = .yield none := rfl
 example : AST.eval (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empty 2 = .outOfFuel := rfl
 example : literalResult (AST.eval Trm.primitiveIdFnOnFalse knownBindings 2) = some "false" := rfl
 

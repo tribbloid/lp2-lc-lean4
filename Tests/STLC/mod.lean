@@ -8,4 +8,4 @@ import «Tests».STLC.Serial.__InferSpec
 import «Tests».STLC.Serial.__Eval_certifiedByInferSpec
 
 -- import «Tests».STLC.UId.Fixture
--- import «Tests».STLC.TrmSpec
+-- import «Tests».STLC.EvalSpec

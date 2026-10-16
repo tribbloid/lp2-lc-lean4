@@ -60,14 +60,14 @@ private def higherOrderApplication : Trm :=
 #guard (literalEval (.ref
     (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)) : Trm 3)
     (NatBindings.empty.set 1 outerValue)).shouldYields 1 "outer"
-applyPrimitive
+
 example : Trm.vFalse.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 0 = .outOfFuel := rfl
 
 -- Rejected terms cannot supply the evaluator's inference-success premise.
-#guard Trm.Malformed.idFnOnFalse2.infer.shouldFail 4
-#check_failure Trm.Malformed.primitiveApply.eval_certified .empty (inferFuel := 2) (typ := .TLit) rfl 2
+#guard Trm.Malformed.WrongTypeIdFnOnFalse2.infer.shouldFail 4
+#check_failure Trm.Malformed.applyLit1.eval_certified .empty (inferFuel := 2) (typ := .TLit) rfl 2
 #check_failure Trm.FreeCapture.directRef.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 1
-#check_failure Trm.Malformed.idFnOnFalse2.eval_certified .empty (inferFuel := 4) (typ := .TLit) rfl 3
+#check_failure Trm.Malformed.WrongTypeIdFnOnFalse2.eval_certified .empty (inferFuel := 4) (typ := .TLit) rfl 3
 #check_failure AST.eval_certified (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empty
   (inferFuel := 4) (typ := .TLit) rfl 2
 
