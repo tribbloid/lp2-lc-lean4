@@ -6,7 +6,7 @@ As in STLC, `Parameters` chooses bytecode and lexical references; `Binder` exten
 Here `TLit` groups all bytecode values, and unary native `primitive` values replace the concrete
 Int/Bool operations. Returning function values supports currying. Conditionals use a bytecode
 predicate to select between `.fn` thunks, then apply only the chosen thunk.
-The guarded constructs and source/stamped type definitions retain the reference grammar's forms;
+Type definitions contain source syntax. The guarded constructs retain the reference grammar's forms;
 their roles are explained below. These are syntax declarations, independent of a proof framework.
 -/
 
@@ -21,7 +21,6 @@ inductive Label where
 | path
 | member
 | members
-| values
 
 namespace Pre
 
@@ -51,10 +50,6 @@ inductive AST : Parameters → Label → Type 2 where
 
 | TMember {P} (name : String) (lower upper : AST P .typ) : AST P .typ
 | typeDef {P} (typ : AST P .typ) : AST P .member -- ordinary source type definition
--- TODO: replace semantic stamps and their captured values with source `typeDef` in gDOT and HK-gDOT.
--- Auxiliary stamped form used by the reference soundness model: `stamp` names a semantic type,
--- and `env` is its finite value substitution. Ordinary source syntax uses `typeDef` instead.
-| typeStamp {P} (env : AST P .values) (stamp : Nat) : AST P .member
 
 | TSel {P} (path : AST P .path) (name : String) : AST P .typ
 | TSingleton {P} (path : AST P .path) : AST P .typ
@@ -79,10 +74,6 @@ inductive AST : Parameters → Label → Type 2 where
 -- Named object definitions; this is the body of `obj`.
 | nil {P} : AST P .members
 | cons {P} (name : String) (member : AST P .member) (rest : AST P .members) : AST P .members
-
--- Unnamed captured values for `typeStamp`; their element type differs from object definitions.
-| nilValues {P} : AST P .values
-| consValues {P} (value : AST P .val) (rest : AST P .values) : AST P .values
 
 end
 

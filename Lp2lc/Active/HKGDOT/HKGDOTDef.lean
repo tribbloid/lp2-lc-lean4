@@ -2,7 +2,7 @@ import «Lp2lc».Active.Parameters
 
 /-!
 Higher-kinded syntax from [HK-gDOT #302](https://github.com/Blaisorblade/dot-iris/pull/302), linked by #360.
-The bytecode, curried primitive, thunked conditional, guarded and stamped conventions are shared
+The bytecode, curried primitive, thunked conditional and guarded conventions are shared
 with [GDOTDef.lean](../GDOT/GDOTDef.lean). This extension adds type lambdas, path application,
 kind-valued type members, interval kinds, and value-dependent function kinds.
 -/
@@ -18,7 +18,6 @@ inductive Label where
 | path
 | member
 | members
-| values
 | kind
 
 namespace Pre
@@ -54,8 +53,6 @@ inductive AST : Parameters → Label → Type 2 where
 | TMember {P} (name : String) (kind : AST P .kind) : AST P .typ
 | KInterval {P} (lower upper : AST P .typ) : AST P .kind -- L .. U
 | typeDef {P} (typ : AST P .typ) : AST P .member
--- Auxiliary semantic-type identity and its captured value substitution, as in gDOT.
-| typeStamp {P} (env : AST P .values) (stamp : Nat) : AST P .member
 
 | TSel {P} (arity : Nat) (path : AST P .path) (name : String) : AST P .typ -- 0 for gDOT
 | TSingleton {P} (path : AST P .path) : AST P .typ
@@ -74,11 +71,9 @@ inductive AST : Parameters → Label → Type 2 where
 | ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val
 | val {P} (value : AST P .val) : AST P .trm
 
--- Named object definitions, followed by the unnamed values captured by `typeStamp`.
+-- Named object definitions; this is the body of `obj`.
 | nil {P} : AST P .members
 | cons {P} (name : String) (member : AST P .member) (rest : AST P .members) : AST P .members
-| nilValues {P} : AST P .values
-| consValues {P} (value : AST P .val) (rest : AST P .values) : AST P .values
 
 end
 
