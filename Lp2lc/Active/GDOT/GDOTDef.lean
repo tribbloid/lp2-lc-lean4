@@ -51,6 +51,7 @@ inductive AST : Parameters → Label → Type 2 where
 
 | TMember {P} (name : String) (lower upper : AST P .typ) : AST P .typ
 | typeDef {P} (typ : AST P .typ) : AST P .member -- ordinary source type definition
+-- TODO: semantically stamped AST permits defining exotic type, this is bad, should be replaced by
 -- Auxiliary stamped form used by the reference soundness model: `stamp` names a semantic type,
 -- and `env` is its finite value substitution. Ordinary source syntax uses `typeDef` instead.
 | typeStamp {P} (env : AST P .values) (stamp : Nat) : AST P .member
@@ -64,6 +65,8 @@ inductive AST : Parameters → Label → Type 2 where
 | TBot {P} : AST P .typ
 | TAnd {P} (left right : AST P .typ) : AST P .typ
 | TOr {P} (left right : AST P .typ) : AST P .typ
+
+-- TODO: for the moment these should be commented oout as we are not certain of typing rule yet.
 -- Guards recursive type-member reasoning in gDOT, even for immutable objects.
 -- Interpreter fuel bounds a run; it does not remove this guard from the original typing rules.
 | TLater {P} (typ : AST P .typ) : AST P .typ -- ▷ T
