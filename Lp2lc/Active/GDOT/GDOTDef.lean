@@ -6,8 +6,8 @@ As in STLC, `Parameters` chooses bytecode and lexical references; `Binder` exten
 Here `TLit` groups all bytecode values, and unary native `primitive` values replace the concrete
 Int/Bool operations. Returning function values supports currying. Conditionals use a bytecode
 predicate to select between `.fn` thunks, then apply only the chosen thunk.
-Type definitions contain source syntax. The guarded constructs retain the reference grammar's forms;
-their roles are explained below. These are syntax declarations, independent of a proof framework.
+Type definitions contain source syntax. Guarded reference constructs are commented out below
+until their typing rules are settled. These are syntax declarations, independent of a proof framework.
 -/
 
 namespace Lp2lc.Active.GDOT
@@ -61,12 +61,12 @@ inductive AST : Parameters → Label → Type 2 where
 | TAnd {P} (left right : AST P .typ) : AST P .typ
 | TOr {P} (left right : AST P .typ) : AST P .typ
 
--- TODO: comment out `TLater` and `skip` in gDOT and HK-gDOT until their typing rules are settled.
+-- Reference forms are disabled until their typing rules are settled.
 -- Guards recursive type-member reasoning in gDOT, even for immutable objects.
 -- Interpreter fuel bounds a run; it does not remove this guard from the original typing rules.
-| TLater {P} (typ : AST P .typ) : AST P .typ -- ▷ T
+-- | TLater {P} (typ : AST P .typ) : AST P .typ -- ▷ T
 -- gDOT's `coerce`: e : ▷ T gives skip e : T, paying one extra reduction step.
-| skip {P} (term : AST P .trm) : AST P .trm
+-- | skip {P} (term : AST P .trm) : AST P .trm
 
 | ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val
 | val {P} (value : AST P .val) : AST P .trm

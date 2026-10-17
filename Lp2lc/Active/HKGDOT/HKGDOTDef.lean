@@ -2,7 +2,7 @@ import «Lp2lc».Active.Parameters
 
 /-!
 Higher-kinded syntax from [HK-gDOT #302](https://github.com/Blaisorblade/dot-iris/pull/302), linked by #360.
-The bytecode, curried primitive, thunked conditional and guarded conventions are shared
+The bytecode, curried primitive and thunked conditional conventions are shared
 with [GDOTDef.lean](../GDOT/GDOTDef.lean). This extension adds type lambdas, path application,
 kind-valued type members, interval kinds, and value-dependent function kinds.
 -/
@@ -63,10 +63,11 @@ inductive AST : Parameters → Label → Type 2 where
 | TBot {P} : AST P .typ
 | TAnd {P} (left right : AST P .typ) : AST P .typ
 | TOr {P} (left right : AST P .typ) : AST P .typ
+-- Reference forms are disabled until their typing rules are settled.
 -- The original guard for recursive type-member reasoning is independent of interpreter fuel.
-| TLater {P} (typ : AST P .typ) : AST P .typ
+-- | TLater {P} (typ : AST P .typ) : AST P .typ
 -- Eliminates one `TLater` after an extra reduction step, as in gDOT.
-| skip {P} (term : AST P .trm) : AST P .trm
+-- | skip {P} (term : AST P .trm) : AST P .trm
 
 | ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val
 | val {P} (value : AST P .val) : AST P .trm
