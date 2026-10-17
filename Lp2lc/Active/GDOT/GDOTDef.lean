@@ -32,34 +32,40 @@ inductive Binder : Parameters → Label → Type 2 where
 
 /-- Raw gDOT syntax; member names are strings, distinct from family tags. -/
 inductive AST : Parameters → Label → Type 2 where
+
+| TTop {P} : AST P .typ -- Any
+| TBot {P} : AST P .typ -- Nothing
+| TAnd {P} (left right : AST P .typ) : AST P .typ -- &, With
+| TOr {P} (left right : AST P .typ) : AST P .typ -- |
+
 | TLit {P} : AST P .typ -- primitive bytecode
 | lit {P} (repr : P.B) : AST P .val
 
 | TFn {P} (tIn : AST P .typ) (tOut : Binder P .typ) : AST P .typ -- ∀ x : S. T
 | fn {P} (body : Binder P .trm) : AST P .val
 -- A unary primitive may return another function value, so application supports currying.
-| primitive {P} (op : P.B → AST P .val) : AST P .val
-| apply {P} (fn arg : AST P .trm) : AST P .trm
+| fnPrimitive {P} (op : P.B → AST P .val) : AST P .val
+
+| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val
+
+| pathDef {P} (path : AST P .path) : AST P .member
+| typeDef {P} (typ : AST P .typ) : AST P .member -- ordinary source type definition
+-- Named object definitions; this is the body of `obj`.
+| nil {P} : AST P .members
+| cons {P} (name : String) (member : AST P .member) (rest : AST P .members) : AST P .members
 
 | TRec {P} (body : Binder P .typ) : AST P .typ -- μ x. T
-| obj {P} (body : Binder P .members) : AST P .val -- ν self. { ... }
 
 | TField {P} (name : String) (typ : AST P .typ) : AST P .typ
-| pathDef {P} (path : AST P .path) : AST P .member
-| proj {P} (base : AST P .trm) (name : String) : AST P .trm
-
 | TMember {P} (name : String) (lower upper : AST P .typ) : AST P .typ
-| typeDef {P} (typ : AST P .typ) : AST P .member -- ordinary source type definition
+-- TODO: both type member and term fields are named, why is an object type be constructed by intersecting (TAnd) TField/TMember without order, but obj term must be constructed from members with order?
+| obj {P} (body : Binder P .members) : AST P .val -- ν self. { ... }
 
+-- TODO: .path already carries a name suffix for selection, why do we need name here again? Should it fold into TSingleton?
 | TSel {P} (path : AST P .path) (name : String) : AST P .typ
 | TSingleton {P} (path : AST P .path) : AST P .typ
 | pathVal {P} (value : AST P .val) : AST P .path
 | pathSel {P} (base : AST P .path) (name : String) : AST P .path
-
-| TTop {P} : AST P .typ
-| TBot {P} : AST P .typ
-| TAnd {P} (left right : AST P .typ) : AST P .typ
-| TOr {P} (left right : AST P .typ) : AST P .typ
 
 -- Reference forms are disabled until their typing rules are settled.
 -- Guards recursive type-member reasoning in gDOT, even for immutable objects.
@@ -68,12 +74,10 @@ inductive AST : Parameters → Label → Type 2 where
 -- gDOT's `coerce`: e : ▷ T gives skip e : T, paying one extra reduction step.
 -- | skip {P} (term : AST P .trm) : AST P .trm
 
-| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val
 | val {P} (value : AST P .val) : AST P .trm
+| apply {P} (fn arg : AST P .trm) : AST P .trm
+| proj {P} (base : AST P .trm) (name : String) : AST P .trm
 
--- Named object definitions; this is the body of `obj`.
-| nil {P} : AST P .members
-| cons {P} (name : String) (member : AST P .member) (rest : AST P .members) : AST P .members
 
 end
 
