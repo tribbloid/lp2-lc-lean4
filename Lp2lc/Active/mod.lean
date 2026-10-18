@@ -5,9 +5,10 @@ import «Lp2lc».Active.Parameters
 import «Lp2lc».Active.NatBindings
 import «Lp2lc».Active.PartialDefInheritance
 
--- gDOT and higher-kinded gDOT syntax.
+-- gDOT, higher-kinded gDOT, and DSub syntax.
 import «Lp2lc».Active.GDOT.GDOTDef
 import «Lp2lc».Active.HKGDOT.HKGDOTDef
+import «Lp2lc».Active.DSub.DSubDef
 
 -- STLC syntax, hashing, serial execution, and type inference.
 import «Lp2lc».Active.STLC.STLCDef
