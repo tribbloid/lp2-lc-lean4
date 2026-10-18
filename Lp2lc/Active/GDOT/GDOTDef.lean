@@ -54,16 +54,16 @@ inductive AST : Parameters → Label → Type 2 where
 | nil {P} : AST P .members
 | cons {P} (name : String) (member : AST P .member) (rest : AST P .members) : AST P .members
 
-| TRec {P} (body : Binder P .typ) : AST P .typ -- μ x. T
+-- TODO: should this fold into TSingleton?
+| TRec {P} (body : Binder P .typ) : AST P .typ -- μ x. T AKA this.type?
 
 | TField {P} (name : String) (typ : AST P .typ) : AST P .typ
 | TMember {P} (name : String) (lower upper : AST P .typ) : AST P .typ
 -- TODO: both type member and term fields are named, why is an object type be constructed by intersecting (TAnd) TField/TMember without order, but obj term must be constructed from members with order?
 | obj {P} (body : Binder P .members) : AST P .val -- ν self. { ... }
 
--- TODO: .path already carries a name suffix for selection, why do we need name here again? Should it fold into TSingleton?
-| TSel {P} (path : AST P .path) (name : String) : AST P .typ
-| TSingleton {P} (path : AST P .path) : AST P .typ
+| TSel {P} (path : AST P .path) (name : String) : AST P .typ -- xx.T
+| TSingleton {P} (path : AST P .path) : AST P .typ -- xx.type
 | pathVal {P} (value : AST P .val) : AST P .path
 | pathSel {P} (base : AST P .path) (name : String) : AST P .path
 
@@ -77,7 +77,6 @@ inductive AST : Parameters → Label → Type 2 where
 | val {P} (value : AST P .val) : AST P .trm
 | apply {P} (fn arg : AST P .trm) : AST P .trm
 | proj {P} (base : AST P .trm) (name : String) : AST P .trm
-
 
 end
 
