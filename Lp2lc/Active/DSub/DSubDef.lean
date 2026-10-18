@@ -33,9 +33,9 @@ inductive AST : Parameters → Label → Type 2 where
 | TFn {P} (tIn : AST P .typ) (tOut : Binder P .typ) : AST P .typ -- ∀ x : S. T
 | fn {P} (body : Binder P .trm) : AST P .val
 
-| TMember {P} (lower upper : AST P .typ) : AST P .typ -- { Type >: L <: U }
-| TSel {P} (value : AST P .val) : AST P .typ -- v.Type
-| typeDef {P} (typ : AST P .typ) : AST P .val -- { Type = T }
+| TMember {P} (lower upper : AST P .typ) : AST P .typ -- Scala type: { type Type >: L <: U }
+| TSel {P} (value : AST P .val) : AST P .typ -- Scala type: v.Type (stable v)
+| typeDef {P} (typ : AST P .typ) : AST P .val -- Scala value: new { type Type = T }
 
 | ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val
 
