@@ -33,7 +33,7 @@ inductive AST : Parameters → Label → Type 2 where
 | TFn {P} (tIn : AST P .typ) (tOut : Binder P .typ) : AST P .typ -- ∀ x : S. T
 | fn {P} (body : Binder P .trm) : AST P .val -- dependent function
 
-| TMember {P} (lower upper : AST P .typ) : AST P .typ -- Scala type: { type Type >: L <: U }
+| TMember {P} (lower upper : AST P .typ) : AST P .typ -- Scala type: { type Type >: L <: U }, equivalent to nominal class/type declaration in Scala
 | TSel {P} (value : AST P .val) : AST P .typ -- Scala type: v.Type (stable v)
 | typeDef {P} (typ : AST P .typ) : AST P .val -- Scala value: new { type Type = T }
 
