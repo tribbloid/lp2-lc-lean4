@@ -37,27 +37,24 @@ private theorem checkReplace {trm : Trm n}
         | TFn input output =>
           obtain ⟨hInput, hBody⟩ := hType
           obtain ⟨bodyFuel, hTarget⟩ := ih
-            (target := target.set (n + 1) (.inr input))
-            (by intro index inputTyp; simp only [NatBindings.set, List.lookup]; split <;> simp_all) hBody
+            (target := target.set (n + 1) ⟨n, .inr annotation, target⟩)
+            (by
+              intro index inputTyp
+              simp only [NatBindings.set, List.lookup]
+              split <;> first | exact id | exact hReplace index inputTyp) hBody
           exact ⟨bodyFuel + 1, hInput, hTarget⟩
     | ref carrier under =>
       simp only [semType, check, Rec.Outcome.getOrElse] at hType
       have hFit : entryFits (source under.sourceIndex.down) typ := by
-        cases hEntry : source under.sourceIndex.down <;>
-          (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
-        all_goals simp only [hEntry, entryFits] at hType ⊢
-        all_goals first | exact hType | exact ⟨fuel, hType⟩
+        split at hType <;> simp_all [entryFits]
+        all_goals first | exact ⟨fuel, hType⟩ | rfl
       have hTarget := hReplace under.sourceIndex.down typ hFit
-      cases hEntry : target under.sourceIndex.down <;>
-        (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
-      all_goals simp only [hEntry, entryFits] at hTarget
-      all_goals
-        first
-        | contradiction
-        | (obtain ⟨valueFuel, hValue⟩ := hTarget
-           exact ⟨valueFuel + 1, by
-             simpa only [semType, check, Rec.Outcome.getOrElse, hEntry] using hValue⟩)
-        | exact ⟨1, by simpa only [semType, check, Rec.Outcome.getOrElse, hEntry] using hTarget⟩
+      unfold entryFits at hTarget
+      split at hTarget
+      · contradiction
+      · exact ⟨1, by simp_all [semType, check, Rec.Outcome.getOrElse] <;> rfl⟩
+      · obtain ⟨valueFuel, hValue⟩ := hTarget
+        exact ⟨valueFuel + 1, by simp_all [semType, check, Rec.Outcome.getOrElse]⟩
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := hType
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
@@ -81,7 +78,7 @@ theorem main (fuel : Nat) (typ : Typ)
       | ref carrier under =>
         cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeValue›)
         all_goals simp only [semType, check, Rec.Outcome.getOrElse,
-          NatBindings.getMap, hBinding, Option.map, eval.eq_3] at hType ⊢
+          NatBindings.getMap, hBinding, Option.map, toCompiler, eval.eq_3] at hType ⊢
         all_goals first | contradiction | exact ⟨fuel, hType⟩
       | apply fn arg =>
         obtain ⟨input, hFn, hArg⟩ := hType
@@ -106,13 +103,13 @@ theorem main (fuel : Nat) (typ : Typ)
               all_goals simp [hArgEval] at hArgSafety
               case outOfFuel => simp [eval.eq_4, hFnEval, hArgEval]
               case yield.some.mk argContext argValue argCaptured =>
-                obtain ⟨_, hBody⟩ := hFnValue
+                obtain ⟨hInput, hBody⟩ := hFnValue
                 let bodyBindings := captured.set (context + 1) (.mk argContext argValue argCaptured)
-                obtain ⟨bodyFuel, hBodyTarget⟩ := checkReplace (target := bodyBindings.map .inl)
+                obtain ⟨bodyFuel, hBodyTarget⟩ := checkReplace (target := bodyBindings.map toCompiler)
                   (by
                     intro index inputTyp hSource
                     simp only [bodyBindings, NatBindings.getMap, NatBindings.set, List.lookup] at hSource ⊢
-                    split at hSource <;> simp_all [entryFits]) hBody
+                    split at hSource <;> simp_all [entryFits, toCompiler, NatBindings.map]) hBody
                 simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
                   ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
 

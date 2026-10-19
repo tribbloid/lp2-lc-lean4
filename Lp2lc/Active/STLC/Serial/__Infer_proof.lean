@@ -3,7 +3,7 @@ import «Lp2lc».Active.STLC.Serial.Eval
 
 namespace Lp2lc.Active.STLC.AST
 
-open Lp2lc.Active.Util
+open Lp2lc.Active.Util ExeValue
 
 variable {n} (trm : Trm n) (bindings : ExeBindings)
 
@@ -58,28 +58,26 @@ private theorem inferReplace {trm : Trm n}
       | lit repr =>
         exact ⟨1, by simpa only [inferInternal.eq_2] using hInfer⟩
       | fn annotation body =>
-        let input := resolveType annotation
         obtain ⟨output, hBody, hType⟩ := inferFnSuccess hInfer
         subst typ
-        obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) (.inr input))
-          (by intro index inputTyp; simp only [NatBindings.set, List.lookup]; split <;> simp_all [input]) hBody
-        dsimp only [input] at hTarget
+        obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) ⟨n, .inr annotation, target⟩)
+          (by
+            intro index inputTyp
+            simp only [NatBindings.set, List.lookup]
+            split <;> first | exact id | exact hReplace index inputTyp) hBody
         exact ⟨bodyFuel + 1, by simp only [inferInternal.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
     | ref carrier under =>
       simp only [inferInternal.eq_4] at hInfer
       have hFit : entryFits (source under.sourceIndex.down) typ := by
-        cases hEntry : source under.sourceIndex.down <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
-        all_goals simp only [hEntry, entryFits, Rec.Outcome.yield.injEq] at hInfer ⊢
-        all_goals first | (cases hInfer <;> rfl) | exact ⟨fuel, hInfer⟩ | exact Option.some.inj hInfer
+        split at hInfer <;> simp_all [entryFits]
+        all_goals first | exact ⟨fuel, hInfer⟩ | exact Option.some.inj hInfer
       have hTarget := hReplace under.sourceIndex.down typ hFit
-      cases hEntry : target under.sourceIndex.down <;> (try cases ‹ValOrTyp›) <;> (try cases ‹ExeValue›)
-      all_goals simp only [hEntry, entryFits] at hTarget
-      all_goals
-        first
-        | contradiction
-        | (obtain ⟨valueFuel, hValue⟩ := hTarget
-           exact ⟨valueFuel + 1, by rw [inferInternal.eq_4, hEntry]; exact hValue⟩)
-        | exact ⟨1, by simp [inferInternal.eq_4, hEntry, hTarget]⟩
+      unfold entryFits at hTarget
+      split at hTarget
+      · contradiction
+      · exact ⟨1, by simp_all [inferInternal.eq_4]⟩
+      · obtain ⟨valueFuel, hValue⟩ := hTarget
+        exact ⟨valueFuel + 1, by simp_all [inferInternal.eq_4]⟩
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
@@ -109,7 +107,8 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
       | val value => exact ⟨inferFuel + 1, hInfer⟩
       | ref carrier under =>
         cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeValue›)
-        all_goals simp only [infer, inferInternal.eq_4, NatBindings.getMap, hBinding, Option.map, eval.eq_3] at hInfer ⊢
+        all_goals simp only [infer, inferInternal.eq_4, NatBindings.getMap, hBinding,
+          Option.map, toCompiler, eval.eq_3] at hInfer ⊢
         all_goals first | cases hInfer | exact ⟨inferFuel, hInfer⟩
       | apply fn arg =>
         obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
@@ -137,15 +136,14 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
                   obtain ⟨fnOutput, hBody, hFnType⟩ := inferFnSuccess hFnValue
                   rcases Pre.AST.TFn.inj hFnType with ⟨hInput, hOutput⟩
                   subst fnOutput
-                  rw [← hInput] at hBody
                   let bodyBindings := captured.set (context + 1) (.mk argContext argValue argCaptured)
-                  obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace (target := bodyBindings.map .inl)
+                  obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace (target := bodyBindings.map toCompiler)
                     (by
-                      have typedArg : entryFits (some (.inl (.mk _ argValue argCaptured))) input :=
+                      have typedArg : entryFits (some ⟨_, .inl argValue, argCaptured.map toCompiler⟩) input :=
                         ⟨argInferFuel, hArgValue⟩
                       intro index inputTyp hSource
                       simp only [bodyBindings, NatBindings.getMap, NatBindings.set, List.lookup] at hSource ⊢
-                      split at hSource <;> simp_all [entryFits])
+                      split at hSource <;> simp_all [entryFits, toCompiler, NatBindings.map])
                     hBody
                   simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
                     ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
