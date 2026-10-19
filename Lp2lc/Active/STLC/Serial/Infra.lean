@@ -7,7 +7,7 @@ open Lp2lc.Active.Util
 abbrev ValOrTyp := ExeValue ⊕ Typ -- Inference at a breakpoint accepts runtime values or types.
 
 -- abbrev CompilerBindings := NatBindings ValOrTyp -- append-only
--- TODO: in STLC we assume that Typ can't bind free vars, this is not true in dependent type. Have to switch to the following in no time
+-- TODO: use CompilerValOrTyp for compiler bindings so values and types retain their context and captured bindings.
 
 structure CompilerValOrTyp : Type 2 where
   n : Nat
