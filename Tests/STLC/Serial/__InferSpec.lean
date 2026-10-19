@@ -26,6 +26,9 @@ private def fnBindings : ExeBindings := (NatBindings.empty.set 0 fnValue).set 1 
 
 private def mixedBindings : ExeBindings := fnBindings.set 1 literalValue
 
+private def typeBindings : CompilerBindings :=
+  NatBindings.empty.set 0 ⟨7, .inr (.TFn .TLit .TLit), .empty⟩
+
 private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
 
 #guard vFalse.infer.shouldYields 1 .TLit
@@ -84,6 +87,22 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
     let bindings := mixedBindings.set 1 closure
     (innerRef.infer bindings).shouldYields 4 (.TFn .TLit .TLit) ∧
       (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 5 .TLit
+  | _ => false
+
+#guard (FreeCapture.directRef.inferInternal typeBindings).shouldYields 1 (.TFn .TLit .TLit)
+
+#guard (FreeCapture.capturedRef.inferInternal typeBindings).shouldYields 2
+  (.TFn .TLit (.TFn .TLit .TLit))
+
+#guard (FreeCapture.capturedRefOnFalse.inferInternal typeBindings).shouldYields 3 (.TFn .TLit .TLit)
+
+#guard (AST.inferInternal (.apply FreeCapture.directRef primitiveIdFn) typeBindings).shouldFail 3
+
+#guard match FreeCapture.capturedRef with
+  | .val value =>
+    let bindings := (typeBindings.set 0 ⟨0, .inr .TLit, .empty⟩).set 1 ⟨0, .inl value, typeBindings⟩
+    (innerRef.inferInternal bindings).shouldYields 3 (.TFn .TLit (.TFn .TLit .TLit)) ∧
+      (AST.inferInternal (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 4 (.TFn .TLit .TLit)
   | _ => false
 
 #guard Malformed.WrongTypeIdFnOnItself.infer.shouldFail 3
