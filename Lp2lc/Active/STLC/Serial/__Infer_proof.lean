@@ -28,7 +28,7 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
     (hInfer : inferInternal (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
     let input := resolveType annotation
     ∃ output, inferInternal (body.apply .only)
-        (entries.set (n + 1) (.inr input)) fuel = .yield (some output) ∧
+        (entries.set (n + 1) ⟨n, .inr annotation, entries⟩) fuel = .yield (some output) ∧
       typ = .TFn input output := by
   simp only [inferInternal.eq_3, Rec.Outcome.map] at hInfer
   repeat split at hInfer
@@ -37,12 +37,12 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
   all_goals try cases hInfer
   all_goals exact ⟨_, rfl, rfl⟩
 
-private def entryFits (entry : Option ValOrTyp) (typ : Typ) : Prop :=
+private def entryFits (entry : Option CompilerValOrTyp) (typ : Typ) : Prop :=
   match entry with
   | none => False
-  | some (.inr input) => input = typ
-  | some (.inl (.mk _ value captured)) =>
-    ∃ fuel, inferInternal value.asTrm (captured.map .inl) fuel = .yield (some typ)
+  | some ⟨_, .inr input, _⟩ => resolveType input = typ
+  | some ⟨_, .inl value, captured⟩ =>
+    ∃ fuel, inferInternal value.asTrm captured fuel = .yield (some typ)
 
 private theorem inferReplace {trm : Trm n}
     {source target : CompilerBindings} {fuel : Nat} {typ : Typ}

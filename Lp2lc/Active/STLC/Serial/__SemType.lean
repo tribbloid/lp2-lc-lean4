@@ -5,12 +5,6 @@ namespace Lp2lc.Active.STLC.AST.Semantic
 
 open Lp2lc.Active.Util
 
-/-- Erase the context index of an annotation without consuming typing fuel. -/
-private def closeType {n} (self : Typ n) : Typ :=
-  match self with
-  | .TLit => .TLit
-  | .TFn input output => .TFn (closeType input) (closeType output)
-
 /-- Fuel-bounded typing with runtime values or hypothetical types.
 
 Application quantifies over its domain; no principal type is selected.
@@ -24,14 +18,13 @@ def check {n} (self : Trm n) (typ : Typ)
       | .val (.lit _), .TFn _ _
       | .val (.fn _ _), .TLit => False
       | .val (.fn annotation body), .TFn input output =>
-        closeType annotation = input ∧
+        resolveType annotation = input ∧
           (check (body.apply .only) output
-            (bindings.set (n + 1) (.inr input)) fuel).getOrElse False
+            (bindings.set (n + 1) ⟨n, .inr annotation, bindings⟩) fuel).getOrElse False
       | .ref _ under, _ =>
         match bindings under.sourceIndex.down with
-        | some (.inl (.mk _ value captured)) =>
-          (check value.asTrm typ (captured.map .inl) fuel).getOrElse False
-        | some (.inr bound) => bound = typ
+        | some ⟨_, .inl value, captured⟩ => (check value.asTrm typ captured fuel).getOrElse False
+        | some ⟨_, .inr bound, _⟩ => resolveType bound = typ
         | none => False
       | .apply fn arg, _ =>
         ∃ input, (check fn (.TFn input typ) bindings fuel).getOrElse False ∧

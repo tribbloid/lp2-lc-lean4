@@ -1,6 +1,6 @@
 import «Lp2lc».Active.STLC.Serial.Infra
 namespace Lp2lc.Active.STLC
-open Lp2lc.Active.Util
+open Lp2lc.Active.Util ExeValue
 
 namespace AST
 variable {P : Parameters}
@@ -18,40 +18,29 @@ local instance typDecidableLE : DecidableLE (Pre.AST P .typ)
     @decidable_of_iff' _ _ (Pre.AST.TFn.injEq a b c d).to_iff
       (@instDecidableAnd _ _ (typDecidableLE a c) (typDecidableLE b d))
 
-/-- Convert `Typ n` to `Typ 0`, preserving its structure without consuming inference fuel. -/
-def resolveType {n} (self : Typ n) : Typ :=
-  match self with
-  | .TLit => .TLit
-  | .TFn tIn tOut => .TFn (resolveType tIn) (resolveType tOut)
-
 /-- Infer using runtime values or hypothetical types, resolving runtime values in their captured environments. -/
 def inferInternal {n} (self : Trm n) (bindings : CompilerBindings) : RecOpt Typ := λ fuel =>
-  match fuel with
-  | 0 => .outOfFuel
-  | fuel + 1 =>
-    match self with
-    | .val (.lit _) => .yield (some .TLit)
-    | .val (.fn tIn body) =>
-      let input := resolveType tIn
-      (inferInternal (body.apply .only)
-        (bindings.set (n + 1) (.inr input)) fuel).map
-        (Option.map (.TFn input))
-    | .ref _ under =>
-      match bindings under.sourceIndex.down with
-      | some (.inl (.mk _ value captured)) =>
-        inferInternal value.asTrm (captured.map .inl) fuel
-      | some (.inr typ) => .yield (some typ)
-      | none => .yield none
-    | .apply fn arg =>
-      match inferInternal fn bindings fuel, inferInternal arg bindings fuel with
-      | .yield (some (.TFn tIn tOut)), .yield (some argTyp) =>
-        .yield (if argTyp ≤ tIn then some tOut else none)
-      | .yield _, .yield _ => .yield none
-      | _, _ => .outOfFuel
+  match fuel, self with
+  | 0, _ => .outOfFuel
+  | _ + 1, .val (.lit _) => .yield (some .TLit)
+  | fuel + 1, .val (.fn tIn body) =>
+    (inferInternal (body.apply .only)
+      (bindings.set (n + 1) ⟨n, .inr tIn, bindings⟩) fuel).map (Option.map (.TFn (resolveType tIn)))
+  | fuel + 1, .ref _ under =>
+    match bindings under.sourceIndex.down with
+    | some ⟨_, .inl value, captured⟩ => inferInternal value.asTrm captured fuel
+    | some ⟨_, .inr typ, _⟩ => .yield (some typ.resolveType)
+    | none => .yield none
+  | fuel + 1, .apply fn arg =>
+    match inferInternal fn bindings fuel, inferInternal arg bindings fuel with
+    | .yield (some (.TFn tIn tOut)), .yield (some argTyp) =>
+      .yield (if argTyp ≤ tIn then some tOut else none)
+    | .yield _, .yield _ => .yield none
+    | _, _ => .outOfFuel
 
 /-- Infer using runtime values only, resolving each captured value to its type. -/ -- TODO: remove this? too trivial
 def infer {n} (self : Trm n) (exeBindings : ExeBindings := .empty) : RecOpt Typ :=
-  self.inferInternal (exeBindings.map .inl)
+  self.inferInternal (exeBindings.map toCompiler)
 
 def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ: Typ) :=
   self.inferInternal bindings fuel = .yield (.some typ)

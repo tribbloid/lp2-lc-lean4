@@ -32,7 +32,7 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
     (hInfer : inferInternal (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
     let input := resolveType annotation
     ∃ output, inferInternal (body.apply .only)
-        (entries.set (n + 1) (.inr input)) fuel = .yield (some output) ∧
+        (entries.set (n + 1) ⟨n, .inr annotation, entries⟩) fuel = .yield (some output) ∧
       typ = .TFn input output := by
   cases hBody : inferInternal (body.apply .only)
       (entries.set (n + 1) (.inr (resolveType annotation))) fuel <;>
@@ -40,11 +40,11 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
   exact ⟨_, rfl, (Option.some.inj hInfer).symm⟩
 
 -- Certification reuses inference monotonicity and derives its other inference facts locally.
-private def entryFits (entry : Option ValOrTyp) (typ : Typ) : Prop :=
+private def entryFits (entry : Option CompilerValOrTyp) (typ : Typ) : Prop :=
   ∃ fuel,
     (match entry with
-    | some (.inl (.mk _ value captured)) => inferInternal value.asTrm (captured.map .inl) fuel
-    | some (.inr input) => .yield (some input)
+    | some ⟨_, .inl value, captured⟩ => inferInternal value.asTrm captured fuel
+    | some ⟨_, .inr input, _⟩ => .yield (some (resolveType input))
     | none => .yield none) = .yield (some typ)
 
 /-- Replacing hypothetical entries by inferable runtime values preserves inference. -/
