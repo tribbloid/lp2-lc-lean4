@@ -7,7 +7,7 @@ open Lp2lc.Active.Util
 /-- A value or type together with its lexical context and captured compiler bindings. -/
 structure CompilerValOrTyp : Type 2 where
   n : Nat
-  value : Val n ⊕ Typ n
+  either : Val n ⊕ Typ n
   captured : NatBindings CompilerValOrTyp
 
 abbrev CompilerBindings := NatBindings CompilerValOrTyp -- append-only
