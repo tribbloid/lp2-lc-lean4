@@ -183,7 +183,20 @@ def Monotone : Prop :=
 
 end
 
-abbrev OutcomeOpt (T : Type u) := Rec.Outcome (Option T)
+/--
+value returned by runtime execution, both are considered safe assuming best effort
+
+don't use it to represent compiletime results, in which stage corrupted state is equivalent to error
+-/
+inductive Return (T : Type u)
+  /-- Some value of type `T`. -/
+  | some (val : T)
+  /-- Runtime panic due to the program being corrupted
+  (e.g. primitive operation executing to a different type, function executing to a term that violates uniformity, etc.)
+  corrupted state cannot be avoided, avoiding it is not the responsibility of the compiler -/
+  | corruption
+
+-- abbrev OutcomeOpt (T : Type u) := Rec.Outcome (Option T) -- TODO: useless?
 end Rec
 
 abbrev RecOpt (T : Type u) := Rec (Option T)
