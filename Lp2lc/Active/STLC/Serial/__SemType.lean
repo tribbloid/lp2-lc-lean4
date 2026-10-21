@@ -54,7 +54,7 @@ theorem termCheck {n} (trm : Trm n) (bindings : CompilerBindings)
     | ref carrier under =>
       simp only [semType, check, Rec.Outcome.getOrElse] at hType ⊢
       cases hEntry : bindings under.sourceIndex.down <;>
-        (try cases ‹CompilerTyp›) <;> (try cases ‹Val _ ⊕ Typ _›)
+        (try cases ‹CompilerTyp ⊕ ExeVal›) <;> (try cases ‹CompilerTyp›) <;> (try cases ‹ExeVal›)
       all_goals simp only [hEntry] at hType ⊢
       all_goals first | exact hType | exact ih _ _ hFuel hType
     | apply fn arg =>

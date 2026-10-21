@@ -34,7 +34,7 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
   repeat split at hInfer
   all_goals simp_all
   all_goals cases ‹Option Typ› <;> simp only [Option.map] at hInfer
-  all_goals try cases hInferCompilerTyp
+  all_goals try cases hInfer
   all_goals exact ⟨_, rfl, rfl⟩
 
 private def entryFits (entry : Option (CompilerTyp ⊕ ExeVal)) (typ : Typ) : Prop :=
@@ -60,7 +60,7 @@ private theorem inferReplace {trm : Trm n}
       | fn annotation body =>
         obtain ⟨output, hBody, hType⟩ := inferFnSuccess hInfer
         subst typ
-        obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) ⟨n, .inr annotation, target⟩)
+        obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) (.inl ⟨n, annotation, .empty⟩))
           (by
             intro index inputTyp
             simp only [NatBindings.set, List.lookup]
@@ -108,7 +108,7 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
       | ref carrier under =>
         cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeVal›)
         all_goals simp only [infer, inferInternal.eq_4, NatBindings.getMap, hBinding,
-          Option.map, toCompiler, eval.eq_3] at hInfer ⊢
+          Option.map, eval.eq_3] at hInfer ⊢
         all_goals first | cases hInfer | exact ⟨inferFuel, hInfer⟩
       | apply fn arg =>
         obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
@@ -137,13 +137,13 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
                   rcases Pre.AST.TFn.inj hFnType with ⟨hInput, hOutput⟩
                   subst fnOutput
                   let bodyBindings := captured.set (context + 1) (.mk argContext argValue argCaptured)
-                  obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace (target := bodyBindings.map toCompiler)
+                  obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace (target := bodyBindings.map .inr)
                     (by
-                      have typedArg : entryFits (some ⟨_, .inl argValue, argCaptured.map toCompiler⟩) input :=
+                      have typedArg : entryFits (some (.inr ⟨_, argValue, argCaptured⟩)) input :=
                         ⟨argInferFuel, hArgValue⟩
                       intro index inputTyp hSource
                       simp only [bodyBindings, NatBindings.getMap, NatBindings.set, List.lookup] at hSource ⊢
-                      split at hSource <;> simp_all [entryFits, toCompiler, NatBindings.map])
+                      split at hSource <;> simp_all [entryFits, NatBindings.map])
                     hBody
                   simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
                     ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
