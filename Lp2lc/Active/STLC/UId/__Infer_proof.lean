@@ -5,7 +5,7 @@ open Lp2lc.Active.Util Root Root.Trm
 
 section variable {refs : UIdRefs} [build : BuildEnv refs]
 
-/-- Every completed evaluation succeeds, and its value can be inferred at the claimed type. -/
+/-- Evaluation cannot reject; every returned value can be inferred at the claimed type. -/
 def safety (trm : refs.base.Trm) (typ : refs.base.Typ) : Prop :=
   trm.eval.isSemiDecidable
     (λ value => value.asTrm.infer.isDecidable (λ inferred => inferred = typ))
