@@ -1,4 +1,5 @@
 import «Lp2lc».Active.STLC.Serial.Eval
+import «Lp2lc».Active.STLC.UId.Eval
 import «Tests».STLC.TrmDemo
 
 namespace Tests.STLC.EvalSpec
@@ -36,5 +37,34 @@ example : AST.eval (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empty 2 = .outO
 example : literalResult (AST.eval Trm.primitiveIdFnOnFalse knownBindings 2) = some "false" := rfl
 
 end eval
+
+namespace UId
+open Root.Trm
+
+section eval
+variable (refs : UIdRefs) [build : BuildEnv refs]
+
+private def literal : refs.base.Trm := .val (.lit "false")
+private def identity : refs.base.Trm := .val (.fn .TLit (.mk (λ carrier => .ref carrier .same)))
+
+example : eval (literal refs) 0 = .outOfFuel := rfl
+example : eval (literal refs) 1 = .yield (some (.some (.lit "false"))) := rfl
+example : eval (.apply (literal refs) (literal refs)) 1 = .outOfFuel := rfl
+example : eval (.apply (literal refs) (literal refs)) 2 = .yield none := rfl
+example : eval (.apply (literal refs) (.apply (identity refs) (literal refs))) 2 = .outOfFuel := rfl
+example : eval (.apply (identity refs) (literal refs)) 1 = .outOfFuel := rfl
+example : eval (.apply (identity refs) (literal refs)) 2 = .yield (some (.some (.lit "false"))) := by
+  change eval (refs := refs) (.ref (build.uid2val (.lit "false")).val .same) 1 = _
+  simp only [eval.eq_4, Root.mapRef.eq_1, BuildEnv.uid2val, KVEquiv.rightInv, Sum.getRight?, Option.map]
+
+example : eval (refs := refs) (.ref (build.uid2val (.lit "outer")).val .same) 1 =
+    .yield (some (.some (.lit "outer"))) := by
+  simp only [eval.eq_4, Root.mapRef.eq_1, BuildEnv.uid2val, KVEquiv.rightInv, Sum.getRight?, Option.map]
+
+example : eval (refs := refs) (.ref (build.uid2bothCtx.inv (.inl .TLit)) .same) 1 = .yield none := by
+  simp only [eval.eq_4, Root.mapRef.eq_1, KVEquiv.rightInv, Sum.getRight?, Option.map]
+
+end eval
+end UId
 
 end Tests.STLC.EvalSpec
