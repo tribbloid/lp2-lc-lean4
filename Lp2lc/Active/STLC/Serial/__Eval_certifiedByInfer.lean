@@ -43,8 +43,8 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
 private def entryFits (entry : Option (CompilerTyp ⊕ ExeVal)) (typ : Typ) : Prop :=
   ∃ fuel,
     (match entry with
-    | some (.inl ⟨_, input, _⟩) => .yield (some (resolveType input))
     | some (.inr ⟨_, value, captured⟩) => inferInternal value.asTrm (captured.map .inr) fuel
+    | some (.inl ⟨_, input, _⟩) => .yield (some (resolveType input))
     | none => .yield none) = .yield (some typ)
 
 /-- Replacing hypothetical entries by inferable runtime values preserves inference. -/
