@@ -4,10 +4,10 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-/-- A value or type together with its lexical context and captured compiler bindings. -/
+/-- A type together with its lexical context and captured type bindings. -/
 structure CompilerTyp : Type 2 where
   n : Nat
-  either : Typ n -- CompilerTyp can bind other type but not value (singleton type is still a type)
+  either : Typ n -- Compiler types capture only other types; singleton types remain types.
   captured : NatBindings CompilerTyp
 
 abbrev CompilerBindings := NatBindings (CompilerTyp ⊕ ExeVal) -- append-only

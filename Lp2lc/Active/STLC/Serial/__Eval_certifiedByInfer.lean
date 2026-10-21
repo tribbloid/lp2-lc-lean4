@@ -39,7 +39,7 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
     (try cases ‹Option Typ›) <;> simp_all [inferInternal.eq_3, Rec.Outcome.map, Option.map]
   exact ⟨_, rfl, (Option.some.inj hInfer).symm⟩
 
--- Certification reuses inference monoCompilerTypives its other inference facts locally.
+-- Certification uses inference monotonicity and establishes the remaining inference facts locally.
 private def entryFits (entry : Option CompilerValOrTyp) (typ : Typ) : Prop :=
   ∃ fuel,
     (match entry with
