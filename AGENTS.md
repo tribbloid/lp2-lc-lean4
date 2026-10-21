@@ -16,7 +16,21 @@ subtask that shall not be violated:
 - code comment
 - prompts & instructions
 
-A subagent MUST be launched at the end of each task or subtask to obstruct any violation.
+A subagent MUST be launched at the end of each task or subtask to obstruct any violation. The reviewer must independently
+read applicable rules and inspect the complete task diff, including tests and helpers, without adopting the author's
+assessment.
+
+- Report **PASS**, **FAIL**, or **UNRESOLVED** for each applicable rule, with the rule text and concrete diff evidence.
+      A passing build does not establish compliance with other rules.
+- For every code-size restriction, record its scope and starting revision. Measure code characters excluding comments
+      and whitespace, and nonblank code lines, before and after, per file and across the complete affected code.
+      Growth in either metric within the restricted scope triggers the growth rule; fewer lines cannot excuse more
+      characters. Include required tests and helpers; do not compress formatting or relocate code to evade the limit.
+- Explicitly check the necessity and duplication of added tests, fixtures, and proof boilerplate as well as production
+      code. Repeated checks must be shared or removed.
+- **FAIL** and **UNRESOLVED**, including qualified reviewer warnings, block dependent work and compliance claims.
+      Resolve them with a correction and renewed review, or obtain human approval where the applicable rule requires it.
+      The author cannot dismiss a finding by choosing a more favorable size metric.
 
 ### Do
 
