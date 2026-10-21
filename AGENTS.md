@@ -126,7 +126,8 @@ When working on an issue that contains multiple subtasks:
 
 #### File Name
 
-- The `__` file prefix indicates experimental, self-contained code; non-experimental code should not import it.
+- The `__` file prefix indicates experimental, self-contained code; no other files should import from it (except other
+ experimental files that share the same name prefix).
 
 #### Definitions
 
