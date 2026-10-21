@@ -90,7 +90,7 @@ theorem main (fuel : Nat) (typ : Typ)
         all_goals simp [hFnEval, Rec.Return.isSafe] at hFnSafety
         case outOfFuel =>
           cases eval arg bindings evalFuel <;> simp [eval.eq_4, hFnEval]
-        case yield.some.corruption =>
+        case yield.some.corrupted =>
           cases hArgEval : eval arg bindings evalFuel <;>
             (try cases ‹Option (Rec.Return ExeVal)›) <;> (try cases ‹Rec.Return ExeVal›) <;>
             simp_all [eval.eq_4, Rec.Return.isSafe]
@@ -107,7 +107,7 @@ theorem main (fuel : Nat) (typ : Typ)
                 (try cases ‹Option (Rec.Return ExeVal)›) <;>
                 (try cases ‹Rec.Return ExeVal›) <;> (try cases ‹ExeVal›)
               all_goals simp [hArgEval, Rec.Return.isSafe] at hArgSafety
-              case yield.some.corruption =>
+              case yield.some.corrupted =>
                 simp [eval.eq_4, hFnEval, hArgEval, Rec.Return.isSafe]
               case outOfFuel => simp [eval.eq_4, hFnEval, hArgEval]
               case yield.some.some.mk argContext argValue argCaptured =>

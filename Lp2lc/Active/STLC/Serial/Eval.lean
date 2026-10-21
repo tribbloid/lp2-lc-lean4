@@ -19,8 +19,8 @@ def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt (Rec.Ret
       | .yield (some (.some (.mk context (.fn _ body) captured))), .yield (some (.some value)) =>
         eval (body.apply .only)
           (captured.set (context + 1) value) fuel
-      | .yield (some corrupted), .yield (some _)
-      | .yield (some _), .yield (some corrupted) => .yield (some corrupted)
+      | .yield (some .corrupted), .yield (some _)
+      | .yield (some _), .yield (some .corrupted) => .yield (some .corrupted)
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
 
