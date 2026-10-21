@@ -12,17 +12,6 @@ structure CompilerTyp : Type 2 where
 
 abbrev CompilerBindings := NatBindings (CompilerTyp ⊕ ExeVal) -- append-only
 
-def ExeValue.toCompiler (self : ExeVal) : CompilerTyp :=
-  match self with
-  | ⟨n, value, captured⟩ =>
-    ⟨n, .inl value, ⟨captured.entries.map (λ entry => (entry.1, entry.2.toCompiler))⟩⟩
-decreasing_by
-  cases ‹Nat × ExeVal›
-  have := List.sizeOf_lt_of_mem (by assumption)
-  cases captured
-  simp_all
-  omega
-
 /-- Erase an STLC type's context index without consuming inference or checking fuel. -/
 def AST.resolveType {n} (self : Typ n) : Typ :=
   match self with

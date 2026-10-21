@@ -20,11 +20,11 @@ def check {n} (self : Trm n) (typ : Typ)
       | .val (.fn annotation body), .TFn input output =>
         resolveType annotation = input ∧
           (check (body.apply .only) output
-            (bindings.set (n + 1) ⟨n, .inr annotation, bindings⟩) fuel).getOrElse False
+            (bindings.set (n + 1) (.inl ⟨n, annotation, .empty⟩)) fuel).getOrElse False
       | .ref _ under, _ =>
         match bindings under.sourceIndex.down with
-        | some ⟨_, .inl value, captured⟩ => (check value.asTrm typ captured fuel).getOrElse False
-        | some ⟨_, .inr bound, _⟩ => resolveType bound = typ
+        | some (.inl ⟨_, bound, _⟩) => resolveType bound = typ
+        | some (.inr ⟨_, value, captured⟩) => (check value.asTrm typ (captured.map .inr) fuel).getOrElse False
         | none => False
       | .apply fn arg, _ =>
         ∃ input, (check fn (.TFn input typ) bindings fuel).getOrElse False ∧

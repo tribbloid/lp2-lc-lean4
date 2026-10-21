@@ -1,6 +1,6 @@
 import «Lp2lc».Active.STLC.Serial.Infra
 namespace Lp2lc.Active.STLC
-open Lp2lc.Active.Util ExeValue
+open Lp2lc.Active.Util
 
 namespace AST
 variable {P : Parameters}
@@ -25,11 +25,11 @@ def inferInternal {n} (self : Trm n) (bindings : CompilerBindings) : RecOpt Typ 
   | _ + 1, .val (.lit _) => .yield (some .TLit)
   | fuel + 1, .val (.fn tIn body) =>
     (inferInternal (body.apply .only)
-      (bindings.set (n + 1) ⟨n, .inr tIn, bindings⟩) fuel).map (Option.map (.TFn (resolveType tIn)))
+      (bindings.set (n + 1) (.inl ⟨n, tIn, .empty⟩)) fuel).map (Option.map (.TFn (resolveType tIn)))
   | fuel + 1, .ref _ under =>
     match bindings under.sourceIndex.down with
-    | some ⟨_, .inl value, captured⟩ => inferInternal value.asTrm captured fuel
-    | some ⟨_, .inr typ, _⟩ => .yield (some typ.resolveType)
+    | some (.inl ⟨_, typ, _⟩) => .yield (some typ.resolveType)
+    | some (.inr ⟨_, value, captured⟩) => inferInternal value.asTrm (captured.map .inr) fuel
     | none => .yield none
   | fuel + 1, .apply fn arg =>
     match inferInternal fn bindings fuel, inferInternal arg bindings fuel with
@@ -40,7 +40,7 @@ def inferInternal {n} (self : Trm n) (bindings : CompilerBindings) : RecOpt Typ 
 
 /-- Infer using runtime values only, resolving each captured value to its type. -/ -- TODO: remove this? too trivial
 def infer {n} (self : Trm n) (exeBindings : ExeBindings := .empty) : RecOpt Typ :=
-  self.inferInternal (exeBindings.map toCompiler)
+  self.inferInternal (exeBindings.map .inr)
 
 def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ: Typ) :=
   self.inferInternal bindings fuel = .yield (.some typ)

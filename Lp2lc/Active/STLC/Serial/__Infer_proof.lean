@@ -3,7 +3,7 @@ import «Lp2lc».Active.STLC.Serial.Eval
 
 namespace Lp2lc.Active.STLC.AST
 
-open Lp2lc.Active.Util ExeValue
+open Lp2lc.Active.Util
 
 variable {n} (trm : Trm n) (bindings : ExeBindings)
 
@@ -28,7 +28,7 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
     (hInfer : inferInternal (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
     let input := resolveType annotation
     ∃ output, inferInternal (body.apply .only)
-        (entries.set (n + 1) ⟨n, .inr annotation, entries⟩) fuel = .yield (some output) ∧
+        (entries.set (n + 1) (.inl ⟨n, annotation, .empty⟩)) fuel = .yield (some output) ∧
       typ = .TFn input output := by
   simp only [inferInternal.eq_3, Rec.Outcome.map] at hInfer
   repeat split at hInfer
@@ -37,12 +37,12 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
   all_goals try cases hInferCompilerTyp
   all_goals exact ⟨_, rfl, rfl⟩
 
-private def entryFits (entry : Option CompilerValOrTyp) (typ : Typ) : Prop :=
+private def entryFits (entry : Option (CompilerTyp ⊕ ExeVal)) (typ : Typ) : Prop :=
   match entry with
   | none => False
-  | some ⟨_, .inr input, _⟩ => resolveType input = typ
-  | some ⟨_, .inl value, captured⟩ =>
-    ∃ fuel, inferInternal value.asTrm captured fuel = .yield (some typ)
+  | some (.inl ⟨_, input, _⟩) => resolveType input = typ
+  | some (.inr ⟨_, value, captured⟩) =>
+    ∃ fuel, inferInternal value.asTrm (captured.map .inr) fuel = .yield (some typ)
 
 private theorem inferReplace {trm : Trm n}
     {source target : CompilerBindings} {fuel : Nat} {typ : Typ}
