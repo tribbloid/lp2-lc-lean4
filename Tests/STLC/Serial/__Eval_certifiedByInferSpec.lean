@@ -10,7 +10,7 @@ section eval_certified
 
 -- The test adapter infers first, independently of the exact evaluation budget.
 private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty)
-    (inferFuel : Nat := 8) : RecOpt (Rec.Return ExeVal) :=
+    (inferFuel : Nat := 8) : RecOpt (Return ExeVal) :=
   match hInfer : trm.infer bindings inferFuel with
   | .yield (some _) => λ fuel =>
       (trm.eval_certified bindings hInfer fuel).map (λ payload => some (payload.map Subtype.val))

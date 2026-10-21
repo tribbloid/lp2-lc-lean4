@@ -39,7 +39,7 @@ theorem termEval {n} (trm) (bindings : ExeBindings) :
     all_goals
       repeat split at hEval
       all_goals simp_all
-      all_goals subst_vars; cases ‹Rec.Return ExeVal› <;>
+      all_goals subst_vars; cases ‹Return ExeVal› <;>
         (try cases ‹ExeVal›) <;> (try cases ‹Val _›) <;> rfl
 
 end Monotone

@@ -115,15 +115,15 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
         have hFnSafety := ih fn bindings inferFuel (.TFn input typ) hFn
         have hArgSafety := ih arg bindings inferFuel input hArg
         cases hFnEval : eval fn bindings evalFuel <;>
-          (try cases ‹Option (Rec.Return ExeVal)›) <;>
-          (try cases ‹Rec.Return ExeVal›) <;> (try cases ‹ExeVal›)
-        all_goals simp [hFnEval, Rec.Return.isSafe] at hFnSafety
+          (try cases ‹Option (Return ExeVal)›) <;>
+          (try cases ‹Return ExeVal›) <;> (try cases ‹ExeVal›)
+        all_goals simp [hFnEval, Return.isSafe] at hFnSafety
         case outOfFuel =>
           cases eval arg bindings evalFuel <;> simp [eval.eq_4, hFnEval]
         case yield.some.corrupted =>
           cases hArgEval : eval arg bindings evalFuel <;>
-            (try cases ‹Option (Rec.Return ExeVal)›) <;> (try cases ‹Rec.Return ExeVal›) <;>
-            simp_all [eval.eq_4, Rec.Return.isSafe]
+            (try cases ‹Option (Return ExeVal)›) <;> (try cases ‹Return ExeVal›) <;>
+            simp_all [eval.eq_4, Return.isSafe]
         case yield.some.some.mk context fnValue captured =>
           obtain ⟨fnInferFuel, hFnValue⟩ := hFnSafety
           cases fnInferFuel with
@@ -135,11 +135,11 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
               cases Option.some.inj hFnValue
             | fn annotation body =>
               cases hArgEval : eval arg bindings evalFuel <;>
-                (try cases ‹Option (Rec.Return ExeVal)›) <;>
-                (try cases ‹Rec.Return ExeVal›) <;> (try cases ‹ExeVal›)
-              all_goals simp [hArgEval, Rec.Return.isSafe] at hArgSafety
+                (try cases ‹Option (Return ExeVal)›) <;>
+                (try cases ‹Return ExeVal›) <;> (try cases ‹ExeVal›)
+              all_goals simp [hArgEval, Return.isSafe] at hArgSafety
               case yield.some.corrupted =>
-                simp [eval.eq_4, hFnEval, hArgEval, Rec.Return.isSafe]
+                simp [eval.eq_4, hFnEval, hArgEval, Return.isSafe]
               case outOfFuel => simp [eval.eq_4, hFnEval, hArgEval]
               case yield.some.some.mk argContext argValue argCaptured =>
                 obtain ⟨argInferFuel, hArgValue⟩ := hArgSafety
@@ -165,9 +165,9 @@ theorem main (fuel : Nat) (typ : Typ)
   intro evalFuel
   have safe := inferEvalSafety trm bindings fuel typ hInfer evalFuel
   cases result : trm.eval bindings evalFuel <;>
-    (try cases ‹Option (Rec.Return ExeVal)›) <;>
-    (try cases ‹Rec.Return ExeVal›) <;> (try cases ‹ExeVal›) <;>
-    simp_all [Rec.Return.isSafe]
+    (try cases ‹Option (Return ExeVal)›) <;>
+    (try cases ‹Return ExeVal›) <;> (try cases ‹ExeVal›) <;>
+    simp_all [Return.isSafe]
   obtain ⟨valueFuel, typed⟩ := safe
   exact ⟨valueFuel, by rw [typed]⟩
 

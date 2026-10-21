@@ -40,6 +40,7 @@ theorem termEval {refs : UIdRefs} [build : BuildEnv refs] (trm : refs.base.Trm) 
     all_goals
       repeat split at hEval
       all_goals simp_all
+      all_goals subst_vars; cases ‹Return refs.base.Val› <;> (try cases ‹refs.base.Val›) <;> rfl
 
 end Monotone
 
