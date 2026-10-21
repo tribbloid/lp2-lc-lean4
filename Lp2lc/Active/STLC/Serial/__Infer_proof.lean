@@ -114,11 +114,17 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
         obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
         have hFnSafety := ih fn bindings inferFuel (.TFn input typ) hFn
         have hArgSafety := ih arg bindings inferFuel input hArg
-        cases hFnEval : eval fn bindings evalFuel <;> (try cases ‹Option ExeVal›) <;> (try cases ‹ExeVal›)
-        all_goals simp [hFnEval] at hFnSafety
+        cases hFnEval : eval fn bindings evalFuel <;>
+          (try cases ‹Option (Rec.Return ExeVal)›) <;>
+          (try cases ‹Rec.Return ExeVal›) <;> (try cases ‹ExeVal›)
+        all_goals simp [hFnEval, Rec.Return.isSafe] at hFnSafety
         case outOfFuel =>
           cases eval arg bindings evalFuel <;> simp [eval.eq_4, hFnEval]
-        case yield.some.mk context fnValue captured =>
+        case yield.some.corruption =>
+          cases hArgEval : eval arg bindings evalFuel <;>
+            (try cases ‹Option (Rec.Return ExeVal)›) <;> (try cases ‹Rec.Return ExeVal›) <;>
+            simp_all [eval.eq_4, Rec.Return.isSafe]
+        case yield.some.some.mk context fnValue captured =>
           obtain ⟨fnInferFuel, hFnValue⟩ := hFnSafety
           cases fnInferFuel with
           | zero => simp [infer] at hFnValue
@@ -128,25 +134,29 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
               simp only [Val.asTrm, infer, infer.eq_2, Rec.Outcome.yield.injEq] at hFnValue
               cases Option.some.inj hFnValue
             | fn annotation body =>
-                cases hArgEval : eval arg bindings evalFuel <;> (try cases ‹Option ExeVal›) <;> (try cases ‹ExeVal›)
-                all_goals simp [hArgEval] at hArgSafety
-                case outOfFuel => simp [eval.eq_4, hFnEval, hArgEval]
-                case yield.some.mk argContext argValue argCaptured =>
-                  obtain ⟨argInferFuel, hArgValue⟩ := hArgSafety
-                  obtain ⟨fnOutput, hBody, hFnType⟩ := inferFnSuccess hFnValue
-                  rcases Pre.AST.TFn.inj hFnType with ⟨hInput, hOutput⟩
-                  subst fnOutput
-                  let bodyBindings := captured.set (context + 1) (.mk argContext argValue argCaptured)
-                  obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace (target := bodyBindings)
-                    (by
-                      have typedArg : entryFits (some (.inr ⟨_, argValue, argCaptured⟩)) input :=
-                        ⟨argInferFuel, hArgValue⟩
-                      intro index inputTyp hSource
-                      simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
-                      split at hSource <;> simp_all [entryFits])
-                    hBody
-                  simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
-                    ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
+              cases hArgEval : eval arg bindings evalFuel <;>
+                (try cases ‹Option (Rec.Return ExeVal)›) <;>
+                (try cases ‹Rec.Return ExeVal›) <;> (try cases ‹ExeVal›)
+              all_goals simp [hArgEval, Rec.Return.isSafe] at hArgSafety
+              case yield.some.corruption =>
+                simp [eval.eq_4, hFnEval, hArgEval, Rec.Return.isSafe]
+              case outOfFuel => simp [eval.eq_4, hFnEval, hArgEval]
+              case yield.some.some.mk argContext argValue argCaptured =>
+                obtain ⟨argInferFuel, hArgValue⟩ := hArgSafety
+                obtain ⟨fnOutput, hBody, hFnType⟩ := inferFnSuccess hFnValue
+                rcases Pre.AST.TFn.inj hFnType with ⟨hInput, hOutput⟩
+                subst fnOutput
+                let bodyBindings := captured.set (context + 1) (.mk argContext argValue argCaptured)
+                obtain ⟨bodyFuel, hBodyTarget⟩ := inferReplace (target := bodyBindings)
+                  (by
+                    have typedArg : entryFits (some (.inr ⟨_, argValue, argCaptured⟩)) input :=
+                      ⟨argInferFuel, hArgValue⟩
+                    intro index inputTyp hSource
+                    simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
+                    split at hSource <;> simp_all [entryFits])
+                  hBody
+                simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
+                  ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
 
 /-- A successfully inferred type makes the executable term safe at that type. -/
 theorem main (fuel : Nat) (typ : Typ)
@@ -154,8 +164,10 @@ theorem main (fuel : Nat) (typ : Typ)
     safety trm bindings typ := by
   intro evalFuel
   have safe := inferEvalSafety trm bindings fuel typ hInfer evalFuel
-  cases result : trm.eval bindings evalFuel <;> (try cases ‹Option ExeVal›) <;> (try cases ‹ExeVal›) <;>
-    simp_all
+  cases result : trm.eval bindings evalFuel <;>
+    (try cases ‹Option (Rec.Return ExeVal)›) <;>
+    (try cases ‹Rec.Return ExeVal›) <;> (try cases ‹ExeVal›) <;>
+    simp_all [Rec.Return.isSafe]
   obtain ⟨valueFuel, typed⟩ := safe
   exact ⟨valueFuel, by rw [typed]⟩
 

@@ -85,11 +85,16 @@ theorem main (fuel : Nat) (typ : Typ)
         have hFnSafety := ih fn bindings fuel (.TFn input typ) hFn
         have hArgSafety := ih arg bindings fuel input hArg
         cases hFnEval : eval fn bindings evalFuel <;>
-          (try cases ‹Option ExeVal›) <;> (try cases ‹ExeVal›)
-        all_goals simp [hFnEval] at hFnSafety
+          (try cases ‹Option (Rec.Return ExeVal)›) <;>
+          (try cases ‹Rec.Return ExeVal›) <;> (try cases ‹ExeVal›)
+        all_goals simp [hFnEval, Rec.Return.isSafe] at hFnSafety
         case outOfFuel =>
           cases eval arg bindings evalFuel <;> simp [eval.eq_4, hFnEval]
-        case yield.some.mk context fnValue captured =>
+        case yield.some.corruption =>
+          cases hArgEval : eval arg bindings evalFuel <;>
+            (try cases ‹Option (Rec.Return ExeVal)›) <;> (try cases ‹Rec.Return ExeVal›) <;>
+            simp_all [eval.eq_4, Rec.Return.isSafe]
+        case yield.some.some.mk context fnValue captured =>
           obtain ⟨fnFuel, hFnValue⟩ := hFnSafety
           cases fnFuel with
           | zero => simp [semType, check, Rec.Outcome.getOrElse] at hFnValue
@@ -99,10 +104,13 @@ theorem main (fuel : Nat) (typ : Typ)
               simp [Val.asTrm, semType, check, Rec.Outcome.getOrElse] at hFnValue
             | fn annotation body =>
               cases hArgEval : eval arg bindings evalFuel <;>
-                (try cases ‹Option ExeVal›) <;> (try cases ‹ExeVal›)
-              all_goals simp [hArgEval] at hArgSafety
+                (try cases ‹Option (Rec.Return ExeVal)›) <;>
+                (try cases ‹Rec.Return ExeVal›) <;> (try cases ‹ExeVal›)
+              all_goals simp [hArgEval, Rec.Return.isSafe] at hArgSafety
+              case yield.some.corruption =>
+                simp [eval.eq_4, hFnEval, hArgEval, Rec.Return.isSafe]
               case outOfFuel => simp [eval.eq_4, hFnEval, hArgEval]
-              case yield.some.mk argContext argValue argCaptured =>
+              case yield.some.some.mk argContext argValue argCaptured =>
                 obtain ⟨hInput, hBody⟩ := hFnValue
                 let bodyBindings := captured.set (context + 1) (.mk argContext argValue argCaptured)
                 obtain ⟨bodyFuel, hBodyTarget⟩ := checkReplace (target := bodyBindings)
