@@ -193,7 +193,7 @@ inductive Return (T : Type u)
   | some (val : T)
   /-- Runtime panic when executable code violates an assumption, such as a primitive's result type
   or a binder's uniformity. -/
-  | corruption
+  | corrupted
 
 namespace Return
 variable {α : Type u} (self : Return α)
@@ -201,13 +201,13 @@ variable {α : Type u} (self : Return α)
 def map {β : Type v} (f : α → β) : Return β :=
   match self with
   | .some value => .some (f value)
-  | .corruption => .corruption
+  | corrupted => corrupted
 
 /-- Corruption is an allowed exit; returned values must satisfy the condition. -/
 def isSafe (condition : α → Prop) : Prop :=
   match self with
   | .some value => condition value
-  | .corruption => True
+  | corrupted => True
 
 end Return
 
