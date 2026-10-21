@@ -23,7 +23,7 @@ private theorem inferApplySuccess {fn arg : Trm n}
     (hInfer : infer (.apply fn arg) entries (fuel + 1) = .yield (some typ)) :
     ∃ input, infer fn entries fuel = .yield (some (.TFn input typ)) ∧
       infer arg entries fuel = .yield (some input) := by
-  simp only [inferInternal.eq_5] at hInfer
+  simp only [infer.eq_5] at hInfer
   repeat split at hInfer
   all_goals simp_all
   all_goals injection hInfer; subst_vars; exact ⟨_, rfl, rfl⟩
@@ -34,9 +34,9 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
     ∃ output, infer (body.apply .only)
         (entries.set (n + 1) ⟨n, annotation, .empty⟩) fuel = .yield (some output) ∧
       typ = .TFn input output := by
-  cases hBody : inferInternal (body.apply .only)
-      (entries.set (n + 1) (.inl ⟨n, annotation, .empty⟩)) fuel <;>
-    (try cases ‹Option Typ›) <;> simp_all [inferInternal.eq_3, Rec.Outcome.map, Option.map]
+  cases hBody : infer (body.apply .only)
+      (entries.set (n + 1) ⟨n, annotation, .empty⟩) fuel <;>
+    (try cases ‹Option Typ›) <;> simp_all [infer.eq_3, Rec.Outcome.map, Option.map]
   exact ⟨_, rfl, (Option.some.inj hInfer).symm⟩
 
 -- Certification uses inference monotonicity and establishes the remaining inference facts locally.
@@ -58,29 +58,29 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
     cases trm with
     | val value =>
       cases value with
-      | lit repr => exact ⟨1, by simpa only [inferInternal.eq_2] using hInfer⟩
+      | lit repr => exact ⟨1, by simpa only [infer.eq_2] using hInfer⟩
       | fn annotation body =>
         obtain ⟨output, hBody, rfl⟩ := inferFnSuccess hInfer
-        obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) (.inl ⟨n, annotation, .empty⟩))
+        obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
           (by
             intro index inputTyp
-            simp only [NatBindings.set, List.lookup]
+            simp only [CompilerBindings.get]
             split <;> first | exact id | exact hReplace index inputTyp) hBody
-        exact ⟨bodyFuel + 1, by simp only [inferInternal.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
+        exact ⟨bodyFuel + 1, by simp only [infer.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
     | ref carrier under =>
       obtain ⟨targetFuel, hTarget⟩ := hReplace under.sourceIndex.down typ
         ⟨fuel, by
-          simp only [inferInternal.eq_4] at hInfer
+          simp only [infer.eq_4] at hInfer
           split at hInfer <;> simp_all⟩
       exact ⟨targetFuel + 1, by
-        simp only [inferInternal.eq_4]
+        simp only [infer.eq_4]
         split <;> simp_all [entryFits]⟩
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
       obtain ⟨argFuel, hArgTarget⟩ := ih hReplace hArg
       exact ⟨max fnFuel argFuel + 1, by
-        rw [inferInternal.eq_5,
+        rw [infer.eq_5,
           Monotone.termInfer fn target fnFuel (max fnFuel argFuel) _ (Nat.le_max_left _ _) hFnTarget,
           Monotone.termInfer arg target argFuel (max fnFuel argFuel) _ (Nat.le_max_right _ _) hArgTarget]
         exact congrArg _ (ite_eq_left (rfl : input = input))⟩
@@ -98,8 +98,8 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
     | some (.mk context value captured) => .yield ⟨.mk context value captured, by
         rintro (_ | inferFuel) typ hInfer
         · cases hInfer
-        · simp only [infer, inferInternal.eq_4, NatBindings.getMap, hBinding, Option.map] at hInfer
-          exact ⟨inferFuel, by simpa only [infer, NatBindings.map] using hInfer⟩⟩
+        · simp only [infer, infer.eq_4, CompilerBindings.get, hBinding, Option.map] at hInfer
+          exact ⟨inferFuel, hInfer⟩⟩
   | fuel + 1, .apply fn arg =>
     (evalInternal fn bindings fuel).flatMap (λ fnResult =>
       match fnResult with
@@ -118,14 +118,14 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
                 rcases Pre.AST.TFn.inj hFnType with ⟨rfl, rfl⟩
                 rcases argResult with ⟨⟨argContext, argValue, argCaptured⟩, argSafe⟩
                 obtain ⟨argFuel, hArgValue⟩ := argSafe hArg
-                exact inferReplace (target := bodyBindings.map .inr)
+                exact inferReplace (target := bodyBindings)
                   (by
                     have typedArg : entryFits (some (.inr ⟨_, argValue, argCaptured⟩))
                         (resolveType annotation) :=
                       ⟨argFuel, hArgValue⟩
                     intro index inputTyp hSource
-                    simp only [bodyBindings, NatBindings.getMap, NatBindings.set, List.lookup] at hSource ⊢
-                    split at hSource <;> simp_all [entryFits, NatBindings.map]) hBody
+                    simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
+                    split at hSource <;> simp_all [entryFits]) hBody
           (evalInternal (body.apply .only) bodyBindings fuel).map (λ bodyResult =>
             ⟨bodyResult.val, λ hInfer => (bodyTyped hInfer).elim (λ _ => bodyResult.property)⟩)))
 

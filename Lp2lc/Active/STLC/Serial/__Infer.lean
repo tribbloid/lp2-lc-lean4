@@ -51,13 +51,13 @@ theorem termInfer (trm : Trm n)
     (infer trm bindings).Monotone := by
   intro less more result hFuel hInfer
   induction less generalizing n trm bindings more result with
-  | zero => simp [inferInternal] at hInfer
+  | zero => simp [infer] at hInfer
   | succ fuel ih =>
     cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
     replace hFuel := Nat.le_of_succ_le_succ hFuel
     cases trm <;> try cases ‹Val n›
     all_goals
-      simp only [inferInternal.eq_2, inferInternal.eq_3, inferInternal.eq_4, inferInternal.eq_5,
+      simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5,
         Rec.Outcome.map] at hInfer ⊢
       repeat split at hInfer
       all_goals simp_all

@@ -37,10 +37,10 @@ private theorem checkReplace {trm : Trm n}
         | TFn input output =>
           obtain ⟨hInput, hBody⟩ := hType
           obtain ⟨bodyFuel, hTarget⟩ := ih
-            (target := target.set (n + 1) (.inl ⟨n, annotation, .empty⟩))
+            (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
             (by
               intro index inputTyp
-              simp only [NatBindings.set, List.lookup]
+              simp only [CompilerBindings.get]
               split <;> first | exact id | exact hReplace index inputTyp) hBody
           exact ⟨bodyFuel + 1, hInput, hTarget⟩
     | ref carrier under =>
@@ -78,7 +78,7 @@ theorem main (fuel : Nat) (typ : Typ)
       | ref carrier under =>
         cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeVal›)
         all_goals simp only [semType, check, Rec.Outcome.getOrElse,
-          NatBindings.getMap, hBinding, Option.map, eval.eq_3] at hType ⊢
+          CompilerBindings.get, hBinding, Option.map, eval.eq_3] at hType ⊢
         all_goals first | contradiction | exact ⟨fuel, hType⟩
       | apply fn arg =>
         obtain ⟨input, hFn, hArg⟩ := hType
@@ -105,11 +105,11 @@ theorem main (fuel : Nat) (typ : Typ)
               case yield.some.mk argContext argValue argCaptured =>
                 obtain ⟨hInput, hBody⟩ := hFnValue
                 let bodyBindings := captured.set (context + 1) (.mk argContext argValue argCaptured)
-                obtain ⟨bodyFuel, hBodyTarget⟩ := checkReplace (target := bodyBindings.map .inr)
+                obtain ⟨bodyFuel, hBodyTarget⟩ := checkReplace (target := bodyBindings)
                   (by
                     intro index inputTyp hSource
-                    simp only [bodyBindings, NatBindings.getMap, NatBindings.set, List.lookup] at hSource ⊢
-                    split at hSource <;> simp_all [entryFits, NatBindings.map]) hBody
+                    simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
+                    split at hSource <;> simp_all [entryFits]) hBody
                 simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
                   ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
 
