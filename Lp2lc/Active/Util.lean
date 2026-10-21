@@ -183,6 +183,9 @@ def Monotone : Prop :=
 
 end
 
+end Rec
+
+
 /-- Runtime execution returns a value or reports corruption as an allowed runtime exit.
 
 Only returned values carry type certificates. Use `Option` separately for compiler rejection;
@@ -210,8 +213,6 @@ def isSafe (condition : α → Prop) : Prop :=
   | corrupted => True
 
 end Return
-
-end Rec
 
 abbrev RecOpt (T : Type u) := Rec (Option T)
 

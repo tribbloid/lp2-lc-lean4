@@ -7,7 +7,7 @@ namespace AST
 
 /-- Evaluate using the caller's bindings, preserving rejection separately from runtime corruption.
 Every recursive resolution consumes one unit of fuel. -/
-def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt (Rec.Return ExeVal) := λ fuel =>
+def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt (Return ExeVal) := λ fuel =>
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>

@@ -10,7 +10,7 @@ namespace Root.Trm
 Type-only receipts are rejected. Every recursive call consumes predecessor fuel; the callback
 receives only `.inr ()`, never the runtime receipt being substituted into its canonical body.
 -/
-def eval {refs : UIdRefs} [build : BuildEnv refs] (self : refs.base.Trm) : RecOpt refs.base.Val
+def eval {refs : UIdRefs} [build : BuildEnv refs] (self : refs.base.Trm) : RecOpt (Return refs.base.Val)
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
