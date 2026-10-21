@@ -95,9 +95,10 @@ When working on an issue that contains multiple subtasks:
     - **Refactoring/Cleanup** enforces code format and compliance without meaningful changes. DO NOT introduce or update
       type signatures, definitions, or proofs (even if missing or `sorry`). Preserve the existing code structure.
     - **Conjecturing** defines or revises proposition/type definitions, including those needed to state a proposition.
-        - Only add proofs with `sorry` as a placeholder.
-        - Strive for shorter abstractions. If a revision makes code longer (not comment), STOP IMMEDIATELY, commit the
+        - If a revision makes code longer (not comment), STOP IMMEDIATELY, commit the
           code, and ask for approval.
+        - Strive for shorter abstractions.
+        - Only add proofs with `sorry` as a placeholder.
         - DO NOT add definitions that repeat implementations or cases; use shared abstractions.
     - **Proving/Discharging/Refuting** proves an existing proposition.
         - DO NOT remove or modify any type or proposition.
