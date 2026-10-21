@@ -27,7 +27,7 @@ private def fnBindings : ExeBindings := (NatBindings.empty.set 0 fnValue).set 1 
 private def mixedBindings : ExeBindings := fnBindings.set 1 literalValue
 
 private def typeBindings : CompilerBindings :=
-  NatBindings.empty.set 0 (.inl ⟨7, .TFn .TLit .TLit, .empty⟩)
+  CompilerBindings.empty.set 0 ⟨7, .TFn .TLit .TLit, .empty⟩
 
 private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
 
@@ -89,20 +89,21 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
       (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 5 .TLit
   | _ => false
 
-#guard (FreeCapture.directRef.inferInternal typeBindings).shouldYields 1 (.TFn .TLit .TLit)
+#guard (FreeCapture.directRef.infer typeBindings).shouldYields 1 (.TFn .TLit .TLit)
 
-#guard (FreeCapture.capturedRef.inferInternal typeBindings).shouldYields 2
+#guard (FreeCapture.capturedRef.infer typeBindings).shouldYields 2
   (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard (FreeCapture.capturedRefOnFalse.inferInternal typeBindings).shouldYields 3 (.TFn .TLit .TLit)
+#guard (FreeCapture.capturedRefOnFalse.infer typeBindings).shouldYields 3 (.TFn .TLit .TLit)
 
-#guard (AST.inferInternal (.apply FreeCapture.directRef primitiveIdFn) typeBindings).shouldFail 3
+#guard (AST.infer (.apply FreeCapture.directRef primitiveIdFn) typeBindings).shouldFail 3
 
 #guard match FreeCapture.capturedRef with
   | .val value =>
-    let bindings := (typeBindings.set 0 (.inl ⟨0, .TLit, .empty⟩)).set 1 (.inr ⟨0, value, fnBindings⟩)
-    (innerRef.inferInternal bindings).shouldYields 5 (.TFn .TLit (.TFn .TLit .TLit)) ∧
-      (AST.inferInternal (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 6 (.TFn .TLit .TLit)
+    let bindings := (CompilerBindings.fromRuntime (NatBindings.empty.set 1 ⟨0, value, fnBindings⟩)).set
+      0 ⟨0, .TLit, .empty⟩
+    (innerRef.infer bindings).shouldYields 5 (.TFn .TLit (.TFn .TLit .TLit)) ∧
+      (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 6 (.TFn .TLit .TLit)
   | _ => false
 
 #guard Malformed.WrongTypeIdFnOnItself.infer.shouldFail 3
