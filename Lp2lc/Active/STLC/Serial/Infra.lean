@@ -11,7 +11,24 @@ structure CompilerTyp : Type 2 where
   captured : NatBindings CompilerTyp
 
 /-- Breakpoint values seed inference; subsequent bindings must contain only hypothetical types. -/
-abbrev CompilerBindings := NatBindings (CompilerTyp ⊕ ExeVal)
+inductive CompilerBindings where
+  | fromRuntime (bindings : ExeBindings)
+  | set (self : CompilerBindings) (index : Nat) (typ : CompilerTyp)
+
+namespace CompilerBindings
+
+def empty : CompilerBindings := .fromRuntime .empty
+
+def get (self : CompilerBindings) (index : Nat) : Option (CompilerTyp ⊕ ExeVal) :=
+  match self with
+  | .fromRuntime bindings => (bindings index).map .inr
+  | .set bindings key typ => if key = index then some (.inl typ) else bindings.get index
+
+instance : CoeFun CompilerBindings (λ _ => Nat → Option (CompilerTyp ⊕ ExeVal)) := ⟨get⟩
+
+instance : Coe ExeBindings CompilerBindings := ⟨.fromRuntime⟩
+
+end CompilerBindings
 
 /-- Erase an STLC type's context index without consuming inference or checking fuel. -/
 def AST.resolveType {n} (self : Typ n) : Typ :=

@@ -19,31 +19,27 @@ local instance typDecidableLE : DecidableLE (Pre.AST P .typ)
       (@instDecidableAnd _ _ (typDecidableLE a c) (typDecidableLE b d))
 
 /-- Infer using runtime values or hypothetical types, resolving runtime values in their captured environments. -/
-def inferInternal {n} (self : Trm n) (bindings : CompilerBindings) : RecOpt Typ := λ fuel =>
+def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Typ := λ fuel =>
   match fuel, self with
   | 0, _ => .outOfFuel
   | _ + 1, .val (.lit _) => .yield (some .TLit)
   | fuel + 1, .val (.fn tIn body) =>
-    (inferInternal (body.apply .only)
-      (bindings.set (n + 1) (.inl ⟨n, tIn, .empty⟩)) fuel).map (Option.map (.TFn (resolveType tIn)))
+    (infer (body.apply .only)
+      (bindings.set (n + 1) ⟨n, tIn, .empty⟩) fuel).map (Option.map (.TFn (resolveType tIn)))
   | fuel + 1, .ref _ under =>
     match bindings under.sourceIndex.down with
     | some (.inl ⟨_, typ, _⟩) => .yield (some typ.resolveType)
-    | some (.inr ⟨_, value, captured⟩) => inferInternal value.asTrm (captured.map .inr) fuel
+    | some (.inr ⟨_, value, captured⟩) => infer value.asTrm captured fuel
     | none => .yield none
   | fuel + 1, .apply fn arg =>
-    match inferInternal fn bindings fuel, inferInternal arg bindings fuel with
+    match infer fn bindings fuel, infer arg bindings fuel with
     | .yield (some (.TFn tIn tOut)), .yield (some argTyp) =>
       .yield (if argTyp ≤ tIn then some tOut else none)
     | .yield _, .yield _ => .yield none
     | _, _ => .outOfFuel
 
-/-- Infer using runtime values only, resolving each captured value to its type. -/ -- TODO: remove this? too trivial
-def infer {n} (self : Trm n) (exeBindings : ExeBindings := .empty) : RecOpt Typ :=
-  self.inferInternal (exeBindings.map .inr)
-
 def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ: Typ) :=
-  self.inferInternal bindings fuel = .yield (.some typ)
+  self.infer bindings fuel = .yield (.some typ)
 
 variable {n : Nat}
 
@@ -52,7 +48,7 @@ namespace Monotone
 /-- Every completed inference result, including rejection, is preserved when fuel increases. -/
 theorem termInfer (trm : Trm n)
     (bindings : CompilerBindings) :
-    (inferInternal trm bindings).Monotone := by
+    (infer trm bindings).Monotone := by
   intro less more result hFuel hInfer
   induction less generalizing n trm bindings more result with
   | zero => simp [inferInternal] at hInfer
@@ -65,10 +61,6 @@ theorem termInfer (trm : Trm n)
         Rec.Outcome.map] at hInfer ⊢
       repeat split at hInfer
       all_goals simp_all
-
-/-- Runtime inference preserves every completed result when fuel increases. -/
-theorem termInferRuntime (trm : Trm n) (bindings : ExeBindings := .empty) :
-    (trm.infer bindings).Monotone := termInfer trm (bindings.map .inr)
 
 end Monotone
 

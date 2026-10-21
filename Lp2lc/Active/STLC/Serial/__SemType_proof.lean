@@ -11,13 +11,13 @@ variable {n} (trm : Trm n) (bindings : ExeBindings)
 /-- Evaluation cannot reject, and every returned closure has the requested type. -/
 def safety (typ : Typ) : Prop :=
   (trm.eval bindings).isSemiDecidable (λ result =>
-    ∃ fuel, semType result.value.asTrm (result.captured.map .inr) fuel typ)
+    ∃ fuel, semType result.value.asTrm result.captured fuel typ)
 
 private def entryFits (entry : Option (CompilerTyp ⊕ ExeVal)) (typ : Typ) : Prop :=
   match entry with
   | none => False
   | some (.inl ⟨_, input, _⟩) => resolveType input = typ
-  | some (.inr ⟨_, value, captured⟩) => ∃ fuel, semType value.asTrm (captured.map .inr) fuel typ
+  | some (.inr ⟨_, value, captured⟩) => ∃ fuel, semType value.asTrm captured fuel typ
 
 private theorem checkReplace {trm : Trm n}
     {source target : CompilerBindings} {fuel : Nat} {typ : Typ}
@@ -65,7 +65,7 @@ private theorem checkReplace {trm : Trm n}
 
 /-- Semantic typing excludes evaluation rejection and preserves the result's type. -/
 theorem main (fuel : Nat) (typ : Typ)
-    (hType : semType trm (bindings.map .inr) fuel typ) : safety trm bindings typ := by
+    (hType : semType trm bindings fuel typ) : safety trm bindings typ := by
   intro evalFuel
   induction evalFuel generalizing n trm bindings fuel typ with
   | zero => trivial

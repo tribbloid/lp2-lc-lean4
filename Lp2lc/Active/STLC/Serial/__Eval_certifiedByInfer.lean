@@ -20,19 +20,19 @@ private def preservesType (source target : RecOpt Typ) : Prop :=
   ∀ {fuel typ}, source fuel = .yield (some typ) → ∃ targetFuel, target targetFuel = .yield (some typ)
 
 private theorem inferApplySuccess {fn arg : Trm n}
-    (hInfer : inferInternal (.apply fn arg) entries (fuel + 1) = .yield (some typ)) :
-    ∃ input, inferInternal fn entries fuel = .yield (some (.TFn input typ)) ∧
-      inferInternal arg entries fuel = .yield (some input) := by
+    (hInfer : infer (.apply fn arg) entries (fuel + 1) = .yield (some typ)) :
+    ∃ input, infer fn entries fuel = .yield (some (.TFn input typ)) ∧
+      infer arg entries fuel = .yield (some input) := by
   simp only [inferInternal.eq_5] at hInfer
   repeat split at hInfer
   all_goals simp_all
   all_goals injection hInfer; subst_vars; exact ⟨_, rfl, rfl⟩
 
 private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
-    (hInfer : inferInternal (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
+    (hInfer : infer (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
     let input := resolveType annotation
-    ∃ output, inferInternal (body.apply .only)
-        (entries.set (n + 1) (.inl ⟨n, annotation, .empty⟩)) fuel = .yield (some output) ∧
+    ∃ output, infer (body.apply .only)
+        (entries.set (n + 1) ⟨n, annotation, .empty⟩) fuel = .yield (some output) ∧
       typ = .TFn input output := by
   cases hBody : inferInternal (body.apply .only)
       (entries.set (n + 1) (.inl ⟨n, annotation, .empty⟩)) fuel <;>
@@ -43,14 +43,14 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
 private def entryFits (entry : Option (CompilerTyp ⊕ ExeVal)) (typ : Typ) : Prop :=
   ∃ fuel,
     (match entry with
-    | some (.inr ⟨_, value, captured⟩) => inferInternal value.asTrm (captured.map .inr) fuel
+    | some (.inr ⟨_, value, captured⟩) => infer value.asTrm captured fuel
     | some (.inl ⟨_, input, _⟩) => .yield (some (resolveType input))
     | none => .yield none) = .yield (some typ)
 
 /-- Replacing hypothetical entries by inferable runtime values preserves inference. -/
 private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
     (hReplace : ∀ index typ, entryFits (source index) typ → entryFits (target index) typ) :
-    preservesType (inferInternal trm source) (inferInternal trm target) := by
+    preservesType (infer trm source) (infer trm target) := by
   intro fuel typ hInfer
   induction fuel generalizing n trm source target typ with
   | zero => cases hInfer

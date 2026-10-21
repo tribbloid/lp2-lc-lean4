@@ -15,9 +15,9 @@ def safety (typ : Typ) : Prop :=
 
 private theorem inferApplySuccess {fn arg : Trm n}
     {entries : CompilerBindings} {fuel : Nat} {typ : Typ}
-    (hInfer : inferInternal (.apply fn arg) entries (fuel + 1) = .yield (some typ)) :
-    ∃ input, inferInternal fn entries fuel = .yield (some (.TFn input typ)) ∧
-      inferInternal arg entries fuel = .yield (some input) := by
+    (hInfer : infer (.apply fn arg) entries (fuel + 1) = .yield (some typ)) :
+    ∃ input, infer fn entries fuel = .yield (some (.TFn input typ)) ∧
+      infer arg entries fuel = .yield (some input) := by
   simp only [inferInternal.eq_5] at hInfer
   repeat split at hInfer
   all_goals simp_all
@@ -25,10 +25,10 @@ private theorem inferApplySuccess {fn arg : Trm n}
 
 private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
     {entries : CompilerBindings} {fuel : Nat} {typ : Typ}
-    (hInfer : inferInternal (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
+    (hInfer : infer (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
     let input := resolveType annotation
-    ∃ output, inferInternal (body.apply .only)
-        (entries.set (n + 1) (.inl ⟨n, annotation, .empty⟩)) fuel = .yield (some output) ∧
+    ∃ output, infer (body.apply .only)
+        (entries.set (n + 1) ⟨n, annotation, .empty⟩) fuel = .yield (some output) ∧
       typ = .TFn input output := by
   simp only [inferInternal.eq_3, Rec.Outcome.map] at hInfer
   repeat split at hInfer
@@ -42,13 +42,13 @@ private def entryFits (entry : Option (CompilerTyp ⊕ ExeVal)) (typ : Typ) : Pr
   | none => False
   | some (.inl ⟨_, input, _⟩) => resolveType input = typ
   | some (.inr ⟨_, value, captured⟩) =>
-    ∃ fuel, inferInternal value.asTrm (captured.map .inr) fuel = .yield (some typ)
+    ∃ fuel, infer value.asTrm captured fuel = .yield (some typ)
 
 private theorem inferReplace {trm : Trm n}
     {source target : CompilerBindings} {fuel : Nat} {typ : Typ}
     (hReplace : ∀ index typ, entryFits (source index) typ → entryFits (target index) typ)
-    (hInfer : inferInternal trm source fuel = .yield (some typ)) :
-    ∃ targetFuel, inferInternal trm target targetFuel = .yield (some typ) := by
+    (hInfer : infer trm source fuel = .yield (some typ)) :
+    ∃ targetFuel, infer trm target targetFuel = .yield (some typ) := by
   induction fuel generalizing n trm source target typ with
   | zero => simp [inferInternal] at hInfer
   | succ fuel ih =>
