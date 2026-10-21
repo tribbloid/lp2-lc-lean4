@@ -6,7 +6,7 @@ open Lp2lc.Active.Util ExeValue
 
 namespace CertifiedByInfer
 
-abbrev ConditionalVal (condition : Typ -> Prop) := {v : ExeValue // (v.value.asTrm.infer v.captured).isDecidable condition}
+abbrev ConditionalVal (condition : Typ -> Prop) := {v : ExeVal // (v.value.asTrm.infer v.captured).isDecidable condition}
 
 /-- A returned value certified at the caller's independently inferred type. -/
 abbrev CertifiedVal (typ : Typ) := ConditionalVal (λ _t => _t = typ)
@@ -39,7 +39,7 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
     (try cases ‹Option Typ›) <;> simp_all [inferInternal.eq_3, Rec.Outcome.map, Option.map]
   exact ⟨_, rfl, (Option.some.inj hInfer).symm⟩
 
--- Certification reuses inference monotonicity and derives its other inference facts locally.
+-- Certification reuses inference monoCompilerTypives its other inference facts locally.
 private def entryFits (entry : Option CompilerValOrTyp) (typ : Typ) : Prop :=
   ∃ fuel,
     (match entry with
@@ -87,7 +87,7 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
 
 /-- Each returned value preserves every successful inference of its source term. -/
 private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
-    Rec {value : ExeValue //
+    Rec {value : ExeVal //
       preservesType (self.infer bindings) (value.value.asTrm.infer value.captured)} := λ fuel =>
   match fuel, self with
   | 0, _ => .outOfFuel

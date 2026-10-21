@@ -10,7 +10,7 @@ section eval_certified
 
 -- The test adapter infers first, independently of the exact evaluation budget.
 private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty)
-    (inferFuel : Nat := 8) : RecOpt ExeValue :=
+    (inferFuel : Nat := 8) : RecOpt ExeVal :=
   match hInfer : trm.infer bindings inferFuel with
   | .yield (some _) => λ fuel =>
       (trm.eval_certified bindings hInfer fuel).map (λ payload => some payload.val)
@@ -23,9 +23,9 @@ private def literalEval {n} (trm : Trm n) (bindings : ExeBindings := .empty) : R
     | .lit repr => some repr
     | .fn _ _ => none))
 
-private def outerValue : ExeValue := .mk 0 (.lit "outer") .empty
+private def outerValue : ExeVal := .mk 0 (.lit "outer") .empty
 private def capturedBindings : ExeBindings := NatBindings.empty.set 0 outerValue
-private def capturedClosure : ExeValue :=
+private def capturedClosure : ExeVal :=
   .mk 0 (.fn .TLit (.mk (λ _ => .ref Trm.FreeCapture.freeSlot (.lower .same)))) capturedBindings
 private def callerBindings : ExeBindings := NatBindings.empty.set 0 capturedClosure
 private def higherOrderId : Trm :=

@@ -6,7 +6,7 @@ open Lp2lc.Active.Util
 namespace AST
 
 /-- Evaluate using the caller's bindings. Every recursive resolution consumes one unit of fuel. -/
-def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt ExeValue := λ fuel =>
+def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt ExeVal := λ fuel =>
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>

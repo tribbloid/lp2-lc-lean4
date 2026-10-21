@@ -8,12 +8,12 @@ open Tests.STLC.Sanity
 
 section eval
 
-private def literalResult (result : Rec.Outcome (Option ExeValue)) : Option String :=
+private def literalResult (result : Rec.Outcome (Option ExeVal)) : Option String :=
   match result with
   | .yield (some (.mk _ (.lit repr) _)) => some repr
   | _ => none
 
-private def outerValue : ExeValue :=
+private def outerValue : ExeVal :=
   .mk 0 (.lit "outer") .empty
 private def knownBindings : ExeBindings := (NatBindings.empty.set 0 outerValue).set 1 outerValue
 

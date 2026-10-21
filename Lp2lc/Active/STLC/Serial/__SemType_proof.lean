@@ -13,7 +13,7 @@ def safety (typ : Typ) : Prop :=
   (trm.eval bindings).isSemiDecidable (λ result =>
     ∃ fuel, semType result.value.asTrm (result.captured.map toCompiler) fuel typ)
 
-private def entryFits (entry : Option CompilerValOrTyp) (typ : Typ) : Prop :=
+private def entryFits (entry : Option CompilerTyp) (typ : Typ) : Prop :=
   match entry with
   | none => False
   | some ⟨_, .inr input, _⟩ => resolveType input = typ
@@ -76,7 +76,7 @@ theorem main (fuel : Nat) (typ : Typ)
       cases trm with
       | val value => exact ⟨fuel + 1, hType⟩
       | ref carrier under =>
-        cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeValue›)
+        cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeVal›)
         all_goals simp only [semType, check, Rec.Outcome.getOrElse,
           NatBindings.getMap, hBinding, Option.map, toCompiler, eval.eq_3] at hType ⊢
         all_goals first | contradiction | exact ⟨fuel, hType⟩
@@ -85,7 +85,7 @@ theorem main (fuel : Nat) (typ : Typ)
         have hFnSafety := ih fn bindings fuel (.TFn input typ) hFn
         have hArgSafety := ih arg bindings fuel input hArg
         cases hFnEval : eval fn bindings evalFuel <;>
-          (try cases ‹Option ExeValue›) <;> (try cases ‹ExeValue›)
+          (try cases ‹Option ExeVal›) <;> (try cases ‹ExeVal›)
         all_goals simp [hFnEval] at hFnSafety
         case outOfFuel =>
           cases eval arg bindings evalFuel <;> simp [eval.eq_4, hFnEval]
@@ -99,7 +99,7 @@ theorem main (fuel : Nat) (typ : Typ)
               simp [Val.asTrm, semType, check, Rec.Outcome.getOrElse] at hFnValue
             | fn annotation body =>
               cases hArgEval : eval arg bindings evalFuel <;>
-                (try cases ‹Option ExeValue›) <;> (try cases ‹ExeValue›)
+                (try cases ‹Option ExeVal›) <;> (try cases ‹ExeVal›)
               all_goals simp [hArgEval] at hArgSafety
               case outOfFuel => simp [eval.eq_4, hFnEval, hArgEval]
               case yield.some.mk argContext argValue argCaptured =>

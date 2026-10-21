@@ -34,7 +34,7 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
   repeat split at hInfer
   all_goals simp_all
   all_goals cases ‹Option Typ› <;> simp only [Option.map] at hInfer
-  all_goals try cases hInfer
+  all_goals try cases hInferCompilerTyp
   all_goals exact ⟨_, rfl, rfl⟩
 
 private def entryFits (entry : Option CompilerValOrTyp) (typ : Typ) : Prop :=
@@ -106,7 +106,7 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
       cases trm with
       | val value => exact ⟨inferFuel + 1, hInfer⟩
       | ref carrier under =>
-        cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeValue›)
+        cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeVal›)
         all_goals simp only [infer, inferInternal.eq_4, NatBindings.getMap, hBinding,
           Option.map, toCompiler, eval.eq_3] at hInfer ⊢
         all_goals first | cases hInfer | exact ⟨inferFuel, hInfer⟩
@@ -114,7 +114,7 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
         obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
         have hFnSafety := ih fn bindings inferFuel (.TFn input typ) hFn
         have hArgSafety := ih arg bindings inferFuel input hArg
-        cases hFnEval : eval fn bindings evalFuel <;> (try cases ‹Option ExeValue›) <;> (try cases ‹ExeValue›)
+        cases hFnEval : eval fn bindings evalFuel <;> (try cases ‹Option ExeVal›) <;> (try cases ‹ExeVal›)
         all_goals simp [hFnEval] at hFnSafety
         case outOfFuel =>
           cases eval arg bindings evalFuel <;> simp [eval.eq_4, hFnEval]
@@ -128,7 +128,7 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
               simp only [Val.asTrm, infer, inferInternal.eq_2, Rec.Outcome.yield.injEq] at hFnValue
               cases Option.some.inj hFnValue
             | fn annotation body =>
-                cases hArgEval : eval arg bindings evalFuel <;> (try cases ‹Option ExeValue›) <;> (try cases ‹ExeValue›)
+                cases hArgEval : eval arg bindings evalFuel <;> (try cases ‹Option ExeVal›) <;> (try cases ‹ExeVal›)
                 all_goals simp [hArgEval] at hArgSafety
                 case outOfFuel => simp [eval.eq_4, hFnEval, hArgEval]
                 case yield.some.mk argContext argValue argCaptured =>
@@ -154,7 +154,7 @@ theorem main (fuel : Nat) (typ : Typ)
     safety trm bindings typ := by
   intro evalFuel
   have safe := inferEvalSafety trm bindings fuel typ hInfer evalFuel
-  cases result : trm.eval bindings evalFuel <;> (try cases ‹Option ExeValue›) <;> (try cases ‹ExeValue›) <;>
+  cases result : trm.eval bindings evalFuel <;> (try cases ‹Option ExeVal›) <;> (try cases ‹ExeVal›) <;>
     simp_all
   obtain ⟨valueFuel, typed⟩ := safe
   exact ⟨valueFuel, by rw [typed]⟩

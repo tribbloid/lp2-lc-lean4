@@ -5,19 +5,19 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
 /-- A value or type together with its lexical context and captured compiler bindings. -/
-structure CompilerValOrTyp : Type 2 where
+structure CompilerTyp : Type 2 where
   n : Nat
-  either : Val n ⊕ Typ n
-  captured : NatBindings CompilerValOrTyp
+  either : Typ n -- CompilerTyp can bind other type but not value (singleton type is still a type)
+  captured : NatBindings CompilerTyp
 
-abbrev CompilerBindings := NatBindings CompilerValOrTyp -- append-only
+abbrev CompilerBindings := NatBindings (CompilerTyp ⊕ ExeVal) -- append-only
 
-def ExeValue.toCompiler (self : ExeValue) : CompilerValOrTyp :=
+def ExeValue.toCompiler (self : ExeVal) : CompilerTyp :=
   match self with
   | ⟨n, value, captured⟩ =>
     ⟨n, .inl value, ⟨captured.entries.map (λ entry => (entry.1, entry.2.toCompiler))⟩⟩
 decreasing_by
-  cases ‹Nat × ExeValue›
+  cases ‹Nat × ExeVal›
   have := List.sizeOf_lt_of_mem (by assumption)
   cases captured
   simp_all

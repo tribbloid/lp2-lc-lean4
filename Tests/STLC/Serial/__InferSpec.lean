@@ -15,9 +15,9 @@ section infer
 local instance : BEq Typ :=
   ⟨λ first second => astBEq first second (λ _ => .null) (λ _ => .null)⟩
 
-private def literalValue : ExeValue := .mk 0 (.lit bTrue) .empty
+private def literalValue : ExeVal := .mk 0 (.lit bTrue) .empty
 
-private def fnValue : ExeValue :=
+private def fnValue : ExeVal :=
   .mk 0 (.fn .TLit (.mk (λ proxy => .ref proxy .same))) .empty
 
 private def literalBindings : ExeBindings := NatBindings.empty.set 0 literalValue
