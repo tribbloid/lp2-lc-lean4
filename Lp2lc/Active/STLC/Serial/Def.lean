@@ -25,10 +25,7 @@ end Val
 
 -- set_option genSizeOf false in
 /-- A source value together with the bindings captured when it was evaluated. -/
-structure ExeVal : Type 2 where
-  n : Nat
-  value : Val n
-  captured : NatBindings ExeVal
+abbrev ExeVal := Closure (Val ·)
 
 abbrev ExeBindings := NatBindings ExeVal -- append-only
 

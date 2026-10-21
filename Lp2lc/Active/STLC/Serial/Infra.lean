@@ -5,10 +5,7 @@ namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
 
 /-- A type together with its lexical context and captured type bindings. -/
-structure CompilerTyp : Type 2 where
-  n : Nat
-  either : Typ n -- Compiler types capture only other types; singleton types remain types.
-  captured : NatBindings CompilerTyp
+abbrev CompilerTyp := Closure (Typ ·) -- Compiler types capture only other types; singleton types remain types.
 
 /-- Breakpoint values seed inference; subsequent bindings must contain only hypothetical types. -/
 inductive CompilerBindings where

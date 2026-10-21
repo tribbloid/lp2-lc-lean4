@@ -1,7 +1,13 @@
 
-import «Lp2lc».Active.Shared
+import «Lp2lc».Active.NatBindings
 
 namespace Lp2lc.Active.Util
+
+/-- Indexed syntax together with its lexical context and recursively captured bindings. -/
+structure Closure (T : Nat → Type 2) where
+  n : Nat
+  value : T n
+  captured : NatBindings (Closure T)
 
 /-- Bundles an upcast with injectivity so refined values cannot collapse. -/
 structure Embedding (α : Sort u) (β : Sort v) where

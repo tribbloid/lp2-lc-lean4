@@ -1,4 +1,4 @@
-import «Lp2lc».Active.Util
+import «Lp2lc».Active.Shared
 
 namespace Lp2lc.Active.Util
 
