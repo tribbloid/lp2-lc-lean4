@@ -32,11 +32,11 @@ inductive Binder : Parameters → Label → UAST where
 -/
 inductive AST : Parameters → Label → UAST where
 | TLit {P} : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
-| lit {P} (repr : P.B) : AST P .val -- most specific type is always `primitive`
+| lit {P} (repr : P.B) : AST P .val -- most specific type is always `.TLit`
 
 | TFn {P} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
 | fn {P} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
-    -- most specific type is always `.fn tIn _`
+    -- most specific type is always `.TFn tIn _`
 
 | val {P} (v : AST P .val) : AST P .trm -- AKA literal
 | apply {P} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
