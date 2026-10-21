@@ -10,8 +10,8 @@ variable {n} (trm : Trm n) (bindings : ExeBindings)
 
 /-- Evaluation cannot reject, and every returned closure has the requested type. -/
 def safety (typ : Typ) : Prop :=
-  (trm.eval bindings).isSemiDecidable (λ result =>
-    ∃ fuel, semType result.value.asTrm result.captured fuel typ)
+  (trm.eval bindings).isSemiDecidable (λ result => result.isSafe (λ value =>
+    ∃ fuel, semType value.value.asTrm value.captured fuel typ))
 
 private def entryFits (entry : Option (CompilerTyp ⊕ ExeVal)) (typ : Typ) : Prop :=
   match entry with

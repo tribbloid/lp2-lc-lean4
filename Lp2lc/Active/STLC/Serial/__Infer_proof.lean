@@ -10,8 +10,8 @@ variable {n} (trm : Trm n) (bindings : ExeBindings)
 namespace Fundamental
 
 def safety (typ : Typ) : Prop :=
-  (trm.eval bindings).isSemiDecidable (λ result =>
-    (result.value.asTrm.infer result.captured).isDecidable (λ inferred => inferred = typ))
+  (trm.eval bindings).isSemiDecidable (λ result => result.isSafe (λ value =>
+    (value.value.asTrm.infer value.captured).isDecidable (λ inferred => inferred = typ)))
 
 private theorem inferApplySuccess {fn arg : Trm n}
     {entries : CompilerBindings} {fuel : Nat} {typ : Typ}
@@ -94,8 +94,8 @@ private theorem inferReplace {trm : Trm n}
 theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
     (inferFuel : Nat) (typ : Typ)
     (hInfer : infer trm bindings inferFuel = .yield (some typ)) :
-    (eval trm bindings).isSemiDecidable (λ result =>
-      ∃ valueFuel, infer result.value.asTrm result.captured valueFuel = .yield (some typ)) := by
+    (eval trm bindings).isSemiDecidable (λ result => result.isSafe (λ value =>
+      ∃ valueFuel, infer value.value.asTrm value.captured valueFuel = .yield (some typ))) := by
   intro evalFuel
   induction evalFuel generalizing n trm bindings inferFuel typ with
   | zero => trivial

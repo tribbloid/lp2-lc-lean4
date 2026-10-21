@@ -5,19 +5,22 @@ open Lp2lc.Active.Util
 
 namespace AST
 
-/-- Evaluate using the caller's bindings. Every recursive resolution consumes one unit of fuel. -/
-def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt ExeVal := λ fuel =>
+/-- Evaluate using the caller's bindings, preserving rejection separately from runtime corruption.
+Every recursive resolution consumes one unit of fuel. -/
+def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt (Rec.Return ExeVal) := λ fuel =>
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val value => .yield (some (.mk n value bindings))
-    | .ref _ under => .yield (bindings under.sourceIndex.down)
+    | .val value => .yield (some (.some (.mk n value bindings)))
+    | .ref _ under => .yield ((bindings under.sourceIndex.down).map .some)
     | .apply fn arg =>
       match eval fn bindings fuel, eval arg bindings fuel with
-      | .yield (some (.mk context (.fn _ body) captured)), .yield (some value) =>
+      | .yield (some (.some (.mk context (.fn _ body) captured))), .yield (some (.some value)) =>
         eval (body.apply .only)
           (captured.set (context + 1) value) fuel
+      | .yield (some .corruption), .yield (some _)
+      | .yield (some _), .yield (some .corruption) => .yield (some .corruption)
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
 
