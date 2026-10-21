@@ -14,17 +14,16 @@ def eval {refs : UIdRefs} [build : BuildEnv refs] (self : refs.base.Trm) : RecOp
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val value => .yield (some value)
+    | .val value => .yield (some (.some value))
     | .apply fnTerm arg =>
       match eval fnTerm fuel, eval arg fuel with
-      | .yield (some (.fn _ body)), .yield (some arg) =>
+      | .yield (some (.some (.fn _ body))), .yield (some (.some arg)) =>
         eval (Root.Binder.apply body (build.uid2val arg)) fuel
+      | .yield (some .corrupted), .yield (some _)
+      | .yield (some _), .yield (some .corrupted) => .yield (some .corrupted)
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
-    | .ref carrier under =>
-      match refs.uid2both.get (mapRef under carrier) with
-      | .inl _ => .yield none
-      | .inr value => .yield (some value)
+    | .ref carrier under => .yield ((refs.uid2both.get (mapRef under carrier)).getRight?.map .some)
 
 namespace Monotone
 
