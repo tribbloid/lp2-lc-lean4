@@ -8,7 +8,6 @@ Warning: this is for runtime test, DO NOT use it in any proof!
 namespace Lp2lc.Active.STLC
 
 open Lean (Json)
-open Lp2lc.Active.Util
 
 -- File-private structural view; the caller supplies its encoding's sole context proxy.
 @[match_pattern] private abbrev bind := @Pre.Binder.mk
