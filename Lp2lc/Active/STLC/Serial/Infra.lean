@@ -10,7 +10,8 @@ structure CompilerTyp : Type 2 where
   either : Typ n -- Compiler types capture only other types; singleton types remain types.
   captured : NatBindings CompilerTyp
 
-abbrev CompilerBindings := NatBindings (CompilerTyp ⊕ ExeVal) -- append-only
+/-- Breakpoint values seed inference; subsequent bindings must contain only hypothetical types. -/
+abbrev CompilerBindings := NatBindings (CompilerTyp ⊕ ExeVal)
 
 /-- Erase an STLC type's context index without consuming inference or checking fuel. -/
 def AST.resolveType {n} (self : Typ n) : Typ :=
