@@ -183,20 +183,18 @@ def Monotone : Prop :=
 
 end
 
-/--
-value returned by runtime execution, both are considered safe assuming best effort
+/-- Runtime execution returns a value or reports corruption as an allowed runtime exit.
 
-don't use it to represent compiletime results, in which stage corrupted state is equivalent to error
+Only returned values carry type certificates. Use `Option` separately for compiler rejection;
+corruption must not disguise a compiler error.
 -/
 inductive Return (T : Type u)
   /-- Some value of type `T`. -/
   | some (val : T)
-  /-- Runtime panic due to the program being corrupted
-  (e.g. primitive operation executing to a different type, function executing to a term that violates uniformity, etc.)
-  corrupted state cannot be avoided, avoiding it is not the responsibility of the compiler -/
+  /-- Runtime panic when executable code violates an assumption, such as a primitive's result type
+  or a binder's uniformity. -/
   | corruption
 
--- abbrev OutcomeOpt (T : Type u) := Rec.Outcome (Option T) -- TODO: useless?
 end Rec
 
 abbrev RecOpt (T : Type u) := Rec (Option T)
