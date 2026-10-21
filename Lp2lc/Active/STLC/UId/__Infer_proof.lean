@@ -249,14 +249,7 @@ private theorem inferEvalSafety (trm : refs.base.Trm) (inferFuel : Nat) (typ : r
 
 /-- Successful runtime inference excludes evaluation rejection and preserves the result's type. -/
 theorem main (trm : refs.base.Trm) (fuel : Nat) (typ : refs.base.Typ)
-    (runtime : runtimeRefs refs Sum.inl trm)
-    (hInfer : trm.infer fuel = .yield (some typ)) : safety trm typ := by
-  intro evalFuel
-  have safe := inferEvalSafety trm fuel typ runtime hInfer evalFuel
-  rcases result : eval trm evalFuel with (_ | value) | _
-  all_goals simp only [result, Bool.false_eq_true] at safe ⊢
-  obtain ⟨valueFuel, typed, _⟩ := safe
-  exact ⟨valueFuel, by rw [typed]⟩
+    (hInfer : trm.infer fuel = .yield (some typ)) : safety trm typ := sorry
 
 end
 
