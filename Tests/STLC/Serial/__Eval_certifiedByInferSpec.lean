@@ -10,18 +10,18 @@ section eval_certified
 
 -- The test adapter infers first, independently of the exact evaluation budget.
 private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty)
-    (inferFuel : Nat := 8) : RecOpt ExeVal :=
+    (inferFuel : Nat := 8) : RecOpt (Rec.Return ExeVal) :=
   match hInfer : trm.infer bindings inferFuel with
   | .yield (some _) => λ fuel =>
-      (trm.eval_certified bindings hInfer fuel).map (λ payload => some payload.val)
+      (trm.eval_certified bindings hInfer fuel).map (λ payload => some (payload.map Subtype.val))
   | .yield none => λ _ => .yield none
   | .outOfFuel => λ _ => .outOfFuel
 
 private def literalEval {n} (trm : Trm n) (bindings : ExeBindings := .empty) : RecOpt String := λ fuel =>
-  (erasedEval trm bindings 8 fuel).map (Option.bind · (λ value =>
-    match value.value with
-    | .lit repr => some repr
-    | .fn _ _ => none))
+  (erasedEval trm bindings 8 fuel).map (Option.bind · (λ result =>
+    match result with
+    | .some (.mk _ (.lit repr) _) => some repr
+    | _ => none))
 
 private def outerValue : ExeVal := .mk 0 (.lit "outer") .empty
 private def capturedBindings : ExeBindings := NatBindings.empty.set 0 outerValue
@@ -47,11 +47,11 @@ private def higherOrderApplication : Trm :=
 #guard (literalEval (.apply Trm.FreeCapture.directRef Trm.vTrue) callerBindings).shouldYields 2 "outer"
 
 #guard (match erasedEval Trm.primitiveIdFn .empty 2 1 with
-    | .yield (some (.mk _ (.fn _ _) _)) => true
+    | .yield (some (.some (.mk _ (.fn _ _) _))) => true
     | _ => false)
 
 #guard (match erasedEval (.apply Trm.get1st Trm.vFalse) .empty 4 2 with
-    | .yield (some (.mk _ (.fn _ _) captured)) =>
+    | .yield (some (.some (.mk _ (.fn _ _) captured))) =>
       match captured 1 with
       | some (.mk _ (.lit repr) _) => repr == "false"
       | _ => false

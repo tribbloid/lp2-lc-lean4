@@ -83,7 +83,7 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 #guard (AST.infer (.apply FreeCapture.directRef primitiveIdFn) fnBindings).shouldFail 4
 
 #guard match FreeCapture.capturedRef.eval (NatBindings.empty.set 0 literalValue) 1 with
-  | .yield (some closure) =>
+  | .yield (some (.some closure)) =>
     let bindings := mixedBindings.set 1 closure
     (innerRef.infer bindings).shouldYields 4 (.TFn .TLit .TLit) ∧
       (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 5 .TLit

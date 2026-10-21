@@ -8,9 +8,9 @@ open Tests.STLC.Sanity
 
 section eval
 
-private def literalResult (result : Rec.Outcome (Option ExeVal)) : Option String :=
+private def literalResult (result : Rec.Outcome (Option (Rec.Return ExeVal))) : Option String :=
   match result with
-  | .yield (some (.mk _ (.lit repr) _)) => some repr
+  | .yield (some (.some (.mk _ (.lit repr) _))) => some repr
   | _ => none
 
 private def outerValue : ExeVal :=
