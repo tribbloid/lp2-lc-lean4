@@ -42,6 +42,8 @@ where
       rcases P with ⟨B, _, _⟩
       cases encoding
       exact .fn input (.mk (λ _ => recurse (.inr ()) rfl (Sum.map map id)))
+    | .fnPrimitive tOut op =>
+      .fnPrimitive (visit tOut encoding map) (λ repr => visit (op repr) encoding map)
     | .val value => .val (visit value encoding map)
     | .apply fnTerm arg => .apply (visit fnTerm encoding map) (visit arg encoding map)
     | .ref carrier under => .ref (map (mapRef under carrier encoding)) .same

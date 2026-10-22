@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.Serial.Def
+import «Lp2lc».Active.STLC.Serial.Infer
 
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
@@ -19,6 +19,12 @@ def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt (Return 
       | .yield (some (.some (.mk context (.fn _ body) captured))), .yield (some (.some value)) =>
         eval (body.apply .only)
           (captured.set (context + 1) value) fuel
+      | .yield (some (.some (.mk context (.fnPrimitive tOut op) captured))),
+          .yield (some (.some (.mk _ (.lit repr) _))) =>
+        let value := op repr
+        letI : DecidableEq (Option Typ) := Option.instDecidableEq (inst := typDecidableLE)
+        (infer (.val value) captured fuel).map (λ result =>
+          some (if result = some (resolveType tOut) then .some ⟨context, value, captured⟩ else .corrupted))
       | .yield (some .corrupted), .yield (some _)
       | .yield (some _), .yield (some .corrupted) => .yield (some .corrupted)
       | .yield _, .yield _ => .yield none

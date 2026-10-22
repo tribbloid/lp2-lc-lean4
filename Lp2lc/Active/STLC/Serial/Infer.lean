@@ -37,6 +37,7 @@ def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Ty
       .yield (if argTyp ≤ tIn then some tOut else none)
     | .yield _, .yield _ => .yield none
     | _, _ => .outOfFuel
+  | _ + 1, .val (.fnPrimitive tOut _) => .yield (some (.TFn .TLit (resolveType tOut)))
 
 def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ: Typ) :=
   self.infer bindings fuel = .yield (.some typ)

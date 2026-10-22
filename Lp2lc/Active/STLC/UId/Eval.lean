@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.UId.Infra
+import «Lp2lc».Active.STLC.UId.Infer
 
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
@@ -19,6 +19,11 @@ def eval {refs : UIdRefs} [build : BuildEnv refs] (self : refs.base.Trm) : RecOp
       match eval fnTerm fuel, eval arg fuel with
       | .yield (some (.some (.fn _ body))), .yield (some (.some arg)) =>
         eval (Root.Binder.apply body (build.uid2val arg)) fuel
+      | .yield (some (.some (.fnPrimitive tOut op))), .yield (some (.some (.lit repr))) =>
+        let value := op repr
+        letI : DecidableEq (Option refs.base.Typ) := Option.instDecidableEq (inst := typDecidableLE)
+        (infer (.val value) fuel).map (λ result =>
+          some (if result = some tOut then .some value else .corrupted))
       | .yield (some .corrupted), .yield (some _)
       | .yield (some _), .yield (some .corrupted) => .yield (some .corrupted)
       | .yield _, .yield _ => .yield none

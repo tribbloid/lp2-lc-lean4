@@ -28,7 +28,8 @@ def check {n} (self : Trm n) (typ : Typ)
         | none => False
       | .apply fn arg, _ =>
         ∃ input, (check fn (.TFn input typ) bindings fuel).getOrElse False ∧
-          (check arg input bindings fuel).getOrElse False)
+          (check arg input bindings fuel).getOrElse False
+      | .val (.fnPrimitive tOut _), _ => typ = .TFn .TLit (resolveType tOut))
 
 def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ: Typ) : Prop :=
   (check self typ bindings fuel).getOrElse False

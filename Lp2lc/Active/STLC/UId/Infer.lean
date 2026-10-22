@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.UId.Eval
+import «Lp2lc».Active.STLC.UId.Infra
 
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util
@@ -38,6 +38,7 @@ def infer {refs : UIdRefs} [env : BuildEnv refs] (self : refs.base.Trm) : RecOpt
       match refs.uid2both.get (mapRef under carrier) with
       | .inl typ => .yield (some typ)
       | .inr value => infer value.asTrm fuel
+    | .val (.fnPrimitive tOut _) => .yield (some (.TFn .TLit tOut))
 
 namespace Monotone
 
