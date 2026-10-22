@@ -9,21 +9,21 @@ abbrev CompilerTyp := Closure (Typ ·) -- Compiler types capture only other type
 
 /-- Breakpoint values seed inference; subsequent bindings must contain only hypothetical types. -/
 inductive CompilerBindings where
-  | fromRuntime (bindings : ExeBindings)
+  | breakpoint (bindings : ExeBindings)
   | set (self : CompilerBindings) (index : Nat) (typ : CompilerTyp)
 
 namespace CompilerBindings
 
-def empty : CompilerBindings := .fromRuntime .empty
+def empty : CompilerBindings := breakpoint .empty
 
 def get (self : CompilerBindings) (index : Nat) : Option (CompilerTyp ⊕ ExeVal) :=
   match self with
-  | .fromRuntime bindings => (bindings index).map .inr
+  | .breakpoint bindings => (bindings index).map .inr
   | .set bindings key typ => if key = index then some (.inl typ) else bindings.get index
 
 instance : CoeFun CompilerBindings (λ _ => Nat → Option (CompilerTyp ⊕ ExeVal)) := ⟨get⟩
 
-instance : Coe ExeBindings CompilerBindings := ⟨.fromRuntime⟩
+instance : Coe ExeBindings CompilerBindings := ⟨breakpoint⟩
 
 end CompilerBindings
 
