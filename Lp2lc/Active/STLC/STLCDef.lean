@@ -36,6 +36,7 @@ inductive AST : Parameters → Label → UAST where
 | TFn {P} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
 | fn {P} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
     -- most specific type is always `.TFn tIn _`
+| fnPrimitive {P} (tOut : AST P .typ) (op : P.B → AST P .val) : AST P .val
 
 | val {P} (v : AST P .val) : AST P .trm -- AKA literal
 | apply {P} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
