@@ -45,8 +45,16 @@ theorem termEval {n} (trm) (bindings : ExeBindings) :
     all_goals
       repeat split at hEval
       all_goals simp_all
-      all_goals subst_vars; cases ‹Return ExeVal› <;>
-        (try cases ‹ExeVal›) <;> (try cases ‹Val _›) <;> rfl
+      all_goals
+        first
+        | rename_i context tOut op captured argContext repr argCaptured hFn hArg
+          cases hCheck : infer (.val (op repr)) captured fuel with
+          | outOfFuel => simp [hCheck, Rec.Outcome.map] at hEval
+          | yield typ =>
+            have hMore := termInfer _ _ _ _ _ hFuel hCheck
+            simpa only [hCheck, hMore] using hEval
+        | subst_vars; cases ‹Return ExeVal› <;>
+            (try cases ‹ExeVal›) <;> (try cases ‹Val _›) <;> rfl
 
 end Monotone
 

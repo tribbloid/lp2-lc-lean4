@@ -57,6 +57,8 @@ private theorem inferReplace {trm : Trm n}
       cases value with
       | lit repr =>
         exact ⟨1, by simpa only [infer.eq_2] using hInfer⟩
+      | fnPrimitive tOut op =>
+        exact ⟨1, by simpa only [infer.eq_6] using hInfer⟩
       | fn annotation body =>
         obtain ⟨output, hBody, hType⟩ := inferFnSuccess hInfer
         subst typ
@@ -157,6 +159,38 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
                   hBody
                 simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
                   ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
+            | fnPrimitive tOut op =>
+              simp only [Val.asTrm, infer.eq_6, Rec.Outcome.yield.injEq] at hFnValue
+              rcases hFnValue with ⟨rfl, rfl⟩
+              cases hArgEval : eval arg bindings evalFuel <;>
+                (try cases ‹Option (Return ExeVal)›) <;>
+                (try cases ‹Return ExeVal›) <;> (try cases ‹ExeVal›)
+              all_goals simp [hArgEval, Return.isSafe] at hArgSafety
+              case yield.some.corrupted => simp [eval.eq_4, hFnEval, hArgEval, Return.isSafe]
+              case outOfFuel => simp [eval.eq_4, hFnEval, hArgEval]
+              case yield.some.some.mk argContext argValue argCaptured =>
+                obtain ⟨argInferFuel, hArgValue⟩ := hArgSafety
+                cases argInferFuel with
+                | zero => simp [infer] at hArgValue
+                | succ argInferFuel =>
+                  cases argValue with
+                  | lit repr =>
+                    simp only [eval.eq_4, hFnEval, hArgEval]
+                    cases hCheck : infer (.val (op repr)) captured evalFuel with
+                    | outOfFuel => simp [Rec.Outcome.map]
+                    | yield output =>
+                      simp only [Rec.Outcome.map]
+                      split
+                      · rename_i hOutput
+                        subst output
+                        exact ⟨evalFuel, hCheck⟩
+                      · trivial
+                  | fn annotation body =>
+                    obtain ⟨_, _, hType⟩ := inferFnSuccess hArgValue
+                    cases hType
+                  | fnPrimitive annotation operation =>
+                    simp only [Val.asTrm, infer.eq_6, Rec.Outcome.yield.injEq] at hArgValue
+                    cases Option.some.inj hArgValue
 
 /-- A successfully inferred type makes the executable term safe at that type. -/
 theorem main (fuel : Nat) (typ : Typ)

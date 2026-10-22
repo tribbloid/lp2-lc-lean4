@@ -45,7 +45,15 @@ theorem termEval {refs : UIdRefs} [build : BuildEnv refs] (trm : refs.base.Trm) 
     all_goals
       repeat split at hEval
       all_goals simp_all
-      all_goals subst_vars; cases ‹Return refs.base.Val› <;> (try cases ‹refs.base.Val›) <;> rfl
+      all_goals
+        first
+        | rename_i tOut op repr hFn hArg
+          cases hCheck : infer (.val (op repr)) fuel with
+          | outOfFuel => simp [hCheck, Rec.Outcome.map] at hEval
+          | yield typ =>
+            have hMore := termInfer _ _ _ _ hFuel hCheck
+            simpa only [hCheck, hMore] using hEval
+        | subst_vars; cases ‹Return refs.base.Val› <;> (try cases ‹refs.base.Val›) <;> rfl
 
 end Monotone
 

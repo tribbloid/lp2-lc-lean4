@@ -58,7 +58,7 @@ theorem termInfer (trm : Trm n)
     replace hFuel := Nat.le_of_succ_le_succ hFuel
     cases trm <;> try cases ‹Val n›
     all_goals
-      simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5,
+      simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5, infer.eq_6,
         Rec.Outcome.map] at hInfer ⊢
       repeat split at hInfer
       all_goals simp_all
