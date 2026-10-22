@@ -54,6 +54,11 @@ namespace Binder
 
 def mk := @body
 
+/-- Open a binder under the index encoding's reference contract. -/
+def apply {P l} (self : Binder P l) (carrier) :=
+  match self with
+  | .body code => code carrier
+
 end Binder
 
 end Pre
