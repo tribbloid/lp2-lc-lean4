@@ -114,6 +114,11 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard Malformed.applyLit1.infer.shouldFail 2
 
+#guard (AST.infer (.val (.fnPrimitive (.TFn .TLit .TLit) .lit) : Trm)).shouldYields 1
+  (.TFn .TLit (.TFn .TLit .TLit))
+
+#guard (AST.infer (.apply (.val (.fnPrimitive .TLit .lit)) primitiveIdFn)).shouldFail 3
+
 end infer
 
 end Trm

@@ -28,6 +28,15 @@ example : astToJson (.ref only .same : Trm 3) sigC sigB =
 
 example : astToJson (.TLit : AST 0 .typ) sigC sigB = "primitive" := rfl
 
+section hash
+
+#guard
+  let primitive : Val := .fnPrimitive .TLit .lit
+  astToJson primitive sigC sigB == .arr #["primitiveFn", "primitive"] &&
+    astBEq primitive (.fnPrimitive .TLit (λ _ => .lit "other")) sigC sigB
+
+end hash
+
 example : astToJson (.TFn .TLit .TLit : AST 0 .typ) sigC sigB =
     .arr #["fn", "primitive", "primitive"] := rfl
 

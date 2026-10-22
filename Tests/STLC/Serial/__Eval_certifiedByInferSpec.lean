@@ -43,6 +43,12 @@ private def higherOrderApplication : Trm :=
 #guard (literalEval Trm.FreeCapture.directRef capturedBindings).shouldYields 1 "outer"
 #guard (literalEval Trm.FreeCapture.capturedRefOnFalse capturedBindings).shouldYields 2 "outer"
 
+#guard (literalEval (.apply (.val (.fnPrimitive .TLit .lit)) Trm.vFalse)).shouldYields 2 "false"
+
+#guard match erasedEval (.apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) Trm.vFalse) .empty 2 2 with
+  | .yield (some .corrupted) => true
+  | _ => false
+
 -- The caller's slot zero holds a function; the applied closure captured a literal there.
 #guard (literalEval (.apply Trm.FreeCapture.directRef Trm.vTrue) callerBindings).shouldYields 2 "outer"
 
