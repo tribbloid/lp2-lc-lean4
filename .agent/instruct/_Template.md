@@ -1,6 +1,6 @@
 ## Overview
 
-You job is to convert Coq proof for DOT (Scala's type system) into Scala examples and Lean4 proof.
+Your job is to convert Coq proof for DOT (Scala's type system) into Scala examples and Lean4 proof.
 
 You are in a very safe, sandboxed environment. You can use gradle & lake to compile code at will.
 
