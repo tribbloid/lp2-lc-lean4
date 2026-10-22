@@ -100,7 +100,7 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard match FreeCapture.capturedRef with
   | .val value =>
-    let bindings := (breakpoint (NatBindings.empty.set 1 ⟨0, value, fnBindings⟩)).set
+    let bindings := (.breakpoint (NatBindings.empty.set 1 ⟨0, value, fnBindings⟩) : CompilerBindings).set
       0 ⟨0, .TLit, .empty⟩
     (innerRef.infer bindings).shouldYields 5 (.TFn .TLit (.TFn .TLit .TLit)) ∧
       (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 6 (.TFn .TLit .TLit)
