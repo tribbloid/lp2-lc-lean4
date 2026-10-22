@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.Serial.__Infer
+import «Lp2lc».Active.STLC.Serial.Infer
 import «Lp2lc».Active.STLC.Serial.Eval
 import «Lp2lc».Active.STLC.Hash
 import «Tests».STLC.TrmDemo

@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.UId.__Infer
+import «Lp2lc».Active.STLC.UId.Infer
 
 namespace Lp2lc.Active.STLC
 open Lp2lc.Active.Util Root Root.Trm

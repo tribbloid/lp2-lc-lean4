@@ -1,5 +1,5 @@
+import «Lp2lc».Active.STLC.Serial.Eval
 import «Tests».STLC.TrmDemo
-import «Lp2lc».Active.STLC.__Infer
 
 open Lp2lc.Active.Util
 open Lp2lc.Active.STLC
