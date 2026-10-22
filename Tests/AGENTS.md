@@ -14,7 +14,7 @@ end eval
 ```
 
 - Theorems, propositions, and properties should be excluded from tests.
-- Test assertions should use `example` and the `rfl` tactic when possible.
+- Test assertions should use concise `#guard` expressions, sharing repeated setup and checks.
 
 ## Scala syntax demo
 
