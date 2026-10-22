@@ -9,6 +9,7 @@ import «Lp2lc».Active.PartialDefInheritance
 import «Lp2lc».Active.GDOT.GDOTDef
 import «Lp2lc».Active.HKGDOT.HKGDOTDef
 import «Lp2lc».Active.DSub.DSubDef
+import «Lp2lc».Active.DSub.Serial.Def
 
 -- STLC syntax, hashing, serial execution, and type inference.
 import «Lp2lc».Active.STLC.STLCDef
