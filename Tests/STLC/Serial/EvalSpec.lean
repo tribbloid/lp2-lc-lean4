@@ -1,54 +1,57 @@
 import «Lp2lc».Active.STLC.Serial.Eval
+import «Lp2lc».Active.STLC.Hash
 import «Tests».STLC.TrmDemo
 
-namespace Tests.STLC.Sanity
+namespace Tests.STLC.Sanity.Trm
 
-namespace Trm
-
-open Lp2lc.Active.Util
-open Lp2lc.Active.STLC
+open Lp2lc.Active.Util Lp2lc.Active.STLC
+open Lean (Json toJson)
 
 section eval
 
-private def evalAt {n} (trm : Trm n) (fuel : Nat) (bindings : ExeBindings := .empty) :=
-  (trm.eval bindings fuel, trm.eval bindings (fuel - 1))
+private def signature (closure : ExeVal) : Json :=
+  match closure with
+  | .mk n value captured =>
+    let rec bindings (entries : ExeBindings) : Json :=
+      match entries with
+      | .empty => .null
+      | .set rest index value => .arr #[bindings rest, toJson index, signature value]
+    .arr #[toJson n, astToJson value toJson toJson, bindings captured]
+termination_by structural closure
 
-private def freeBindings : ExeBindings := NatBindings.empty.set 0 ⟨0, .lit bTrue, .empty⟩
+private def evalYields {n} (trm : Trm n) (fuel : Nat) (expected : ExeVal)
+    (bindings : ExeBindings := .empty) : Bool :=
+  match trm.eval bindings fuel, trm.eval bindings (fuel - 1) with
+  | .yield (some (.some value)), .outOfFuel => signature value == signature expected
+  | _, _ => false
 
-example : evalAt vFalse 1 =
-    (.yield (some (.some ⟨0, .lit bFalse, .empty⟩)), .outOfFuel) := rfl
+private def falseValue : ExeVal := ⟨0, .lit bFalse, .empty⟩
+private def trueValue : ExeVal := ⟨0, .lit bTrue, .empty⟩
+private def freeBindings : ExeBindings := NatBindings.empty.set 0 trueValue
 
-example : evalAt primitiveIdFnOnFalse 2 =
-    (.yield (some (.some ⟨0, .lit bFalse, .empty⟩)), .outOfFuel) := rfl
+#guard evalYields vFalse 1 falseValue
 
-example : evalAt get1stOnTuple 3 =
-    (.yield (some (.some ⟨0, .lit bFalse, .empty⟩)), .outOfFuel) := rfl
+#guard evalYields primitiveIdFnOnFalse 2 falseValue
 
-example : evalAt get2ndOnTuple 3 =
-    (.yield (some (.some ⟨0, .lit bTrue, .empty⟩)), .outOfFuel) := rfl
+#guard evalYields get1stOnTuple 3 falseValue
 
-example : evalAt Malformed.WrongTypeIdFnOnItself 2 =
-    (.yield (some (.some ⟨0, Val.idFn, .empty⟩)), .outOfFuel) := rfl
+#guard evalYields get2ndOnTuple 3 trueValue
 
-example : evalAt Malformed.WrongTypeIdFnOnFalse2 3 =
-    (.yield (some (.some ⟨0, .lit bFalse, .empty⟩)), .outOfFuel) := rfl
+#guard evalYields Malformed.WrongTypeIdFnOnItself 2 ⟨0, Val.idFn, .empty⟩
 
-#guard Trm.Malformed.applyLit2.eval.shouldFail 3
+#guard evalYields Malformed.WrongTypeIdFnOnFalse2 3 falseValue
 
-#guard Trm.Malformed.applyLit1.eval.shouldFail 2
+#guard Malformed.applyLit2.eval.shouldFail 3
 
-example : evalAt primitiveTrueFnOnFalse 2 =
-    (.yield (some (.some ⟨1, .lit bTrue, NatBindings.empty.set 1 ⟨0, .lit bFalse, .empty⟩⟩)),
-      .outOfFuel) := rfl
+#guard Malformed.applyLit1.eval.shouldFail 2
 
-example : evalAt FreeCapture.directRef 1 freeBindings =
-    (.yield (some (.some ⟨0, .lit bTrue, .empty⟩)), .outOfFuel) := rfl
+#guard evalYields primitiveTrueFnOnFalse 2
+  ⟨1, .lit bTrue, NatBindings.empty.set 1 falseValue⟩
 
-example : evalAt FreeCapture.capturedRefOnFalse 2 freeBindings =
-    (.yield (some (.some ⟨0, .lit bTrue, .empty⟩)), .outOfFuel) := rfl
+#guard evalYields FreeCapture.directRef 1 trueValue freeBindings
+
+#guard evalYields FreeCapture.capturedRefOnFalse 2 trueValue freeBindings
 
 end eval
 
-end Trm
-
-end Sanity
+end Tests.STLC.Sanity.Trm
