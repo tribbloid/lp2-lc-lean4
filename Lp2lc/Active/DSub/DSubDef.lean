@@ -35,7 +35,7 @@ inductive AST : Parameters → Label → Type 2 where
 | fnPrimitive {P} (tOut : Binder P .typ) (op : P.B → AST P .val) : AST P .val
     -- declared type is `.TFn .TLit tOut`; typing must validate `op` at every literal input
 
-| TMember {P} (lower upper : AST P .typ) : AST P .typ -- Scala type: { type Type >: L <: U }, equivalent to nominal class/type declaration in Scala
+| TMember {P} (lower upper : AST P .typ) : AST P .typ -- Scala type: { type Type >: L <: U }
 | TSel {P} (value : AST P .val) : AST P .typ -- Scala type: v.Type (stable v)
 | typeDef {P} (typ : AST P .typ) : AST P .val -- Scala value: new { type Type = T }
 
