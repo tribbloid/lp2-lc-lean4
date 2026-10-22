@@ -1,23 +1,18 @@
 ## Overview
 
-Your job is to convert Coq proof for DOT (Scala's type system) into Scala examples and Lean4 proof.
+Your job is to convert Coq proofs for DOT (Scala's type system) into Scala examples and Lean 4 proofs.
 
-You are in a very safe, sandboxed environment. You can use gradle & lake to compile code at will.
+Follow the [project guide](../../AGENTS.md) and [code structure](../CodeStructure.md), including their build commands.
 
 ## Tasks (mark as complete when done)
 
-- [ ] Explain/Demo Scala language features defined as types in [<source>.v](../../Lp2lc_coq/Active/<source>.v) using
-  rule in [Demo.md](../Demo.md), write Scala code into
-  [<source>.scala](../../example/src/main/scala/lp2lc/example/<source>.scala)
-- [ ] Explain theorems in [<source>.v](../../Lp2lc_coq/Active/<source>.v) using rule in [Explain.md](../Explain.md),
-  write Scala code & comment into
-  [<source>_theorem.scala](../../example/src/main/scala/lp2lc/example/<source>_theorem.scala)
-- [ ] Convert types & propositions in [<source>.v](../../Lp2lc_coq/Active/<source>.v) into
-  [<source>.lean](../../Lp2lc/Active/<source>.lean) using rule in [Scaffold.md](../Scaffold.md),
-- [ ] Discharge theorems in [<source>.lean](../../Lp2lc/Active/<source>.lean) using rule in
-  [Discharge.md](../Discharge.md),
+- [ ] Explain and demonstrate Scala language features defined in the [Coq sources](../../Lp2lc_coq/Active),
+      writing corresponding Scala code under [Tests/Example](../../Tests/Example).
+- [ ] Explain the corresponding Coq theorems in comments beside those Scala examples.
+- [ ] Convert types and propositions into [Lean production modules](../../Lp2lc/Active).
+- [ ] Discharge the Lean theorems following the project's proving guardrails.
 
 ## Rules
 
-- continue from where they left off
+- Continue from the last completed step.
 - DO NOT proceed to the next task until the current one is completed
