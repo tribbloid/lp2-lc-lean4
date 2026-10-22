@@ -1,90 +1,53 @@
 import «Lp2lc».Active.STLC.Serial.Eval
 import «Tests».STLC.TrmDemo
 
-open Lp2lc.Active.Util
-open Lp2lc.Active.STLC
-
 namespace Tests.STLC.Sanity
 
 namespace Trm
 
-open Tests.STLC.Sanity.Symbolic
+open Lp2lc.Active.Util
+open Lp2lc.Active.STLC
 
 section eval
-variable [testEnv : TestEnv]
 
-/-- Runtime context is the fixture's own executable view, whose equivalence
-mints receipts only from executable values. -/
-@[reducible] instance env : ExeEnv refs := testEnv.exe
+private def evalAt {n} (trm : Trm n) (fuel : Nat) (bindings : ExeBindings := .empty) :=
+  (trm.eval bindings fuel, trm.eval bindings (fuel - 1))
 
-instance : BEq (AST.Val refs.Parameters) :=
-  ⟨λ a b => astBEq a b (λ _ => .null) (λ repr => litSig repr)⟩
+private def freeBindings : ExeBindings := NatBindings.empty.set 0 ⟨0, .lit bTrue, .empty⟩
 
-attribute [local simp] AST.eval
-attribute [local simp] Binder.apply
-attribute [local simp] Trm.vFalse Trm.vTrue Trm.primitiveIdFn Trm.primitiveIdFnOnFalse
-attribute [local simp] Trm.get1st Trm.get2nd Trm.get1stOnTuple Trm.get2ndOnTuple
-attribute [local simp] Trm.primitiveTrueFn Trm.primitiveTrueFnOnFalse
-attribute [local simp] Trm.Malformed.WrongTypeIdFnOnItself Trm.Malformed.WrongTypeIdFnOnFalse2
-attribute [local simp] Trm.Malformed.applyLit2 Trm.Malformed.applyLit1 Val.idFn
-attribute [local simp] Trm.FreeCapture.receipt Trm.FreeCapture.directRef Trm.FreeCapture.capturedRef
-attribute [local simp] Trm.FreeCapture.capturedRefOnFalse
+example : evalAt vFalse 1 =
+    (.yield (some (.some ⟨0, .lit bFalse, .empty⟩)), .outOfFuel) := rfl
 
-#guard Trm.vFalse.eval.shouldYields 1 (.lit bFalse)
+example : evalAt primitiveIdFnOnFalse 2 =
+    (.yield (some (.some ⟨0, .lit bFalse, .empty⟩)), .outOfFuel) := rfl
 
-#guard Trm.primitiveIdFnOnFalse.eval.shouldYields 2 (.lit bFalse)
+example : evalAt get1stOnTuple 3 =
+    (.yield (some (.some ⟨0, .lit bFalse, .empty⟩)), .outOfFuel) := rfl
 
-#guard Trm.get1stOnTuple.eval.shouldYields 3 (.lit bFalse)
+example : evalAt get2ndOnTuple 3 =
+    (.yield (some (.some ⟨0, .lit bTrue, .empty⟩)), .outOfFuel) := rfl
 
-#guard Trm.get2ndOnTuple.eval.shouldYields 3 (.lit bTrue)
+example : evalAt Malformed.WrongTypeIdFnOnItself 2 =
+    (.yield (some (.some ⟨0, Val.idFn, .empty⟩)), .outOfFuel) := rfl
 
-#guard Trm.Malformed.WrongTypeIdFnOnItself.eval.shouldYields 2 Val.idFn
-
-#guard Trm.Malformed.WrongTypeIdFnOnFalse2.eval.shouldYields 3 (.lit bFalse)
+example : evalAt Malformed.WrongTypeIdFnOnFalse2 3 =
+    (.yield (some (.some ⟨0, .lit bFalse, .empty⟩)), .outOfFuel) := rfl
 
 #guard Trm.Malformed.applyLit2.eval.shouldFail 3
 
 #guard Trm.Malformed.applyLit1.eval.shouldFail 2
 
-example : True := by
-  fail_if_success
-    have _body : Binder refs.Parameters .trm :=
-      λ receipt => .ref receipt
-  trivial
+example : evalAt primitiveTrueFnOnFalse 2 =
+    (.yield (some (.some ⟨1, .lit bTrue, NatBindings.empty.set 1 ⟨0, .lit bFalse, .empty⟩⟩)),
+      .outOfFuel) := rfl
 
-#guard Trm.primitiveTrueFnOnFalse.eval.shouldYields 2 (.lit bTrue)
+example : evalAt FreeCapture.directRef 1 freeBindings =
+    (.yield (some (.some ⟨0, .lit bTrue, .empty⟩)), .outOfFuel) := rfl
 
-#guard Trm.FreeCapture.directRef.eval.shouldYields 1 Trm.FreeCapture.value
-
-#guard Trm.FreeCapture.capturedRefOnFalse.eval.shouldYields 2 Trm.FreeCapture.value
+example : evalAt FreeCapture.capturedRefOnFalse 2 freeBindings =
+    (.yield (some (.some ⟨0, .lit bTrue, .empty⟩)), .outOfFuel) := rfl
 
 end eval
-
-section compilerCapability -- FIXME: useless now, remove
-
-variable [refs : HasUId2Any] [build : BuildEnv refs]
-
-example : True := by
-  fail_if_success
-    have _receipt := refs.uid2any.inv
-  trivial
-
-example : True := by
-  fail_if_success
-    have _exe : ExeEnv refs := inferInstance
-  trivial
-
-example [_exe : ExeEnv refs] : True := by
-  fail_if_success
-    have _receipt := _exe.uid2typCtx.inv
-  trivial
-
-example : True := by
-  fail_if_success
-    have _receipt := build.uid2valCtx.inv
-  trivial
-
-end compilerCapability
 
 end Trm
 
