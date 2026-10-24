@@ -33,4 +33,7 @@ import «Lp2lc».Active.STLC.UId.Eval
 import «Lp2lc».Active.STLC.UId.Infer
 import «Lp2lc».Active.STLC.UId.__Infer_proof
 
+-- Self-contained certified STLC evaluation (machine-generated).
+import «Lp2lc».Active.STLC_minimal.mod
+
 -- import «Lp2lc».Active.DOT.DOTDef
