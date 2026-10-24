@@ -256,42 +256,44 @@ private def functionType (self : CompilerTyp) (context : NatBindings CompilerTyp
 /-- Infer from runtime imports and hypothetical types, retaining dependent stable paths.
 Primitive result annotations are inferred here; their implementations require validation at evaluation. -/
 def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt CompilerTyp := λ fuel =>
-  match fuel, self with
-  | 0, _ => .outOfFuel
-  | _ + 1, .val (.lit _) => .yield (some ⟨n, .TLit, .empty⟩)
-  | fuel + 1, .val (.typeDef typ) =>
-    (resolveType typ bindings fuel).map (Option.map (λ typ => ⟨n, .TMember typ typ, .empty⟩))
-  | fuel + 1, .val (.fn input body) =>
-    andThen (resolveType input bindings fuel) (λ input =>
-      let entries := bindings.set (n + 1) ⟨n, input, .empty⟩
-      andThen (infer (body.apply .only) entries fuel) (λ output =>
-        (quoteType output none entries.types (n + 1) id .empty fuel).map
-          (Option.map (λ output => ⟨n, .TFn input (.mk (λ _ => output)), .empty⟩))))
-  | fuel + 1, .val (.fnPrimitive output _) =>
-    (resolveType (output.apply .only) (bindings.set (n + 1) ⟨n, .TLit, .empty⟩) fuel).map
-      (Option.map (λ output => ⟨n, .TFn .TLit (.mk (λ _ => output)), .empty⟩))
-  | fuel + 1, .val (.ref _ under) =>
-    let found :=
-      match bindings under.sourceIndex.down with
-      | some (.inl typ) => .yield (some typ)
-      | some (.inr value) => infer value.value.asTrm value.captured fuel
-      | none => .yield none
-    andThen found (λ typ =>
-      (quoteType typ none bindings.types n id .empty fuel).map (Option.map (λ typ => ⟨n, typ, .empty⟩)))
-  | fuel + 1, .apply fn arg =>
-    andThen (infer fn bindings fuel) (λ fnType =>
-      andThen (infer arg bindings fuel) (λ argType =>
-        andThen (functionType fnType bindings.types fuel) (λ ⟨index, input, output, captured⟩ =>
-          (argType.subtype ⟨index, input, captured⟩ bindings.types fuel).flatMap (λ accepted =>
-            if accepted then
-              let replacement :=
-                match arg with
-                | .val (.ref _ under) =>
-                  if (bindings.types under.sourceIndex.down).isSome then pathAlias under.sourceIndex.down else argType
-                | _ => argType
-              (quoteType ⟨index + 1, output.apply .only, captured.set (index + 1) replacement⟩ none
-                bindings.types n id .empty fuel).map (Option.map (λ typ => ⟨n, typ, .empty⟩))
-            else .yield none))))
+  match fuel with
+  | 0 => .outOfFuel
+  | fuel + 1 =>
+    match self with
+    | .val (.lit _) => .yield (some ⟨n, .TLit, .empty⟩)
+    | .val (.typeDef typ) =>
+      (resolveType typ bindings fuel).map (Option.map (λ typ => ⟨n, .TMember typ typ, .empty⟩))
+    | .val (.fn input body) =>
+      andThen (resolveType input bindings fuel) (λ input =>
+        let entries := bindings.set (n + 1) ⟨n, input, .empty⟩
+        andThen (infer (body.apply .only) entries fuel) (λ output =>
+          (quoteType output none entries.types (n + 1) id .empty fuel).map
+            (Option.map (λ output => ⟨n, .TFn input (.mk (λ _ => output)), .empty⟩))))
+    | .val (.fnPrimitive output _) =>
+      (resolveType (output.apply .only) (bindings.set (n + 1) ⟨n, .TLit, .empty⟩) fuel).map
+        (Option.map (λ output => ⟨n, .TFn .TLit (.mk (λ _ => output)), .empty⟩))
+    | .val (.ref _ under) =>
+      let found :=
+        match bindings under.sourceIndex.down with
+        | some (.inl typ) => .yield (some typ)
+        | some (.inr value) => infer value.value.asTrm value.captured fuel
+        | none => .yield none
+      andThen found (λ typ =>
+        (quoteType typ none bindings.types n id .empty fuel).map (Option.map (λ typ => ⟨n, typ, .empty⟩)))
+    | .apply fn arg =>
+      andThen (infer fn bindings fuel) (λ fnType =>
+        andThen (infer arg bindings fuel) (λ argType =>
+          andThen (functionType fnType bindings.types fuel) (λ ⟨index, input, output, captured⟩ =>
+            (argType.subtype ⟨index, input, captured⟩ bindings.types fuel).flatMap (λ accepted =>
+              if accepted then
+                let replacement :=
+                  match arg with
+                  | .val (.ref _ under) =>
+                    if (bindings.types under.sourceIndex.down).isSome then pathAlias under.sourceIndex.down else argType
+                  | _ => argType
+                (quoteType ⟨index + 1, output.apply .only, captured.set (index + 1) replacement⟩ none
+                  bindings.types n id .empty fuel).map (Option.map (λ typ => ⟨n, typ, .empty⟩))
+              else .yield none))))
 
 def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ : CompilerTyp) : Prop :=
   self.infer bindings fuel = .yield (some typ)
