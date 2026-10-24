@@ -67,7 +67,13 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
           _hValue : value.value.asTrm.infer value.captured budget with
       | .yield (some expected), .yield (some actual) =>
         match _hSubtype : actual.subtype expected .empty budget with
-        | .yield true => .yield ⟨value, by sorry⟩
+        | .yield true => .yield ⟨value, by
+            intro inferFuel typ hInfer
+            have hMono := Monotone.termInfer self bindings
+            have hSame := (hMono budget (max budget inferFuel) _ (Nat.le_max_left _ _) _hSource).symm.trans
+              (hMono inferFuel (max budget inferFuel) _ (Nat.le_max_right _ _) hInfer)
+            cases Rec.Outcome.yield.inj hSame
+            exact ⟨budget, by rw [_hValue]; exact ⟨budget, _hSubtype⟩⟩⟩
         | _ => .outOfFuel
       | _, _ => .outOfFuel)
 
@@ -76,7 +82,33 @@ namespace Monotone
 /-- Completed evaluation results are preserved when fuel increases. -/
 private theorem termEval {n} (trm : Trm n) (bindings : ExeBindings) :
     (evalInternal trm bindings).Monotone := by
-  sorry
+  intro less more result hFuel h
+  induction less generalizing n trm bindings more result with
+  | zero => cases h
+  | succ fuel ih =>
+    cases more with
+    | zero => exact False.elim (Nat.not_succ_le_zero _ hFuel)
+    | succ more =>
+      replace hFuel := Nat.le_of_succ_le_succ hFuel
+      have hRun {m} (self : Trm m) entries value :
+          (evalInternal self entries fuel).map Subtype.val = .yield value →
+          (evalInternal self entries more).map Subtype.val = .yield value := by
+        cases hResult : evalInternal self entries fuel with
+        | outOfFuel => simp [Rec.Outcome.map]
+        | yield result =>
+          intro h
+          rw [ih self entries more result hFuel hResult]
+          exact h
+      have hInfer := @AST.Monotone.termInfer
+      have hSubtype := CompilerTyp.Monotone.subtype
+      simp only [Rec.Monotone] at hInfer hSubtype
+      cases trm <;> try cases ‹Val n›
+      all_goals simp only [evalInternal, Rec.Outcome.flatMap] at h ⊢
+      all_goals repeat' split at h
+      all_goals try grind (splits := 0)
+      all_goals rename_i hRaw expected actual hSource hValue hSubtypeCheck
+      all_goals repeat' split at hRaw
+      all_goals grind (splits := 1)
 
 end Monotone
 

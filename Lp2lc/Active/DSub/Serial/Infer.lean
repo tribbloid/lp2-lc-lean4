@@ -105,10 +105,60 @@ def subtype (self upper : CompilerTyp) (context : NatBindings CompilerTyp := .em
 
 namespace Monotone
 
+private theorem combine {left right left' right' : Rec.Outcome Bool} {result : Bool}
+    (shortCircuit : Bool)
+    (hLeft : ∀ value, left = .yield value → left' = .yield value)
+    (hRight : ∀ value, right = .yield value → right' = .yield value)
+    (h : CompilerTyp.combine shortCircuit left right = .yield result) :
+    CompilerTyp.combine shortCircuit left' right' = .yield result := by
+  cases left <;> cases right <;> cases shortCircuit <;> simp_all [CompilerTyp.combine]
+  all_goals split at h <;> simp_all
+  all_goals cases left' <;> cases right' <;> simp_all
+
+private theorem bounds (less more : Nat) (hFuel : less ≤ more) :
+    (∀ self context result, memberBounds self context less = .yield result →
+      memberBounds self context more = .yield result) ∧
+    (∀ {n} (value : Val n) captured context result, selectionBounds value captured context less = .yield result →
+      selectionBounds value captured context more = .yield result) := by
+  induction less generalizing more with
+  | zero => constructor <;> intros <;> contradiction
+  | succ fuel ih =>
+    cases more with
+    | zero => exact False.elim (Nat.not_succ_le_zero _ hFuel)
+    | succ more =>
+      obtain ⟨hMember, hSelection⟩ := ih more (Nat.le_of_succ_le_succ hFuel)
+      constructor
+      · rintro ⟨n, typ, captured⟩ context result h
+        cases typ
+        all_goals simp only [memberBounds, Rec.Outcome.flatMap] at h ⊢
+        all_goals repeat split at h
+        all_goals simp_all <;> subst_vars <;> rfl
+      · intro n value captured context result h
+        cases value
+        all_goals simp only [selectionBounds] at h ⊢
+        all_goals repeat split at h
+        all_goals simp_all
+
 /-- Completed subtype checks retain their result when fuel increases. -/
 theorem subtype (self upper : CompilerTyp) (context : NatBindings CompilerTyp) :
     (self.subtype upper context).Monotone := by
-  sorry
+  intro less more result hFuel h
+  induction less generalizing self upper context more result with
+  | zero => cases h
+  | succ fuel ih =>
+    cases more with
+    | zero => exact False.elim (Nat.not_succ_le_zero _ hFuel)
+    | succ more =>
+      replace hFuel := Nat.le_of_succ_le_succ hFuel
+      obtain ⟨_, hSelection⟩ := bounds fuel more hFuel
+      simp only [CompilerTyp.subtype.eq_2] at h ⊢
+      repeat' (split at h <;> try simp_all only [Bool.false_eq_true, ite_true, ite_false])
+      all_goals apply combine _ ?_ ?_ h
+      all_goals intro value hBranch
+      all_goals try exact ih _ _ _ more value hFuel hBranch
+      all_goals try simp only [Rec.Outcome.flatMap] at hBranch ⊢
+      all_goals repeat split at hBranch
+      all_goals simp_all [-Bool.forall_bool]
 
 end Monotone
 
@@ -248,10 +298,70 @@ def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ :
 
 namespace Monotone
 
+/-- Completed quotation results retain their syntax when fuel increases. -/
+private theorem quoteType (self : CompilerTyp) (imports : Option ExeBindings)
+    (context : NatBindings CompilerTyp) (target : Nat) (names : Nat → Nat)
+    (targetCaptures : NatBindings CompilerTyp) :
+    (AST.quoteType self imports context target names targetCaptures).Monotone := by
+  intro less more result hFuel h
+  induction less generalizing self imports context target names targetCaptures more result with
+  | zero => cases h
+  | succ fuel ih =>
+    cases more with
+    | zero => exact False.elim (Nat.not_succ_le_zero _ hFuel)
+    | succ more =>
+      replace hFuel := Nat.le_of_succ_le_succ hFuel
+      obtain ⟨hMember, _⟩ := CompilerTyp.Monotone.bounds fuel more hFuel
+      have hSubtype (self upper : CompilerTyp) (context : NatBindings CompilerTyp) (value : Bool) :=
+        CompilerTyp.Monotone.subtype self upper context fuel more value hFuel
+      have hCheck (lower upper : CompilerTyp) (context : NatBindings CompilerTyp) (value : Bool) :=
+        CompilerTyp.Monotone.combine (result := value) false (hSubtype lower upper context) (hSubtype upper lower context)
+      rcases self with ⟨n, typ, captured⟩
+      cases typ
+      all_goals try cases ‹Val n›
+      all_goals simp only [AST.quoteType, andThen, Rec.Outcome.map, Rec.Outcome.flatMap] at h ⊢
+      all_goals repeat' split at h
+      all_goals try simp_all [-Bool.forall_bool]
+      all_goals first | exact ih _ _ _ _ _ _ more _ hFuel h | subst_vars; rfl
+
+private theorem functionType (self : CompilerTyp) (context : NatBindings CompilerTyp) :
+    (AST.functionType self context).Monotone := by
+  intro less more result hFuel h
+  induction less generalizing self context more result with
+  | zero => cases h
+  | succ fuel ih =>
+    cases more with
+    | zero => exact False.elim (Nat.not_succ_le_zero _ hFuel)
+    | succ more =>
+      replace hFuel := Nat.le_of_succ_le_succ hFuel
+      obtain ⟨_, hSelection⟩ := CompilerTyp.Monotone.bounds fuel more hFuel
+      rcases self with ⟨n, typ, captured⟩
+      cases typ
+      all_goals simp only [AST.functionType, andThen, Rec.Outcome.flatMap] at h ⊢
+      all_goals repeat' split at h
+      all_goals simp_all <;> subst_vars <;> rfl
+
 /-- Every completed inference result, including rejection, is preserved when fuel increases. -/
 theorem termInfer {n} (trm : Trm n) (bindings : CompilerBindings) :
     (infer trm bindings).Monotone := by
-  sorry
+  intro less more result hFuel h
+  induction less generalizing n trm bindings more result with
+  | zero => cases h
+  | succ fuel ih =>
+    cases more with
+    | zero => exact False.elim (Nat.not_succ_le_zero _ hFuel)
+    | succ more =>
+      replace hFuel := Nat.le_of_succ_le_succ hFuel
+      have hQuote (self imports context target names captures result) :=
+        quoteType self imports context target names captures fuel more result hFuel
+      have hFunction (self context result) := functionType self context fuel more result hFuel
+      have hSubtype (self upper context result) := CompilerTyp.Monotone.subtype self upper context fuel more result hFuel
+      cases trm <;> try cases ‹Val n›
+      all_goals simp only [infer, resolveType, andThen, Rec.Outcome.flatMap, Rec.Outcome.map] at h ⊢
+      all_goals repeat' split at h
+      all_goals try simp_all [-Bool.forall_bool]
+      all_goals repeat' (split at * <;> try simp_all [-Bool.forall_bool])
+      all_goals subst_vars <;> first | contradiction | rfl
 
 end Monotone
 
