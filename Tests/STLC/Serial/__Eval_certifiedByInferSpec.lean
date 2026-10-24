@@ -1,4 +1,5 @@
 import «Lp2lc».Active.STLC.Serial.__Eval_certifiedByInfer
+import «Lp2lc».Active.STLC.Serial.Eval
 import «Tests».STLC.TrmDemo
 
 namespace Tests.STLC.EvalCertifiedByInferSpec
@@ -13,7 +14,7 @@ private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty)
     (inferFuel : Nat := 8) : RecOpt (Return ExeVal) :=
   match hInfer : trm.infer bindings inferFuel with
   | .yield (some _) => λ fuel =>
-      (trm.eval_certified bindings hInfer fuel).map (λ payload => some (.some payload.val))
+      (trm.eval_certified bindings hInfer fuel).map (λ result => some (result.map Subtype.val))
   | .yield none => λ _ => .yield none
   | .outOfFuel => λ _ => .outOfFuel
 
@@ -33,6 +34,14 @@ private def higherOrderId : Trm :=
 private def higherOrderApplication : Trm :=
   .apply (.apply higherOrderId Trm.primitiveIdFn) Trm.vFalse
 
+private def corruptApplication (n : Nat := 0) : Trm n :=
+  .apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) (.val (.lit "false"))
+
+private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
+  match trm.eval .empty fuel, erasedEval trm .empty 8 fuel with
+  | .yield (some .corrupted), .yield (some .corrupted) => true
+  | _, _ => false
+
 -- Exact evaluation budgets include the one-less-budget exhaustion check.
 #guard (literalEval Trm.vFalse).shouldYields 1 "false"
 #guard (literalEval Trm.primitiveIdFnOnFalse).shouldYields 2 "false"
@@ -45,9 +54,20 @@ private def higherOrderApplication : Trm :=
 
 #guard (literalEval (.apply (.val (.fnPrimitive .TLit .lit)) Trm.vFalse)).shouldYields 2 "false"
 
-#guard match erasedEval (.apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) Trm.vFalse) .empty 2 2 with
+#guard corruptsAt corruptApplication 2
+#guard corruptsAt corruptApplication 1000
+#guard corruptsAt (.apply corruptApplication Trm.vTrue) 3
+#guard corruptsAt (.apply higherOrderId corruptApplication) 3
+#guard corruptsAt (.apply (.val (.fn .TLit (.mk (λ _ => corruptApplication 1)))) Trm.vFalse) 3
+
+#guard match erasedEval corruptApplication .empty 2 1 with
   | .outOfFuel => true
   | _ => false
+
+#guard
+  let primitive : Val := .fnPrimitive .TLit
+    (λ _ => .fn .TLit (.mk (λ _ => .apply (.val (.lit "bad")) (.val (.lit "bad")))))
+  corruptsAt (.apply (.val primitive) Trm.vFalse) 4
 
 -- The caller's slot zero holds a function; the applied closure captured a literal there.
 #guard (literalEval (.apply Trm.FreeCapture.directRef Trm.vTrue) callerBindings).shouldYields 2 "outer"
