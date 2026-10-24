@@ -41,7 +41,7 @@ private theorem checkReplace {trm : Trm n}
             (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
             (by
               intro index inputTyp
-              simp only [CompilerBindings.get]
+              simp only [CompilerBindings.get, NatBindings.get]
               split <;> first | exact id | exact hReplace index inputTyp) hBody
           exact ⟨bodyFuel + 1, hInput, hTarget⟩
     | ref carrier under =>
@@ -156,7 +156,7 @@ theorem main (fuel : Nat) (typ : Typ)
                   (by
                     intro index inputTyp hSource
                     simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
-                    split at hSource <;> simp_all [entryFits]) hBody
+                    split at hSource <;> simp_all [entryFits, Option.map]) hBody
                 simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
                   ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
             | fnPrimitive tOut op =>

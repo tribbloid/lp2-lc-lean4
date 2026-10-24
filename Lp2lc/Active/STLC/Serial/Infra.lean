@@ -8,18 +8,23 @@ open Lp2lc.Active.Util
 abbrev CompilerTyp := Closure (Typ ·) -- Compiler types capture only other types; singleton types remain types.
 
 /-- Breakpoint values seed inference; subsequent bindings must contain only hypothetical types. -/
-inductive CompilerBindings where
-  | breakpoint (bindings : ExeBindings)
-  | set (self : CompilerBindings) (index : Nat) (typ : CompilerTyp)
+structure CompilerBindings where
+  runtime : ExeBindings
+  types : NatBindings CompilerTyp
 
 namespace CompilerBindings
 
+abbrev breakpoint (bindings : ExeBindings) : CompilerBindings := ⟨bindings, .empty⟩
+
 def empty : CompilerBindings := breakpoint .empty
 
-def get (self : CompilerBindings) (index : Nat) : Option (CompilerTyp ⊕ ExeVal) :=
-  match self with
-  | .breakpoint bindings => (bindings index).map .inr
-  | .set bindings key typ => if key = index then some (.inl typ) else bindings.get index
+variable (self : CompilerBindings)
+
+abbrev set (index : Nat) (typ : CompilerTyp) : CompilerBindings :=
+  { self with types := self.types.set index typ }
+
+def get (index : Nat) : Option (CompilerTyp ⊕ ExeVal) :=
+  ((self.types index).map .inl).orElse (λ _ => (self.runtime index).map .inr)
 
 instance : CoeFun CompilerBindings (λ _ => Nat → Option (CompilerTyp ⊕ ExeVal)) := ⟨get⟩
 

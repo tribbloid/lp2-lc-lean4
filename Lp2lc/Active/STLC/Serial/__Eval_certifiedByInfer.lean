@@ -64,7 +64,7 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
         obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
           (by
             intro index inputTyp
-            simp only [CompilerBindings.get]
+            simp only [CompilerBindings.get, NatBindings.get]
             split <;> first | exact id | exact hReplace index inputTyp) hBody
         exact ⟨bodyFuel + 1, by simp only [infer.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
       | fnPrimitive _ _ => exact ⟨fuel + 1, by simpa only [infer.eq_6] using hInfer⟩
@@ -140,15 +140,12 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
               · obtain ⟨output, hBody, hFnType⟩ := inferFnSuccess hFnValue
                 rcases Pre.AST.TFn.inj hFnType with ⟨rfl, rfl⟩
                 rcases argResult with ⟨⟨argContext, argValue, argCaptured⟩, argSafe⟩
-                obtain ⟨argFuel, hArgValue⟩ := argSafe hArg
+                have argTyped := argSafe hArg
                 exact inferReplace (target := bodyBindings)
                   (by
-                    have typedArg : entryFits (some (.inr ⟨_, argValue, argCaptured⟩))
-                        (resolveType annotation) :=
-                      ⟨argFuel, hArgValue⟩
                     intro index inputTyp hSource
                     simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
-                    split at hSource <;> simp_all [entryFits]) hBody
+                    split at hSource <;> simp_all [entryFits, Option.map]) hBody
           (evalInternal (body.apply .only) bodyBindings fuel).map (λ bodyResult =>
             ⟨bodyResult.val, λ hInfer => (bodyTyped hInfer).elim (λ _ => bodyResult.property)⟩)))
 
