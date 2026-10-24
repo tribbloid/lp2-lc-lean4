@@ -13,7 +13,7 @@ private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty)
     (inferFuel : Nat := 8) : RecOpt (Return ExeVal) :=
   match hInfer : trm.infer bindings inferFuel with
   | .yield (some _) => λ fuel =>
-      (trm.eval_certified bindings hInfer fuel).map (λ payload => some (payload.map Subtype.val))
+      (trm.eval_certified bindings hInfer fuel).map (λ payload => some (.some payload.val))
   | .yield none => λ _ => .yield none
   | .outOfFuel => λ _ => .outOfFuel
 
@@ -46,7 +46,7 @@ private def higherOrderApplication : Trm :=
 #guard (literalEval (.apply (.val (.fnPrimitive .TLit .lit)) Trm.vFalse)).shouldYields 2 "false"
 
 #guard match erasedEval (.apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) Trm.vFalse) .empty 2 2 with
-  | .yield (some .corrupted) => true
+  | .outOfFuel => true
   | _ => false
 
 -- The caller's slot zero holds a function; the applied closure captured a literal there.
@@ -67,7 +67,9 @@ private def higherOrderApplication : Trm :=
     (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)) : Trm 3)
     (NatBindings.empty.set 1 outerValue)).shouldYields 1 "outer"
 
-example : Trm.vFalse.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 0 = .outOfFuel := rfl
+#guard match Trm.vFalse.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 0 with
+  | .outOfFuel => true
+  | _ => false
 
 -- Rejected terms cannot supply the evaluator's inference-success premise.
 #guard Trm.Malformed.WrongTypeIdFnOnFalse2.infer.shouldFail 4

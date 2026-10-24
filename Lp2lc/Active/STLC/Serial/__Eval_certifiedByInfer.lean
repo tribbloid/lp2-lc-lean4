@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.Serial.__Infer
+import «Lp2lc».Active.STLC.Serial.Infer
 
 namespace Lp2lc.Active.STLC.AST
 
@@ -67,6 +67,7 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
             simp only [CompilerBindings.get]
             split <;> first | exact id | exact hReplace index inputTyp) hBody
         exact ⟨bodyFuel + 1, by simp only [infer.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
+      | fnPrimitive _ _ => exact ⟨fuel + 1, by simpa only [infer.eq_6] using hInfer⟩
     | ref carrier under =>
       obtain ⟨targetFuel, hTarget⟩ := hReplace under.sourceIndex.down typ
         ⟨fuel, by
@@ -104,6 +105,28 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
     (evalInternal fn bindings fuel).flatMap (λ fnResult =>
       match fnResult with
       | ⟨.mk _ (.lit _) _, _⟩ => .outOfFuel
+      | ⟨.mk context (.fnPrimitive tOut op) captured, fnSafe⟩ =>
+        (evalInternal arg bindings fuel).flatMap (λ argResult =>
+          match argResult.val.value with
+          | .lit repr =>
+            letI : DecidableEq Typ := λ a b => typDecidableLE a b
+            match hCheck : infer (.val (op repr)) captured fuel with
+            | .yield (some checked) =>
+              if hSame : checked = resolveType tOut then
+                .yield ⟨.mk context (op repr) captured, by
+                  rintro (_ | inferFuel) typ hInfer
+                  · cases hInfer
+                  · obtain ⟨input, hFn, _⟩ := inferApplySuccess hInfer
+                    obtain ⟨fnFuel, hFnValue⟩ := fnSafe hFn
+                    cases fnFuel with
+                    | zero => cases hFnValue
+                    | succ fnFuel =>
+                      simp only [Val.asTrm, infer.eq_6] at hFnValue
+                      cases hFnValue
+                      exact ⟨fuel, by rw [hSame] at hCheck; exact hCheck⟩⟩
+              else .outOfFuel
+            | _ => .outOfFuel
+          | _ => .outOfFuel)
       | ⟨.mk context (.fn annotation body) captured, fnSafe⟩ =>
         (evalInternal arg bindings fuel).flatMap (λ argResult =>
           let bodyBindings := captured.set (context + 1) argResult.val
