@@ -103,25 +103,27 @@ Tests/AGENTS.md are not exhaustive.
 When working on an issue that contains multiple subtasks:
 
 - Each subtask should have its own independent git commit. When you complete one, commit immediately.
-- Typo or underspecified part in documentation/comment should be corrected and committed before actual work start.
 - Each subtask should be classified into one of the following categories:
 
     - **Refactoring/Cleanup** enforces code format and compliance without meaningful changes. DO NOT introduce or update
       type signatures, definitions, or proofs (even if missing or `sorry`). Preserve the existing code structure.
-    - **Conjecturing** defines or revises proposition/type definitions, including those needed to state a proposition.
-        - If a revision makes code longer (not comment), commit your work, then STOP IMMEDIATELY and ask for human approval.
-        - Strive for shorter abstractions.
-        - Only add proofs with `sorry` as a placeholder.
-        - DO NOT add definitions that repeat implementations or cases; use shared abstractions.
+    - **Conjecturing** introduces or revises definition, proposition and algorithm.
+        - DO NOT:
+            - make old algorithm much longer.
+            - repeat (write the same concept twice or more) in schema definition, inductive/match case or algorithm implementation.
+            - proof anything, all introduced theorem should be assigned `sorry`
+            - if any of the above is absolutely necessary, commit your work, then STOP IMMEDIATELY and ask for human approval.
+        - Prefer laconic, succinct code.
+        - Prefer predefined shared concept & abstraction.
     - **Proving/Discharging/Refuting** proves an existing proposition.
-        - DO NOT remove or modify any type or proposition.
-        - Introduce new lemmas only if they help prove the main theorem.
-        - Before proving the theorem, use subagent(s) to check that it is:
-            - not vacuous, tautological, or trivial.
-            - not false with clear counterexample(s).
-            - not inconsistent with contradicting axioms & conditions that can be used to construct `False`.
-        - if the above check fails:
-            - add a new entry into `DEFECT.md` (with a formal refutation lean file under `__TEMP` if applicable) to elaborate.
+        - DO NOT remove or modify type of main, public theorems (AKA propositions).
+        - Introduce relevant lemma (reusable private theorem) on-demand, but new lemma should always be documented for
+          their motivation/intention.
+        - Delete old lemma that are no longer useful or relevant.
+        - Before proving the theorem, use subagent(s) to hunt for definitional defect(s) and log them in `DEFECT.md`:
+            - vacuous, tautological, or trivial theorem/conjecture.
+            - false conjecture with clear counterexample(s).
+            - inconsistent/contradicting axioms & conditions that can be used to construct `False`.
     - **Example/Demo/Test/Benchmark** writes examples or tests for existing definitions in `Tests`.
         - DO NOT write or update production code unless it is a demo allowed by the guardrails above.
         - Theorems and lemmas are self-contained and erased at runtime; they need no test cases.
@@ -173,8 +175,10 @@ in one or more preceding git commits if necessary:
 
 - format is defined and enforced by @.markdownlint.jsonc and @dev/make-all.sh
 - Duplicated or contradicting information should be merged or deleted.
-- Inconsistent or dangling references should be fixed.
-- Spelling and syntax errors should be fixed.
+- Correct the following defects in a new git commit before actual work start:
+    - Typo/spelling error & syntax error.
+    - Inconsistent or dangling reference.
+    - Underspecified description & requirement.
 - All references must point to existing code or artefacts; references to historical objects must be deleted.
 
 ## Git (Version Control)

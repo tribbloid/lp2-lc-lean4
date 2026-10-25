@@ -1,4 +1,4 @@
-### Code Structure
+### Code & File Structure
 
 - All Lean production files and modules should be under [this](../Lp2lc/Active) module.
 - All Lean test files and modules should be under [this](../Tests) module.
@@ -8,11 +8,23 @@
         - `Proof.lean`: theorems and proofs.
         - `mod.lean`: module aggregator; active imports compile modules, while import comments record
               disabled modules.
-    - Markdown documents:
-        - `TODO.md`: problems irrelevant to the current task that can be addressed later.
-        - `DEFECT.md`: problems that may block or negatively affect the current task. Fix them systematically
-              before the main task starts. Link to a self-contained counterexample or demo if possible, such as:
-            - Inconsistent hypotheses that imply `False`.
-            - Refutable or unprovable conjectures with counterexamples.
-        - `Glossary.md`: contains a list of major theorems with remarks of their purpose.
-- Code shared between modules should be in `/Lp2lc/Active`.
+    - Markdown:
+        - `TODO.md`: issues that can be fixed now or later.
+        - `DEFECT.md`: defects of the current code that must be fixed immediately (otherwise will block or negatively
+          affect the current task).
+
+#### Issue Format
+
+For all issues in markdown files:
+
+- Each issue is a `- [ ]` or `- [x]` checkbox followed by a short name and indented fields:
+    - **Summary:** Short description.
+    - **Position:** Path to the problematic code and/or block comment that explains the issue, e.g.
+      `src/path/to/file.lean (issue_summary)`.
+      The block comment must be consistent with both code and documentation; every symbol should be annotated with a
+      variable name in the code. The block comment should have the following sections:
+        - always start with `TODO: issue_summary`.
+        - detailed explanation.
+        - recommended fix (if applicable).
+    - **Refutation:** Path to the formal lean counterexample(s) & test case(s) that confirms & elaborates the issue.
+- Delete the issue only when committing the fixed code.
