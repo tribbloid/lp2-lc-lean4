@@ -30,17 +30,24 @@ inductive Binder : Parameters → Label → UAST where
 `TLit` classifies primitive bytecode values and `TFn` classifies functions.
 -/
 inductive AST : Parameters → Label → UAST where
-| TLit {P} : AST P .typ -- `AnyVal` in Scala, accepts only primitive values
+/-- `AnyVal/Int/Bool/Double ...`, differentiating them is trivial and won't be included in this proof -/
+| TLit {P} : AST P .typ
+/-- `v: _Lit` -/
 | lit {P} (repr : P.B) : AST P .val -- most specific type is always `.TLit`
 
+/-- `In => Out` -/
 | TFn {P} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
+/-- `fn: _Fn with (In => ?)` -/
 | fn {P} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
-    -- most specific type is always `.TFn tIn _`
+/-- `fnPrimitive: _Fn with (_Lit => Out)` unlike above, it can contain binary computation.
+Technically not part of STLC -/
 | fnPrimitive {P} (tOut : AST P .typ) (op : P.B → AST P .val) : AST P .val
 
+/-- thin wrapper of value as term -/
 | val {P} (v : AST P .val) : AST P .trm -- AKA literal
+/-- `fn (arg)` -/
 | apply {P} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
-    -- fn must be a function that can be applied on arg
+    --
 -- A lexical reference retains its source context and a witness reaching the current context.
 | ref {P} {P' : Parameters} (carrier : P'.TRef)
     (under : P'.Under P) : AST P .trm
