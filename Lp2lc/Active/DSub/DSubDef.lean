@@ -10,20 +10,15 @@ namespace Lp2lc.Active.DSub
 
 open Lp2lc.Active.Util
 
-inductive Label where
-| typ
-| trm
-| val
-
 namespace Pre
 
 mutual
 
 /-- A single lexical binder for functions and dependent result types. -/
-inductive Binder : Parameters → Label → Type 2 where
+inductive Binder : Parameters → Label → UAST where
 | private body {P} (body : P.Next.TRef → AST P.Next l) : Binder P l
 
-inductive AST : Parameters → Label → Type 2 where
+inductive AST : Parameters → Label → UAST where
 | TTop {P} : AST P .typ
 | TBot {P} : AST P .typ
 

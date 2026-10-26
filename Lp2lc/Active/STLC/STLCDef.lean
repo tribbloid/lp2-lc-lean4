@@ -5,8 +5,6 @@ namespace Lp2lc.Active.STLC
 
 open Lp2lc.Active.Util
 
-def UAST := Type 2
-
 /-
 Unreified AST with parametric carrier
 
@@ -18,11 +16,11 @@ mutual
 
 /-- A binder introduces the next lexical context for its body. -/
 inductive Binder : Parameters → Label → UAST where
-    /-- Internal construction callback; do not consume it as a nonuniform function.
+/-- Internal construction callback; do not consume it as a nonuniform function.
 
-    Use `Binder.apply` under the index encoding's opening contract. UId opens only at `.inr ()`
-    and substitutes receipts structurally; serial binders receive their sole context proxy.
-    -/
+Use `Binder.apply` under the index encoding's opening contract. UId opens only at `.inr ()`
+and substitutes receipts structurally; serial binders receive their sole context proxy.
+-/
 | private body {P} (body : P.Next.TRef → AST P.Next l) : Binder P l
 
 /-- Source type, value, and term syntax.
@@ -32,25 +30,24 @@ inductive Binder : Parameters → Label → UAST where
 inductive AST : Parameters → Label → UAST where
 /-- `AnyVal/Int/Bool/Double ...`, differentiating them is trivial and won't be included in this proof -/
 | TLit {P} : AST P .typ
-/-- `v: _Lit` -/
-| lit {P} (repr : P.B) : AST P .val -- most specific type is always `.TLit`
+/-- `v: _Lit`, most specific type is always `.TLit` -/
+| lit {P} (repr : P.B) : AST P .val
 
-/-- `In => Out` -/
-| TFn {P} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ -- function
+/-- `In => Out`, function type -/
+| TFn {P} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ
 /-- `fn: _Fn with (In => ?)` -/
 | fn {P} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
-/-- `fnPrimitive: _Fn with (_Lit => Out)` unlike above, it can contain binary computation.
+/-- `fnPrimitive: _Fn with (_Lit => Out)`, unlike above, it can contain binary computation.
 Technically not part of STLC -/
 | fnPrimitive {P} (tOut : AST P .typ) (op : P.B → AST P .val) : AST P .val
 
-/-- thin wrapper of value as term -/
+/-- a thin wrapper of value as term -/
 | val {P} (v : AST P .val) : AST P .trm -- AKA literal
-/-- `fn (arg)` -/
+/-- `fn (arg)`, `fn` and `arg` should be converted to ANF first -/
 | apply {P} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
-    --
--- A lexical reference retains its source context and a witness reaching the current context.
-| ref {P} {P' : Parameters} (carrier : P'.TRef)
-    (under : P'.Under P) : AST P .trm
+
+/-- A lexical reference retains its source context and a witness reaching the current context. -/
+| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .trm
  end
 
 namespace Binder

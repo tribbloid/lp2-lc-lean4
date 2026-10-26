@@ -3,8 +3,11 @@ import «Lp2lc».Active.NatBindings
 
 namespace Lp2lc.Active.Util
 
+
+def UAST := Type 2
+
 /-- Indexed syntax together with its lexical context and recursively captured bindings. -/
-structure Closure (T : Nat → Type 2) where
+structure Closure (T : Nat → UAST) where
   n : Nat
   value : T n
   captured : NatBindings (Closure T)
