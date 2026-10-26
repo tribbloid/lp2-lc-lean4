@@ -35,10 +35,10 @@ inductive AST : Parameters → Label → UAST where
 
 /-- `In => Out`, function type -/
 | TFn {P} (tIn : AST P .typ) (tOut : AST P .typ) : AST P .typ
-/-- `fn: _Fn with (In => ?)` -/
+/-- `fn: _Fn with (In => ?)`. AKA lambda -/
 | fn {P} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
 /-- `fnPrimitive: _Fn with (_Lit => Out)`, unlike above, it can contain binary computation.
-Technically not part of STLC -/
+Technically not part of STLC. AKA PrimitiveOp -/
 | fnPrimitive {P} (tOut : AST P .typ) (op : P.B → AST P .val) : AST P .val
 
 /-- a thin wrapper of value as term -/
@@ -46,7 +46,7 @@ Technically not part of STLC -/
 /-- `fn (arg)`, `fn` and `arg` should be converted to ANF first -/
 | apply {P} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
 
-/-- A lexical reference retains its source context and a witness reaching the current context. -/
+/-- A lexical reference retains its source context and a witness reaching the current context. AKA variable, var -/
 | ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .trm
  end
 
