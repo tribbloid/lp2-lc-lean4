@@ -109,14 +109,14 @@ private def rejects {n} (trm : Trm n) : Bool :=
   | .yield none => true
   | _ => false
 
-#guard rejects Trm.Malformed.WrongTypeIdFnOnItself
-#guard rejects Trm.Malformed.WrongTypeIdFnOnFalse2
+#guard rejects WrongInputType
+#guard rejects ContainWrongTIn
 #guard rejects Trm.Malformed.applyLit2
 #guard rejects Trm.Malformed.applyLit1
 #guard rejects (.apply (.val (.fnPrimitive .TLit .lit)) Trm.primitiveIdFn)
 #check_failure Trm.Malformed.applyLit1.eval_certified .empty (inferFuel := 2) (typ := .TLit) rfl 2
 #check_failure Trm.FreeCapture.directRef.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 1
-#check_failure Trm.Malformed.WrongTypeIdFnOnFalse2.eval_certified .empty (inferFuel := 4) (typ := .TLit) rfl 3
+#check_failure ContainWrongTIn.eval_certified .empty (inferFuel := 4) (typ := .TLit) rfl 3
 #check_failure AST.eval_certified (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empty
   (inferFuel := 4) (typ := .TLit) rfl 2
 
