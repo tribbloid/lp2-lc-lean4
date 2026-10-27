@@ -61,44 +61,44 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard TypeHinted.hintedIdFnOnFalse.infer.shouldYields 3 .TLit
 
-#guard (FreeCapture.directRef.infer literalBindings).shouldYields 2 .TLit
+#guard (FreeVarCapture.directRef.infer literalBindings).shouldYields 2 .TLit
 
-#guard (AST.infer (.ref FreeCapture.freeSlot .same : Trm 0) literalBindings).shouldYields 2 .TLit
+#guard (AST.infer (.ref FreeVarCapture.freeSlot .same : Trm 0) literalBindings).shouldYields 2 .TLit
 
-#guard (FreeCapture.directRef.infer fnBindings).shouldYields 3 (.TFn .TLit .TLit)
+#guard (FreeVarCapture.directRef.infer fnBindings).shouldYields 3 (.TFn .TLit .TLit)
 
-#guard (FreeCapture.capturedRef.infer fnBindings).shouldYields 4
+#guard (FreeVarCapture.capturedRef.infer fnBindings).shouldYields 4
   (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard (FreeCapture.capturedRefOnFalse.infer fnBindings).shouldYields 5 (.TFn .TLit .TLit)
+#guard (FreeVarCapture.capturedRefOnFalse.infer fnBindings).shouldYields 5 (.TFn .TLit .TLit)
 
 #guard (primitiveIdFn.infer fnBindings).shouldYields 2 (.TFn .TLit .TLit)
 
 #guard (primitiveIdFn.infer mixedBindings).shouldYields 2 (.TFn .TLit .TLit)
 
-#guard (FreeCapture.directRef.infer mixedBindings).shouldYields 3 (.TFn .TLit .TLit)
+#guard (FreeVarCapture.directRef.infer mixedBindings).shouldYields 3 (.TFn .TLit .TLit)
 
 #guard (innerRef.infer mixedBindings).shouldYields 2 .TLit
 
-#guard (AST.infer (.apply FreeCapture.directRef primitiveIdFn) fnBindings).shouldFail 4
+#guard (AST.infer (.apply FreeVarCapture.directRef primitiveIdFn) fnBindings).shouldFail 4
 
-#guard match FreeCapture.capturedRef.eval (NatBindings.empty.set 0 literalValue) 1 with
+#guard match FreeVarCapture.capturedRef.eval (NatBindings.empty.set 0 literalValue) 1 with
   | .yield (some (.some closure)) =>
     let bindings := mixedBindings.set 1 closure
     (innerRef.infer bindings).shouldYields 4 (.TFn .TLit .TLit) ∧
       (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 5 .TLit
   | _ => false
 
-#guard (FreeCapture.directRef.infer typeBindings).shouldYields 1 (.TFn .TLit .TLit)
+#guard (FreeVarCapture.directRef.infer typeBindings).shouldYields 1 (.TFn .TLit .TLit)
 
-#guard (FreeCapture.capturedRef.infer typeBindings).shouldYields 2
+#guard (FreeVarCapture.capturedRef.infer typeBindings).shouldYields 2
   (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard (FreeCapture.capturedRefOnFalse.infer typeBindings).shouldYields 3 (.TFn .TLit .TLit)
+#guard (FreeVarCapture.capturedRefOnFalse.infer typeBindings).shouldYields 3 (.TFn .TLit .TLit)
 
-#guard (AST.infer (.apply FreeCapture.directRef primitiveIdFn) typeBindings).shouldFail 3
+#guard (AST.infer (.apply FreeVarCapture.directRef primitiveIdFn) typeBindings).shouldFail 3
 
-#guard match FreeCapture.capturedRef with
+#guard match FreeVarCapture.capturedRef with
   | .val value =>
     let bindings := (.breakpoint (NatBindings.empty.set 1 ⟨0, value, fnBindings⟩) : CompilerBindings).set
       0 ⟨0, .TLit, .empty⟩

@@ -47,8 +47,7 @@ def primitiveTrueFn : Trm :=
 def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn vFalse
 
--- TODO: name should be more specific: "FreeVarCapture"
-namespace FreeCapture
+namespace FreeVarCapture
 
 /-- A symbolic outer-context slot used by the syntax-only capture examples. -/
 def freeSlot : IndexEncoding.SerialProxy 0 := .only
@@ -65,7 +64,7 @@ def capturedRef : Trm :=
 def capturedRefOnFalse : Trm :=
   .apply capturedRef (.val (.lit bFalse))
 
-end FreeCapture
+end FreeVarCapture
 
 namespace TypeHinted
 -- TODO: this namespace should be deleted, current STLC syntax has no type hint, many fixtures in it are just duplicates

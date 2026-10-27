@@ -16,7 +16,7 @@ def get1stOnFalseValue : ExeVal :=
     NatBindings.empty.set 1 falseValue⟩
 def outerValue : ExeVal := ⟨0, .lit "outer", .empty⟩
 def capturedBindings : ExeBindings := NatBindings.empty.set 0 outerValue
-def capturedClosure : ExeVal := ⟨0, Trm.FreeCapture.capturedValue, capturedBindings⟩
+def capturedClosure : ExeVal := ⟨0, Trm.FreeVarCapture.capturedValue, capturedBindings⟩
 def callerBindings : ExeBindings := NatBindings.empty.set 0 capturedClosure
 def shiftedBindings : ExeBindings := NatBindings.empty.set 1 outerValue
 
@@ -45,7 +45,7 @@ instance : Coe ExeVal (Return ExeVal) where
 
 namespace Trm
 
-namespace FreeCapture
+namespace FreeVarCapture
 
 -- Share the captured primitive between evaluators, including its missing-capture failure.
 def primitive : Val :=
@@ -60,7 +60,7 @@ def directRefOnTrue : Trm :=
 def shiftedRef : Trm 3 :=
   .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same))
 
-end FreeCapture
+end FreeVarCapture
 
 def get1stOnFalse : Trm :=
   .apply get1st vFalse
@@ -104,7 +104,7 @@ def applyLitToApplication : Trm :=
   .apply vFalse primitiveIdFnOnFalse
 
 def missingPrimitiveCapture : Trm :=
-  .apply (.val FreeCapture.primitive) vFalse
+  .apply (.val FreeVarCapture.primitive) vFalse
 
 def wrongNestedTIn : Trm :=
   .apply higherOrderId get1st
@@ -127,6 +127,6 @@ end Corrupted
 end Trm
 
 def capturedPrimitiveBindings : ExeBindings :=
-  NatBindings.empty.set 0 ⟨0, Trm.FreeCapture.primitive, freeBindings⟩
+  NatBindings.empty.set 0 ⟨0, Trm.FreeVarCapture.primitive, freeBindings⟩
 
 end Tests.STLC.Sanity

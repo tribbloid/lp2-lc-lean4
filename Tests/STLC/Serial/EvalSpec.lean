@@ -39,21 +39,21 @@ private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (
 
 #guard primitiveTrueFnOnFalse.evalShouldYields 2 capturedTrueValue
 
-#guard FreeCapture.directRef.evalShouldYields 1 trueValue freeBindings
+#guard FreeVarCapture.directRef.evalShouldYields 1 trueValue freeBindings
 
-#guard FreeCapture.directRef.eval.shouldFail 1
+#guard FreeVarCapture.directRef.eval.shouldFail 1
 
-#guard FreeCapture.capturedRefOnFalse.evalShouldYields 2 trueValue freeBindings
+#guard FreeVarCapture.capturedRefOnFalse.evalShouldYields 2 trueValue freeBindings
 
-#guard FreeCapture.directRefOnTrue.evalShouldYields 2 outerValue callerBindings
+#guard FreeVarCapture.directRefOnTrue.evalShouldYields 2 outerValue callerBindings
 
-#guard FreeCapture.shiftedRef.evalShouldYields 1 outerValue shiftedBindings
+#guard FreeVarCapture.shiftedRef.evalShouldYields 1 outerValue shiftedBindings
 
 #guard primitiveLiteralIdFnOnFalse.evalShouldYields 2 falseValue
 
 #guard primitiveFirstFnOnTuple.evalShouldYields 3 falseValue
 
-#guard FreeCapture.primitiveRefOnFalseTwice.evalShouldYields 5 trueValue capturedPrimitiveBindings
+#guard FreeVarCapture.primitiveRefOnFalseTwice.evalShouldYields 5 trueValue capturedPrimitiveBindings
 
 #guard Malformed.missingPrimitiveCapture.evalShouldYields 3 .corrupted
 

@@ -35,13 +35,13 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
 #guard evalYields Trm.get2ndOnTuple 3 trueValue
 #guard evalYields Trm.primitiveTrueFnOnFalse 2 capturedTrueValue
 #guard evalYields Trm.higherOrderApplication 3 falseValue
-#guard evalYields Trm.FreeCapture.directRef 1 trueValue freeBindings
-#guard evalYields Trm.FreeCapture.capturedRefOnFalse 2 trueValue freeBindings
+#guard evalYields Trm.FreeVarCapture.directRef 1 trueValue freeBindings
+#guard evalYields Trm.FreeVarCapture.capturedRefOnFalse 2 trueValue freeBindings
 
 #guard evalYields Trm.primitiveLiteralIdFnOnFalse 2 falseValue
 #guard evalYields Trm.primitiveFirstFnOnTuple 3 falseValue
 
-#guard evalYields Trm.FreeCapture.primitiveRefOnFalseTwice 5 trueValue capturedPrimitiveBindings
+#guard evalYields Trm.FreeVarCapture.primitiveRefOnFalseTwice 5 trueValue capturedPrimitiveBindings
 #guard evalYields Trm.Malformed.missingPrimitiveCapture 3 .corrupted
 #guard evalYields Trm.Malformed.primitiveFnOnTuple 3 .corrupted
 
@@ -58,13 +58,13 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
 #guard corruptsAt illTypedPrimitiveResult 4
 
 -- The caller's slot zero holds a function; the applied closure captured a literal there.
-#guard evalYields Trm.FreeCapture.directRefOnTrue 2 outerValue callerBindings
+#guard evalYields Trm.FreeVarCapture.directRefOnTrue 2 outerValue callerBindings
 
 #guard evalYields Trm.primitiveIdFn 1 idFnValue
 
 #guard evalYields Trm.get1stOnFalse 2 get1stOnFalseValue
 
-#guard evalYields Trm.FreeCapture.shiftedRef 1 outerValue shiftedBindings
+#guard evalYields Trm.FreeVarCapture.shiftedRef 1 outerValue shiftedBindings
 
 #guard match Trm.vFalse.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 0 with
   | .outOfFuel => true
@@ -82,7 +82,7 @@ private def rejects {n} (trm : Trm n) : Bool :=
 #guard rejects Trm.Malformed.applyLit1
 #guard rejects Trm.Malformed.primitiveLiteralIdFnOnFn
 #check_failure Trm.Malformed.applyLit1.eval_certified .empty (inferFuel := 2) (typ := .TLit) rfl 2
-#check_failure Trm.FreeCapture.directRef.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 1
+#check_failure Trm.FreeVarCapture.directRef.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 1
 #check_failure Trm.Malformed.ContainWrongTIn.eval_certified .empty (inferFuel := 4) (typ := .TLit) rfl 3
 #check_failure Trm.Malformed.applyLitToApplication.eval_certified .empty
   (inferFuel := 4) (typ := .TLit) rfl 2
