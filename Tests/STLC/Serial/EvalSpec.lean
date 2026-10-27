@@ -13,10 +13,6 @@ private def evalYields {n} (trm : Trm n) (fuel : Nat) (expected : ExeVal)
   | .yield (some (.some value)), .outOfFuel => closureSignature value == closureSignature expected
   | _, _ => false
 
-private def falseValue : ExeVal := ⟨0, .lit bFalse, .empty⟩
-private def trueValue : ExeVal := ⟨0, .lit bTrue, .empty⟩
-private def freeBindings : ExeBindings := NatBindings.empty.set 0 trueValue
-
 #guard evalYields vFalse 1 falseValue
 
 #guard evalYields primitiveIdFnOnFalse 2 falseValue
@@ -42,26 +38,14 @@ private def freeBindings : ExeBindings := NatBindings.empty.set 0 trueValue
 
 #guard evalYields (.apply (.val (.fnPrimitive .TLit .lit)) vFalse) 2 falseValue
 
-#guard evalYields (.apply
-  (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
-    (λ first => .fnPrimitive .TLit (λ _ => .lit first)))) vFalse) vTrue) 3 falseValue
+#guard evalYields primitiveFirstFnOnTuple 3 falseValue
 
-#guard match FreeCapture.capturedRef with
-  | .val value =>
-    let primitive : Val := .fnPrimitive (.TFn .TLit .TLit) (λ _ => value)
-    let caller := NatBindings.empty.set 0 (⟨0, primitive, freeBindings⟩ : ExeVal)
-    evalYields (.apply (.apply FreeCapture.directRef vFalse) vFalse) 5 trueValue caller &&
-      match AST.eval (.apply (.val primitive) vFalse) .empty 3,
-          AST.eval (.apply (.val primitive) vFalse) .empty 2 with
-      | .yield (some .corrupted), .outOfFuel => true
-      | _, _ => false
-  | _ => false
+#guard evalYields FreeCapture.primitiveTwiceOnFalse 5 trueValue FreeCapture.primitiveCaller &&
+  match AST.eval FreeCapture.primitiveOnFalse .empty 3, AST.eval FreeCapture.primitiveOnFalse .empty 2 with
+  | .yield (some .corrupted), .outOfFuel => true
+  | _, _ => false
 
-#guard
-  let trm : Trm := .apply
-    (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
-      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) vFalse) vTrue
-  match trm.eval .empty 3, trm.eval .empty 2 with
+#guard match Malformed.primitiveFnOnTuple.eval .empty 3, Malformed.primitiveFnOnTuple.eval .empty 2 with
   | .yield (some .corrupted), .outOfFuel => true
   | _, _ => false
 

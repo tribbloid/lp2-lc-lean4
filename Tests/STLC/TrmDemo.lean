@@ -10,6 +10,10 @@ def bFalse := "false"
 
 def bTrue := "true"
 
+def falseValue : ExeVal := ⟨0, .lit bFalse, .empty⟩
+def trueValue : ExeVal := ⟨0, .lit bTrue, .empty⟩
+def freeBindings : ExeBindings := NatBindings.empty.set 0 trueValue
+
 open Lean (Json toJson)
 
 -- Compare runtime closures, including their contexts and captured bindings, in evaluator tests.
@@ -61,6 +65,11 @@ def primitiveTrueFn : AST 0 .trm :=
 def primitiveTrueFnOnFalse : AST 0 .trm :=
   .apply primitiveTrueFn vFalse
 
+def primitiveFirstFnOnTuple : Trm :=
+  .apply
+    (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
+      (λ first => .fnPrimitive .TLit (λ _ => .lit first)))) vFalse) vTrue
+
 namespace FreeCapture
 
 /-- A symbolic outer-context slot used by the syntax-only capture examples. -/
@@ -69,8 +78,20 @@ def freeSlot : IndexEncoding.SerialProxy 0 := .only
 def directRef : Trm 0 :=
   .ref freeSlot .same
 
+def capturedRefValue : Val :=
+  .fn .TLit (.mk (λ _ => .ref freeSlot (.lower .same)))
+
 def capturedRef : AST 0 .trm :=
-  .val (.fn .TLit (.mk (λ _ => .ref freeSlot (.lower .same))))
+  .val capturedRefValue
+
+def primitive : Val :=
+  .fnPrimitive (.TFn .TLit .TLit) (λ _ => capturedRefValue)
+
+def primitiveCaller : ExeBindings := NatBindings.empty.set 0 ⟨0, primitive, freeBindings⟩
+
+def primitiveOnFalse : Trm := .apply (.val primitive) vFalse
+
+def primitiveTwiceOnFalse : Trm := .apply (.apply directRef vFalse) vFalse
 
 def capturedRefOnFalse : AST 0 .trm :=
   .apply capturedRef (.val (.lit bFalse))
@@ -103,6 +124,11 @@ def applyLit1 : AST 0 .trm :=
 
 def applyLit2 : AST 0 .trm :=
   .apply (.apply primitiveIdFn vFalse) vTrue
+
+def primitiveFnOnTuple : Trm :=
+  .apply
+    (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
+      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) vFalse) vTrue
 
 end Malformed
 

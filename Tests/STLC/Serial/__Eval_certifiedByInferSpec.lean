@@ -23,10 +23,6 @@ private def evalYields {n} (trm : Trm n) (fuel : Nat) (expected : ExeVal)
   | .yield (some (.some value)), .outOfFuel => closureSignature value == closureSignature expected
   | _, _ => false
 
-private def falseValue : ExeVal := ⟨0, .lit bFalse, .empty⟩
-private def trueValue : ExeVal := ⟨0, .lit bTrue, .empty⟩
-private def freeBindings : ExeBindings := NatBindings.empty.set 0 trueValue
-
 private def outerValue : ExeVal := .mk 0 (.lit "outer") .empty
 private def capturedBindings : ExeBindings := NatBindings.empty.set 0 outerValue
 private def capturedClosure : ExeVal :=
@@ -57,29 +53,18 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
 #guard evalYields Trm.FreeCapture.capturedRefOnFalse 2 trueValue freeBindings
 
 #guard evalYields (.apply (.val (.fnPrimitive .TLit .lit)) Trm.vFalse) 2 falseValue
-#guard evalYields (.apply
-  (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
-    (λ first => .fnPrimitive .TLit (λ _ => .lit first)))) Trm.vFalse) Trm.vTrue) 3 falseValue
+#guard evalYields Trm.primitiveFirstFnOnTuple 3 falseValue
 
-#guard match Trm.FreeCapture.capturedRef with
-  | .val value =>
-    let primitive : Val := .fnPrimitive (.TFn .TLit .TLit) (λ _ => value)
-    let caller := NatBindings.empty.set 0 (⟨0, primitive, freeBindings⟩ : ExeVal)
-    evalYields (.apply (.apply Trm.FreeCapture.directRef Trm.vFalse) Trm.vFalse) 5 trueValue caller &&
-      corruptsAt (.apply (.val primitive) Trm.vFalse) 3 &&
-      match erasedEval (.apply (.val primitive) Trm.vFalse) .empty 8 2 with
-      | .outOfFuel => true
-      | _ => false
-  | _ => false
-
-#guard
-  let trm : Trm := .apply
-    (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
-      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) Trm.vFalse) Trm.vTrue
-  corruptsAt trm 3 &&
-    match erasedEval trm .empty 8 2 with
+#guard evalYields Trm.FreeCapture.primitiveTwiceOnFalse 5 trueValue Trm.FreeCapture.primitiveCaller &&
+  corruptsAt Trm.FreeCapture.primitiveOnFalse 3 &&
+    match erasedEval Trm.FreeCapture.primitiveOnFalse .empty 8 2 with
     | .outOfFuel => true
     | _ => false
+
+#guard corruptsAt Trm.Malformed.primitiveFnOnTuple 3 &&
+  match erasedEval Trm.Malformed.primitiveFnOnTuple .empty 8 2 with
+  | .outOfFuel => true
+  | _ => false
 
 #guard corruptsAt corruptApplication 2
 #guard corruptsAt corruptApplication 1000
