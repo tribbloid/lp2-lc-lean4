@@ -7,26 +7,32 @@ open Lp2lc.Active.Util Lp2lc.Active.STLC
 
 section eval
 
-private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (fuel : Nat)
-    (expected : Return Val)
+private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldYield {n} (trm : Trm n) (fuel : Nat)
+    (expected : Return Val) -- TODO: type of it should be `(expected : Val)`, if result is ".corrupted", should use `evalShouldCrash`
     (bindings : ExeBindings := .empty) : Prop :=
   returnsValue (trm.eval bindings) fuel expected
 
-#guard vFalse.evalShouldYields 1 (.some falseValue)
+-- TODO: imiplement this & add document
+private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldCrash {n} (trm : Trm n) (fuel : Nat)
+    (bindings : ExeBindings := .empty) : Prop := sorry
 
-#guard primitiveIdFn.evalShouldYields 1 (.some Val.idFn)
+-- TODO: the fuck is this? why calling with long prefix while dot-notation can be used?
+-- TODO: Also augment docstring of evalShouldYield and evalShouldCrash such that they can only be invoked using dot-notation
+#guard vFalse._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 1 (.some falseValue)
+
+#guard primitiveIdFn._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 1 (.some Val.idFn)
 
 -- A nested identity is closed; a function returning its captured argument is not an identity.
 #guard returnsValue (AST.eval (.apply get2nd vFalse : Trm)) 2 (.some Val.idFn)
-#guard ¬ get1stOnFalse.evalShouldYields 2 (.some Val.idFn)
+#guard ¬ get1stOnFalse._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 2 (.some Val.idFn)
 
-#guard primitiveIdFnOnFalse.evalShouldYields 2 (.some falseValue)
+#guard primitiveIdFnOnFalse._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 2 (.some falseValue)
 
-#guard get1stOnTuple.evalShouldYields 3 (.some falseValue)
+#guard get1stOnTuple._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 (.some falseValue)
 
-#guard get2ndOnTuple.evalShouldYields 3 (.some trueValue)
+#guard get2ndOnTuple._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 (.some trueValue)
 
-#guard higherOrderApplication.evalShouldYields 4 (.some falseValue)
+#guard higherOrderApplication._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 4 (.some falseValue)
 
 #guard Malformed.WrongTIn.eval.shouldFail 3
 
@@ -40,27 +46,27 @@ private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (
 
 #guard Malformed.applyLitToApplication.eval.shouldFail 3
 
-#guard primitiveTrueFnOnFalse.evalShouldYields 2 (.some trueValue)
+#guard primitiveTrueFnOnFalse._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 2 (.some trueValue)
 
-#guard primitiveLiteralIdFnOnFalse.evalShouldYields 2 (.some falseValue)
+#guard primitiveLiteralIdFnOnFalse._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 2 (.some falseValue)
 
-#guard primitiveFirstFnOnTuple.evalShouldYields 3 (.some falseValue)
+#guard primitiveFirstFnOnTuple._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 (.some falseValue)
 
-#guard Corrupted.primitiveFnOnTuple.evalShouldYields 3 .corrupted
+#guard Corrupted.primitiveFnOnTuple._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 .corrupted
 
-#guard Corrupted.corruptApplication.evalShouldYields 2 .corrupted
+#guard Corrupted.corruptApplication._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 2 .corrupted
 
 #guard match Corrupted.corruptApplication.eval .empty 1000 with
   | .yield (some .corrupted) => true
   | _ => false
 
-#guard Corrupted.corruptedCallee.evalShouldYields 3 .corrupted
+#guard Corrupted.corruptedCallee._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 .corrupted
 
-#guard Corrupted.corruptedArgument.evalShouldYields 3 .corrupted
+#guard Corrupted.corruptedArgument._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 .corrupted
 
-#guard Corrupted.corruptedBody.evalShouldYields 3 .corrupted
+#guard Corrupted.corruptedBody._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 .corrupted
 
-#guard Corrupted.illTypedPrimitiveResult.evalShouldYields 4 .corrupted
+#guard Corrupted.illTypedPrimitiveResult._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 4 .corrupted
 
 #guard Malformed.primitiveLiteralIdFnOnFn.eval.shouldFail 2
 

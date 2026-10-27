@@ -10,7 +10,9 @@ def bFalse := "false"
 
 def bTrue := "true"
 
+-- TODO: do we already have a Coe from Val to Trm? if so, this construct should be merged into vFalse
 def falseValue : Val := .lit bFalse
+-- TODO: Ditto, this should be merged into vTrue
 def trueValue : Val := .lit bTrue
 
 deriving instance BEq for Return
