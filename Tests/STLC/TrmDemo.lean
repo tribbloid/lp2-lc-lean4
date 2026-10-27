@@ -1,4 +1,5 @@
 import «Tests».STLC.ValDemo
+import «Lp2lc».Active.STLC.Hash
 
 namespace Tests.STLC.Sanity
 
@@ -8,6 +9,19 @@ open Lp2lc.Active.Util
 def bFalse := "false"
 
 def bTrue := "true"
+
+open Lean (Json toJson)
+
+-- Compare runtime closures, including their contexts and captured bindings, in evaluator tests.
+def closureSignature (closure : ExeVal) : Json :=
+  match closure with
+  | .mk n value captured =>
+    let rec bindings (entries : ExeBindings) : Json :=
+      match entries with
+      | .empty => .null
+      | .set rest index value => .arr #[bindings rest, toJson index, closureSignature value]
+    .arr #[toJson n, astToJson value toJson toJson, bindings captured]
+termination_by structural closure
 
 namespace Trm
 

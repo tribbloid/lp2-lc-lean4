@@ -1,28 +1,16 @@
 import «Lp2lc».Active.STLC.Serial.Eval
-import «Lp2lc».Active.STLC.Hash
 import «Tests».STLC.TrmDemo
 
 namespace Tests.STLC.Sanity.Trm
 
 open Lp2lc.Active.Util Lp2lc.Active.STLC
-open Lean (Json toJson)
 
 section eval
-
-private def signature (closure : ExeVal) : Json :=
-  match closure with
-  | .mk n value captured =>
-    let rec bindings (entries : ExeBindings) : Json :=
-      match entries with
-      | .empty => .null
-      | .set rest index value => .arr #[bindings rest, toJson index, signature value]
-    .arr #[toJson n, astToJson value toJson toJson, bindings captured]
-termination_by structural closure
 
 private def evalYields {n} (trm : Trm n) (fuel : Nat) (expected : ExeVal)
     (bindings : ExeBindings := .empty) : Bool :=
   match trm.eval bindings fuel, trm.eval bindings (fuel - 1) with
-  | .yield (some (.some value)), .outOfFuel => signature value == signature expected
+  | .yield (some (.some value)), .outOfFuel => closureSignature value == closureSignature expected
   | _, _ => false
 
 private def falseValue : ExeVal := ⟨0, .lit bFalse, .empty⟩

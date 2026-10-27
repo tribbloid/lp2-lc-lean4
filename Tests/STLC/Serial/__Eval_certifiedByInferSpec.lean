@@ -1,5 +1,4 @@
 import «Lp2lc».Active.STLC.Serial.__Eval_certifiedByInfer
-import «Lp2lc».Active.STLC.Serial.Eval
 import «Tests».STLC.TrmDemo
 
 namespace Tests.STLC.EvalCertifiedByInferSpec
@@ -18,11 +17,15 @@ private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty)
   | .yield none => λ _ => .yield none
   | .outOfFuel => λ _ => .outOfFuel
 
-private def literalEval {n} (trm : Trm n) (bindings : ExeBindings := .empty) : RecOpt String := λ fuel =>
-  (erasedEval trm bindings 8 fuel).map (Option.bind · (λ result =>
-    match result with
-    | .some (.mk _ (.lit repr) _) => some repr
-    | _ => none))
+private def evalYields {n} (trm : Trm n) (fuel : Nat) (expected : ExeVal)
+    (bindings : ExeBindings := .empty) : Bool :=
+  match erasedEval trm bindings 8 fuel, erasedEval trm bindings 8 (fuel - 1) with
+  | .yield (some (.some value)), .outOfFuel => closureSignature value == closureSignature expected
+  | _, _ => false
+
+private def falseValue : ExeVal := ⟨0, .lit bFalse, .empty⟩
+private def trueValue : ExeVal := ⟨0, .lit bTrue, .empty⟩
+private def freeBindings : ExeBindings := NatBindings.empty.set 0 trueValue
 
 private def outerValue : ExeVal := .mk 0 (.lit "outer") .empty
 private def capturedBindings : ExeBindings := NatBindings.empty.set 0 outerValue
@@ -38,21 +41,45 @@ private def corruptApplication (n : Nat := 0) : Trm n :=
   .apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) (.val (.lit "false"))
 
 private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
-  match trm.eval .empty fuel, erasedEval trm .empty 8 fuel with
-  | .yield (some .corrupted), .yield (some .corrupted) => true
-  | _, _ => false
+  match erasedEval trm .empty 8 fuel with
+  | .yield (some .corrupted) => true
+  | _ => false
 
 -- Exact evaluation budgets include the one-less-budget exhaustion check.
-#guard (literalEval Trm.vFalse).shouldYields 1 "false"
-#guard (literalEval Trm.primitiveIdFnOnFalse).shouldYields 2 "false"
-#guard (literalEval Trm.get1stOnTuple).shouldYields 3 "false"
-#guard (literalEval Trm.get2ndOnTuple).shouldYields 3 "true"
-#guard (literalEval Trm.primitiveTrueFnOnFalse).shouldYields 2 "true"
-#guard (literalEval higherOrderApplication).shouldYields 3 "false"
-#guard (literalEval Trm.FreeCapture.directRef capturedBindings).shouldYields 1 "outer"
-#guard (literalEval Trm.FreeCapture.capturedRefOnFalse capturedBindings).shouldYields 2 "outer"
+#guard evalYields Trm.vFalse 1 falseValue
+#guard evalYields Trm.primitiveIdFnOnFalse 2 falseValue
+#guard evalYields Trm.get1stOnTuple 3 falseValue
+#guard evalYields Trm.get2ndOnTuple 3 trueValue
+#guard evalYields Trm.primitiveTrueFnOnFalse 2
+  ⟨1, .lit bTrue, NatBindings.empty.set 1 falseValue⟩
+#guard evalYields higherOrderApplication 3 falseValue
+#guard evalYields Trm.FreeCapture.directRef 1 trueValue freeBindings
+#guard evalYields Trm.FreeCapture.capturedRefOnFalse 2 trueValue freeBindings
 
-#guard (literalEval (.apply (.val (.fnPrimitive .TLit .lit)) Trm.vFalse)).shouldYields 2 "false"
+#guard evalYields (.apply (.val (.fnPrimitive .TLit .lit)) Trm.vFalse) 2 falseValue
+#guard evalYields (.apply
+  (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
+    (λ first => .fnPrimitive .TLit (λ _ => .lit first)))) Trm.vFalse) Trm.vTrue) 3 falseValue
+
+#guard match Trm.FreeCapture.capturedRef with
+  | .val value =>
+    let primitive : Val := .fnPrimitive (.TFn .TLit .TLit) (λ _ => value)
+    let caller := NatBindings.empty.set 0 (⟨0, primitive, freeBindings⟩ : ExeVal)
+    evalYields (.apply (.apply Trm.FreeCapture.directRef Trm.vFalse) Trm.vFalse) 5 trueValue caller &&
+      corruptsAt (.apply (.val primitive) Trm.vFalse) 3 &&
+      match erasedEval (.apply (.val primitive) Trm.vFalse) .empty 8 2 with
+      | .outOfFuel => true
+      | _ => false
+  | _ => false
+
+#guard
+  let trm : Trm := .apply
+    (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
+      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) Trm.vFalse) Trm.vTrue
+  corruptsAt trm 3 &&
+    match erasedEval trm .empty 8 2 with
+    | .outOfFuel => true
+    | _ => false
 
 #guard corruptsAt corruptApplication 2
 #guard corruptsAt corruptApplication 1000
@@ -70,7 +97,7 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
   corruptsAt (.apply (.val primitive) Trm.vFalse) 4
 
 -- The caller's slot zero holds a function; the applied closure captured a literal there.
-#guard (literalEval (.apply Trm.FreeCapture.directRef Trm.vTrue) callerBindings).shouldYields 2 "outer"
+#guard evalYields (.apply Trm.FreeCapture.directRef Trm.vTrue) 2 outerValue callerBindings
 
 #guard (match erasedEval Trm.primitiveIdFn .empty 2 1 with
     | .yield (some (.some (.mk _ (.fn _ _) _))) => true
@@ -83,16 +110,25 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
       | _ => false
     | _ => false)
 
-#guard (literalEval (.ref
+#guard evalYields (.ref
     (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)) : Trm 3)
-    (NatBindings.empty.set 1 outerValue)).shouldYields 1 "outer"
+    1 outerValue (NatBindings.empty.set 1 outerValue)
 
 #guard match Trm.vFalse.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 0 with
   | .outOfFuel => true
   | _ => false
 
--- Rejected terms cannot supply the evaluator's inference-success premise.
-#guard Trm.Malformed.WrongTypeIdFnOnFalse2.infer.shouldFail 4
+-- Rejected terms cannot supply the evaluator's inference-success premise, even when raw evaluation returns a value.
+private def rejects {n} (trm : Trm n) : Bool :=
+  match erasedEval trm .empty 8 0 with
+  | .yield none => true
+  | _ => false
+
+#guard rejects Trm.Malformed.WrongTypeIdFnOnItself
+#guard rejects Trm.Malformed.WrongTypeIdFnOnFalse2
+#guard rejects Trm.Malformed.applyLit2
+#guard rejects Trm.Malformed.applyLit1
+#guard rejects (.apply (.val (.fnPrimitive .TLit .lit)) Trm.primitiveIdFn)
 #check_failure Trm.Malformed.applyLit1.eval_certified .empty (inferFuel := 2) (typ := .TLit) rfl 2
 #check_failure Trm.FreeCapture.directRef.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 1
 #check_failure Trm.Malformed.WrongTypeIdFnOnFalse2.eval_certified .empty (inferFuel := 4) (typ := .TLit) rfl 3
