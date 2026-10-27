@@ -7,15 +7,17 @@ open Lp2lc.Active.Util Lp2lc.Active.STLC
 
 section eval
 
-private def _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (fuel : Nat) (expected : ExeVal)
-    (bindings : ExeBindings := .empty) : Bool :=
-  match trm.eval bindings fuel, trm.eval bindings (fuel - 1) with
-  | .yield (some (.some value)), .outOfFuel => closureSignature value == closureSignature expected
-  | _, _ => false
+private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (fuel : Nat)
+    (expected : Return ExeVal) (bindings : ExeBindings := .empty) : Prop :=
+  (trm.eval bindings).shouldYields fuel expected
 
 #guard vFalse.evalShouldYields 1 falseValue
 
+#guard primitiveIdFn.evalShouldYields 1 idFnValue
+
 #guard primitiveIdFnOnFalse.evalShouldYields 2 falseValue
+
+#guard get1stOnFalse.evalShouldYields 2 get1stOnFalseValue
 
 #guard get1stOnTuple.evalShouldYields 3 falseValue
 
@@ -33,25 +35,41 @@ private def _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (fue
 
 #guard Malformed.applyLit1.eval.shouldFail 2
 
+#guard Malformed.applyLitToApplication.eval.shouldFail 3
+
 #guard primitiveTrueFnOnFalse.evalShouldYields 2 capturedTrueValue
 
 #guard FreeCapture.directRef.evalShouldYields 1 trueValue freeBindings
 
+#guard FreeCapture.directRef.eval.shouldFail 1
+
 #guard FreeCapture.capturedRefOnFalse.evalShouldYields 2 trueValue freeBindings
+
+#guard FreeCapture.directRefOnTrue.evalShouldYields 2 outerValue callerBindings
+
+#guard FreeCapture.shiftedRef.evalShouldYields 1 outerValue shiftedBindings
 
 #guard primitiveLiteralIdFnOnFalse.evalShouldYields 2 falseValue
 
 #guard primitiveFirstFnOnTuple.evalShouldYields 3 falseValue
 
-#guard capturedPrimitiveCase (λ trm corrupted caller =>
-  trm.evalShouldYields 5 trueValue caller &&
-    match corrupted.eval .empty 3, corrupted.eval .empty 2 with
-    | .yield (some .corrupted), .outOfFuel => true
-    | _, _ => false)
+#guard FreeCapture.primitiveRefOnFalseTwice.evalShouldYields 5 trueValue capturedPrimitiveBindings
 
-#guard match Malformed.primitiveFnOnTuple.eval .empty 3, Malformed.primitiveFnOnTuple.eval .empty 2 with
-  | .yield (some .corrupted), .outOfFuel => true
-  | _, _ => false
+#guard Malformed.missingPrimitiveCapture.evalShouldYields 3 .corrupted
+
+#guard Malformed.primitiveFnOnTuple.evalShouldYields 3 .corrupted
+
+#guard Malformed.corruptApplication.evalShouldYields 2 .corrupted
+
+#guard (Malformed.corruptApplication.eval .empty 1000).getOrElse none == some .corrupted
+
+#guard Malformed.corruptedCallee.evalShouldYields 3 .corrupted
+
+#guard Malformed.corruptedArgument.evalShouldYields 3 .corrupted
+
+#guard Malformed.corruptedBody.evalShouldYields 3 .corrupted
+
+#guard Malformed.illTypedPrimitiveResult.evalShouldYields 4 .corrupted
 
 #guard Malformed.primitiveLiteralIdFnOnFn.eval.shouldFail 2
 

@@ -55,8 +55,11 @@ def freeSlot : IndexEncoding.SerialProxy 0 := .only
 def directRef : Trm 0 :=
   .ref freeSlot .same
 
+def capturedValue : Val :=
+  .fn .TLit (.mk (λ _ => .ref freeSlot (.lower .same)))
+
 def capturedRef : Trm :=
-  .val (.fn .TLit (.mk (λ _ => .ref freeSlot (.lower .same))))
+  .val capturedValue
 
 def capturedRefOnFalse : Trm :=
   .apply capturedRef (.val (.lit bFalse))

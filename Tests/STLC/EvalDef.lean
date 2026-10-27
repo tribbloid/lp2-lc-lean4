@@ -9,6 +9,16 @@ def falseValue : ExeVal := ⟨0, .lit bFalse, .empty⟩
 def trueValue : ExeVal := ⟨0, .lit bTrue, .empty⟩
 def freeBindings : ExeBindings := NatBindings.empty.set 0 trueValue
 def capturedTrueValue : ExeVal := ⟨1, .lit bTrue, NatBindings.empty.set 1 falseValue⟩
+def idFnValue : ExeVal := ⟨0, Val.idFn, .empty⟩
+def get1stOnFalseValue : ExeVal :=
+  ⟨1, .fn .TLit (.mk (λ _ => .ref
+    (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower .same))),
+    NatBindings.empty.set 1 falseValue⟩
+def outerValue : ExeVal := ⟨0, .lit "outer", .empty⟩
+def capturedBindings : ExeBindings := NatBindings.empty.set 0 outerValue
+def capturedClosure : ExeVal := ⟨0, Trm.FreeCapture.capturedValue, capturedBindings⟩
+def callerBindings : ExeBindings := NatBindings.empty.set 0 capturedClosure
+def shiftedBindings : ExeBindings := NatBindings.empty.set 1 outerValue
 
 open Lean (Json toJson)
 
@@ -23,17 +33,37 @@ def closureSignature (closure : ExeVal) : Json :=
     .arr #[toJson n, astToJson value toJson toJson, bindings captured]
 termination_by structural closure
 
--- Exercise the same captured primitive with each evaluator, including its missing-capture failure.
-def capturedPrimitiveCase (check : Trm 0 → Trm 0 → ExeBindings → Bool) : Bool :=
-  match Trm.FreeCapture.capturedRef with
-  | .val value =>
-    let primitive : Val := .fnPrimitive (.TFn .TLit .TLit) (λ _ => value)
-    let caller := NatBindings.empty.set 0 (⟨0, primitive, freeBindings⟩ : ExeVal)
-    check (.apply (.apply Trm.FreeCapture.directRef Trm.vFalse) Trm.vFalse)
-      (.apply (.val primitive) Trm.vFalse) caller
-  | _ => false
+instance : BEq (Return ExeVal) where
+  beq first second :=
+    match first, second with
+    | .some first, .some second => closureSignature first == closureSignature second
+    | .corrupted, .corrupted => true
+    | _, _ => false
+
+instance : Coe ExeVal (Return ExeVal) where
+  coe value := .some value
 
 namespace Trm
+
+namespace FreeCapture
+
+-- Share the captured primitive between evaluators, including its missing-capture failure.
+def primitive : Val :=
+  .fnPrimitive (.TFn .TLit .TLit) (λ _ => capturedValue)
+
+def primitiveRefOnFalseTwice : Trm :=
+  .apply (.apply directRef vFalse) vFalse
+
+def directRefOnTrue : Trm :=
+  .apply directRef vTrue
+
+def shiftedRef : Trm 3 :=
+  .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same))
+
+end FreeCapture
+
+def get1stOnFalse : Trm :=
+  .apply get1st vFalse
 
 def higherOrderId : Trm :=
   .val (.fn (.TFn .TLit .TLit) (.mk (λ fn => .ref fn .same)))
@@ -54,6 +84,28 @@ def primitiveFirstFnOnTuple : Trm :=
 
 namespace Malformed
 
+def corruptApplication (n : Nat := 0) : Trm n :=
+  .apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) (.val (.lit bFalse))
+
+def corruptedCallee : Trm :=
+  .apply corruptApplication vTrue
+
+def corruptedArgument : Trm :=
+  .apply higherOrderId corruptApplication
+
+def corruptedBody : Trm :=
+  .apply (.val (.fn .TLit (.mk (λ _ => corruptApplication 1)))) vFalse
+
+def illTypedPrimitiveResult : Trm :=
+  .apply (.val (.fnPrimitive .TLit
+    (λ _ => .fn .TLit (.mk (λ _ => .apply (.val (.lit "bad")) (.val (.lit "bad"))))))) vFalse
+
+def applyLitToApplication : Trm :=
+  .apply vFalse primitiveIdFnOnFalse
+
+def missingPrimitiveCapture : Trm :=
+  .apply (.val FreeCapture.primitive) vFalse
+
 def wrongNestedTIn : Trm :=
   .apply higherOrderId get1st
 
@@ -68,5 +120,8 @@ def primitiveFnOnTuple : Trm :=
 end Malformed
 
 end Trm
+
+def capturedPrimitiveBindings : ExeBindings :=
+  NatBindings.empty.set 0 ⟨0, Trm.FreeCapture.primitive, freeBindings⟩
 
 end Tests.STLC.Sanity
