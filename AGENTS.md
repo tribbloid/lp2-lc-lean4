@@ -84,14 +84,14 @@ Tests/AGENTS.md are not exhaustive.
 
 #### Don't
 
-- Do not add `unsafe`, `noncomputable`, or `partial` declarations/blocks.
+- Do not add `unsafe` or `partial` declarations/blocks without an explicit request.
 - Do not introduce axioms without an explicit request.
-- Do not write multiple cases in pattern matching in 1 line; each case should be in its own line
+- Do not repeat match conditions; group them into simple tiers (particularly for induction fuel).
+- Do not write multiple cases in inductive/match in 1 line; each case should be in its own line
       starting with `|`.
 - Do not add compiler public API for an already-defined feature (e.g. type-checking, evaluation).
       Each feature should have only one public definition.
 - Do not overuse generic universes when fixed levels suffice (`Prop`, `Type`, `Type 1`, `Type 2`).
-- Do not repeat pattern-match conditions; keep them as short as possible.
 - Do not export definition, only open at callsite.
 - Do not write unnecessary arguments at call sites.
 - Do not create Lean file with `.` in file name.
