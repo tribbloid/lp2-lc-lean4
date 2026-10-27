@@ -35,6 +35,12 @@ def capturedPrimitiveCase (check : Trm 0 → Trm 0 → ExeBindings → Bool) : B
 
 namespace Trm
 
+def higherOrderId : Trm :=
+  .val (.fn (.TFn .TLit .TLit) (.mk (λ fn => .ref fn .same)))
+
+def higherOrderApplication : Trm :=
+  .apply (.apply higherOrderId primitiveIdFn) vFalse
+
 def primitiveLiteralIdFn : Trm :=
   .val (.fnPrimitive .TLit .lit)
 
@@ -47,6 +53,9 @@ def primitiveFirstFnOnTuple : Trm :=
       (λ first => .fnPrimitive .TLit (λ _ => .lit first)))) vFalse) vTrue
 
 namespace Malformed
+
+def wrongNestedTIn : Trm :=
+  .apply higherOrderId get1st
 
 def primitiveLiteralIdFnOnFn : Trm :=
   .apply primitiveLiteralIdFn primitiveIdFn

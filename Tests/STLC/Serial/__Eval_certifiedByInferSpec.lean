@@ -28,10 +28,6 @@ private def capturedBindings : ExeBindings := NatBindings.empty.set 0 outerValue
 private def capturedClosure : ExeVal :=
   .mk 0 (.fn .TLit (.mk (λ _ => .ref Trm.FreeCapture.freeSlot (.lower .same)))) capturedBindings
 private def callerBindings : ExeBindings := NatBindings.empty.set 0 capturedClosure
-private def higherOrderId : Trm :=
-  .val (.fn (.TFn .TLit .TLit) (.mk (λ fn => .ref fn .same)))
-private def higherOrderApplication : Trm :=
-  .apply (.apply higherOrderId Trm.primitiveIdFn) Trm.vFalse
 
 private def corruptApplication (n : Nat := 0) : Trm n :=
   .apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) (.val (.lit "false"))
@@ -47,7 +43,7 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
 #guard evalYields Trm.get1stOnTuple 3 falseValue
 #guard evalYields Trm.get2ndOnTuple 3 trueValue
 #guard evalYields Trm.primitiveTrueFnOnFalse 2 capturedTrueValue
-#guard evalYields higherOrderApplication 3 falseValue
+#guard evalYields Trm.higherOrderApplication 3 falseValue
 #guard evalYields Trm.FreeCapture.directRef 1 trueValue freeBindings
 #guard evalYields Trm.FreeCapture.capturedRefOnFalse 2 trueValue freeBindings
 
@@ -68,7 +64,7 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
 #guard corruptsAt corruptApplication 2
 #guard corruptsAt corruptApplication 1000
 #guard corruptsAt (.apply corruptApplication Trm.vTrue) 3
-#guard corruptsAt (.apply higherOrderId corruptApplication) 3
+#guard corruptsAt (.apply Trm.higherOrderId corruptApplication) 3
 #guard corruptsAt (.apply (.val (.fn .TLit (.mk (λ _ => corruptApplication 1)))) Trm.vFalse) 3
 
 #guard match erasedEval corruptApplication .empty 2 1 with

@@ -21,9 +21,13 @@ private def _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (fue
 
 #guard get2ndOnTuple.evalShouldYields 3 trueValue
 
+#guard higherOrderApplication.evalShouldYields 4 falseValue
+
 #guard Malformed.WrongTIn.eval.shouldFail 3
 
 #guard Malformed.ContainWrongTIn.eval.shouldFail 4
+
+#guard Malformed.wrongNestedTIn.eval.shouldFail 4
 
 #guard Malformed.applyLit2.eval.shouldFail 3
 
