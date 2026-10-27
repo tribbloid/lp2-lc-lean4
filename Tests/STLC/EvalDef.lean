@@ -20,25 +20,25 @@ def capturedClosure : ExeVal := ⟨0, Trm.FreeVarCapture.capturedValue, captured
 def callerBindings : ExeBindings := NatBindings.empty.set 0 capturedClosure
 def shiftedBindings : ExeBindings := NatBindings.empty.set 1 outerValue
 
-open Lean (Json toJson)
+open Lean (toJson)
 
 -- Compare runtime closures, including their contexts and captured bindings, in evaluator tests.
-def closureSignature (closure : ExeVal) : Json :=
-  match closure with
-  | .mk n value captured =>
-    let rec bindings (entries : ExeBindings) : Json :=
-      match entries with
-      | .empty => .null
-      | .set rest index value => .arr #[bindings rest, toJson index, closureSignature value]
-    .arr #[toJson n, astToJson value toJson toJson, bindings captured]
-termination_by structural closure
+private def closureBEq (first second : ExeVal) : Bool :=
+  match first, second with
+  | .mk n value captured, .mk m value' captured' =>
+    if h : m = n then
+      let rec bindings (first second : ExeBindings) : Bool :=
+        match first, second with
+        | .empty, .empty => true
+        | .set rest index value, .set rest' index' value' =>
+          index == index' && closureBEq value value' && bindings rest rest'
+        | _, _ => false
+      astBEq value (cast (congrArg (λ k => Val k) h) value') toJson toJson && bindings captured captured'
+    else false
+termination_by structural first
 
-instance : BEq (Return ExeVal) where -- TODO: violate the rule (double implementation): ExeEval BEq can already be inferred through BEq of AST
-  beq first second :=
-    match first, second with
-    | .some first, .some second => closureSignature first == closureSignature second
-    | .corrupted, .corrupted => true
-    | _, _ => false
+instance : BEq ExeVal := ⟨closureBEq⟩
+deriving instance BEq for Return
 
 instance : Coe ExeVal (Return ExeVal) where
   coe value := .some value
