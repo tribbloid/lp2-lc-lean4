@@ -1,7 +1,7 @@
 import «Lp2lc».Active.STLC.Serial.Eval
 import «Tests».STLC.TrmDemo
 
-namespace Lp2lc.Active.STLC.Trm
+namespace Lp2lc.Active.STLC.AST
 
 open Lp2lc.Active.Util Tests.STLC.Sanity
 
@@ -15,7 +15,7 @@ private abbrev evalShouldYield (expected : Val) (bindings : ExeBindings := .empt
 private abbrev evalShouldCrash (bindings : ExeBindings := .empty) : Prop :=
   returnsValue (trm.eval bindings) fuel .corrupted
 
-end Lp2lc.Active.STLC.Trm
+end Lp2lc.Active.STLC.AST
 
 namespace Tests.STLC.Sanity.Trm
 
@@ -23,12 +23,12 @@ open Lp2lc.Active.Util Lp2lc.Active.STLC
 
 section eval
 
-#guard vFalse.asTrm.evalShouldYield 1 vFalse
+#guard vFalse.evalShouldYield (n := 0) 1 vFalse
 
 #guard primitiveIdFn.evalShouldYield 1 Val.idFn
 
 -- A nested identity is closed; a function returning its captured argument is not an identity.
-#guard returnsValue (AST.eval (.apply get2nd vFalse.asTrm : Trm)) 2 (.some Val.idFn)
+#guard returnsValue (AST.eval (.apply get2nd vFalse : Trm)) 2 (.some Val.idFn)
 #guard ¬ get1stOnFalse.evalShouldYield 2 Val.idFn
 
 #guard primitiveIdFnOnFalse.evalShouldYield 2 vFalse

@@ -30,7 +30,7 @@ def primitiveIdFn : Trm :=
   .val Val.idFn
 
 def primitiveIdFnOnFalse : Trm :=
-  .apply primitiveIdFn vFalse.asTrm
+  .apply primitiveIdFn vFalse
 
 def get1st : Trm :=
   .val
@@ -45,36 +45,36 @@ def get2nd : Trm :=
         .val (.fn .TLit (.mk (λ second => .ref second .same))))))
 
 def get1stOnTuple : Trm :=
-  .apply (.apply get1st vFalse.asTrm) vTrue.asTrm
+  .apply (.apply get1st vFalse) vTrue
 
 def get2ndOnTuple : Trm :=
-  .apply (.apply get2nd vFalse.asTrm) vTrue.asTrm
+  .apply (.apply get2nd vFalse) vTrue
 
 def primitiveTrueFn : Trm :=
   .val (.fn .TLit (.mk (λ _ => .val (.lit bTrue))))
 
 def primitiveTrueFnOnFalse : Trm :=
-  .apply primitiveTrueFn vFalse.asTrm
+  .apply primitiveTrueFn vFalse
 
 def get1stOnFalse : Trm :=
-  .apply get1st vFalse.asTrm
+  .apply get1st vFalse
 
 def higherOrderId : Trm :=
   .val (.fn (.TFn .TLit .TLit) (.mk (λ fn => .ref fn .same)))
 
 def higherOrderApplication : Trm :=
-  .apply (.apply higherOrderId primitiveIdFn) vFalse.asTrm
+  .apply (.apply higherOrderId primitiveIdFn) vFalse
 
 def primitiveLiteralIdFn : Trm :=
   .val (.fnPrimitive .TLit .lit)
 
 def primitiveLiteralIdFnOnFalse : Trm :=
-  .apply primitiveLiteralIdFn vFalse.asTrm
+  .apply primitiveLiteralIdFn vFalse
 
 def primitiveFirstFnOnTuple : Trm :=
   .apply
     (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
-      (λ first => .fnPrimitive .TLit (λ _ => .lit first)))) vFalse.asTrm) vTrue.asTrm
+      (λ first => .fnPrimitive .TLit (λ _ => .lit first)))) vFalse) vTrue
 
 -- Free-variable capture fixtures remain disabled while their test setup is simplified.
 -- namespace FreeVarCapture
@@ -92,17 +92,17 @@ def primitiveFirstFnOnTuple : Trm :=
 --   .val capturedValue
 
 -- def capturedRefOnFalse : Trm :=
---   .apply capturedRef vFalse.asTrm
+--   .apply capturedRef vFalse
 
 -- -- Share the captured primitive between evaluators, including its missing-capture failure.
 -- def primitive : Val :=
 --   .fnPrimitive (.TFn .TLit .TLit) (λ _ => capturedValue)
 
 -- def primitiveRefOnFalseTwice : Trm :=
---   .apply (.apply directRef vFalse.asTrm) vFalse.asTrm
+--   .apply (.apply directRef vFalse) vFalse
 
 -- def directRefOnTrue : Trm :=
---   .apply directRef vTrue.asTrm
+--   .apply directRef vTrue
 
 -- def shiftedRef : Trm 3 :=
 --   .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same))
@@ -118,16 +118,16 @@ def WrongTIn : Trm :=
   .apply primitiveIdFn primitiveIdFn
 
 def ContainWrongTIn : Trm :=
-  .apply WrongTIn vFalse.asTrm
+  .apply WrongTIn vFalse
 
 def applyLit1 : Trm :=
-  .apply vFalse.asTrm vTrue.asTrm
+  .apply vFalse vTrue
 
 def applyLit2 : Trm :=
-  .apply (.apply primitiveIdFn vFalse.asTrm) vTrue.asTrm
+  .apply (.apply primitiveIdFn vFalse) vTrue
 
 def applyLitToApplication : Trm :=
-  .apply vFalse.asTrm primitiveIdFnOnFalse
+  .apply vFalse primitiveIdFnOnFalse
 
 def wrongNestedTIn : Trm :=
   .apply higherOrderId get1st
@@ -143,23 +143,23 @@ def corruptApplication (n : Nat := 0) : Trm n :=
   .apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) (.val (.lit bFalse))
 
 def corruptedCallee : Trm :=
-  .apply corruptApplication vTrue.asTrm
+  .apply corruptApplication vTrue
 
 def corruptedArgument : Trm :=
   .apply higherOrderId corruptApplication
 
 def corruptedBody : Trm :=
-  .apply (.val (.fn .TLit (.mk (λ _ => corruptApplication 1)))) vFalse.asTrm
+  .apply (.val (.fn .TLit (.mk (λ _ => corruptApplication 1)))) vFalse
 
 def illTypedPrimitiveResult : Trm :=
   .apply (.val (.fnPrimitive .TLit
-    (λ _ => .fn .TLit (.mk (λ _ => .apply (.val (.lit "bad")) (.val (.lit "bad"))))))) vFalse.asTrm
+    (λ _ => .fn .TLit (.mk (λ _ => .apply (.val (.lit "bad")) (.val (.lit "bad"))))))) vFalse
 
 -- The declared curried type is valid; the callback violates its final literal result type at runtime.
 def primitiveFnOnTuple : Trm :=
   .apply
     (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
-      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) vFalse.asTrm) vTrue.asTrm
+      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) vFalse) vTrue
 
 end Corrupted
 

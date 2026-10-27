@@ -29,7 +29,7 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
   | _ => false
 
 -- Exact evaluation budgets include the one-less-budget exhaustion check.
-#guard evalYields vFalse.asTrm 1 (.some vFalse)
+#guard evalYields (n := 0) vFalse 1 (.some vFalse)
 #guard evalYields Trm.primitiveIdFnOnFalse 2 (.some vFalse)
 #guard evalYields Trm.get1stOnTuple 3 (.some vFalse)
 #guard evalYields Trm.get2ndOnTuple 3 (.some vTrue)
@@ -55,7 +55,7 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
 
 #guard evalYields Trm.primitiveIdFn 1 (.some Val.idFn)
 
-#guard match vFalse.asTrm.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 0 with
+#guard match vFalse.eval_certified (n := 0) .empty (inferFuel := 1) (typ := .TLit) rfl 0 with
   | .outOfFuel => true
   | _ => false
 
