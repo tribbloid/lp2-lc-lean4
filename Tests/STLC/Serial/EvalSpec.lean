@@ -1,38 +1,43 @@
 import «Lp2lc».Active.STLC.Serial.Eval
 import «Tests».STLC.TrmDemo
 
+namespace Lp2lc.Active.STLC.Trm
+
+open Lp2lc.Active.Util Tests.STLC.Sanity
+
+variable {n} (trm : Trm n) (fuel : Nat)
+
+/-- Check the returned value and exact fuel cost. Invoke only as `trm.evalShouldYield fuel expected`. -/
+private abbrev evalShouldYield (expected : Val) (bindings : ExeBindings := .empty) : Prop :=
+  returnsValue (trm.eval bindings) fuel (.some expected)
+
+/-- Check runtime corruption and exact fuel cost. Invoke only as `trm.evalShouldCrash fuel`. -/
+private abbrev evalShouldCrash (bindings : ExeBindings := .empty) : Prop :=
+  returnsValue (trm.eval bindings) fuel .corrupted
+
+end Lp2lc.Active.STLC.Trm
+
 namespace Tests.STLC.Sanity.Trm
 
 open Lp2lc.Active.Util Lp2lc.Active.STLC
 
 section eval
 
-private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldYield {n} (trm : Trm n) (fuel : Nat)
-    (expected : Return Val) -- TODO: type of it should be `(expected : Val)`, if result is ".corrupted", should use `evalShouldCrash`
-    (bindings : ExeBindings := .empty) : Prop :=
-  returnsValue (trm.eval bindings) fuel expected
+#guard vFalse.evalShouldYield 1 falseValue
 
--- TODO: imiplement this & add document
-private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldCrash {n} (trm : Trm n) (fuel : Nat)
-    (bindings : ExeBindings := .empty) : Prop := sorry
-
--- TODO: the fuck is this? why calling with long prefix while dot-notation can be used?
--- TODO: Also augment docstring of evalShouldYield and evalShouldCrash such that they can only be invoked using dot-notation
-#guard vFalse._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 1 (.some falseValue)
-
-#guard primitiveIdFn._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 1 (.some Val.idFn)
+#guard primitiveIdFn.evalShouldYield 1 Val.idFn
 
 -- A nested identity is closed; a function returning its captured argument is not an identity.
 #guard returnsValue (AST.eval (.apply get2nd vFalse : Trm)) 2 (.some Val.idFn)
-#guard ¬ get1stOnFalse._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 2 (.some Val.idFn)
+#guard ¬ get1stOnFalse.evalShouldYield 2 Val.idFn
 
-#guard primitiveIdFnOnFalse._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 2 (.some falseValue)
+#guard primitiveIdFnOnFalse.evalShouldYield 2 falseValue
 
-#guard get1stOnTuple._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 (.some falseValue)
+#guard get1stOnTuple.evalShouldYield 3 falseValue
 
-#guard get2ndOnTuple._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 (.some trueValue)
+#guard get2ndOnTuple.evalShouldYield 3 trueValue
 
-#guard higherOrderApplication._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 4 (.some falseValue)
+#guard higherOrderApplication.evalShouldYield 4 falseValue
 
 #guard Malformed.WrongTIn.eval.shouldFail 3
 
@@ -46,27 +51,27 @@ private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldCrash {n} (trm : Trm n) (f
 
 #guard Malformed.applyLitToApplication.eval.shouldFail 3
 
-#guard primitiveTrueFnOnFalse._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 2 (.some trueValue)
+#guard primitiveTrueFnOnFalse.evalShouldYield 2 trueValue
 
-#guard primitiveLiteralIdFnOnFalse._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 2 (.some falseValue)
+#guard primitiveLiteralIdFnOnFalse.evalShouldYield 2 falseValue
 
-#guard primitiveFirstFnOnTuple._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 (.some falseValue)
+#guard primitiveFirstFnOnTuple.evalShouldYield 3 falseValue
 
-#guard Corrupted.primitiveFnOnTuple._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 .corrupted
+#guard Corrupted.primitiveFnOnTuple.evalShouldCrash 3
 
-#guard Corrupted.corruptApplication._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 2 .corrupted
+#guard Corrupted.corruptApplication.evalShouldCrash 2
 
 #guard match Corrupted.corruptApplication.eval .empty 1000 with
   | .yield (some .corrupted) => true
   | _ => false
 
-#guard Corrupted.corruptedCallee._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 .corrupted
+#guard Corrupted.corruptedCallee.evalShouldCrash 3
 
-#guard Corrupted.corruptedArgument._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 .corrupted
+#guard Corrupted.corruptedArgument.evalShouldCrash 3
 
-#guard Corrupted.corruptedBody._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 3 .corrupted
+#guard Corrupted.corruptedBody.evalShouldCrash 3
 
-#guard Corrupted.illTypedPrimitiveResult._root_.Lp2lc.Active.STLC.Trm.evalShouldYield 4 .corrupted
+#guard Corrupted.illTypedPrimitiveResult.evalShouldCrash 4
 
 #guard Malformed.primitiveLiteralIdFnOnFn.eval.shouldFail 2
 
