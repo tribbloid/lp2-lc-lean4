@@ -32,18 +32,4 @@ instance : Coe ExeBindings CompilerBindings := ⟨breakpoint⟩
 
 end CompilerBindings
 
-/-- Reindex types, opening output binders only at the serial proxy.
-
-The current type syntax contains only `TLit` and `TFn`, so it has no references to substitute
-or captured bindings to resolve. Fuel also bounds traversal beneath output binders.
--/
-def AST.resolveType {n} (self : Typ n) (target : Nat := 0) : Rec (Typ target) := λ fuel =>
-  match fuel, self with
-  | 0, _ => .outOfFuel
-  | _ + 1, .TLit => .yield .TLit
-  | fuel + 1, .TFn input output =>
-    (AST.resolveType input target fuel).flatMap (λ input =>
-      (AST.resolveType (output.apply .only) (target + 1) fuel).map (λ output =>
-        .TFn input (.mk (λ _ => output))))
-
 end DTLC

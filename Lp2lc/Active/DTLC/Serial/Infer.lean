@@ -6,11 +6,26 @@ open Lp2lc.Active.Util
 
 namespace AST
 
+/-- Reindex types, opening output binders only at the serial proxy.
+
+The current type syntax contains only `TLit` and `TFn`, so it has no references to substitute
+or captured bindings to resolve. Fuel also bounds traversal beneath output binders.
+-/
+private def resolveType {n} (self : Typ n) (target : Nat := 0) : Rec (Typ target) := λ fuel =>
+  match fuel, self with
+  | 0, _ => .outOfFuel
+  | _ + 1, .TLit => .yield .TLit -- TODO: violating rules
+  | fuel + 1, .TFn input output =>
+    (AST.resolveType input target fuel).flatMap (λ input =>
+      (AST.resolveType (output.apply .only) (target + 1) fuel).map (λ output =>
+        .TFn input (.mk (λ _ => output))))
+
+
 /-- Structural type equality, comparing output binders at their sole serial proxies. -/
-def sameType {n m} (self : Typ n) (other : Typ m) : Rec Bool := λ fuel =>
+private def sameType {n m} (self : Typ n) (other : Typ m) : Rec Bool := λ fuel =>
   match fuel, self, other with
   | 0, _, _ => .outOfFuel
-  | _ + 1, .TLit, .TLit => .yield true
+  | _ + 1, .TLit, .TLit => .yield true -- TODO: violating rules
   | fuel + 1, .TFn input output, .TFn otherInput otherOutput =>
     (sameType input otherInput fuel).flatMap (λ same =>
       if same then sameType (output.apply .only) (otherOutput.apply .only) fuel
@@ -28,7 +43,7 @@ def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Ty
   match fuel, self with
   | 0, _ => .outOfFuel
   | _ + 1, .val (.lit _) => .yield (some .TLit)
-  | fuel + 1, .val (.fn input body) =>
+  | fuel + 1, .val (.fn input body) => -- TODO: violating rules
     (infer (body.apply .only) (bindings.set (n + 1) ⟨n, input, .empty⟩) fuel).flatMap (λ output =>
       match output with
       | some output => (functionType input output fuel).map some
