@@ -21,6 +21,11 @@ namespace Val
 
 def asTrm (self : Val n) : Trm n := .val self
 
+instance : Coe (Val n) (Trm n) := ⟨asTrm⟩
+
+-- UAST's opaque sort blocks the generic coercion-chain instances.
+instance (self : Val n) : CoeT (Val n) self (Trm n) := ⟨Coe.coe self⟩
+
 end Val
 
 -- set_option genSizeOf false in
