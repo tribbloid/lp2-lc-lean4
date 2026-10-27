@@ -3,6 +3,8 @@ import «Lp2lc».Active.STLC.Hash
 
 namespace Tests.STLC.Sanity
 
+-- TODO: this is an illegal file, it should be merged back into "TrmDemo.lean", with all duplications removed
+
 open Lp2lc.Active.STLC Lp2lc.Active.Util
 
 def falseValue : ExeVal := ⟨0, .lit bFalse, .empty⟩
