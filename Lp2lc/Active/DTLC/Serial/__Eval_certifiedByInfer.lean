@@ -16,6 +16,7 @@ abbrev CertifiedVal (typ : Typ) :=
 abbrev Result (typ : Typ) := Rec (Return (CertifiedVal typ))
 
 private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) : Rec (Return ExeVal) := λ fuel =>
+  -- TODO: delete it, "eval_certified should build certified result in every step"
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>

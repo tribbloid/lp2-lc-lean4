@@ -50,7 +50,7 @@ assessment.
 - DO NOT revert any part of the code to a previous state in git history; every commit is there for a reason.
 - DO NOT modify any code that is modified in the previous few commits and can compile successfully; they are the
       effective changes you need to adapt to.
-- DO NOT delete comment without an explicit reason.
+- DO NOT delete comment without an explicit reason, unless it is for obsolete TODO entry.
 
 ## Structure
 
