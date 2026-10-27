@@ -21,10 +21,9 @@ private def _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (fue
 
 #guard get2ndOnTuple.evalShouldYields 3 trueValue
 
--- TODO: evaluation of Malformed terms should always fail.
-#guard Malformed.WrongTIn.evalShouldYields 2 ⟨0, Val.idFn, .empty⟩
+#guard Malformed.WrongTIn.eval.shouldFail 3
 
-#guard Malformed.ContainWrongTIn.evalShouldYields 3 falseValue
+#guard Malformed.ContainWrongTIn.eval.shouldFail 4
 
 #guard Malformed.applyLit2.eval.shouldFail 3
 
