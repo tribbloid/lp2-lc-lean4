@@ -46,13 +46,12 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
 #guard evalYields Trm.primitiveIdFnOnFalse 2 falseValue
 #guard evalYields Trm.get1stOnTuple 3 falseValue
 #guard evalYields Trm.get2ndOnTuple 3 trueValue
-#guard evalYields Trm.primitiveTrueFnOnFalse 2
-  ⟨1, .lit bTrue, NatBindings.empty.set 1 falseValue⟩
+#guard evalYields Trm.primitiveTrueFnOnFalse 2 capturedTrueValue
 #guard evalYields higherOrderApplication 3 falseValue
 #guard evalYields Trm.FreeCapture.directRef 1 trueValue freeBindings
 #guard evalYields Trm.FreeCapture.capturedRefOnFalse 2 trueValue freeBindings
 
-#guard evalYields (.apply (.val (.fnPrimitive .TLit .lit)) Trm.vFalse) 2 falseValue
+#guard evalYields Trm.primitiveLiteralIdFnOnFalse 2 falseValue
 #guard evalYields Trm.primitiveFirstFnOnTuple 3 falseValue
 
 #guard capturedPrimitiveCase (λ trm corrupted caller =>
@@ -109,14 +108,14 @@ private def rejects {n} (trm : Trm n) : Bool :=
   | .yield none => true
   | _ => false
 
-#guard rejects WrongInputType
-#guard rejects ContainWrongTIn
+#guard rejects Trm.Malformed.WrongTIn
+#guard rejects Trm.Malformed.ContainWrongTIn
 #guard rejects Trm.Malformed.applyLit2
 #guard rejects Trm.Malformed.applyLit1
-#guard rejects (.apply (.val (.fnPrimitive .TLit .lit)) Trm.primitiveIdFn)
+#guard rejects Trm.Malformed.primitiveLiteralIdFnOnFn
 #check_failure Trm.Malformed.applyLit1.eval_certified .empty (inferFuel := 2) (typ := .TLit) rfl 2
 #check_failure Trm.FreeCapture.directRef.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 1
-#check_failure ContainWrongTIn.eval_certified .empty (inferFuel := 4) (typ := .TLit) rfl 3
+#check_failure Trm.Malformed.ContainWrongTIn.eval_certified .empty (inferFuel := 4) (typ := .TLit) rfl 3
 #check_failure AST.eval_certified (.apply Trm.vFalse Trm.primitiveIdFnOnFalse) .empty
   (inferFuel := 4) (typ := .TLit) rfl 2
 

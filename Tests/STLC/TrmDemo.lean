@@ -11,40 +11,40 @@ def bTrue := "true"
 
 namespace Trm
 
-def vFalse : AST 0 .trm :=
+def vFalse : Trm :=
   .val (.lit bFalse)
 
-def vTrue : AST 0 .trm :=
+def vTrue : Trm :=
   .val (.lit bTrue)
 
-def primitiveIdFn : AST 0 .trm :=
+def primitiveIdFn : Trm :=
   .val (.fn .TLit (.mk (λ proxy => .ref proxy .same)))
 
-def primitiveIdFnOnFalse : AST 0 .trm :=
+def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
 
-def get1st : AST 0 .trm :=
+def get1st : Trm :=
   .val
     (.fn .TLit
       (.mk (λ first =>
         .val (.fn .TLit (.mk (λ _ => .ref first (.lower .same)))))))
 
-def get2nd : AST 0 .trm :=
+def get2nd : Trm :=
   .val
     (.fn .TLit
       (.mk (λ _ =>
         .val (.fn .TLit (.mk (λ second => .ref second .same))))))
 
-def get1stOnTuple : AST 0 .trm :=
+def get1stOnTuple : Trm :=
   .apply (.apply get1st vFalse) vTrue
 
-def get2ndOnTuple : AST 0 .trm :=
+def get2ndOnTuple : Trm :=
   .apply (.apply get2nd vFalse) vTrue
 
-def primitiveTrueFn : AST 0 .trm :=
+def primitiveTrueFn : Trm :=
   .val (.fn .TLit (.mk (λ _ => .val (.lit bTrue))))
 
-def primitiveTrueFnOnFalse : AST 0 .trm :=
+def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn vFalse
 
 namespace FreeCapture
@@ -55,39 +55,39 @@ def freeSlot : IndexEncoding.SerialProxy 0 := .only
 def directRef : Trm 0 :=
   .ref freeSlot .same
 
-def capturedRef : AST 0 .trm :=
+def capturedRef : Trm :=
   .val (.fn .TLit (.mk (λ _ => .ref freeSlot (.lower .same))))
 
-def capturedRefOnFalse : AST 0 .trm :=
+def capturedRefOnFalse : Trm :=
   .apply capturedRef (.val (.lit bFalse))
 
 end FreeCapture
 
 namespace TypeHinted
 
-def hintedFalse : AST 0 .trm :=
+def hintedFalse : Trm :=
   .val (.lit bFalse)
 
-def hintedIdFn : AST 0 .trm :=
+def hintedIdFn : Trm :=
   .val (.fn .TLit (.mk (λ proxy => .ref proxy .same)))
 
-def hintedIdFnOnFalse : AST 0 .trm :=
+def hintedIdFnOnFalse : Trm :=
   .apply hintedIdFn hintedFalse
 
 end TypeHinted
 
 namespace Malformed
 
-def WrongTIn : AST 0 .trm :=
+def WrongTIn : Trm :=
   .apply primitiveIdFn primitiveIdFn
 
-def ContainWrongTIn : AST 0 .trm :=
+def ContainWrongTIn : Trm :=
   .apply WrongTIn vFalse
 
-def applyLit1 : AST 0 .trm :=
+def applyLit1 : Trm :=
   .apply vFalse vTrue
 
-def applyLit2 : AST 0 .trm :=
+def applyLit2 : Trm :=
   .apply (.apply primitiveIdFn vFalse) vTrue
 
 end Malformed

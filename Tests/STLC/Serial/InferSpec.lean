@@ -1,7 +1,7 @@
 import «Lp2lc».Active.STLC.Serial.Infer
 import «Lp2lc».Active.STLC.Serial.Eval
 import «Lp2lc».Active.STLC.Hash
-import «Tests».STLC.TrmDemo
+import «Tests».STLC.EvalDef
 
 namespace Tests.STLC.Sanity
 
@@ -106,9 +106,9 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
       (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 6 (.TFn .TLit .TLit)
   | _ => false
 
-#guard WrongInputType.infer.shouldFail 3
+#guard Malformed.WrongTIn.infer.shouldFail 3
 
-#guard ContainWrongTIn.infer.shouldFail 4
+#guard Malformed.ContainWrongTIn.infer.shouldFail 4
 
 #guard Malformed.applyLit2.infer.shouldFail 4
 
@@ -117,7 +117,7 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 #guard (AST.infer (.val (.fnPrimitive (.TFn .TLit .TLit) .lit) : Trm)).shouldYields 1
   (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard (AST.infer (.apply (.val (.fnPrimitive .TLit .lit)) primitiveIdFn)).shouldFail 3
+#guard Malformed.primitiveLiteralIdFnOnFn.infer.shouldFail 3
 
 end infer
 

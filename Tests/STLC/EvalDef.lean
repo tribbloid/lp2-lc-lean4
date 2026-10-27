@@ -8,6 +8,7 @@ open Lp2lc.Active.STLC Lp2lc.Active.Util
 def falseValue : ExeVal := ⟨0, .lit bFalse, .empty⟩
 def trueValue : ExeVal := ⟨0, .lit bTrue, .empty⟩
 def freeBindings : ExeBindings := NatBindings.empty.set 0 trueValue
+def capturedTrueValue : ExeVal := ⟨1, .lit bTrue, NatBindings.empty.set 1 falseValue⟩
 
 open Lean (Json toJson)
 
@@ -34,12 +35,21 @@ def capturedPrimitiveCase (check : Trm 0 → Trm 0 → ExeBindings → Bool) : B
 
 namespace Trm
 
+def primitiveLiteralIdFn : Trm :=
+  .val (.fnPrimitive .TLit .lit)
+
+def primitiveLiteralIdFnOnFalse : Trm :=
+  .apply primitiveLiteralIdFn vFalse
+
 def primitiveFirstFnOnTuple : Trm :=
   .apply
     (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
       (λ first => .fnPrimitive .TLit (λ _ => .lit first)))) vFalse) vTrue
 
 namespace Malformed
+
+def primitiveLiteralIdFnOnFn : Trm :=
+  .apply primitiveLiteralIdFn primitiveIdFn
 
 def primitiveFnOnTuple : Trm :=
   .apply
