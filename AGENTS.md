@@ -37,7 +37,12 @@ assessment.
 - Build after every revision. Do not proceed while compiler/LSP errors remain; final Lean changes must pass `lake build`
       without errors. Existing `sorry`-backed scaffolds may remain only when the current task is not discharging them;
       do not introduce new production `sorry` unless the task is explicitly Conjecture Scaffolding.
-- Only create new permanent file if required by `.agent/CodeStructure.md`.
+- Create a new permanent file only when the user explicitly authorizes its creation and `.agent/CodeStructure.md`
+      permits it. A request to fix or extend existing code does not authorize new files.
+    - Reuse existing files for tests, fixtures, helpers, and shared utilities. Deduplication, convenience, and reviewer
+          recommendations do not authorize creating a file.
+    - If the task cannot be completed within existing files, explain the proposed file's path and purpose and obtain
+          explicit user approval before creating it. Do not create or commit it while approval is pending.
     - Agent tool scripts not part of the core project should be under the `<project-dir>/.agent/script` directory.
     - Temporary files (e.g. experiments and demos) should be under a `__TEMP` subdirectory.
 
