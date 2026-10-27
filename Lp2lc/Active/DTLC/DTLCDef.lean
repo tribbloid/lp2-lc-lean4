@@ -10,19 +10,19 @@ namespace Pre
 mutual
 
 /-- A binder introduces the next lexical context for its body. -/
-inductive Binder : Parameters → Label → UAST where
+inductive Binder : (P : Parameters) → (l : Label) → UAST where
 /-- Internal construction callback; do not consume it as a nonuniform function.
 
 Use `Binder.apply` under the index encoding's opening contract. UId opens only at `.inr ()`
 and substitutes receipts structurally; serial binders receive their sole context proxy.
 -/
-| private body {P} (body : P.Next.TRef → AST P.Next l) : Binder P l
+| private body {P} (body : (carrier : P.Next.TRef) → AST P.Next l) : Binder P l
 
 /-- Dependently-typed lambda calculus
 
 STLC-style syntax with function output type binders (as represented by `TFn` and `fnPrimitive`).
 -/
-inductive AST : Parameters → Label → UAST where
+inductive AST : (P : Parameters) → (l : Label) → UAST where
 /-- `AnyVal/Int/Bool/Double ...`, differentiating them is trivial and won't be included in this proof -/
 | TLit {P} : AST P .typ
 /-- `v: _Lit`, most specific type is always `.TLit` -/
@@ -33,7 +33,7 @@ inductive AST : Parameters → Label → UAST where
 /-- `fn: _Fn with (In => ?)`. AKA lambda -/
 | fn {P} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
 /-- A primitive operation on literal bytecode, extending the core calculus. -/
-| fnPrimitive {P} (tOut : Binder P .typ) (op : P.B → AST P .val) : AST P .val
+| fnPrimitive {P} (tOut : Binder P .typ) (op : (repr : P.B) → AST P .val) : AST P .val
 
 /-- A lexical reference retains its source context and a witness reaching the current context. AKA variable, var -/
 | ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .trm
