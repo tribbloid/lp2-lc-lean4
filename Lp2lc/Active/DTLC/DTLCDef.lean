@@ -20,8 +20,7 @@ and substitutes receipts structurally; serial binders receive their sole context
 
 /-- Dependently-typed lambda calculus
 
-Almost STLC but function output type depends on input type (AKA dependent Pi-type, as shown in
-.TFn an .fnPrimitive)
+STLC-style syntax with function output type binders (as represented by `TFn` and `fnPrimitive`).
 -/
 inductive AST : Parameters → Label → UAST where
 /-- `AnyVal/Int/Bool/Double ...`, differentiating them is trivial and won't be included in this proof -/
@@ -33,7 +32,7 @@ inductive AST : Parameters → Label → UAST where
 | TFn {P} (tIn : AST P .typ) (tOut : Binder P .typ) : AST P .typ
 /-- `fn: _Fn with (In => ?)`. AKA lambda -/
 | fn {P} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
-/-- A primitive operation on literal bytecode, extending core System D. -/
+/-- A primitive operation on literal bytecode, extending the core calculus. -/
 | fnPrimitive {P} (tOut : Binder P .typ) (op : P.B → AST P .val) : AST P .val
 
 /-- A lexical reference retains its source context and a witness reaching the current context. AKA variable, var -/
@@ -41,7 +40,7 @@ inductive AST : Parameters → Label → UAST where
 
 /-- a thin wrapper of value as term -/
 | val {P} (v : AST P .val) : AST P .trm -- AKA literal
-/-- `fn (arg)`, with general terms as in the original System D presentation. -/
+/-- `fn (arg)`, with general terms as function and argument. -/
 | apply {P} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
 
 end
