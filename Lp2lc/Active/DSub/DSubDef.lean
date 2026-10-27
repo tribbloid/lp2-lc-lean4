@@ -18,6 +18,12 @@ mutual
 inductive Binder : Parameters → Label → UAST where
 | private body {P} (body : P.Next.TRef → AST P.Next l) : Binder P l
 
+/-- System D_Sub (AKA System D_SubSup in the original DOT paper)
+
+extension to System D that supports subtyping semilattice (defined through the only type member, because structural typing).
+
+The original System D_Sub (only supports subtyping tree) was deliberately omitted by gDOT article for being trivial
+-/
 inductive AST : Parameters → Label → UAST where
 | TTop {P} : AST P .typ
 | TBot {P} : AST P .typ
@@ -25,16 +31,18 @@ inductive AST : Parameters → Label → UAST where
 | TLit {P} : AST P .typ
 | lit {P} (repr : P.B) : AST P .val
 
-| TFn {P} (tIn : AST P .typ) (tOut : Binder P .typ) : AST P .typ -- ∀ x : S. T
-| fn {P} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val -- dependent function
+| TFn {P} (tIn : AST P .typ) (tOut : Binder P .typ) : AST P .typ
+| fn {P} (tIn : AST P .typ) (body : Binder P .trm) : AST P .val
 | fnPrimitive {P} (tOut : Binder P .typ) (op : P.B → AST P .val) : AST P .val
-    -- inference uses declared `.TFn .TLit tOut`; evaluation must validate each result of `op`
 
-| TMember {P} (lower upper : AST P .typ) : AST P .typ -- Scala type: { type Type >: L <: U }
-| TSel {P} (value : AST P .val) : AST P .typ -- Scala type: v.Type (stable v)
-| typeDef {P} (typ : AST P .typ) : AST P .val -- Scala value: new { type Type = T }
+/-- `{ type Type >: L <: U }` -/
+| TMember {P} (lower upper : AST P .typ) : AST P .typ
+/-- `Scala type: v.Type (stable v)` -/
+| TSel {P} (value : AST P .val) : AST P .typ
+/-- `new { type Type = T }` -/
+| typeDef {P} (typ : AST P .typ) : AST P .val
 
-| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val
+| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val -- TOOD: this should be .trm
 
 -- Upstream guarded forms are deferred, as in GDOT, until their typing rules are settled.
 -- | TLater {P} (typ : AST P .typ) : AST P .typ -- ▷ T

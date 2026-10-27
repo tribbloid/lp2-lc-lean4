@@ -41,14 +41,15 @@ inductive AST : Parameters → Label → UAST where
 Technically not part of STLC. AKA PrimitiveOp -/
 | fnPrimitive {P} (tOut : AST P .typ) (op : P.B → AST P .val) : AST P .val
 
+/-- A lexical reference retains its source context and a witness reaching the current context. AKA variable, var -/
+| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .trm
+
 /-- a thin wrapper of value as term -/
 | val {P} (v : AST P .val) : AST P .trm -- AKA literal
 /-- `fn (arg)`, `fn` and `arg` should be converted to ANF first -/
 | apply {P} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
 
-/-- A lexical reference retains its source context and a witness reaching the current context. AKA variable, var -/
-| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .trm
- end
+end
 
 namespace Binder
 -- All theorems about Binder should be here, e.g. parametricity, lift relation
