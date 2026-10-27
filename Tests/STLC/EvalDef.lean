@@ -33,7 +33,7 @@ def closureSignature (closure : ExeVal) : Json :=
     .arr #[toJson n, astToJson value toJson toJson, bindings captured]
 termination_by structural closure
 
-instance : BEq (Return ExeVal) where
+instance : BEq (Return ExeVal) where -- TODO: violate the rule (double implementation): ExeEval BEq can already be inferred through BEq of AST
   beq first second :=
     match first, second with
     | .some first, .some second => closureSignature first == closureSignature second
@@ -118,6 +118,11 @@ def primitiveFnOnTuple : Trm :=
       (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) vFalse) vTrue
 
 end Malformed
+
+namespace Corrupted
+-- TODO: some test fixtures in `Malformed` cannot be rejected by the compiler type inference, they should be moved here
+
+end Corrupted
 
 end Trm
 
