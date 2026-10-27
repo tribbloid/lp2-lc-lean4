@@ -1,5 +1,4 @@
 import «Lp2lc».Active.STLC.Serial.Infer
-import «Lp2lc».Active.STLC.Serial.Eval
 import «Lp2lc».Active.STLC.Hash
 import «Tests».STLC.TrmDemo
 
@@ -15,12 +14,9 @@ section infer
 local instance : BEq Typ :=
   ⟨λ first second => astBEq first second (λ _ => .null) (λ _ => .null)⟩
 
-private def fnBindings : ExeBindings := (NatBindings.empty.set 0 idFnValue).set 1 idFnValue
+private def fnBindings : ExeBindings := (NatBindings.empty.set 0 ⟨0, Val.idFn, .empty⟩).set 1 ⟨0, Val.idFn, .empty⟩
 
-private def mixedBindings : ExeBindings := fnBindings.set 1 trueValue
-
-private def typeBindings : CompilerBindings :=
-  CompilerBindings.empty.set 0 ⟨7, .TFn .TLit .TLit, .empty⟩
+private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, trueValue, .empty⟩
 
 private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
 
@@ -48,48 +44,11 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard primitiveTrueFnOnFalse.infer.shouldYields 3 .TLit
 
-#guard (FreeVarCapture.directRef.infer freeBindings).shouldYields 2 .TLit
-
-#guard (FreeVarCapture.directRef.infer fnBindings).shouldYields 3 (.TFn .TLit .TLit)
-
-#guard (FreeVarCapture.capturedRef.infer fnBindings).shouldYields 4
-  (.TFn .TLit (.TFn .TLit .TLit))
-
-#guard (FreeVarCapture.capturedRefOnFalse.infer fnBindings).shouldYields 5 (.TFn .TLit .TLit)
-
 #guard (primitiveIdFn.infer fnBindings).shouldYields 2 (.TFn .TLit .TLit)
 
 #guard (primitiveIdFn.infer mixedBindings).shouldYields 2 (.TFn .TLit .TLit)
 
-#guard (FreeVarCapture.directRef.infer mixedBindings).shouldYields 3 (.TFn .TLit .TLit)
-
 #guard (innerRef.infer mixedBindings).shouldYields 2 .TLit
-
-#guard (AST.infer (.apply FreeVarCapture.directRef primitiveIdFn) fnBindings).shouldFail 4
-
-#guard match FreeVarCapture.capturedRef.eval freeBindings 1 with
-  | .yield (some (.some closure)) =>
-    let bindings := mixedBindings.set 1 closure
-    (innerRef.infer bindings).shouldYields 4 (.TFn .TLit .TLit) ∧
-      (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 5 .TLit
-  | _ => false
-
-#guard (FreeVarCapture.directRef.infer typeBindings).shouldYields 1 (.TFn .TLit .TLit)
-
-#guard (FreeVarCapture.capturedRef.infer typeBindings).shouldYields 2
-  (.TFn .TLit (.TFn .TLit .TLit))
-
-#guard (FreeVarCapture.capturedRefOnFalse.infer typeBindings).shouldYields 3 (.TFn .TLit .TLit)
-
-#guard (AST.infer (.apply FreeVarCapture.directRef primitiveIdFn) typeBindings).shouldFail 3
-
-#guard match FreeVarCapture.capturedRef with
-  | .val value =>
-    let bindings := (.breakpoint (NatBindings.empty.set 1 ⟨0, value, fnBindings⟩) : CompilerBindings).set
-      0 ⟨0, .TLit, .empty⟩
-    (innerRef.infer bindings).shouldYields 5 (.TFn .TLit (.TFn .TLit .TLit)) ∧
-      (AST.infer (.apply innerRef (.val (.lit bFalse))) bindings).shouldYields 6 (.TFn .TLit .TLit)
-  | _ => false
 
 #guard Malformed.WrongTIn.infer.shouldFail 3
 

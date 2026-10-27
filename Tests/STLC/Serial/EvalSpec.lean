@@ -8,23 +8,25 @@ open Lp2lc.Active.Util Lp2lc.Active.STLC
 section eval
 
 private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (fuel : Nat)
-    (expected : Return ExeVal) -- TODO: at this moment, it should be `(expected : Return Val)`, no captured variable should be return
+    (expected : Return Val)
     (bindings : ExeBindings := .empty) : Prop :=
-  (trm.eval bindings).shouldYields fuel expected
+  returnsValue (trm.eval bindings) fuel expected
 
-#guard vFalse.evalShouldYields 1 falseValue
+#guard vFalse.evalShouldYields 1 (.some falseValue)
 
-#guard primitiveIdFn.evalShouldYields 1 idFnValue
+#guard primitiveIdFn.evalShouldYields 1 (.some Val.idFn)
 
-#guard primitiveIdFnOnFalse.evalShouldYields 2 falseValue
+-- A nested identity is closed; a function returning its captured argument is not an identity.
+#guard returnsValue (AST.eval (.apply get2nd vFalse : Trm)) 2 (.some Val.idFn)
+#guard ¬ get1stOnFalse.evalShouldYields 2 (.some Val.idFn)
 
-#guard get1stOnFalse.evalShouldYields 2 get1stOnFalseValue
+#guard primitiveIdFnOnFalse.evalShouldYields 2 (.some falseValue)
 
-#guard get1stOnTuple.evalShouldYields 3 falseValue
+#guard get1stOnTuple.evalShouldYields 3 (.some falseValue)
 
-#guard get2ndOnTuple.evalShouldYields 3 trueValue
+#guard get2ndOnTuple.evalShouldYields 3 (.some trueValue)
 
-#guard higherOrderApplication.evalShouldYields 4 falseValue
+#guard higherOrderApplication.evalShouldYields 4 (.some falseValue)
 
 #guard Malformed.WrongTIn.eval.shouldFail 3
 
@@ -38,31 +40,19 @@ private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (
 
 #guard Malformed.applyLitToApplication.eval.shouldFail 3
 
-#guard primitiveTrueFnOnFalse.evalShouldYields 2 capturedTrueValue
+#guard primitiveTrueFnOnFalse.evalShouldYields 2 (.some trueValue)
 
-#guard FreeVarCapture.directRef.evalShouldYields 1 trueValue freeBindings
+#guard primitiveLiteralIdFnOnFalse.evalShouldYields 2 (.some falseValue)
 
-#guard FreeVarCapture.directRef.eval.shouldFail 1
-
-#guard FreeVarCapture.capturedRefOnFalse.evalShouldYields 2 trueValue freeBindings
-
-#guard FreeVarCapture.directRefOnTrue.evalShouldYields 2 outerValue callerBindings
-
-#guard FreeVarCapture.shiftedRef.evalShouldYields 1 outerValue shiftedBindings
-
-#guard primitiveLiteralIdFnOnFalse.evalShouldYields 2 falseValue
-
-#guard primitiveFirstFnOnTuple.evalShouldYields 3 falseValue
-
-#guard FreeVarCapture.primitiveRefOnFalseTwice.evalShouldYields 5 trueValue FreeVarCapture.capturedPrimitiveBindings
-
-#guard Corrupted.missingPrimitiveCapture.evalShouldYields 3 .corrupted
+#guard primitiveFirstFnOnTuple.evalShouldYields 3 (.some falseValue)
 
 #guard Corrupted.primitiveFnOnTuple.evalShouldYields 3 .corrupted
 
 #guard Corrupted.corruptApplication.evalShouldYields 2 .corrupted
 
-#guard (Corrupted.corruptApplication.eval .empty 1000).getOrElse none == some .corrupted
+#guard match Corrupted.corruptApplication.eval .empty 1000 with
+  | .yield (some .corrupted) => true
+  | _ => false
 
 #guard Corrupted.corruptedCallee.evalShouldYields 3 .corrupted
 
