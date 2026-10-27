@@ -66,20 +66,6 @@ def capturedRefOnFalse : Trm :=
 
 end FreeVarCapture
 
-namespace TypeHinted
--- TODO: this namespace should be deleted, current STLC syntax has no type hint, many fixtures in it are just duplicates
-
-def hintedFalse : Trm :=
-  .val (.lit bFalse)
-
-def hintedIdFn : Trm :=
-  .val (.fn .TLit (.mk (λ proxy => .ref proxy .same)))
-
-def hintedIdFnOnFalse : Trm :=
-  .apply hintedIdFn hintedFalse
-
-end TypeHinted
-
 namespace Malformed
 
 def WrongTIn : Trm :=

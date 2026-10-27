@@ -55,12 +55,6 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard primitiveTrueFnOnFalse.infer.shouldYields 3 .TLit
 
-#guard TypeHinted.hintedFalse.infer.shouldYields 1 .TLit
-
-#guard TypeHinted.hintedIdFn.infer.shouldYields 2 (.TFn .TLit .TLit)
-
-#guard TypeHinted.hintedIdFnOnFalse.infer.shouldYields 3 .TLit
-
 #guard (FreeVarCapture.directRef.infer literalBindings).shouldYields 2 .TLit
 
 #guard (AST.infer (.ref FreeVarCapture.freeSlot .same : Trm 0) literalBindings).shouldYields 2 .TLit
