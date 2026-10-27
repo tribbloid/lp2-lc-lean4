@@ -1,5 +1,5 @@
 import «Lp2lc».Active.STLC.Serial.Eval
-import «Tests».STLC.EvalDef
+import «Tests».STLC.TrmDemo
 
 namespace Tests.STLC.Sanity.Trm
 
@@ -53,7 +53,7 @@ private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (
 
 #guard primitiveFirstFnOnTuple.evalShouldYields 3 falseValue
 
-#guard FreeVarCapture.primitiveRefOnFalseTwice.evalShouldYields 5 trueValue capturedPrimitiveBindings
+#guard FreeVarCapture.primitiveRefOnFalseTwice.evalShouldYields 5 trueValue FreeVarCapture.capturedPrimitiveBindings
 
 #guard Corrupted.missingPrimitiveCapture.evalShouldYields 3 .corrupted
 

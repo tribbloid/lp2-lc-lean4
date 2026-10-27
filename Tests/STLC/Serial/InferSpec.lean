@@ -1,7 +1,7 @@
 import «Lp2lc».Active.STLC.Serial.Infer
 import «Lp2lc».Active.STLC.Serial.Eval
 import «Lp2lc».Active.STLC.Hash
-import «Tests».STLC.EvalDef
+import «Tests».STLC.TrmDemo
 
 namespace Tests.STLC.Sanity
 
@@ -15,16 +15,9 @@ section infer
 local instance : BEq Typ :=
   ⟨λ first second => astBEq first second (λ _ => .null) (λ _ => .null)⟩
 
-private def literalValue : ExeVal := .mk 0 (.lit bTrue) .empty
+private def fnBindings : ExeBindings := (NatBindings.empty.set 0 idFnValue).set 1 idFnValue
 
-private def fnValue : ExeVal :=
-  .mk 0 (.fn .TLit (.mk (λ proxy => .ref proxy .same))) .empty
-
-private def literalBindings : ExeBindings := NatBindings.empty.set 0 literalValue
-
-private def fnBindings : ExeBindings := (NatBindings.empty.set 0 fnValue).set 1 fnValue
-
-private def mixedBindings : ExeBindings := fnBindings.set 1 literalValue
+private def mixedBindings : ExeBindings := fnBindings.set 1 trueValue
 
 private def typeBindings : CompilerBindings :=
   CompilerBindings.empty.set 0 ⟨7, .TFn .TLit .TLit, .empty⟩
@@ -55,9 +48,7 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard primitiveTrueFnOnFalse.infer.shouldYields 3 .TLit
 
-#guard (FreeVarCapture.directRef.infer literalBindings).shouldYields 2 .TLit
-
-#guard (AST.infer (.ref FreeVarCapture.freeSlot .same : Trm 0) literalBindings).shouldYields 2 .TLit
+#guard (FreeVarCapture.directRef.infer freeBindings).shouldYields 2 .TLit
 
 #guard (FreeVarCapture.directRef.infer fnBindings).shouldYields 3 (.TFn .TLit .TLit)
 
@@ -76,7 +67,7 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard (AST.infer (.apply FreeVarCapture.directRef primitiveIdFn) fnBindings).shouldFail 4
 
-#guard match FreeVarCapture.capturedRef.eval (NatBindings.empty.set 0 literalValue) 1 with
+#guard match FreeVarCapture.capturedRef.eval freeBindings 1 with
   | .yield (some (.some closure)) =>
     let bindings := mixedBindings.set 1 closure
     (innerRef.infer bindings).shouldYields 4 (.TFn .TLit .TLit) ∧
