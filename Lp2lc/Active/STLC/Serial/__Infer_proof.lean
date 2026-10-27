@@ -154,8 +154,17 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
                     simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
                     split at hSource <;> simp_all [entryFits, Option.map])
                   hBody
-                simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
-                  ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
+                cases hCheck : infer argValue.asTrm argCaptured evalFuel with
+                | outOfFuel => simp [eval.eq_4, hFnEval, hArgEval, hCheck, Rec.Outcome.flatMap]
+                | yield checked =>
+                  obtain ⟨argFuel, hArgValue⟩ := hArgSafety
+                  have hTyped := Monotone.termInfer _ _ _ _ _ (Nat.le_max_left argFuel evalFuel) hArgValue
+                  have hChecked := Monotone.termInfer _ _ _ _ _ (Nat.le_max_right argFuel evalFuel) hCheck
+                  rw [hTyped] at hChecked
+                  have hSame : checked = some (resolveType annotation) := by
+                    simpa [hInput] using (Rec.Outcome.yield.inj hChecked).symm
+                  simpa [eval.eq_4, hFnEval, hArgEval, hCheck, Rec.Outcome.flatMap, hSame, bodyBindings] using
+                    ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
             | fnPrimitive tOut op =>
               simp only [Val.asTrm, infer.eq_6, Rec.Outcome.yield.injEq] at hFnValue
               rcases hFnValue with ⟨rfl, rfl⟩

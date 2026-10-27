@@ -3,6 +3,7 @@ import «Lp2lc».Active.STLC.Serial.__SemType
 namespace Lp2lc.Active.STLC.AST.Semantic
 
 open Lp2lc.Active.Util
+open Lp2lc.Active.STLC.AST.Monotone (termInfer)
 
 namespace Fundamental
 
@@ -64,47 +65,67 @@ private theorem checkReplace {trm : Trm n}
         Monotone.termCheck fn target (Nat.le_max_left _ _) hFnTarget,
         Monotone.termCheck arg target (Nat.le_max_right _ _) hArgTarget⟩
 
+/-- Relate executable inference to semantic typing when checking runtime argument contracts. -/
+private theorem inferSuccessIff {n} (term : Trm n) (entries : CompilerBindings) (budget : Nat) (ty : Typ) :
+    infer term entries budget = .yield (some ty) ↔ semType term entries budget ty := by
+  induction budget generalizing n term entries ty with
+  | zero => simp [infer, semType, check, Rec.Outcome.getOrElse]
+  | succ budget ih =>
+    cases term with
+    | val value =>
+      cases value with
+      | lit repr =>
+        cases ty <;> simp only [infer, semType, check, Rec.Outcome.getOrElse, Rec.Outcome.yield.injEq,
+          Option.some.injEq (α := Typ), reduceCtorEq]
+      | fnPrimitive tOut op =>
+        simp only [infer, semType, check, Rec.Outcome.getOrElse, Rec.Outcome.yield.injEq,
+          Option.some.injEq (α := Typ), eq_comm]
+      | fn annotation body =>
+        cases ty with
+        | TLit =>
+          simp only [infer.eq_3]
+          cases infer (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget <;>
+            (try cases ‹Option Typ›) <;>
+            simp only [semType, check, Rec.Outcome.getOrElse, Rec.Outcome.map, Option.map, Rec.Outcome.yield.injEq,
+              Option.some.injEq (α := Typ), reduceCtorEq]
+        | TFn input output =>
+          change (infer (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget).map _ = _ ↔
+            resolveType annotation = input ∧
+              semType (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget output
+          rw [← ih]
+          cases infer (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget <;>
+            (try cases ‹Option Typ›) <;>
+            simp only [Rec.Outcome.map, Option.map, Rec.Outcome.yield.injEq, Option.some.injEq (α := Typ),
+              Pre.AST.TFn.injEq, reduceCtorEq, and_false]
+    | ref carrier under =>
+      cases hEntry : entries under.sourceIndex.down <;>
+        (try cases ‹CompilerTyp ⊕ ExeVal›) <;> (try cases ‹CompilerTyp›) <;> (try cases ‹ExeVal›)
+      all_goals simp only [infer.eq_4, semType, check, Rec.Outcome.getOrElse, hEntry, ih, Rec.Outcome.yield.injEq,
+        Option.some.injEq (α := Typ), reduceCtorEq]
+    | apply fn arg =>
+      change infer (.apply fn arg) entries (budget + 1) = _ ↔
+        ∃ input, semType fn entries budget (.TFn input ty) ∧ semType arg entries budget input
+      simp only [infer.eq_5, ← ih]
+      cases hFn : infer fn entries budget <;> (try cases ‹Option Typ›)
+      case yield.some fnTyp =>
+        cases fnTyp <;> cases hArg : infer arg entries budget <;> (try cases ‹Option Typ›)
+        all_goals simp only [Rec.Outcome.yield.injEq, Option.some.injEq (α := Typ), Pre.AST.TFn.injEq,
+          reduceCtorEq, and_false, false_and, exists_false (α := Typ)]
+        all_goals try (split <;> simp_all)
+        case isTrue hSame =>
+          simp only [Option.some.injEq (α := Typ)]
+          constructor
+          · intro hOutput; exact ⟨_, ⟨rfl, hOutput⟩, hSame⟩
+          · rintro ⟨_, ⟨rfl, hOutput⟩, _⟩; exact hOutput
+        case isFalse hDifferent =>
+          rintro ⟨_, ⟨rfl, _⟩, hSame⟩
+          exact hDifferent hSame
+      all_goals cases infer arg entries budget <;>
+        simp only [Rec.Outcome.yield.injEq, reduceCtorEq, and_false, false_and, exists_false (α := Typ)]
+
 /-- Semantic typing excludes evaluation rejection and preserves the result's type. -/
 theorem main (fuel : Nat) (typ : Typ)
     (hType : semType trm bindings fuel typ) : safety trm bindings typ := by
-  have checked {n} (term : Trm n) (entries : CompilerBindings) (budget : Nat) (ty : Typ)
-      (success : infer term entries budget = .yield (some ty)) : semType term entries budget ty := by
-    induction budget generalizing n term entries ty with
-    | zero => simp [infer] at success
-    | succ budget ih =>
-      cases term with
-      | val value =>
-        cases value with
-        | lit repr =>
-          simp only [infer.eq_2, Rec.Outcome.yield.injEq] at success
-          cases Option.some.inj success
-          trivial
-        | fn annotation body =>
-          simp only [infer.eq_3, Rec.Outcome.map] at success
-          repeat split at success
-          all_goals simp_all
-          all_goals cases ‹Option Typ› <;> simp only [Option.map] at success
-          all_goals try cases success
-          all_goals exact ⟨rfl, ih _ _ _ ‹_›⟩
-        | fnPrimitive tOut op =>
-          simp only [infer.eq_6, Rec.Outcome.yield.injEq] at success
-          cases Option.some.inj success
-          rfl
-      | ref carrier under =>
-        simp only [infer.eq_4] at success
-        cases hEntry : entries under.sourceIndex.down <;>
-          (try cases ‹CompilerTyp ⊕ ExeVal›) <;> (try cases ‹CompilerTyp›) <;> (try cases ‹ExeVal›)
-        all_goals simp only [hEntry] at success
-        all_goals simp only [semType, check, Rec.Outcome.getOrElse, hEntry]
-        all_goals first
-          | cases success <;> rfl
-          | exact ih _ _ _ success
-      | apply fn arg =>
-        simp only [infer.eq_5] at success
-        repeat split at success
-        all_goals simp_all
-        all_goals injection success; subst_vars
-        all_goals exact ⟨_, ih _ _ _ ‹_›, ih _ _ _ ‹_›⟩
   intro evalFuel
   induction evalFuel generalizing n trm bindings fuel typ with
   | zero => trivial
@@ -157,8 +178,19 @@ theorem main (fuel : Nat) (typ : Typ)
                     intro index inputTyp hSource
                     simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
                     split at hSource <;> simp_all [entryFits, Option.map]) hBody
-                simpa [eval.eq_4, hFnEval, hArgEval, bodyBindings] using
-                  ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
+                cases hCheck : infer argValue.asTrm argCaptured evalFuel with
+                | outOfFuel => simp [eval.eq_4, hFnEval, hArgEval, hCheck, Rec.Outcome.flatMap]
+                | yield checked =>
+                  obtain ⟨argFuel, hArgValue⟩ := hArgSafety
+                  have hTyped := termInfer _ _ _ _ _
+                    (Nat.le_max_left argFuel evalFuel) ((inferSuccessIff _ _ _ _).mpr hArgValue)
+                  have hChecked := termInfer _ _ _ _ _
+                    (Nat.le_max_right argFuel evalFuel) hCheck
+                  rw [hTyped] at hChecked
+                  have hSame : checked = some (resolveType annotation) := by
+                    simpa [hInput] using (Rec.Outcome.yield.inj hChecked).symm
+                  simpa [eval.eq_4, hFnEval, hArgEval, hCheck, Rec.Outcome.flatMap, hSame, bodyBindings] using
+                    ih (body.apply .only) bodyBindings bodyFuel typ hBodyTarget
             | fnPrimitive tOut op =>
               rcases hFnValue with ⟨rfl⟩
               cases hArgEval : eval arg bindings evalFuel <;>
@@ -182,7 +214,7 @@ theorem main (fuel : Nat) (typ : Typ)
                       split
                       · rename_i hOutput
                         subst output
-                        exact ⟨evalFuel, checked _ _ _ _ hCheck⟩
+                        exact ⟨evalFuel, (inferSuccessIff _ _ _ _).mp hCheck⟩
                       · trivial
                   | fn annotation body => exact False.elim hArgValue
                   | fnPrimitive annotation operation =>

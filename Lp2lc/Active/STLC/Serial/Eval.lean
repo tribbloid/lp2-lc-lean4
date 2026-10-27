@@ -49,6 +49,13 @@ theorem termEval {n} (trm) (bindings : ExeBindings) :
       all_goals simp_all
       all_goals
         first
+        | rename_i context tIn body captured value hFn hArg
+          cases hCheck : infer value.value.asTrm value.captured fuel with
+          | outOfFuel => simp [hCheck, Rec.Outcome.flatMap] at hEval
+          | yield typ =>
+            have hMore := termInfer _ _ _ _ _ hFuel hCheck
+            simp only [hCheck, hMore, Rec.Outcome.flatMap] at hEval ⊢
+            split at hEval <;> simp_all
         | rename_i context tOut op captured argContext repr argCaptured hFn hArg
           cases hCheck : infer (.val (op repr)) captured fuel with
           | outOfFuel => simp [hCheck, Rec.Outcome.map] at hEval
