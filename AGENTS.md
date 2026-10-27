@@ -57,6 +57,12 @@ assessment.
 See [.agent/CodeStructure.md](.agent/CodeStructure.md). Also follow the nearest nested `AGENTS.md`; examples such as
 Tests/AGENTS.md are not exhaustive.
 
+- Existing style and designated examples or style guides govern **all code structures**, including directory layout,
+      file names (prefixes and suffixes), module boundaries and aggregators, namespace names and nesting, declaration
+      placement and order, naming conventions, and public API organization. Follow the corresponding existing patterns;
+      do not invent alternative structures, file naming conventions, or namespace hierarchies. Adapt names and content
+      only as required by the requested task.
+
 ## Lean Code Convention
 
 ### Guardrails
