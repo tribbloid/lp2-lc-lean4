@@ -8,7 +8,8 @@ open Lp2lc.Active.Util Lp2lc.Active.STLC
 section eval
 
 private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (fuel : Nat)
-    (expected : Return ExeVal) (bindings : ExeBindings := .empty) : Prop :=
+    (expected : Return ExeVal) -- TODO: at this moment, it should be `(expected : Return Val)`, no captured variable should be return
+    (bindings : ExeBindings := .empty) : Prop :=
   (trm.eval bindings).shouldYields fuel expected
 
 #guard vFalse.evalShouldYields 1 falseValue

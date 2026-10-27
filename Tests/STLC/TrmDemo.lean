@@ -81,41 +81,6 @@ def primitiveTrueFn : Trm :=
 def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn vFalse
 
-namespace FreeVarCapture
-
-/-- A symbolic outer-context slot used by the syntax-only capture examples. -/
-def freeSlot : IndexEncoding.SerialProxy 0 := .only
-
-def directRef : Trm 0 :=
-  .ref freeSlot .same
-
-def capturedValue : Val :=
-  .fn .TLit (.mk (λ _ => .ref freeSlot (.lower .same)))
-
-def capturedRef : Trm :=
-  .val capturedValue
-
-def capturedRefOnFalse : Trm :=
-  .apply capturedRef vFalse
-
--- Share the captured primitive between evaluators, including its missing-capture failure.
-def primitive : Val :=
-  .fnPrimitive (.TFn .TLit .TLit) (λ _ => capturedValue)
-
-def primitiveRefOnFalseTwice : Trm :=
-  .apply (.apply directRef vFalse) vFalse
-
-def directRefOnTrue : Trm :=
-  .apply directRef vTrue
-
-def shiftedRef : Trm 3 :=
-  .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same))
-
-def capturedPrimitiveBindings : ExeBindings :=
-  NatBindings.empty.set 0 ⟨0, primitive, freeBindings⟩
-
-end FreeVarCapture
-
 def get1stOnFalse : Trm :=
   .apply get1st vFalse
 
@@ -136,33 +101,41 @@ def primitiveFirstFnOnTuple : Trm :=
     (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
       (λ first => .fnPrimitive .TLit (λ _ => .lit first)))) vFalse) vTrue
 
-namespace Corrupted
+-- TODO: this fixture group has been temporarily forbidden for causing complex test conditioning, all its invocations should be deleted
+-- namespace FreeVarCapture
 
-def corruptApplication (n : Nat := 0) : Trm n :=
-  .apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) (.val (.lit bFalse))
+-- /-- A symbolic outer-context slot used by the syntax-only capture examples. -/
+-- def freeSlot : IndexEncoding.SerialProxy 0 := .only
 
-def corruptedCallee : Trm :=
-  .apply corruptApplication vTrue
+-- def directRef : Trm 0 :=
+--   .ref freeSlot .same
 
-def corruptedArgument : Trm :=
-  .apply higherOrderId corruptApplication
+-- def capturedValue : Val :=
+--   .fn .TLit (.mk (λ _ => .ref freeSlot (.lower .same)))
 
-def corruptedBody : Trm :=
-  .apply (.val (.fn .TLit (.mk (λ _ => corruptApplication 1)))) vFalse
+-- def capturedRef : Trm :=
+--   .val capturedValue
 
-def illTypedPrimitiveResult : Trm :=
-  .apply (.val (.fnPrimitive .TLit
-    (λ _ => .fn .TLit (.mk (λ _ => .apply (.val (.lit "bad")) (.val (.lit "bad"))))))) vFalse
+-- def capturedRefOnFalse : Trm :=
+--   .apply capturedRef vFalse
 
-def missingPrimitiveCapture : Trm :=
-  .apply (.val FreeVarCapture.primitive) vFalse
+-- -- Share the captured primitive between evaluators, including its missing-capture failure.
+-- def primitive : Val :=
+--   .fnPrimitive (.TFn .TLit .TLit) (λ _ => capturedValue)
 
-def primitiveFnOnTuple : Trm :=
-  .apply
-    (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
-      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) vFalse) vTrue
+-- def primitiveRefOnFalseTwice : Trm :=
+--   .apply (.apply directRef vFalse) vFalse
 
-end Corrupted
+-- def directRefOnTrue : Trm :=
+--   .apply directRef vTrue
+
+-- def shiftedRef : Trm 3 :=
+--   .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same))
+
+-- def capturedPrimitiveBindings : ExeBindings :=
+--   NatBindings.empty.set 0 ⟨0, primitive, freeBindings⟩
+
+-- end FreeVarCapture
 
 namespace Malformed
 
@@ -188,6 +161,35 @@ def primitiveLiteralIdFnOnFn : Trm :=
   .apply primitiveLiteralIdFn primitiveIdFn
 
 end Malformed
+
+namespace Corrupted
+
+def corruptApplication (n : Nat := 0) : Trm n :=
+  .apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) (.val (.lit bFalse))
+
+def corruptedCallee : Trm :=
+  .apply corruptApplication vTrue
+
+def corruptedArgument : Trm :=
+  .apply higherOrderId corruptApplication
+
+def corruptedBody : Trm :=
+  .apply (.val (.fn .TLit (.mk (λ _ => corruptApplication 1)))) vFalse
+
+def illTypedPrimitiveResult : Trm :=
+  .apply (.val (.fnPrimitive .TLit
+    (λ _ => .fn .TLit (.mk (λ _ => .apply (.val (.lit "bad")) (.val (.lit "bad"))))))) vFalse
+
+def missingPrimitiveCapture : Trm :=
+  .apply (.val FreeVarCapture.primitive) vFalse
+
+-- TODO: this should be Malformed: primitiveFn applied on Tuple should be rejected by compiler
+def primitiveFnOnTuple : Trm :=
+  .apply
+    (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
+      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) vFalse) vTrue
+
+end Corrupted
 
 end Trm
 
