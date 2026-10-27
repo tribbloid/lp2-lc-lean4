@@ -1,5 +1,5 @@
 import «Lp2lc».Active.STLC.Serial.Eval
-import «Tests».STLC.TrmDemo
+import «Tests».STLC.EvalDef
 
 namespace Tests.STLC.Sanity.Trm
 
@@ -40,10 +40,11 @@ private def evalYields {n} (trm : Trm n) (fuel : Nat) (expected : ExeVal)
 
 #guard evalYields primitiveFirstFnOnTuple 3 falseValue
 
-#guard evalYields FreeCapture.primitiveTwiceOnFalse 5 trueValue FreeCapture.primitiveCaller &&
-  match AST.eval FreeCapture.primitiveOnFalse .empty 3, AST.eval FreeCapture.primitiveOnFalse .empty 2 with
-  | .yield (some .corrupted), .outOfFuel => true
-  | _, _ => false
+#guard capturedPrimitiveCase (λ trm corrupted caller =>
+  evalYields trm 5 trueValue caller &&
+    match AST.eval corrupted .empty 3, AST.eval corrupted .empty 2 with
+    | .yield (some .corrupted), .outOfFuel => true
+    | _, _ => false)
 
 #guard match Malformed.primitiveFnOnTuple.eval .empty 3, Malformed.primitiveFnOnTuple.eval .empty 2 with
   | .yield (some .corrupted), .outOfFuel => true

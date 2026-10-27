@@ -1,5 +1,5 @@
 import «Lp2lc».Active.STLC.Serial.__Eval_certifiedByInfer
-import «Tests».STLC.TrmDemo
+import «Tests».STLC.EvalDef
 
 namespace Tests.STLC.EvalCertifiedByInferSpec
 
@@ -55,11 +55,11 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
 #guard evalYields (.apply (.val (.fnPrimitive .TLit .lit)) Trm.vFalse) 2 falseValue
 #guard evalYields Trm.primitiveFirstFnOnTuple 3 falseValue
 
-#guard evalYields Trm.FreeCapture.primitiveTwiceOnFalse 5 trueValue Trm.FreeCapture.primitiveCaller &&
-  corruptsAt Trm.FreeCapture.primitiveOnFalse 3 &&
-    match erasedEval Trm.FreeCapture.primitiveOnFalse .empty 8 2 with
+#guard capturedPrimitiveCase (λ trm corrupted caller =>
+  evalYields trm 5 trueValue caller && corruptsAt corrupted 3 &&
+    match erasedEval corrupted .empty 8 2 with
     | .outOfFuel => true
-    | _ => false
+    | _ => false)
 
 #guard corruptsAt Trm.Malformed.primitiveFnOnTuple 3 &&
   match erasedEval Trm.Malformed.primitiveFnOnTuple .empty 8 2 with
