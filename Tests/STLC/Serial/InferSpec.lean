@@ -16,13 +16,13 @@ local instance : BEq Typ :=
 
 private def fnBindings : ExeBindings := (NatBindings.empty.set 0 ⟨0, Val.idFn, .empty⟩).set 1 ⟨0, Val.idFn, .empty⟩
 
-private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, trueValue, .empty⟩
+private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, vTrue, .empty⟩
 
 private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
 
-#guard vFalse.infer.shouldYields 1 .TLit
+#guard vFalse.asTrm.infer.shouldYields 1 .TLit
 
-#guard vTrue.infer.shouldYields 1 .TLit
+#guard vTrue.asTrm.infer.shouldYields 1 .TLit
 
 #guard primitiveIdFn.infer.shouldYields 2 (.TFn .TLit .TLit)
 

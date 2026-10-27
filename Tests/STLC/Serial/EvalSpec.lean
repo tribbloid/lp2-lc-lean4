@@ -23,21 +23,21 @@ open Lp2lc.Active.Util Lp2lc.Active.STLC
 
 section eval
 
-#guard vFalse.evalShouldYield 1 falseValue
+#guard vFalse.asTrm.evalShouldYield 1 vFalse
 
 #guard primitiveIdFn.evalShouldYield 1 Val.idFn
 
 -- A nested identity is closed; a function returning its captured argument is not an identity.
-#guard returnsValue (AST.eval (.apply get2nd vFalse : Trm)) 2 (.some Val.idFn)
+#guard returnsValue (AST.eval (.apply get2nd vFalse.asTrm : Trm)) 2 (.some Val.idFn)
 #guard ¬ get1stOnFalse.evalShouldYield 2 Val.idFn
 
-#guard primitiveIdFnOnFalse.evalShouldYield 2 falseValue
+#guard primitiveIdFnOnFalse.evalShouldYield 2 vFalse
 
-#guard get1stOnTuple.evalShouldYield 3 falseValue
+#guard get1stOnTuple.evalShouldYield 3 vFalse
 
-#guard get2ndOnTuple.evalShouldYield 3 trueValue
+#guard get2ndOnTuple.evalShouldYield 3 vTrue
 
-#guard higherOrderApplication.evalShouldYield 4 falseValue
+#guard higherOrderApplication.evalShouldYield 4 vFalse
 
 #guard Malformed.WrongTIn.eval.shouldFail 3
 
@@ -51,11 +51,11 @@ section eval
 
 #guard Malformed.applyLitToApplication.eval.shouldFail 3
 
-#guard primitiveTrueFnOnFalse.evalShouldYield 2 trueValue
+#guard primitiveTrueFnOnFalse.evalShouldYield 2 vTrue
 
-#guard primitiveLiteralIdFnOnFalse.evalShouldYield 2 falseValue
+#guard primitiveLiteralIdFnOnFalse.evalShouldYield 2 vFalse
 
-#guard primitiveFirstFnOnTuple.evalShouldYield 3 falseValue
+#guard primitiveFirstFnOnTuple.evalShouldYield 3 vFalse
 
 #guard Corrupted.primitiveFnOnTuple.evalShouldCrash 3
 

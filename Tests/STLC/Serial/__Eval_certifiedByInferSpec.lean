@@ -29,15 +29,15 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
   | _ => false
 
 -- Exact evaluation budgets include the one-less-budget exhaustion check.
-#guard evalYields Trm.vFalse 1 (.some falseValue)
-#guard evalYields Trm.primitiveIdFnOnFalse 2 (.some falseValue)
-#guard evalYields Trm.get1stOnTuple 3 (.some falseValue)
-#guard evalYields Trm.get2ndOnTuple 3 (.some trueValue)
-#guard evalYields Trm.primitiveTrueFnOnFalse 2 (.some trueValue)
-#guard evalYields Trm.higherOrderApplication 3 (.some falseValue)
+#guard evalYields vFalse.asTrm 1 (.some vFalse)
+#guard evalYields Trm.primitiveIdFnOnFalse 2 (.some vFalse)
+#guard evalYields Trm.get1stOnTuple 3 (.some vFalse)
+#guard evalYields Trm.get2ndOnTuple 3 (.some vTrue)
+#guard evalYields Trm.primitiveTrueFnOnFalse 2 (.some vTrue)
+#guard evalYields Trm.higherOrderApplication 3 (.some vFalse)
 
-#guard evalYields Trm.primitiveLiteralIdFnOnFalse 2 (.some falseValue)
-#guard evalYields Trm.primitiveFirstFnOnTuple 3 (.some falseValue)
+#guard evalYields Trm.primitiveLiteralIdFnOnFalse 2 (.some vFalse)
+#guard evalYields Trm.primitiveFirstFnOnTuple 3 (.some vFalse)
 
 #guard evalYields Trm.Corrupted.primitiveFnOnTuple 3 .corrupted
 
@@ -55,7 +55,7 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
 
 #guard evalYields Trm.primitiveIdFn 1 (.some Val.idFn)
 
-#guard match Trm.vFalse.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 0 with
+#guard match vFalse.asTrm.eval_certified .empty (inferFuel := 1) (typ := .TLit) rfl 0 with
   | .outOfFuel => true
   | _ => false
 
