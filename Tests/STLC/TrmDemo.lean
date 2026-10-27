@@ -10,9 +10,8 @@ def bFalse := "false"
 
 def bTrue := "true"
 
--- TODO: do we already have a Coe from Val to Trm? if so, this construct should be merged into vFalse
 def falseValue : Val := .lit bFalse
--- TODO: Ditto, this should be merged into vTrue
+
 def trueValue : Val := .lit bTrue
 
 deriving instance BEq for Return
@@ -28,10 +27,10 @@ abbrev returnsValue (computation : RecOpt (Return ExeVal)) (fuel : Nat) (expecte
 namespace Trm
 
 def vFalse : Trm :=
-  .val (.lit bFalse)
+  falseValue.asTrm
 
 def vTrue : Trm :=
-  .val (.lit bTrue)
+  trueValue.asTrm
 
 def primitiveIdFn : Trm :=
   .val Val.idFn
