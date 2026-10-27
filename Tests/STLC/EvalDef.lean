@@ -125,6 +125,7 @@ end Malformed
 
 end Trm
 
+--     TODO: move into "FreeVarCapture"
 def capturedPrimitiveBindings : ExeBindings :=
   NatBindings.empty.set 0 ⟨0, Trm.FreeVarCapture.primitive, freeBindings⟩
 
