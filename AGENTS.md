@@ -201,6 +201,7 @@ in one or more preceding git commits if necessary:
         - launch a subagent to review it for guardrail compliance.
 - If HEAD is detached, create a temporary branch and commit into it.
 - If the commit can't compile cleanly, include `[WIP]` in its message.
+- Do not read files in other worktree or diverging branch.
 
 ## Planning
 
