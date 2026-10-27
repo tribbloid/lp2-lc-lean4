@@ -18,4 +18,7 @@ import «Lp2lc».Active.STLC.mod
 -- Self-contained certified STLC evaluation (machine-generated).
 import «Lp2lc».Active.STLC_minimal.mod
 
+-- DTLC syntax, serial type inference, and conjectured certified evaluation.
+import «Lp2lc».Active.DTLC.mod
+
 -- import «Lp2lc».Active.DOT.DOTDef
