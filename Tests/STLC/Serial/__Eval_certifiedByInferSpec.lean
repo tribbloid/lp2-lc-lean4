@@ -5,7 +5,7 @@ namespace Tests.STLC.EvalCertifiedByInferSpec
 
 open Lp2lc.Active.STLC Lp2lc.Active.Util
 open Tests.STLC.Sanity
-open Tests.STLC.Sanity.Trm.Malformed
+open Tests.STLC.Sanity.Trm.Corrupted
   (corruptApplication corruptedCallee corruptedArgument corruptedBody illTypedPrimitiveResult)
 
 section eval_certified
@@ -42,8 +42,8 @@ private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
 #guard evalYields Trm.primitiveFirstFnOnTuple 3 falseValue
 
 #guard evalYields Trm.FreeVarCapture.primitiveRefOnFalseTwice 5 trueValue capturedPrimitiveBindings
-#guard evalYields Trm.Malformed.missingPrimitiveCapture 3 .corrupted
-#guard evalYields Trm.Malformed.primitiveFnOnTuple 3 .corrupted
+#guard evalYields Trm.Corrupted.missingPrimitiveCapture 3 .corrupted
+#guard evalYields Trm.Corrupted.primitiveFnOnTuple 3 .corrupted
 
 #guard corruptsAt corruptApplication 2
 #guard corruptsAt corruptApplication 1000

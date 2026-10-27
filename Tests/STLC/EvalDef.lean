@@ -82,7 +82,7 @@ def primitiveFirstFnOnTuple : Trm :=
     (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
       (λ first => .fnPrimitive .TLit (λ _ => .lit first)))) vFalse) vTrue
 
-namespace Malformed
+namespace Corrupted
 
 def corruptApplication (n : Nat := 0) : Trm n :=
   .apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) (.val (.lit bFalse))
@@ -100,11 +100,20 @@ def illTypedPrimitiveResult : Trm :=
   .apply (.val (.fnPrimitive .TLit
     (λ _ => .fn .TLit (.mk (λ _ => .apply (.val (.lit "bad")) (.val (.lit "bad"))))))) vFalse
 
-def applyLitToApplication : Trm :=
-  .apply vFalse primitiveIdFnOnFalse
-
 def missingPrimitiveCapture : Trm :=
   .apply (.val FreeVarCapture.primitive) vFalse
+
+def primitiveFnOnTuple : Trm :=
+  .apply
+    (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
+      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) vFalse) vTrue
+
+end Corrupted
+
+namespace Malformed
+
+def applyLitToApplication : Trm :=
+  .apply vFalse primitiveIdFnOnFalse
 
 def wrongNestedTIn : Trm :=
   .apply higherOrderId get1st
@@ -112,17 +121,7 @@ def wrongNestedTIn : Trm :=
 def primitiveLiteralIdFnOnFn : Trm :=
   .apply primitiveLiteralIdFn primitiveIdFn
 
-def primitiveFnOnTuple : Trm :=
-  .apply
-    (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
-      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) vFalse) vTrue
-
 end Malformed
-
-namespace Corrupted
--- TODO: some test fixtures in `Malformed` cannot be rejected by the compiler type inference, they should be moved here
-
-end Corrupted
 
 end Trm
 

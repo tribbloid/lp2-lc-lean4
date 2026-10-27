@@ -55,21 +55,21 @@ private abbrev _root_.Lp2lc.Active.STLC.Trm.evalShouldYields {n} (trm : Trm n) (
 
 #guard FreeVarCapture.primitiveRefOnFalseTwice.evalShouldYields 5 trueValue capturedPrimitiveBindings
 
-#guard Malformed.missingPrimitiveCapture.evalShouldYields 3 .corrupted
+#guard Corrupted.missingPrimitiveCapture.evalShouldYields 3 .corrupted
 
-#guard Malformed.primitiveFnOnTuple.evalShouldYields 3 .corrupted
+#guard Corrupted.primitiveFnOnTuple.evalShouldYields 3 .corrupted
 
-#guard Malformed.corruptApplication.evalShouldYields 2 .corrupted
+#guard Corrupted.corruptApplication.evalShouldYields 2 .corrupted
 
-#guard (Malformed.corruptApplication.eval .empty 1000).getOrElse none == some .corrupted
+#guard (Corrupted.corruptApplication.eval .empty 1000).getOrElse none == some .corrupted
 
-#guard Malformed.corruptedCallee.evalShouldYields 3 .corrupted
+#guard Corrupted.corruptedCallee.evalShouldYields 3 .corrupted
 
-#guard Malformed.corruptedArgument.evalShouldYields 3 .corrupted
+#guard Corrupted.corruptedArgument.evalShouldYields 3 .corrupted
 
-#guard Malformed.corruptedBody.evalShouldYields 3 .corrupted
+#guard Corrupted.corruptedBody.evalShouldYields 3 .corrupted
 
-#guard Malformed.illTypedPrimitiveResult.evalShouldYields 4 .corrupted
+#guard Corrupted.illTypedPrimitiveResult.evalShouldYields 4 .corrupted
 
 #guard Malformed.primitiveLiteralIdFnOnFn.eval.shouldFail 2
 
