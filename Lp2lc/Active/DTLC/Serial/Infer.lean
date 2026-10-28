@@ -76,10 +76,26 @@ def semType (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ : Typ
 
 namespace Monotone
 
-/-- Conjecture: every completed inference result is preserved when fuel increases. -/
+/-- Every completed inference result is preserved when fuel increases. -/
 theorem termInfer (trm : Trm n) (bindings : CompilerBindings) :
     (infer trm bindings).Monotone := by
-  sorry
+  intro less more result hFuel hInfer
+  induction less generalizing n trm bindings more result with
+  | zero => cases hInfer
+  | succ fuel ih =>
+    cases more with
+    | zero => exact False.elim (Nat.not_succ_le_zero _ hFuel)
+    | succ more =>
+      replace hFuel := Nat.le_of_succ_le_succ hFuel
+      have hSame {a b : Typ} : ∀ result, a.sameType b fuel = .yield result →
+          a.sameType b more = .yield result := by
+        cases fuel <;> cases more <;> simp_all [sameType]
+      cases trm <;> try cases ‹Val n›
+      all_goals
+        simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5, infer.eq_6,
+          Rec.Outcome.map, Rec.Outcome.flatMap] at hInfer ⊢
+        repeat split at hInfer
+        all_goals simp_all
 
 end Monotone
 
