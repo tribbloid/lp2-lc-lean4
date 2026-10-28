@@ -103,25 +103,29 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
   | fuel + 1, .apply fn arg =>
     match evalInternal fn bindings fuel, evalInternal arg bindings fuel with
     | .yield (.some ⟨.mk context (.fn annotation body) captured, fnSafe⟩), .yield (.some argResult) =>
-      let bodyBindings := captured.set (context + 1) argResult.val
-      have bodyTyped : preservesType (infer (.apply fn arg) bindings)
-          (infer (body.apply .only) bodyBindings) := by
-        rintro (_ | inferFuel) typ hInfer
-        · cases hInfer
-        · obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
-          obtain ⟨_ | fnFuel, hFnValue⟩ := fnSafe hFn
-          · cases hFnValue
-          · obtain ⟨output, hBody, hFnType⟩ := inferFnSuccess hFnValue
-            rcases Pre.AST.TFn.inj hFnType with ⟨rfl, rfl⟩
-            rcases argResult with ⟨⟨argContext, argValue, argCaptured⟩, argSafe⟩
-            have argTyped := argSafe hArg
-            exact inferReplace (target := bodyBindings)
-              (by
-                intro index inputTyp hSource
-                simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
-                split at hSource <;> simp_all [entryFits, Option.map]) hBody
-      (evalInternal (body.apply .only) bodyBindings fuel).map (·.map (λ bodyResult =>
-        ⟨bodyResult.val, λ hInfer => (bodyTyped hInfer).elim (λ _ => bodyResult.property)⟩))
+      letI : DecidableEq (Option Typ) := Option.instDecidableEq (inst := typDecidableLE)
+      (infer argResult.val.value.asTrm argResult.val.captured fuel).flatMap (λ checked =>
+        if checked = some (resolveType annotation) then
+          let bodyBindings := captured.set (context + 1) argResult.val
+          have bodyTyped : preservesType (infer (.apply fn arg) bindings)
+              (infer (body.apply .only) bodyBindings) := by
+            rintro (_ | inferFuel) typ hInfer
+            · cases hInfer
+            · obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
+              obtain ⟨_ | fnFuel, hFnValue⟩ := fnSafe hFn
+              · cases hFnValue
+              · obtain ⟨output, hBody, hFnType⟩ := inferFnSuccess hFnValue
+                rcases Pre.AST.TFn.inj hFnType with ⟨rfl, rfl⟩
+                rcases argResult with ⟨⟨argContext, argValue, argCaptured⟩, argSafe⟩
+                have argTyped := argSafe hArg
+                exact inferReplace (target := bodyBindings)
+                  (by
+                    intro index inputTyp hSource
+                    simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
+                    split at hSource <;> simp_all [entryFits, Option.map]) hBody
+          (evalInternal (body.apply .only) bodyBindings fuel).map (·.map (λ bodyResult =>
+            ⟨bodyResult.val, λ hInfer => (bodyTyped hInfer).elim (λ _ => bodyResult.property)⟩))
+        else .outOfFuel)
     | .yield (.some ⟨.mk context (.fnPrimitive tOut op) captured, fnSafe⟩),
         .yield (.some ⟨.mk _ (.lit repr) _, _⟩) =>
       letI : DecidableEq Typ := λ a b => typDecidableLE a b
