@@ -20,6 +20,7 @@ private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, vTrue, .empty�
 
 private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
 
+-- TODO: investigate why (n := 0) cannot be omitted
 #guard (vFalse.infer (n := 0)).shouldYield 1 .TLit
 
 #guard (vTrue.infer (n := 0)).shouldYield 1 .TLit

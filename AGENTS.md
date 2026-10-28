@@ -83,6 +83,8 @@ Tests/AGENTS.md are not exhaustive.
 - If multiple functions in a namespace block can be shortened with shared section variables, they should be.
 - Shorten function calls with dot notation when possible.
 - Inline trivial functions or wrappers that are used only once.
+- Every implicit coercion should be wrapping an explicit conversion method callable as dot-notation with no parameter.
+- If an implicit coercion caused a compilation error, use the underlying explicit conversion method instead.
 - Every permanent (non-temporary) Lean file must be mentioned in its module aggregator with either:
     - an import clause (`import XXX`), or
     - an import comment (`-- import XXX`).
