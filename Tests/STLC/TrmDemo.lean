@@ -21,7 +21,7 @@ abbrev shouldYieldSyntax (computation : RecOpt (Return ExeVal)) (fuel : Nat) (ex
   let offset (n index : Nat) := toJson (Int.ofNat index - Int.ofNat n)
   letI : BEq ExeVal := ⟨λ actual expected =>
     astBEq actual.value expected.value (offset actual.n) toJson (offset expected.n)⟩
-  computation.shouldYields fuel (expected.map (λ value => ⟨0, value, .empty⟩))
+  computation.shouldYield fuel (expected.map (λ value => ⟨0, value, .empty⟩))
 
 namespace Trm
 

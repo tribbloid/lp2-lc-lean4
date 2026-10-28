@@ -20,37 +20,37 @@ private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, vTrue, .empty�
 
 private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
 
-#guard (vFalse.infer (n := 0)).shouldYields 1 .TLit
+#guard (vFalse.infer (n := 0)).shouldYield 1 .TLit
 
-#guard (vTrue.infer (n := 0)).shouldYields 1 .TLit
+#guard (vTrue.infer (n := 0)).shouldYield 1 .TLit
 
-#guard primitiveIdFn.infer.shouldYields 2 (.TFn .TLit .TLit)
+#guard primitiveIdFn.infer.shouldYield 2 (.TFn .TLit .TLit)
 
-#guard primitiveIdFnOnFalse.infer.shouldYields 3 .TLit
+#guard primitiveIdFnOnFalse.infer.shouldYield 3 .TLit
 
-#guard get1st.infer.shouldYields 3 (.TFn .TLit (.TFn .TLit .TLit))
+#guard get1st.infer.shouldYield 3 (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard get2nd.infer.shouldYields 3 (.TFn .TLit (.TFn .TLit .TLit))
+#guard get2nd.infer.shouldYield 3 (.TFn .TLit (.TFn .TLit .TLit))
 
-#guard get1stOnTuple.infer.shouldYields 5 .TLit
+#guard get1stOnTuple.infer.shouldYield 5 .TLit
 
-#guard get2ndOnTuple.infer.shouldYields 5 .TLit
+#guard get2ndOnTuple.infer.shouldYield 5 .TLit
 
-#guard primitiveTrueFn.infer.shouldYields 2 (.TFn .TLit .TLit)
+#guard primitiveTrueFn.infer.shouldYield 2 (.TFn .TLit .TLit)
 
-#guard primitiveTrueFnOnFalse.infer.shouldYields 3 .TLit
+#guard primitiveTrueFnOnFalse.infer.shouldYield 3 .TLit
 
-#guard get1stOnFalse.infer.shouldYields 4 (.TFn .TLit .TLit)
+#guard get1stOnFalse.infer.shouldYield 4 (.TFn .TLit .TLit)
 
-#guard higherOrderId.infer.shouldYields 2 (.TFn (.TFn .TLit .TLit) (.TFn .TLit .TLit))
+#guard higherOrderId.infer.shouldYield 2 (.TFn (.TFn .TLit .TLit) (.TFn .TLit .TLit))
 
-#guard higherOrderApplication.infer.shouldYields 4 .TLit
+#guard higherOrderApplication.infer.shouldYield 4 .TLit
 
-#guard primitiveLiteralIdFn.infer.shouldYields 1 (.TFn .TLit .TLit)
+#guard primitiveLiteralIdFn.infer.shouldYield 1 (.TFn .TLit .TLit)
 
-#guard primitiveLiteralIdFnOnFalse.infer.shouldYields 2 .TLit
+#guard primitiveLiteralIdFnOnFalse.infer.shouldYield 2 .TLit
 
-#guard primitiveFirstFnOnTuple.infer.shouldYields 3 .TLit
+#guard primitiveFirstFnOnTuple.infer.shouldYield 3 .TLit
 
 #guard Malformed.WrongTIn.infer.shouldFail 3
 
@@ -66,29 +66,29 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard Malformed.primitiveLiteralIdFnOnFn.infer.shouldFail 3
 
-#guard Corrupted.corruptApplication.infer.shouldYields 2 (.TFn .TLit .TLit)
+#guard Corrupted.corruptApplication.infer.shouldYield 2 (.TFn .TLit .TLit)
 
-#guard Corrupted.corruptedCallee.infer.shouldYields 3 .TLit
+#guard Corrupted.corruptedCallee.infer.shouldYield 3 .TLit
 
-#guard Corrupted.corruptedArgument.infer.shouldYields 3 (.TFn .TLit .TLit)
+#guard Corrupted.corruptedArgument.infer.shouldYield 3 (.TFn .TLit .TLit)
 
-#guard Corrupted.corruptedBody.infer.shouldYields 4 (.TFn .TLit .TLit)
+#guard Corrupted.corruptedBody.infer.shouldYield 4 (.TFn .TLit .TLit)
 
-#guard Corrupted.illTypedPrimitiveResult.infer.shouldYields 2 .TLit
+#guard Corrupted.illTypedPrimitiveResult.infer.shouldYield 2 .TLit
 
-#guard Corrupted.primitiveFnOnTuple.infer.shouldYields 3 .TLit
+#guard Corrupted.primitiveFnOnTuple.infer.shouldYield 3 .TLit
 
 #guard (AST.infer (.val (.fn (.TFn .TLit (.TFn .TLit .TLit))
-  (.mk (λ proxy => .ref proxy .same))) : Trm 7)).shouldYields 2
+  (.mk (λ proxy => .ref proxy .same))) : Trm 7)).shouldYield 2
   (.TFn (.TFn .TLit (.TFn .TLit .TLit)) (.TFn .TLit (.TFn .TLit .TLit)))
 
-#guard (primitiveIdFn.infer fnBindings).shouldYields 2 (.TFn .TLit .TLit)
+#guard (primitiveIdFn.infer fnBindings).shouldYield 2 (.TFn .TLit .TLit)
 
-#guard (primitiveIdFn.infer mixedBindings).shouldYields 2 (.TFn .TLit .TLit)
+#guard (primitiveIdFn.infer mixedBindings).shouldYield 2 (.TFn .TLit .TLit)
 
-#guard (innerRef.infer mixedBindings).shouldYields 2 .TLit
+#guard (innerRef.infer mixedBindings).shouldYield 2 .TLit
 
-#guard (AST.infer (.val (.fnPrimitive (.TFn .TLit .TLit) .lit) : Trm)).shouldYields 1
+#guard (AST.infer (.val (.fnPrimitive (.TFn .TLit .TLit) .lit) : Trm)).shouldYield 1
   (.TFn .TLit (.TFn .TLit .TLit))
 
 end infer
