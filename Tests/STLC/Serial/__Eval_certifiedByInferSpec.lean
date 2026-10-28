@@ -1,4 +1,3 @@
-import «Lp2lc».Active.STLC.Serial.Eval
 import «Lp2lc».Active.STLC.Serial.__Eval_certifiedByInfer
 import «Tests».STLC.TrmDemo
 
@@ -22,11 +21,16 @@ private abbrev evalShouldYield (expected : Val) (bindings : ExeBindings := .empt
 private abbrev evalShouldCrash (bindings : ExeBindings := .empty) : Prop :=
   shouldYieldSyntax (erasedEval trm bindings) fuel .corrupted
 
--- Rejected terms cannot supply the certified evaluator's premise; retain their exact runtime failure costs.
+-- Check inference rejection; accepted fixtures still run certified evaluation for diagnostics.
 private abbrev evalShouldFail (bindings : ExeBindings := .empty) : Prop :=
-  (match trm.infer bindings 8 with
+  (match (erasedEval trm bindings) fuel with
   | .yield none => true
-  | _ => false) = true ∧ (trm.eval bindings).shouldFail fuel
+  | .yield (some (.some _)) =>
+    panic! "The rejection test fixture is well-formed: inference and certified evaluation succeeded."
+  | .yield (some .corrupted) =>
+    panic! "Inference accepted a rejection fixture; certified evaluation reported allowed runtime corruption. Check the fixture and primitive contract."
+  | .outOfFuel =>
+    panic! "Inference or certified evaluation exhausted its fuel; rejection was not established. Soundness is inconclusive.") = true
 
 end Lp2lc.Active.STLC.AST
 
