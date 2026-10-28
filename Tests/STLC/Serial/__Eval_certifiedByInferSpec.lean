@@ -1,13 +1,40 @@
+import «Lp2lc».Active.STLC.Serial.Eval
 import «Lp2lc».Active.STLC.Serial.__Eval_certifiedByInfer
 import «Tests».STLC.TrmDemo
 
+namespace Lp2lc.Active.STLC.AST
+
+open Lp2lc.Active.Util Tests.STLC.Sanity
+
+variable {n} (trm : Trm n) (fuel : Nat)
+
+-- Infer independently of evaluation fuel and erase only the returned value's certificate.
+private def erasedEval (bindings : ExeBindings := .empty) (inferFuel : Nat := 8) : RecOpt (Return ExeVal) :=
+  match hInfer : trm.infer bindings inferFuel with
+  | .yield (some _) => λ fuel =>
+    (trm.eval_certified bindings hInfer fuel).map (λ result => some (result.map Subtype.val))
+  | .yield none => λ _ => .yield none
+  | .outOfFuel => λ _ => .outOfFuel
+
+private abbrev evalShouldYield (expected : Val) (bindings : ExeBindings := .empty) : Prop :=
+  shouldYieldSyntax (erasedEval trm bindings) fuel (.some expected)
+
+private abbrev evalShouldCrash (bindings : ExeBindings := .empty) : Prop :=
+  shouldYieldSyntax (erasedEval trm bindings) fuel .corrupted
+
+-- Rejected terms cannot supply the certified evaluator's premise; retain their exact runtime failure costs.
+private abbrev evalShouldFail (bindings : ExeBindings := .empty) : Prop :=
+  (match trm.infer bindings 8 with
+  | .yield none => true
+  | _ => false) = true ∧ (trm.eval bindings).shouldFail fuel
+
+end Lp2lc.Active.STLC.AST
+
 namespace Tests.STLC.EvalCertifiedByInferSpec
 
+open Lp2lc.Active.STLC Tests.STLC.Sanity Tests.STLC.Sanity.Trm
 
 section eval_certified
-
--- TODO: these should be the same unit test as EvalSpec, the only difference is that they should test certified evaluation, why are they failing?
--- fix them by defining the missing functions
 
 #guard vFalse.asTrm.evalShouldYield 1 vFalse
 
