@@ -122,12 +122,10 @@ end Monotone
 
 end CertifiedByInfer
 
-open CertifiedByInfer
-
 /-- Evaluate an independently inferred term and certify its returned value at the inferred type. -/
 def eval_certified {n} (self : Trm n) (bindings : ExeBindings := .empty)
     {inferFuel : Nat} {typ : CompilerTyp}
-    (hInfer : self.infer bindings inferFuel = .yield (some typ)) : Result typ := λ fuel =>
-  (evalInternal self bindings fuel).map (·.map (λ result => ⟨result.val, result.property hInfer⟩))
+    (hInfer : self.infer bindings inferFuel = .yield (some typ)) : CertifiedByInfer.Result typ := λ fuel =>
+  (CertifiedByInfer.evalInternal self bindings fuel).map (·.map (λ result => ⟨result.val, result.property hInfer⟩))
 
 end Lp2lc.Active.DSub.AST

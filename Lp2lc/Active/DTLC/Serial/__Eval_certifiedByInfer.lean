@@ -16,7 +16,7 @@ abbrev CertifiedVal (typ : Typ) :=
 abbrev Result (typ : Typ) := Rec (Return (CertifiedVal typ))
 
 private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) : Rec (Return ExeVal) := λ fuel =>
-  -- TODO: delete it, "eval_certified should build certified result in every step"
+  -- TODO: this may be useless and needs to be removed, "eval_certified should build certified result in every step".
   match fuel with
   | 0 => .outOfFuel
   | fuel + 1 =>
@@ -47,14 +47,12 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) : Rec (Retu
 
 end CertifiedByInfer
 
-open CertifiedByInfer
-
 /-- Conjectured soundness: evaluation certifies returned values at the independently inferred type.
 The evaluator is executable; only its type-preservation certificate is left unproved.
 -/
 def eval_certified (self : Trm n) (bindings : ExeBindings := .empty)
     {inferFuel : Nat} {typ : Typ}
-    (_hInfer : self.infer bindings inferFuel = .yield (some typ)) : Result typ := λ fuel =>
-  (evalInternal self bindings fuel).map (·.map (λ value => ⟨value, by sorry⟩))
+    (_hInfer : self.infer bindings inferFuel = .yield (some typ)) : CertifiedByInfer.Result typ := λ fuel =>
+  (CertifiedByInfer.evalInternal self bindings fuel).map (·.map (λ value => ⟨value, by sorry⟩))
 
 end Lp2lc.Active.DTLC.AST
