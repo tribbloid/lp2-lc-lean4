@@ -20,6 +20,8 @@ private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, vTrue, .empty�
 
 private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
 
+-- TODO: some test fixtures in "TrmDemo.lean" hasn't been used in the following tests for type inferences, add them
+-- TODO: the sequence of the following tests should be identical to the sequence of the test fixtures they use
 #guard (vFalse.infer (n := 0)).shouldYields 1 .TLit
 
 #guard (vTrue.infer (n := 0)).shouldYields 1 .TLit

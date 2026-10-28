@@ -33,7 +33,7 @@ section hash
 #guard
   let primitive : Val := .fnPrimitive .TLit .lit
   astToJson primitive sigC sigB == .arr #["primitiveFn", "primitive"] &&
-    astBEq primitive (.fnPrimitive .TLit (λ _ => .lit "other")) sigC sigB
+    astBEq primitive (.fnPrimitive .TLit (λ _ => .lit "other") : Val) sigC sigB
 
 end hash
 

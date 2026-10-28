@@ -21,7 +21,7 @@ private def erasedEval {n} (trm : Trm n) (bindings : ExeBindings := .empty)
 
 private abbrev evalYields {n} (trm : Trm n) (fuel : Nat) (expected : Return Val)
     (bindings : ExeBindings := .empty) : Prop :=
-  returnsValue (erasedEval trm bindings) fuel expected
+  shouldYieldSyntax (erasedEval trm bindings) fuel expected
 
 private def corruptsAt {n} (trm : Trm n) (fuel : Nat) : Bool :=
   match erasedEval trm .empty 8 fuel with

@@ -41,9 +41,9 @@ def astToJson {n l} (self : AST n l)
   visit self (λ _ => .only) (Sum.elim (sigC ∘ ULift.down) sigB)
 
 /-- Equality of caller-supplied JSON signatures over [AST]. -/
-def astBEq {n l} (a b : AST n l)
-    (sigC : Nat → Json) (sigB : String → Json) : Bool :=
-  astToJson a sigC sigB == astToJson b sigC sigB
+def astBEq {n m l} (a : AST n l) (b : AST m l)
+    (sigC : Nat → Json) (sigB : String → Json) (otherSigC : Nat → Json := sigC) : Bool :=
+  astToJson a sigC sigB == astToJson b otherSigC sigB
 
 /-- Hash of the caller-supplied JSON signature over [AST]. -/
 def astHash {n l} (self : AST n l)

@@ -244,6 +244,7 @@ Whether `self` needs exactly `fuelBudget` fuel to evaluate to `expectedV`.
 It requires both that `fuelBudget` fuel yields `expectedV`, and that one less
 fuel runs out, pinning the exact fuel cost of the evaluation.
 -/
+--TODO: name should be "shouldYield"
 abbrev shouldYields (fuelBudget : Nat) (expectedV : T) [BEq T] : Prop :=
   (match self fuelBudget, self (fuelBudget - 1) with
     | .yield (some value), .outOfFuel => value == expectedV

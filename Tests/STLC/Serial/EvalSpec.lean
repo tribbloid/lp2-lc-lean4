@@ -9,11 +9,11 @@ variable {n} (trm : Trm n) (fuel : Nat)
 
 /-- Check the returned value and exact fuel cost. Invoke only as `trm.evalShouldYield fuel expected`. -/
 private abbrev evalShouldYield (expected : Val) (bindings : ExeBindings := .empty) : Prop :=
-  returnsValue (trm.eval bindings) fuel (.some expected)
+  shouldYieldSyntax (trm.eval bindings) fuel (.some expected)
 
 /-- Check runtime corruption and exact fuel cost. Invoke only as `trm.evalShouldCrash fuel`. -/
 private abbrev evalShouldCrash (bindings : ExeBindings := .empty) : Prop :=
-  returnsValue (trm.eval bindings) fuel .corrupted
+  shouldYieldSyntax (trm.eval bindings) fuel .corrupted
 
 end Lp2lc.Active.STLC.AST
 
