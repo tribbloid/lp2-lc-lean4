@@ -17,6 +17,8 @@ def vTrue : Val := .lit bTrue
 deriving instance BEq for Return
 
 -- Compare returned syntax using binder offsets, without requiring expected runtime environments.
+-- TODO: name is clueless, rename to something better
+-- TODO: there is no need to use astToJson to compare the result, AST already has BEq instance.
 abbrev returnsValue (computation : RecOpt (Return ExeVal)) (fuel : Nat) (expected : Return Val) : Prop :=
   let signature {n} (value : Val n) :=
     astToJson value (λ index => toJson (Int.ofNat index - Int.ofNat n)) toJson
