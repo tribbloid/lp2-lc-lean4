@@ -152,13 +152,11 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
 
 end CertifiedByInfer
 
-open CertifiedByInfer
-
 /-- Evaluate an independently inferred term and certify its returned value at the inferred type. -/
 def eval_certified {n} (self : Trm n) (bindings : ExeBindings := .empty)
     {inferFuel : Nat} {typ : Typ}
-    (hInfer : self.infer bindings inferFuel = .yield (some typ)) : Result typ := λ fuel =>
-  (evalInternal self bindings fuel).map (·.map (λ result =>
+    (hInfer : self.infer bindings inferFuel = .yield (some typ)) : CertifiedByInfer.Result typ := λ fuel =>
+  (CertifiedByInfer.evalInternal self bindings fuel).map (·.map (λ result =>
     ⟨result.val, (result.property hInfer).imp (λ _ hValue => by rw [hValue])⟩))
 
 end Lp2lc.Active.STLC.AST
