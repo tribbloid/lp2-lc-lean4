@@ -136,6 +136,14 @@ private theorem inferNormalized {trm : Trm n}
       all_goals try cases hInfer
       exact resolveTypeResolve _ _ 0 0
 
+/-- The input of a successfully inferred function type is already normalized. -/
+private theorem inferInputNormalized {trm : Trm n} {input : Typ} {output : Binder 0 .typ}
+    (hInfer : infer trm entries fuel = .yield (some (.TFn input output))) :
+    resolveType input (λ _ => .only) = input := by
+  have hNormal := inferNormalized hInfer
+  cases output
+  exact (Pre.AST.TFn.inj hNormal).1
+
 private def preservesType (source target : RecOpt Typ) : Prop :=
   ∀ {fuel typ}, source fuel = .yield (some typ) → ∃ targetFuel, target targetFuel = .yield (some typ)
 
@@ -150,11 +158,7 @@ private theorem inferApplySuccess {fn arg : Trm n}
   split at hInfer
   · rename_i input output argType hFn hArg
     have hNormalArg := inferNormalized hArg
-    have hNormalFn := inferNormalized hFn
-    cases output
-    rename_i output
-    have hInput : resolveType input (λ _ => .only) = input :=
-      (Pre.AST.TFn.inj hNormalFn).1
+    have hInput := inferInputNormalized hFn
     cases hSame : argType.sameType input fuel with
     | outOfFuel => simp [hSame, Rec.Outcome.flatMap] at hInfer
     | yield accepted =>
@@ -225,10 +229,7 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
         (Nat.le_trans (Nat.le_max_right _ _) (Nat.le_max_left _ _)) hArgTarget
       exact ⟨budget + 1, by
         rw [infer.eq_6, hFnMore, hArgMore]
-        have hNormal : resolveType input (λ _ => .only) = input := by
-          have hFnNormal := inferNormalized hFnTarget
-          cases output
-          exact (Pre.AST.TFn.inj hFnNormal).1
+        have hNormal := inferInputNormalized hFnTarget
         have hMatch := typeMatchesResolve input (λ _ => .only) 0 0
         rw [hNormal] at hMatch
         have hSame : sameType input input budget = .yield true := by
