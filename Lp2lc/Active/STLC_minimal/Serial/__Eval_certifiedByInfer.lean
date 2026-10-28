@@ -6,11 +6,9 @@ open Lp2lc.Active.Util
 
 namespace CertifiedByInfer
 
-/-- A returned value certified at the caller's independently inferred type. -/
 abbrev CertifiedVal (typ : Typ) :=
   {value : ExeVal // (value.value.asTrm.infer value.captured).isDecidable (· = typ)}
 
-/-- Certified evaluation preserves runtime corruption and may exhaust its fuel. -/
 abbrev Result (typ : Typ) := Rec (Return (CertifiedVal typ))
 
 variable {n fuel : Nat} {typ : Typ} {entries : CompilerBindings}
@@ -38,7 +36,6 @@ private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
     (try cases ‹Option Typ›) <;> simp_all [infer.eq_3, Rec.Outcome.map, Option.map]
   exact ⟨_, rfl, (Option.some.inj hInfer).symm⟩
 
--- Certification uses inference monotonicity and establishes the remaining inference facts locally.
 private def entryFits (entry : Option (CompilerTyp ⊕ ExeVal)) (typ : Typ) : Prop :=
   ∃ fuel,
     (match entry with
@@ -46,7 +43,6 @@ private def entryFits (entry : Option (CompilerTyp ⊕ ExeVal)) (typ : Typ) : Pr
     | some (.inl ⟨_, input, _⟩) => .yield (some (resolveType input))
     | none => .yield none) = .yield (some typ)
 
-/-- Replacing hypothetical entries by inferable runtime values preserves inference. -/
 private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
     (hReplace : ∀ index typ, entryFits (source index) typ → entryFits (target index) typ) :
     preservesType (infer trm source) (infer trm target) := by
@@ -85,7 +81,6 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
           Monotone.termInfer arg target argFuel (max fnFuel argFuel) _ (Nat.le_max_right _ _) hArgTarget]
         exact congrArg _ (ite_eq_left (rfl : input = input))⟩
 
-/-- Each returned value preserves every successful inference of its source term. -/
 private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
     Rec (Return {value : ExeVal //
       preservesType (self.infer bindings) (value.value.asTrm.infer value.captured)}) := λ fuel =>
@@ -103,25 +98,29 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
   | fuel + 1, .apply fn arg =>
     match evalInternal fn bindings fuel, evalInternal arg bindings fuel with
     | .yield (.some ⟨.mk context (.fn annotation body) captured, fnSafe⟩), .yield (.some argResult) =>
-      let bodyBindings := captured.set (context + 1) argResult.val
-      have bodyTyped : preservesType (infer (.apply fn arg) bindings)
-          (infer (body.apply .only) bodyBindings) := by
-        rintro (_ | inferFuel) typ hInfer
-        · cases hInfer
-        · obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
-          obtain ⟨_ | fnFuel, hFnValue⟩ := fnSafe hFn
-          · cases hFnValue
-          · obtain ⟨output, hBody, hFnType⟩ := inferFnSuccess hFnValue
-            rcases Pre.AST.TFn.inj hFnType with ⟨rfl, rfl⟩
-            rcases argResult with ⟨⟨argContext, argValue, argCaptured⟩, argSafe⟩
-            have argTyped := argSafe hArg
-            exact inferReplace (target := bodyBindings)
-              (by
-                intro index inputTyp hSource
-                simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
-                split at hSource <;> simp_all [entryFits, Option.map]) hBody
-      (evalInternal (body.apply .only) bodyBindings fuel).map (·.map (λ bodyResult =>
-        ⟨bodyResult.val, λ hInfer => (bodyTyped hInfer).elim (λ _ => bodyResult.property)⟩))
+      letI : DecidableEq (Option Typ) := Option.instDecidableEq (inst := typDecidableLE)
+      (infer argResult.val.value.asTrm argResult.val.captured fuel).flatMap (λ checked =>
+        if checked = some (resolveType annotation) then
+          let bodyBindings := captured.set (context + 1) argResult.val
+          have bodyTyped : preservesType (infer (.apply fn arg) bindings)
+              (infer (body.apply .only) bodyBindings) := by
+            rintro (_ | inferFuel) typ hInfer
+            · cases hInfer
+            · obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
+              obtain ⟨_ | fnFuel, hFnValue⟩ := fnSafe hFn
+              · cases hFnValue
+              · obtain ⟨output, hBody, hFnType⟩ := inferFnSuccess hFnValue
+                rcases Pre.AST.TFn.inj hFnType with ⟨rfl, rfl⟩
+                rcases argResult with ⟨⟨argContext, argValue, argCaptured⟩, argSafe⟩
+                have argTyped := argSafe hArg
+                exact inferReplace (target := bodyBindings)
+                  (by
+                    intro index inputTyp hSource
+                    simp only [bodyBindings, CompilerBindings.get, NatBindings.get] at hSource ⊢
+                    split at hSource <;> simp_all [entryFits, Option.map]) hBody
+          (evalInternal (body.apply .only) bodyBindings fuel).map (·.map (λ bodyResult =>
+            ⟨bodyResult.val, λ hInfer => (bodyTyped hInfer).elim (λ _ => bodyResult.property)⟩))
+        else .outOfFuel)
     | .yield (.some ⟨.mk context (.fnPrimitive tOut op) captured, fnSafe⟩),
         .yield (.some ⟨.mk _ (.lit repr) _, _⟩) =>
       letI : DecidableEq Typ := λ a b => typDecidableLE a b
@@ -148,13 +147,10 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
 
 end CertifiedByInfer
 
-open CertifiedByInfer
-
-/-- Evaluate an independently inferred term and certify its returned value at the inferred type. -/
 def eval_certified {n} (self : Trm n) (bindings : ExeBindings := .empty)
     {inferFuel : Nat} {typ : Typ}
-    (hInfer : self.infer bindings inferFuel = .yield (some typ)) : Result typ := λ fuel =>
-  (evalInternal self bindings fuel).map (·.map (λ result =>
+    (hInfer : self.infer bindings inferFuel = .yield (some typ)) : CertifiedByInfer.Result typ := λ fuel =>
+  (CertifiedByInfer.evalInternal self bindings fuel).map (·.map (λ result =>
     ⟨result.val, (result.property hInfer).imp (λ _ hValue => by rw [hValue])⟩))
 
 end Lp2lc.Active.STLC_minimal.AST

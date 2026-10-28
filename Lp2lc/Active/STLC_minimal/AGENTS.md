@@ -11,10 +11,12 @@ From the repository root:
 
 ```sh
 sh .agent/script/gen_stlc_minimal.sh
-lake build Lp2lc.Active.STLC_minimal.mod
+lake build Lp2lc.Active.STLC_minimal.mod Tests.STLC_minimal.mod
 ```
 
-The generator copies the minimal dependency closure of `Serial/__Eval_certifiedByInfer.lean`
-(`STLCDef.lean`, `Serial/Def.lean`, `Serial/Infra.lean`, `Serial/Infer.lean`, and the certified evaluator)
-from `Lp2lc/Active/STLC` and renames the `Lp2lc.Active.STLC` namespace to `Lp2lc.Active.STLC_minimal`.
-The generated evaluator is `Serial/__Eval_certifiedByInfer.lean`.
+The generator removes previous generated Lean files, then copies the STLC dependency closure of serial inference,
+certified evaluation, their test suites, and the value, type, and term demos. Production modules live here; migrated
+tests and demos live in `Tests/STLC_minimal`. Both directories have generated `mod.lean` aggregators.
+
+All Lean comments are stripped, including nested block comments; string literals are preserved. Module references and
+namespaces are renamed from `STLC` to `STLC_minimal`. Update the sources or generator and regenerate both trees together.

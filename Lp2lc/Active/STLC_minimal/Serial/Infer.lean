@@ -5,10 +5,8 @@ open Lp2lc.Active.Util
 namespace AST
 variable {P : Parameters}
 
-/-- Current STLC subtyping coincides with structural type equality. -/
 local instance typLE : LE (Pre.AST P .typ) := ⟨Eq⟩
 
-/-- Decides structural subtyping by source type equality for every carrier. -/
 @[instance_reducible]
 local instance typDecidableLE : DecidableLE (Pre.AST P .typ)
   | .TLit, .TLit => isTrue rfl
@@ -18,7 +16,6 @@ local instance typDecidableLE : DecidableLE (Pre.AST P .typ)
     @decidable_of_iff' _ _ (Pre.AST.TFn.injEq a b c d).to_iff
       (@instDecidableAnd _ _ (typDecidableLE a c) (typDecidableLE b d))
 
-/-- Infer using runtime values or hypothetical types, resolving runtime values in their captured environments. -/
 def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Typ := λ fuel =>
   match fuel, self with
   | 0, _ => .outOfFuel
@@ -46,7 +43,6 @@ variable {n : Nat}
 
 namespace Monotone
 
-/-- Every completed inference result, including rejection, is preserved when fuel increases. -/
 theorem termInfer (trm : Trm n)
     (bindings : CompilerBindings) :
     (infer trm bindings).Monotone := by

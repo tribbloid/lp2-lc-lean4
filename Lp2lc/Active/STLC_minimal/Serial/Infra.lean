@@ -4,10 +4,8 @@ namespace Lp2lc.Active.STLC_minimal
 
 open Lp2lc.Active.Util
 
-/-- A type together with its lexical context and captured type bindings. -/
-abbrev CompilerTyp := Closure (Typ ·) -- Compiler types capture only other types; singleton types remain types.
+abbrev CompilerTyp := Closure (Typ ·)
 
-/-- Breakpoint values seed inference; subsequent bindings must contain only hypothetical types. -/
 structure CompilerBindings where
   runtime : ExeBindings
   types : NatBindings CompilerTyp
@@ -32,7 +30,6 @@ instance : Coe ExeBindings CompilerBindings := ⟨breakpoint⟩
 
 end CompilerBindings
 
-/-- Erase an STLC type's context index without consuming inference or checking fuel. -/
 def AST.resolveType {n} (self : Typ n) : Typ :=
   match self with
   | .TLit => .TLit

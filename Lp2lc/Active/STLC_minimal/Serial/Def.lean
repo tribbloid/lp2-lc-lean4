@@ -5,9 +5,7 @@ namespace Lp2lc.Active.STLC_minimal
 
 open Lp2lc.Active.Util
 
----------------------------- Concrete indexed AST ----------------------------
-
-abbrev AST (n : Nat := 0) (l : Label)  := -- TODO: the label argument is just currying
+abbrev AST (n : Nat := 0) (l : Label)  :=
   Pre.AST { B := String, I := IndexEncoding.Serial, index := ⟨n⟩ } l
 
 abbrev Binder (n : Nat := 0) (l : Label)  :=
@@ -23,15 +21,12 @@ def asTrm (self : Val n) : Trm n := .val self
 
 instance : Coe (Val n) (Trm n) := ⟨asTrm⟩
 
--- UAST's opaque sort blocks the generic coercion-chain instances.
 instance (self : Val n) : CoeT (Val n) self (Trm n) := ⟨Coe.coe self⟩
 
 end Val
 
--- set_option genSizeOf false in
-/-- A source value together with the bindings captured when it was evaluated. -/
 abbrev ExeVal := Closure (Val ·)
 
-abbrev ExeBindings := NatBindings ExeVal -- append-only
+abbrev ExeBindings := NatBindings ExeVal
 
 end STLC_minimal
