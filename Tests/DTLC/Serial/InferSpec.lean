@@ -19,9 +19,9 @@ private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, vTrue, .empty�
 
 private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
 
-#guard (vFalse.infer (n := 0)).shouldYield 1 .TLit
+#guard vFalse.asTrm.infer.shouldYield 1 .TLit
 
-#guard (vTrue.infer (n := 0)).shouldYield 1 .TLit
+#guard vTrue.asTrm.infer.shouldYield 1 .TLit
 
 #guard primitiveIdFn.infer.shouldYield 2 (.TFn .TLit (.mk (λ _ => .TLit)))
 

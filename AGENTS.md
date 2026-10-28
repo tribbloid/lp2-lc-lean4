@@ -83,8 +83,12 @@ Tests/AGENTS.md are not exhaustive.
 - If multiple functions in a namespace block can be shortened with shared section variables, they should be.
 - Shorten function calls with dot notation when possible.
 - Inline trivial functions or wrappers that are used only once.
-- Every implicit coercion should be wrapping an explicit conversion method callable as dot-notation with no parameter.
-- If an implicit coercion caused a compilation error, use the underlying explicit conversion method instead.
+- Every implicit coercion must wrap an explicit conversion method callable with dot notation and no explicit arguments
+      beyond the receiver.
+- If an implicit coercion fails, including failure to infer a type or index parameter, use its explicit conversion
+      method at the call site. Rewrite existing calls that supply arguments or type annotations solely to force that
+      coercion to compile, even if those workarounds currently compile successfully.
+    - For example, use `value.asTrm.infer` instead of `value.infer (n := 0)` when coercion cannot infer `n`.
 - Every permanent (non-temporary) Lean file must be mentioned in its module aggregator with either:
     - an import clause (`import XXX`), or
     - an import comment (`-- import XXX`).
