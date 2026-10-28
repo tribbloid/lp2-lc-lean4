@@ -20,17 +20,11 @@ private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, vTrue, .empty�
 
 private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
 
--- TODO: some test fixtures in "TrmDemo.lean" hasn't been used in the following tests for type inferences, add them
--- TODO: the sequence of the following tests should be identical to the sequence of the test fixtures they use
 #guard (vFalse.infer (n := 0)).shouldYields 1 .TLit
 
 #guard (vTrue.infer (n := 0)).shouldYields 1 .TLit
 
 #guard primitiveIdFn.infer.shouldYields 2 (.TFn .TLit .TLit)
-
-#guard (AST.infer (.val (.fn (.TFn .TLit (.TFn .TLit .TLit))
-  (.mk (λ proxy => .ref proxy .same))) : Trm 7)).shouldYields 2
-  (.TFn (.TFn .TLit (.TFn .TLit .TLit)) (.TFn .TLit (.TFn .TLit .TLit)))
 
 #guard primitiveIdFnOnFalse.infer.shouldYields 3 .TLit
 
@@ -46,24 +40,56 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard primitiveTrueFnOnFalse.infer.shouldYields 3 .TLit
 
+#guard get1stOnFalse.infer.shouldYields 4 (.TFn .TLit .TLit)
+
+#guard higherOrderId.infer.shouldYields 2 (.TFn (.TFn .TLit .TLit) (.TFn .TLit .TLit))
+
+#guard higherOrderApplication.infer.shouldYields 4 .TLit
+
+#guard primitiveLiteralIdFn.infer.shouldYields 1 (.TFn .TLit .TLit)
+
+#guard primitiveLiteralIdFnOnFalse.infer.shouldYields 2 .TLit
+
+#guard primitiveFirstFnOnTuple.infer.shouldYields 3 .TLit
+
+#guard Malformed.WrongTIn.infer.shouldFail 3
+
+#guard Malformed.ContainWrongTIn.infer.shouldFail 4
+
+#guard Malformed.applyLit1.infer.shouldFail 2
+
+#guard Malformed.applyLit2.infer.shouldFail 4
+
+#guard Malformed.applyLitToApplication.infer.shouldFail 4
+
+#guard Malformed.wrongNestedTIn.infer.shouldFail 4
+
+#guard Malformed.primitiveLiteralIdFnOnFn.infer.shouldFail 3
+
+#guard Corrupted.corruptApplication.infer.shouldYields 2 (.TFn .TLit .TLit)
+
+#guard Corrupted.corruptedCallee.infer.shouldYields 3 .TLit
+
+#guard Corrupted.corruptedArgument.infer.shouldYields 3 (.TFn .TLit .TLit)
+
+#guard Corrupted.corruptedBody.infer.shouldYields 4 (.TFn .TLit .TLit)
+
+#guard Corrupted.illTypedPrimitiveResult.infer.shouldYields 2 .TLit
+
+#guard Corrupted.primitiveFnOnTuple.infer.shouldYields 3 .TLit
+
+#guard (AST.infer (.val (.fn (.TFn .TLit (.TFn .TLit .TLit))
+  (.mk (λ proxy => .ref proxy .same))) : Trm 7)).shouldYields 2
+  (.TFn (.TFn .TLit (.TFn .TLit .TLit)) (.TFn .TLit (.TFn .TLit .TLit)))
+
 #guard (primitiveIdFn.infer fnBindings).shouldYields 2 (.TFn .TLit .TLit)
 
 #guard (primitiveIdFn.infer mixedBindings).shouldYields 2 (.TFn .TLit .TLit)
 
 #guard (innerRef.infer mixedBindings).shouldYields 2 .TLit
 
-#guard Malformed.WrongTIn.infer.shouldFail 3
-
-#guard Malformed.ContainWrongTIn.infer.shouldFail 4
-
-#guard Malformed.applyLit2.infer.shouldFail 4
-
-#guard Malformed.applyLit1.infer.shouldFail 2
-
 #guard (AST.infer (.val (.fnPrimitive (.TFn .TLit .TLit) .lit) : Trm)).shouldYields 1
   (.TFn .TLit (.TFn .TLit .TLit))
-
-#guard Malformed.primitiveLiteralIdFnOnFn.infer.shouldFail 3
 
 end infer
 
