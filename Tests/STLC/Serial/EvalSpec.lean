@@ -15,6 +15,9 @@ private abbrev evalShouldYield (expected : Val) (bindings : ExeBindings := .empt
 private abbrev evalShouldCrash (bindings : ExeBindings := .empty) : Prop :=
   shouldYieldSyntax (trm.eval bindings) fuel .corrupted
 
+private abbrev evalShouldFail (bindings : ExeBindings := .empty) : Prop :=
+ (trm.eval bindings).shouldFail fuel
+
 end Lp2lc.Active.STLC.AST
 
 namespace Tests.STLC.Sanity.Trm
@@ -48,19 +51,19 @@ section eval
 
 #guard primitiveFirstFnOnTuple.evalShouldYield 3 vFalse
 
-#guard Malformed.WrongTIn.eval.shouldFail 3
+#guard Malformed.WrongTIn.evalShouldFail 3
 
-#guard Malformed.ContainWrongTIn.eval.shouldFail 4
+#guard Malformed.ContainWrongTIn.evalShouldFail 4
 
-#guard Malformed.applyLit1.eval.shouldFail 2
+#guard Malformed.applyLit1.evalShouldFail 2
 
-#guard Malformed.applyLit2.eval.shouldFail 3
+#guard Malformed.applyLit2.evalShouldFail 3
 
-#guard Malformed.applyLitToApplication.eval.shouldFail 3
+#guard Malformed.applyLitToApplication.evalShouldFail 3
 
-#guard Malformed.wrongNestedTIn.eval.shouldFail 4
+#guard Malformed.wrongNestedTIn.evalShouldFail 4
 
-#guard Malformed.primitiveLiteralIdFnOnFn.eval.shouldFail 2
+#guard Malformed.primitiveLiteralIdFnOnFn.evalShouldFail 2
 
 #guard Corrupted.corruptApplication.evalShouldCrash 2
 
