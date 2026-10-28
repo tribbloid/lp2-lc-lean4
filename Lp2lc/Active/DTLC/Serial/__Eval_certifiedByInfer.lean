@@ -15,6 +15,12 @@ abbrev CertifiedVal (typ : Typ) :=
 /-- Corruption is an allowed runtime exit; evaluation may also exhaust its fuel. -/
 abbrev Result (typ : Typ) := Rec (Return (CertifiedVal typ))
 
+private def hasType (value : ExeVal) (expected : Typ n) : Rec Bool := λ fuel =>
+  (value.value.asTrm.infer value.captured fuel).flatMap (λ actual =>
+    match actual with
+    | some actual => actual.sameType expected fuel
+    | none => .yield false)
+
 private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) : Rec (Return ExeVal) := λ fuel =>
   -- TODO: this may be useless and needs to be removed, "eval_certified should build certified result in every step".
   match fuel with
@@ -28,19 +34,15 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) : Rec (Retu
       | none => .outOfFuel
     | .apply fn arg =>
       match evalInternal fn bindings fuel, evalInternal arg bindings fuel with
-      | .yield (.some ⟨context, .fn _ body, captured⟩), .yield (.some argument) =>
-        evalInternal (body.apply .only) (captured.set (context + 1) argument) fuel
+      | .yield (.some ⟨context, .fn input body, captured⟩), .yield (.some argument) =>
+        (hasType argument input fuel).flatMap (λ accepted =>
+          if accepted then evalInternal (body.apply .only) (captured.set (context + 1) argument) fuel
+          else .yield .corrupted)
       | .yield (.some ⟨context, .fnPrimitive output op, captured⟩),
           .yield (.some ⟨_, .lit repr, _⟩) =>
-        let value : Val context := op repr
-        match value.asTrm.infer captured fuel with
-        | .yield (some actual) =>
-          match actual.sameType (output.apply .only) fuel with
-          | .yield true => .yield (.some ⟨context, value, captured⟩)
-          | .yield false => .yield .corrupted
-          | .outOfFuel => .outOfFuel
-        | .yield none => .yield .corrupted
-        | .outOfFuel => .outOfFuel
+        let value : ExeVal := ⟨context, op repr, captured⟩
+        (hasType value (output.apply .only) fuel).map (λ accepted =>
+          if accepted then .some value else .corrupted)
       | .yield .corrupted, .yield _
       | .yield _, .yield .corrupted => .yield .corrupted
       | _, _ => .outOfFuel
