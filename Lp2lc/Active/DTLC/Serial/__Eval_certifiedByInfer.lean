@@ -296,73 +296,50 @@ private theorem evalPreserves {self : Trm n} {bindings : ExeBindings} {value : E
   induction fuel generalizing n self bindings value inferFuel typ with
   | zero => cases hEval
   | succ fuel ih =>
-    cases self with
-    | val source =>
-      cases hEval
-      exact ⟨inferFuel, hInfer⟩
-    | ref carrier under =>
-      simp only [evalInternal] at hEval
-      split at hEval
-      · rename_i result hBinding
+    cases inferFuel with
+    | zero => cases hInfer
+    | succ inferFuel =>
+      cases self with
+      | val source =>
         cases hEval
-        rcases value with ⟨context, source, captured⟩
-        cases inferFuel with
-        | zero => cases hInfer
-        | succ inferFuel =>
+        exact ⟨inferFuel + 1, hInfer⟩
+      | ref carrier under =>
+        simp only [evalInternal] at hEval
+        split at hEval
+        · rename_i result hBinding
+          cases hEval
+          rcases value with ⟨context, source, captured⟩
           exact ⟨inferFuel, by
             simpa only [infer.eq_5, CompilerBindings.get, CompilerBindings.breakpoint,
               NatBindings.get, hBinding, Option.map, Option.orElse] using hInfer⟩
-      · cases hEval
-    | apply fn arg =>
-      cases inferFuel with
-      | zero => cases hInfer
-      | succ inferFuel =>
+        · cases hEval
+      | apply fn arg =>
         obtain ⟨input, output, hFn, _hArg, rfl⟩ := inferApplySuccess hInfer
-        simp only [evalInternal] at hEval
+        simp only [evalInternal, Rec.Outcome.flatMap, Rec.Outcome.map] at hEval
         split at hEval
-        · rename_i context annotation body captured argument hFnEval hArgEval
-          cases hCheck : hasType argument annotation fuel with
-          | outOfFuel => simp [hCheck, Rec.Outcome.flatMap] at hEval
-          | yield accepted =>
-            cases accepted with
-            | false => simp [hCheck, Rec.Outcome.flatMap] at hEval
-            | true =>
-              simp only [hCheck, Rec.Outcome.flatMap, ite_true] at hEval
-              obtain ⟨_ | fnFuel, hFnValue⟩ := ih hFnEval hFn
-              · cases hFnValue
-              · obtain ⟨bodyTyp, hBody, hFnType⟩ := inferFnSuccess hFnValue
-                change Pre.AST.TFn input output =
-                  Pre.AST.TFn (resolveType annotation (λ _ => .only))
-                    (.mk (λ _ => resolveType bodyTyp (λ _ => .only) 1)) at hFnType
-                rcases Pre.AST.TFn.inj hFnType with ⟨rfl, rfl⟩
-                obtain ⟨bodyFuel, hBodyTyped⟩ := inferReplace
-                  (target := CompilerBindings.breakpoint (captured.set (context + 1) argument))
-                  (by
-                    intro index inputTyp hSource
-                    simp only [CompilerBindings.get, NatBindings.get] at hSource ⊢
-                    rcases argument with ⟨argContext, argValue, argCaptured⟩
-                    split at hSource <;> simp_all [entryFits, Option.map]
-                    exact ⟨fuel, by
-                      simpa only [Option.some.inj hSource] using hasTypeSound hCheck⟩) hBody
-                simp only [Pre.Binder.apply, Pre.Binder.mk, resolveTypeResolve, inferNormalized hBody]
-                exact ih hEval hBodyTyped
-        · rename_i context expected op captured argContext repr argCaptured hFnEval hArgEval
-          cases hCheck : hasType ⟨context, op repr, captured⟩ (expected.apply .only) fuel with
-          | outOfFuel => simp [hCheck, Rec.Outcome.map] at hEval
-          | yield accepted =>
-            cases accepted with
-            | false => simp [hCheck, Rec.Outcome.map] at hEval
-            | true =>
-              simp only [hCheck, Rec.Outcome.map, ite_true] at hEval
-              cases hEval
-              obtain ⟨_ | fnFuel, hFnValue⟩ := ih hFnEval hFn
-              · cases hFnValue
-              · simp only [Val.asTrm, infer.eq_4, Rec.Outcome.yield.injEq] at hFnValue
-                cases Option.some.inj hFnValue
-                exact ⟨fuel, by
-                  simpa only [functionType, Pre.Binder.apply, Pre.Binder.mk, resolveTypeResolve]
-                    using hasTypeSound hCheck⟩
-        all_goals cases hEval
+        all_goals (repeat split at hEval)
+        all_goals try cases hEval
+        all_goals subst_vars
+        all_goals obtain ⟨_ | fnFuel, hFnValue⟩ := ih (self := fn) (by assumption) hFn
+        all_goals try cases hFnValue
+        · rename_i context annotation body captured argument hFnEval hArgEval checkResult hCheck
+          obtain ⟨bodyTyp, hBody, hFnType⟩ := inferFnSuccess hFnValue
+          cases hFnType
+          obtain ⟨bodyFuel, hBodyTyped⟩ := inferReplace
+            (target := CompilerBindings.breakpoint (captured.set (context + 1) argument))
+            (by
+              intro index inputTyp hSource
+              simp only [CompilerBindings.get, NatBindings.get] at hSource ⊢
+              rcases argument with ⟨argContext, argValue, argCaptured⟩
+              split at hSource <;> simp_all [entryFits, Option.map]
+              exact ⟨fuel, by
+                simpa only [Option.some.inj hSource] using hasTypeSound hCheck⟩) hBody
+          simp only [Pre.Binder.apply, Pre.Binder.mk, resolveTypeResolve, inferNormalized hBody]
+          exact ih hEval hBodyTyped
+        · rename_i context expected op captured argContext repr argCaptured hFnEval hArgEval checkResult hCheck
+          exact ⟨fuel, by
+            simpa only [functionType, Pre.Binder.apply, Pre.Binder.mk, resolveTypeResolve]
+              using hasTypeSound hCheck⟩
 
 end CertifiedByInfer
 
