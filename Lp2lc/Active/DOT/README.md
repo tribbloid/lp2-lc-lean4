@@ -36,17 +36,17 @@ def fn: Int => Int = { x => // <- introducing x (bound variable)
   x + 1
 }
 
-trait T1 { // <- introducing T1.this (self-binder, or is it "bounded self"?)
+trait T1 { // <- introducing T1.this (self-binder)
   trait T2 { // <- introducing T2.this
     def breadcrumb = T1.this.toString + "." + T2.this.toString
   }
 }
 
-type DepFn = { (x: HList) => // <- introducing x (bounded variable)
+type DepFn = { (x: HList) => // <- introducing x (bound variable)
   x.Arity
 }
 
-type K1[T] = // <- introducing T (bounded type argument)
+type K1[T] = // <- introducing T (bound type parameter)
   Option[T] | List[T]
 
 ```

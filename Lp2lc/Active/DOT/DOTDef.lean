@@ -14,7 +14,7 @@ object/record, with real ∀).
 It is:
 
 - Not System F! (or its extension, lack of explicit polyFn, polyArrow, fake ∀)
-- Not WadlerFest 2016 version! (lack of union type)
+- Includes intersection and union types through `Typ.and` and `Typ.or`.
 -/
 
 section Syntax
@@ -52,11 +52,11 @@ inductive Typ : Type where
 /-- Object member declarations used by type-level record/object shapes. -/
 inductive MemberDeclaration: Type where -- member of an object/record, this is only the type-level declaration, not definition/implementation
 | typeAlias (tName: Name) : MemberDeclaration -- `{type Name}`, it deliberately contains no type assignment or bound, they are evidence terms in the same object
-| term (name: Option Name) (isImplicit: Bool) (annotation: Typ) : MemberDeclaration -- `{term name = Tm}`, they are multi-indexed after compilation: by name (if name exists) and by "tUnder" (if "isGiven" and is a "subtypeEv"")
+| term (name: Option Name) (isImplicit: Bool) (annotation: Typ) : MemberDeclaration -- `{term name: annotation}`; `name` supports named lookup and `isImplicit` marks implicit evidence lookup through `annotation`
 
 /-- Runtime member implementations paired with their type-level schema. -/
 inductive MemberImpl: Type where -- AKA member definition, runtime only but carries type-tag & schema
-| typeAlias (tName: Name) : MemberImpl -- same as MemberImpl
+| typeAlias (tName: Name) : MemberImpl -- runtime counterpart of `MemberDeclaration.typeAlias`
 | term (name: Option Name) (body: Trm) (annotation: Typ) : MemberImpl -- different, body is only visible at runtime
 
 /-- Runtime object body as a member lookup function. -/
@@ -97,7 +97,7 @@ Semantics
 TODO: each constraint has 2 semantic representations:
 
 - embedded/definitional: type bindings are predicates for terms (Trm -> Prop), subtype
-  evidences are higher-order predicates:
+  evidence consists of higher-order predicates:
   ∀ {T1 T2 : Trm -> Prop} {v : Trm} (ev: T1 <:< T2) (T1 v) -> (T2 v)
 - explicit/operational: type bindings are lookup, subtype evidences are lattice, both forms
   the Env/Context
