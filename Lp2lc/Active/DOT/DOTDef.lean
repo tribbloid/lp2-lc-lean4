@@ -8,8 +8,7 @@ namespace Lp2lc.Active.DOT
 open Lp2lc.Active.Util
 
 /-
-here is the self-contained syntax for the latest DOT (System D-Diamond with
-object/record, with real ∀).
+Self-contained DOT syntax with objects/records and dependent functions.
 
 It is:
 
@@ -99,8 +98,8 @@ TODO: each constraint has 2 semantic representations:
 - embedded/definitional: type bindings are predicates for terms (Trm -> Prop), subtype
   evidence consists of higher-order predicates:
   ∀ {T1 T2 : Trm -> Prop} {v : Trm} (ev: T1 <:< T2) (T1 v) -> (T2 v)
-- explicit/operational: type bindings are lookup, subtype evidences are lattice, both forms
-  the Env/Context
+- explicit/operational: type bindings use lookups and subtype evidence forms a lattice;
+  together they form the Env/Context
 
 they don't have to match, but which one would you choose?
 -/
@@ -108,13 +107,13 @@ they don't have to match, but which one would you choose?
 /-
 if choosing embedded/definitional:
 
-Some Val should be indistinguisable from denotation, (all of them if positivity
-doesn't block it), can we avoid repetitive definitions?
+Some `Val` values should be indistinguishable from their denotations (all of them if positivity
+permits it). Can the syntax and denotation share their definitions?
 -/
 
 -- inductive Data: Type where -- AKA Denotation
 -- | primitive : Data -- `3`, `3.2`, `true` etc.
--- | object : (Lookup Data or (Data -> Data) ) → Data -- carrying a member lookup, in DOT objects are only identified only by structure, Trait has to carry a hidden type member
+-- | object : (Lookup Data or (Data -> Data) ) → Data -- carrying a member lookup; DOT objects are identified by structure, so a trait has to carry a hidden type member
 
 
 
