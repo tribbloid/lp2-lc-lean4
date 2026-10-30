@@ -14,7 +14,7 @@ private def erasedEval (trm : Trm) : RecOpt (Return ExeVal) :=
   | .outOfFuel => λ _ => .outOfFuel
 
 private def literal : Trm := .val (.lit "ok")
-private def identity : Trm := .val (.fn .TLit (.mk (λ value => .val (.ref value .same))))
+private def identity : Trm := .val (.fn .TLit (.mk (λ value => .ref value .same)))
 private def corruptApplication (n : Nat := 0) : Trm n :=
   .apply (.val (.fnPrimitive (.mk (λ _ => .TBot)) .lit)) (.val (.lit "ok"))
 

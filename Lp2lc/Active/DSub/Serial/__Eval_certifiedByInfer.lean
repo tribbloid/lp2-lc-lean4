@@ -33,13 +33,10 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
       (evalInternal trm captured fuel).map (·.map Subtype.val)
     let result : Rec.Outcome (Return ExeVal) :=
       match self with
-      | .val (.ref _ under) =>
+      | .ref _ under =>
         match bindings under.sourceIndex.down with
         | none => .yield .corrupted
-        | some value =>
-          match value.value with
-          | .ref _ _ => run value.value.asTrm value.captured
-          | _ => .yield (.some value)
+        | some value => .yield (.some value)
       | .val value => .yield (.some ⟨n, value, bindings⟩)
       | .apply fn arg =>
         match run fn bindings, run arg bindings with

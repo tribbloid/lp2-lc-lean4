@@ -4,25 +4,6 @@ namespace Lp2lc.Active.DSub.CompilerTyp
 
 open Lp2lc.Active.Util
 
-mutual
-
-private def scopeBound (self : CompilerTyp) : Nat :=
-  match self with
-  | ⟨n, _, captured⟩ => max n (bindingsBound captured)
-termination_by sizeOf self
-
-private def bindingsBound (self : NatBindings CompilerTyp) : Nat :=
-  match self with
-  | .empty => 0
-  | .set entries index typ => max index (max (scopeBound typ) (bindingsBound entries))
-termination_by sizeOf self
-
-end
-
-private def pathAlias (index : Nat) : CompilerTyp :=
-  let path : Typ index := .TSel (.ref (IndexEncoding.SerialProxy.only (C := index)) .same)
-  ⟨index, .TMember path path, .empty⟩
-
 /-- Combine fuel-bounded checks, retaining a conclusive conjunction or disjunction. -/
 private def combine (shortCircuit : Bool) (left right : Rec.Outcome Bool) : Rec.Outcome Bool :=
   match left, right with
@@ -53,10 +34,6 @@ private def selectionBounds {n} (value : Val n) (captured context : NatBindings 
   match fuel, value with
   | 0, _ => .outOfFuel
   | _ + 1, .typeDef typ => .yield (some (⟨n, typ, captured⟩, ⟨n, typ, captured⟩))
-  | fuel + 1, .ref _ under =>
-    match (captured under.sourceIndex.down).orElse (λ _ => context under.sourceIndex.down) with
-    | some typ => memberBounds typ context fuel
-    | none => .yield none
   | _ + 1, _ => .yield none
 
 end
@@ -76,32 +53,21 @@ def subtype (self upper : CompilerTyp) (context : NatBindings CompilerTyp := .em
         (subtype ⟨self.n, upper₁, self.captured⟩ ⟨upper.n, upper₂, upper.captured⟩ context fuel)
     | .TFn input₁ output₁, .TFn input₂ output₂ =>
       let rightInput : CompilerTyp := ⟨upper.n, input₂, upper.captured⟩
-      let fresh := max (scopeBound self) (max (scopeBound upper) (bindingsBound context)) + 1
-      let alias := pathAlias fresh
       combine false
         (subtype rightInput ⟨self.n, input₁, self.captured⟩ context fuel)
-        (subtype ⟨self.n + 1, output₁.apply .only, self.captured.set (self.n + 1) alias⟩
-          ⟨upper.n + 1, output₂.apply .only, upper.captured.set (upper.n + 1) alias⟩
-          (context.set fresh rightInput) fuel)
+        (subtype ⟨self.n + 1, output₁.apply .only, self.captured⟩
+          ⟨upper.n + 1, output₂.apply .only, upper.captured⟩ context fuel)
     | _, _ =>
-      let samePath :=
-        match self.value, upper.value with
-        | .TSel (.ref _ left), .TSel (.ref _ right) =>
-          (self.captured left.sourceIndex.down).isNone &&
-            (upper.captured right.sourceIndex.down).isNone &&
-            left.sourceIndex.down == right.sourceIndex.down
-        | _, _ => false
-      if samePath then .yield true else
-        let follow (selected other : CompilerTyp) (widen : Bool) :=
-          match selected.value with
-          | .TSel value =>
-            (selectionBounds value selected.captured context fuel).flatMap (λ result =>
-              match result with
-              | some (lower, upper) =>
-                if widen then subtype upper other context fuel else subtype other lower context fuel
-              | none => .yield false)
-          | _ => .yield false
-        combine true (follow self upper true) (follow upper self false)
+      let follow (selected other : CompilerTyp) (widen : Bool) :=
+        match selected.value with
+        | .TSel value =>
+          (selectionBounds value selected.captured context fuel).flatMap (λ result =>
+            match result with
+            | some (lower, upper) =>
+              if widen then subtype upper other context fuel else subtype other lower context fuel
+            | none => .yield false)
+        | _ => .yield false
+      combine true (follow self upper true) (follow upper self false)
 
 namespace Monotone
 
@@ -167,7 +133,6 @@ end Lp2lc.Active.DSub.CompilerTyp
 namespace Lp2lc.Active.DSub.AST
 
 open Lp2lc.Active.Util
-open CompilerTyp (pathAlias)
 
 private def andThen {T R : Type 2} (result : Rec.Outcome (Option T))
     (next : (value : T) → Rec.Outcome (Option R)) : Rec.Outcome (Option R) :=
@@ -175,21 +140,6 @@ private def andThen {T R : Type 2} (result : Rec.Outcome (Option T))
     match value with
     | some value => next value
     | none => .yield none)
-
-private def reference (context index : Nat) : Option (Val context) :=
-  match context with
-  | 0 =>
-    if index = 0 then some (.ref (IndexEncoding.SerialProxy.only (C := 0)) .same) else none
-  | n + 1 =>
-    if index = n + 1 then some (.ref (IndexEncoding.SerialProxy.only (C := n + 1)) .same) else
-      match reference n index with
-      | some (.ref carrier under) => some (.ref carrier (.lower under))
-      | _ => none
-
-private def capturePaths (bindings : NatBindings CompilerTyp) : NatBindings CompilerTyp :=
-  match bindings with
-  | .empty => .empty
-  | .set entries index _ => (capturePaths entries).set index (pathAlias index)
 
 /-- Re-express a type in the caller's context without evaluating terms.
 Selections use source values; references are terms and cannot occur in selections. -/
@@ -207,40 +157,15 @@ private def quoteType (self : CompilerTyp) (imports : Option ExeBindings)
         (Option.map (.TMember lower)))
   | fuel + 1, .TFn input output =>
     andThen (quoteType ⟨self.n, input, self.captured⟩ imports context target names targetCaptures fuel) (λ input =>
-      let fresh := max target (max (CompilerTyp.scopeBound self)
-        (max (CompilerTyp.bindingsBound context) (CompilerTyp.bindingsBound targetCaptures))) + 1
-      let alias := pathAlias fresh
-      (quoteType ⟨self.n + 1, output.apply .only, self.captured.set (self.n + 1) alias⟩ imports
-        (context.set fresh ⟨target, input, targetCaptures⟩) (target + 1)
-        (λ index => if index = fresh then target + 1 else names index)
-        (targetCaptures.set (target + 1) alias) fuel).map (Option.map (λ output => .TFn input (.mk (λ _ => output)))))
+      (quoteType ⟨self.n + 1, output.apply .only, self.captured⟩ imports context (target + 1)
+        names targetCaptures fuel).map (Option.map (λ output => .TFn input (.mk (λ _ => output)))))
   | fuel + 1, .TSel (.typeDef typ) =>
     quoteType ⟨self.n, typ, self.captured⟩ imports context target names targetCaptures fuel
-  | fuel + 1, .TSel (.ref _ under) =>
-    let index := under.sourceIndex.down
-    match self.captured index with
-    | some typ =>
-      andThen (CompilerTyp.memberBounds typ context fuel) (λ (lower, upper) =>
-        (CompilerTyp.combine false (lower.subtype upper context fuel) (upper.subtype lower context fuel)).flatMap
-          (λ accepted => if accepted then quoteType upper none context target names targetCaptures fuel
-            else .yield none))
-    | none =>
-      match imports with
-      | some bindings =>
-        match bindings index with
-        | some value => quoteType ⟨value.n, .TSel value.value, .empty⟩ (some value.captured)
-            context target names targetCaptures fuel
-        | none => .yield none
-      | none =>
-        match context index with
-        | some typ => andThen (CompilerTyp.memberBounds typ context fuel) (λ _ =>
-            .yield ((reference target (names index)).map .TSel))
-        | none => .yield none
   | _ + 1, .TSel _ => .yield none
 
 /-- Resolve annotations using runtime imports and the current hypothetical type bindings. -/
 private def resolveType {n} (self : Typ n) (bindings : CompilerBindings) : RecOpt (Typ n) :=
-  quoteType ⟨n, self, capturePaths bindings.types⟩ (some bindings.runtime) bindings.types n id .empty
+  quoteType ⟨n, self, .empty⟩ (some bindings.runtime) bindings.types n id .empty
 
 private def functionType (self : CompilerTyp) (context : NatBindings CompilerTyp) :
     RecOpt (Σ n, Typ n × Binder n .typ × NatBindings CompilerTyp) := λ fuel =>
@@ -272,7 +197,7 @@ def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Co
     | .val (.fnPrimitive output _) =>
       (resolveType (output.apply .only) (bindings.set (n + 1) ⟨n, .TLit, .empty⟩) fuel).map
         (Option.map (λ output => ⟨n, .TFn .TLit (.mk (λ _ => output)), .empty⟩))
-    | .val (.ref _ under) =>
+    | .ref _ under =>
       let found :=
         match bindings under.sourceIndex.down with
         | some (.inl typ) => .yield (some typ)
@@ -286,12 +211,7 @@ def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Co
           andThen (functionType fnType bindings.types fuel) (λ ⟨index, input, output, captured⟩ =>
             (argType.subtype ⟨index, input, captured⟩ bindings.types fuel).flatMap (λ accepted =>
               if accepted then
-                let replacement :=
-                  match arg with
-                  | .val (.ref _ under) =>
-                    if (bindings.types under.sourceIndex.down).isSome then pathAlias under.sourceIndex.down else argType
-                  | _ => argType
-                (quoteType ⟨index + 1, output.apply .only, captured.set (index + 1) replacement⟩ none
+                (quoteType ⟨index + 1, output.apply .only, captured.set (index + 1) argType⟩ none
                   bindings.types n id .empty fuel).map (Option.map (λ typ => ⟨n, typ, .empty⟩))
               else .yield none))))
 
