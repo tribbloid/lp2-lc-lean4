@@ -192,7 +192,7 @@ private def capturePaths (bindings : NatBindings CompilerTyp) : NatBindings Comp
   | .set entries index _ => (capturePaths entries).set index (pathAlias index)
 
 /-- Re-express a type in the caller's context without evaluating terms.
-An abstract member path stays stable; eliminating a captured path requires equivalent member bounds. -/
+Selections use source values; references are terms and cannot occur in selections. -/
 private def quoteType (self : CompilerTyp) (imports : Option ExeBindings)
     (context : NatBindings CompilerTyp) (target : Nat) (names : Nat → Nat)
     (targetCaptures : NatBindings CompilerTyp) : RecOpt (Typ target) := λ fuel =>
@@ -253,7 +253,7 @@ private def functionType (self : CompilerTyp) (context : NatBindings CompilerTyp
       functionType upper context fuel)
   | _ + 1, _ => .yield none
 
-/-- Infer from runtime imports and hypothetical types, retaining dependent stable paths.
+/-- Infer from runtime imports and hypothetical types.
 Primitive result annotations are inferred here; their implementations require validation at evaluation. -/
 def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt CompilerTyp := λ fuel =>
   match fuel with
