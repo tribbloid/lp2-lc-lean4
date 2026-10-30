@@ -42,7 +42,7 @@ inductive AST : Parameters → Label → UAST where
 /-- `new { type Type = T }` -/
 | typeDef {P} (typ : AST P .typ) : AST P .val
 
-| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val -- TOOD: this should be .trm
+| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val -- TODO: this should be .trm
 
 -- Upstream guarded forms are deferred, as in GDOT, until their typing rules are settled.
 -- | TLater {P} (typ : AST P .typ) : AST P .typ -- ▷ T

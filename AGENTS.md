@@ -108,7 +108,7 @@ Tests/AGENTS.md are not exhaustive.
 - Do not create Lean file with `.` in file name.
 - Do not import temporary Lean files in a module aggregator.
 - Do not import or modify Lean files in ".obsolete" directory.
-- Do not.`open` a namespace if it is defined in the same file.
+- Do not `open` a namespace if it is defined in the same file.
 - Do not use the following Lean keywords:
     - `forall` (use `∀`)
     - `exists` (use `∃`)
@@ -129,7 +129,7 @@ When working on an issue that contains multiple subtasks:
         - DO NOT:
             - make old algorithm much longer.
             - repeat (write the same concept twice or more) in schema definition, inductive/match case or algorithm implementation.
-            - proof anything, all introduced theorem should be assigned `sorry`
+            - prove anything; all introduced theorems should be assigned `sorry`
             - if any of the above is absolutely necessary, commit your work, then STOP IMMEDIATELY and ask for human approval.
         - Prefer laconic, succinct code.
         - Prefer predefined shared concept & abstraction.

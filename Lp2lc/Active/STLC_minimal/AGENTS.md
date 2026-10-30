@@ -3,7 +3,7 @@
 ## Machine-generated module
 
 Every Lean file in this directory is machine-generated. Do **NOT** edit them by hand: update the STLC sources or
-[the generator](../../../../.agent/script/gen_stlc_minimal.sh), then regenerate.
+[the generator](../../../.agent/script/gen_stlc_minimal.sh), then regenerate.
 
 ## Replaying the generation
 
