@@ -29,7 +29,7 @@ mutual
 inductive Evidence : Type where -- a thin wrapper of 2 "Typ", there is no co/contravariant evidence, which is just a function between 2 subtypeEv
 -- TODO: dependent subtypeEv? then maybe it can be merged into depFn?
 | subtypeEv (tUnder: Typ) (tOver: Typ) : Evidence -- subtype evidence, AKA coercion, `Under <:< Over`, notice that co/contravariance evidence are just higher-kind subtype evidence: `K[-T]` means `(X <:< Y) <:< (K[Y] <:< K[X])`
-| congruenceEv (tL: Typ) (tR: Typ) : Evidence -- congruence evidence, if `L === R` then all their inhabitats are equal (namely `∀ (l: L, r: R), l.T =:= r.T`), not in core DOT but a critical improvement.
+| congruenceEv (tL: Typ) (tR: Typ) : Evidence -- congruence evidence, if `L === R` then all their inhabitants are equal (namely `∀ (l: L, r: R), l.T =:= r.T`), not in core DOT but a critical improvement.
 
 /-- Core DOT type syntax, including dependent functions, records, paths, recursive binders, and bounds. -/
 inductive Typ : Type where
@@ -41,7 +41,7 @@ inductive Typ : Type where
 | depSelectTyp (base: Trm) (tK: Name) : Typ -- `base.K`
 -- TODO: this "body" definition assumes polymorphic output schema depending on input, is it true?
 | selfBinder (body : (this : I) → Typ) : Typ -- AKA Mu-type, body can refer to `this` (If de Bruijn serial is used instead of PHOAS, `this` would have serial "0")
-| singleton (v: Trm) : Typ -- path singleton type, v can only be a "var" (`x.type`) or "depSelectTrm" (`x.name.type`), otherwise compilation fail
+| singleton (v: Trm) : Typ -- path singleton type, v can only be a "var" (`x.type`) or "depSelectTrm" (`x.name.type`), otherwise compilation fails
 | and (tX: Typ) (tY: Typ) : Typ -- AKA intersection, `X & Y`
 | or (tX: Typ) (tY: Typ) : Typ -- AKA union, `X | Y`
 | top  : Typ -- `Any`
@@ -51,7 +51,7 @@ inductive Typ : Type where
 
 /-- Object member declarations used by type-level record/object shapes. -/
 inductive MemberDeclaration: Type where -- member of an object/record, this is only the type-level declaration, not definition/implementation
-| typeAlias (tName: Name) : MemberDeclaration -- `{type Name}`, it deliberately contain no type assigment or bound, they are evidence terms in the same object
+| typeAlias (tName: Name) : MemberDeclaration -- `{type Name}`, it deliberately contains no type assignment or bound, they are evidence terms in the same object
 | term (name: Option Name) (isImplicit: Bool) (annotation: Typ) : MemberDeclaration -- `{term name = Tm}`, they are multi-indexed after compilation: by name (if name exists) and by "tUnder" (if "isGiven" and is a "subtypeEv"")
 
 /-- Runtime member implementations paired with their type-level schema. -/
@@ -65,14 +65,14 @@ structure ObjectBody where
 
 /-- DOT term syntax for variables, values, selections, and applications. -/
 inductive Trm : Type where -- AKA expression, expr
-| var (symbol: I) (tOver: Typ) : Trm -- variable, `x`, almost always bounded & never free (In PHOAS it is imposible to construct wildcard "(symbol: I)"), `tOver` is the upper-bound of "x"
+| var (symbol: I) (tOver: Typ) : Trm -- variable, `x`, almost always bound & never free (In PHOAS it is impossible to construct wildcard "(symbol: I)"), `tOver` is the upper-bound of "x"
 | val (v : Val) : Trm -- value, AKA literal
 | depSelectTrm (base: Trm) (name: Name) : Trm  -- `object.name`
 | depApply (fn: Trm) (arg: Trm) : Trm -- application of (dependent?) function, execution requires constructing subtyping lattice from AST (which contains many "Evidence")
 
 -- { theoretically everything in this section should have type erased to be used in runtime, but this is not enforced
 /-- Runtime value syntax used as ANF evaluation results and arguments. -/
-inductive Val : Type where -- evaluation results and args of Atomic Normal Form (ANF), `Typ` CANNOT be carried! they are erased at runtime!
+inductive Val : Type where -- evaluation results and arguments of A-normal form (ANF); type erasure is not enforced by this mutual syntax
 | primitive (repr: ByteCode) : Val -- `3`, `3.2`, `true` etc. Type is always ".primitive"
 | evidence (ev: Evidence) : Val -- ev can be both type & value
 -- TODO: does it really need a body? Why can't it be merged into subtypeEv ?
@@ -94,7 +94,7 @@ end
 
 /-
 Semantics
-TODO: each constraint has 2 semantic representation:
+TODO: each constraint has 2 semantic representations:
 
 - embedded/definitional: type bindings are predicates for terms (Trm -> Prop), subtype
   evidences are higher-order predicates:

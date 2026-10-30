@@ -1,31 +1,30 @@
 
 Conventions:
 
-- PHOAS (parametric higher order abstract syntx), term/type indices are
+- PHOAS (parametric higher order abstract syntax), term/type indices are
   irrelevant, no de Bruijn serial or explicit variable name allowed
-- All typing/subtyping/variance relations are evidences (a special kind of
-  term)! These includes:
+- All typing/subtyping/variance relations are evidence (a special kind of
+  term)! This includes:
     - typing: t : T
     - subtyping: T1 <:< T2
     - variance for type constructors: [+I] => T[I], [-I] => T[I]
 - Extrinsic typing, in pCIC a type cannot be indexed by another type in the same
-  mutual block which makes intrinsic typing IMPOSSIBLE. Types still exists in
+  mutual block which makes intrinsic typing IMPOSSIBLE. Types still exist in
   term constructors, but they are evaluated much later.
-- Scala is purely functional, stateless with structural object/record, so:
-    - No let-binding! (exists in Wadler 2016 but was quickly removed), binding is
-    just monoFn/monoApply with side effects on the record of local variables
-    - Explicit Env/Context/Store is just a collection of all 3 kinds of evidences
+- The modeled Scala subset is purely functional and stateless, with structural objects/records, so:
+    - No let-binding! Binding uses `Val.depFn` and `Trm.depApply`.
+    - Explicit Env/Context/Store is just a collection of all 3 kinds of evidence
     (backed by Heyting lattice).
 
-    It's only an IR built from only a AST tree and nothing else, but it's an
+    It's an IR built from an AST and nothing else, but it's an
     important one. Without it we may never be able to infer the equality of
         - `type A; type B <: A`, and
         - `type B; type A >: B`
-- We haven't reach variance yet, so both Function and SubtypeEvidence are
+- We haven't reached variance yet, so both `Typ.depFn` and `Evidence.subtypeEv` are
   invariant (IRL they are 1-contravariant and 2-covariant, but we will get
   there)
-- Type erasure: Val do NOT carry any type information
-- Currying is always enabled, a binary operation is fold into curried form of 2
+- Runtime values use `Val`; its `evidence` constructor can still carry type information through `Evidence`.
+- Currying is always enabled, a binary operation is folded into curried form of 2
   unary operations.
 
 The most iconic part of PHOAS is the "(I : Type)" argument in every definition,
@@ -33,7 +32,7 @@ it is used whenever an unknown symbol is used to construct a new AST in Scala,
 e.g.
 
 ```scala
-def fn: Int => Int = { x => // <- introducing x (bounded variable)
+def fn: Int => Int = { x => // <- introducing x (bound variable)
   x + 1
 }
 
