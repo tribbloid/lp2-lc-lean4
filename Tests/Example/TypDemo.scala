@@ -6,6 +6,8 @@ object TypDemo extends Preamble {
 
   type `false` = Boolean
 
+  type tFalse = `false`
+
   type idFn = Boolean => Boolean
 
   type get1st = Boolean => Boolean => Boolean

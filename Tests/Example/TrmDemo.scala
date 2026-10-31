@@ -58,13 +58,49 @@ object TrmDemo extends Preamble {
   val primitiveTrueFnOnFalse: Boolean =
     primitiveTrueFn(vFalse)
 
+  val get1stOnFalse: Boolean => Boolean =
+    get1st(vFalse)
+
+  val higherOrderId: (Boolean => Boolean) => Boolean => Boolean =
+    f => f
+
+  val higherOrderApplication: Boolean =
+    higherOrderId(primitiveIdFn)(vFalse)
+
+  // Native Scala callbacks represent fnPrimitive; ordinary lambdas above represent fn.
+  val primitiveLiteralIdFn: Boolean => Boolean =
+    identity[Boolean]
+
+  val primitiveLiteralIdFnOnFalse: Boolean =
+    primitiveLiteralIdFn(vFalse)
+
+  val primitiveFirstFnOnTuple: Boolean = {
+    val primitive: Boolean => Boolean => Boolean = get1st
+    primitive(vFalse)(vTrue)
+  }
+
   object Malformed {
+
+    lazy val WrongTIn: Boolean =
+      primitiveIdFn(primitiveIdFn.asInstanceOf[Boolean])
+
+    lazy val ContainWrongTIn: Boolean =
+      WrongTIn.asInstanceOf[Boolean => Boolean](vFalse)
 
     lazy val applyLit1: Boolean =
       vFalse.asInstanceOf[Boolean => Boolean](vTrue)
 
     lazy val applyLit2: Boolean =
       idFn(vFalse).asInstanceOf[Boolean => Boolean](vTrue)
+
+    lazy val applyLitToApplication: Boolean =
+      vFalse.asInstanceOf[Boolean => Boolean](primitiveIdFnOnFalse)
+
+    lazy val wrongNestedTIn: Boolean => Boolean =
+      higherOrderId(get1st.asInstanceOf[Boolean => Boolean])
+
+    lazy val primitiveLiteralIdFnOnFn: Boolean =
+      primitiveLiteralIdFn(primitiveIdFn.asInstanceOf[Boolean])
 
     lazy val primitiveFalseAsFn: Boolean => Boolean =
       vFalse.asInstanceOf[Boolean => Boolean]
@@ -84,5 +120,39 @@ object TrmDemo extends Preamble {
     }
   }
 
-  object Corrupted {}
+  // Casts expose the primitive callbacks' broken result contracts; all failures stay lazy.
+  object Corrupted {
+
+    lazy val corruptApplication: Boolean => Boolean = {
+      val primitive: Boolean => (Boolean => Boolean) =
+        x => x.asInstanceOf[Boolean => Boolean]
+      primitive(vFalse)
+    }
+
+    lazy val corruptedCallee: Boolean =
+      corruptApplication(vTrue)
+
+    lazy val corruptedArgument: Boolean => Boolean =
+      higherOrderId(corruptApplication)
+
+    lazy val corruptedBody: Boolean => Boolean = {
+      val fn: Boolean => (Boolean => Boolean) = _ => corruptApplication
+      fn(vFalse)
+    }
+
+    lazy val illTypedPrimitiveResult: Boolean = {
+      val primitive: Boolean => Boolean = _ => {
+        val result: Boolean => Boolean =
+          _ => "bad".asInstanceOf[String => Boolean]("bad")
+        result.asInstanceOf[Boolean]
+      }
+      primitive(vFalse)
+    }
+
+    lazy val primitiveFnOnTuple: Boolean = {
+      val primitive: Boolean => Boolean => Boolean =
+        _ => _ => ValDemo.idFn.asInstanceOf[Boolean]
+      primitive(vFalse)(vTrue)
+    }
+  }
 }
