@@ -238,11 +238,12 @@ def ifSucceedMustSatisfy (condition: T -> Prop := λ _ => True) : Prop :=
   | .yield (some v) => condition v
   | _ => true
 
-/- TODO: this require an exact match of "fuelBudget"
-I propose to change to it into 2 arguments: "minFuel" and "maxFuel" (defaults value set to 50)
-The single condition is turned into a loop which tries all fuel in-between
-the result of previous fuelBudget can be cached to save computation
-This revision should also affect shouldFail -/
+/- TODO: search an inclusive fuel range
+Replace `fuelBudget` with `minFuel` and an optional `maxFuel` defaulting to 50 in
+`shouldYield` and `shouldFail`. Accept any matching result in the inclusive range,
+without requiring the preceding fuel value to run out. An inverted range fails.
+Evaluate each attempted fuel value at most once and stop at the first match.
+-/
 /--
 Whether `self` needs exactly `fuelBudget` fuel to evaluate to `expectedV`.
 
