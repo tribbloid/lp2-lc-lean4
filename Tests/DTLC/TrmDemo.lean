@@ -30,6 +30,7 @@ def astToJson {n l} (self : AST n l)
 def astBEq {n m l} (a : AST n l) (b : AST m l)
     (sigC : Nat → Json) (sigB : String → Json) (otherSigC : Nat → Json := sigC) : Bool :=
   astToJson a sigC sigB == astToJson b otherSigC sigB
+-- TODO: delete above, AST already have BEq instance
 
 open Lean (toJson)
 
