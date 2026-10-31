@@ -5,6 +5,7 @@
 - A Lean source directory may contain these files:
     - Lean source code:
         - `<module-name>Def.lean`: definitions, types, and supporting data structures.
+        - `Hash.lean`: runtime JSON signatures, signature equality, and hashing for the module's syntax.
         - `Proof.lean`: theorems and proofs.
         - `mod.lean`: module aggregator; active imports compile modules, while import comments record
               disabled modules.
