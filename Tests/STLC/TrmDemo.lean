@@ -6,14 +6,6 @@ namespace Tests.STLC.Sanity
 open Lp2lc.Active.STLC Lp2lc.Active.Util
 open Lean (toJson)
 
-def bFalse := "false"
-
-def bTrue := "true"
-
-def vFalse : Val := .lit bFalse
-
-def vTrue : Val := .lit bTrue
-
 deriving instance BEq for Return
 
 -- Compare returned syntax using binder offsets, without requiring expected runtime environments.

@@ -5,6 +5,14 @@ namespace Tests.DSub.Sanity
 open Lp2lc.Active.DSub
 open Lp2lc.Active.Util
 
+def bFalse := "false"
+
+def bTrue := "true"
+
+def vFalse : Val := .lit bFalse
+
+def vTrue : Val := .lit bTrue
+
 instance {n} : Coe (Val n) (Trm n) := ⟨Val.asTrm⟩
 
 instance {n} (self : Val n) : CoeT (Val n) self (Trm n) := ⟨Val.asTrm self⟩

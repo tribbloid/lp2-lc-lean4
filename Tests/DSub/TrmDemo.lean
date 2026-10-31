@@ -6,16 +6,6 @@ namespace Tests.DSub.Sanity
 open Lp2lc.Active.DSub Lp2lc.Active.Util
 open Lean (toJson)
 
-def bFalse := "false"
-
-def bTrue := "true"
-
-/- TODO: these test fixtures of type "Val" should be moved into "ValDemo.lean"
-This issue affects DSub, DTLC, STLC_minimal and STLC module -/
-def vFalse : Val := .lit bFalse
-
-def vTrue : Val := .lit bTrue
-
 deriving instance BEq for Return
 
 abbrev shouldYieldSyntax (computation : RecOpt (Return ExeVal)) (fuel : Nat) (expected : Return Val) : Prop :=
