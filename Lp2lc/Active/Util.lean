@@ -238,37 +238,20 @@ def ifSucceedMustSatisfy (condition: T -> Prop := λ _ => True) : Prop :=
   | .yield (some v) => condition v
   | _ => true
 
-/- TODO: search an inclusive fuel range
-Replace `fuelBudget` with `minFuel` and an optional `maxFuel` defaulting to 50 in
-`shouldYield` and `shouldFail`. Accept any matching result in the inclusive range,
-without requiring the preceding fuel value to run out. An inverted range fails.
-Evaluate each attempted fuel value at most once and stop at the first match.
--/
-/--
-Whether `self` needs exactly `fuelBudget` fuel to evaluate to `expectedV`.
+/-- Share the fuel search, evaluating each attempted fuel value once and stopping at the first match. -/
+private abbrev shouldFinish (condition : Option T → Bool) (minFuel maxFuel : Nat) : Prop :=
+  ((List.range' minFuel (maxFuel + 1 - minFuel)).any
+    (λ fuel => ((self fuel).map condition).getOrElse false)) = true
 
-It requires both that `fuelBudget` fuel yields `expectedV`, and that one less
-fuel runs out, pinning the exact fuel cost of the evaluation.
--/
-abbrev shouldYield (fuelBudget : Nat) (expectedV : T) [BEq T] : Prop :=
-  (match self fuelBudget, self (fuelBudget - 1) with
-    | .yield (some value), .outOfFuel => value == expectedV
-    | _, _ => false) = true
+/-- Whether `self` yields `expectedV` at any fuel from `minFuel` through `maxFuel` (default 50).
+An inverted range fails. -/
+abbrev shouldYield (minFuel : Nat) (expectedV : T) [BEq T] (maxFuel : Nat := 50) : Prop :=
+  self.shouldFinish (· == some expectedV) minFuel maxFuel
 
-example [BEq T] (n v) : Decidable (self.shouldYield n v) := inferInstance
-
-/--
-Whether `self` needs exactly `fuelBudget` fuel to deterministically fail.
-
-It requires both that `fuelBudget` fuel reaches `.yield none`, and that one less
-fuel runs out, pinning the exact fuel cost of the failure.
--/
-abbrev shouldFail (fuelBudget : Nat) : Prop :=
-  (match self fuelBudget, self (fuelBudget - 1) with
-    | .yield none, .outOfFuel => true
-    | _, _ => false) = true
-
-example (n) : Decidable (self.shouldFail n) := inferInstance
+/-- Whether `self` yields `none` at any fuel from `minFuel` through `maxFuel` (default 50).
+An inverted range fails. -/
+abbrev shouldFail (minFuel : Nat) (maxFuel : Nat := 50) : Prop :=
+  self.shouldFinish Option.isNone minFuel maxFuel
 
 end
 end RecOpt

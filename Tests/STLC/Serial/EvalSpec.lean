@@ -7,11 +7,11 @@ open Lp2lc.Active.Util Tests.STLC.Sanity
 
 variable {n} (trm : Trm n) (fuel : Nat)
 
-/-- Check the returned value and exact fuel cost. Invoke only as `trm.evalShouldYield fuel expected`. -/
+/-- Check the returned value with fuel from `fuel` through 50. Invoke only as `trm.evalShouldYield fuel expected`. -/
 private abbrev evalShouldYield (expected : Val) (bindings : ExeBindings := .empty) : Prop :=
   shouldYieldSyntax (trm.eval bindings) fuel (.some expected)
 
-/-- Check runtime corruption and exact fuel cost. Invoke only as `trm.evalShouldCrash fuel`. -/
+/-- Check runtime corruption with fuel from `fuel` through 50. Invoke only as `trm.evalShouldCrash fuel`. -/
 private abbrev evalShouldCrash (bindings : ExeBindings := .empty) : Prop :=
   shouldYieldSyntax (trm.eval bindings) fuel .corrupted
 
