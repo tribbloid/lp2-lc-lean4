@@ -60,6 +60,7 @@ def rename(source):
 
 
 roots = [
+    'Lp2lc.Active.STLC.Hash',
     'Lp2lc.Active.STLC.Serial.Infer',
     'Lp2lc.Active.STLC.Serial.__Eval_certifiedByInfer',
     'Tests.STLC.Serial.InferSpec',

@@ -21,15 +21,14 @@ private abbrev evalShouldCrash (bindings : ExeBindings := .empty) : Prop :=
   shouldYieldSyntax (erasedEval trm bindings) fuel .corrupted
 
 private abbrev evalShouldFail (bindings : ExeBindings := .empty) : Prop :=
-  (match hInfer : trm.infer bindings 8 with
+  (match (erasedEval trm bindings) fuel with
   | .yield none => true
-  | .yield (some _) =>
-    match trm.eval_certified bindings hInfer fuel with
-    | .yield (.some _) => panic! "The rejection test fixture is well-formed: inference and certified evaluation succeeded."
-    | .yield .corrupted =>
-      panic! "Inference accepted a rejection fixture; certified evaluation reported allowed runtime corruption. Check the fixture and primitive contract."
-    | .outOfFuel => panic! "Inference accepted a rejection fixture; certified evaluation exhausted its fuel. Soundness is inconclusive."
-  | .outOfFuel => panic! "Inference exhausted its fuel; rejection was not established.") = true
+  | .yield (some (.some _)) =>
+    panic! "The rejection test fixture is well-formed: inference and certified evaluation succeeded."
+  | .yield (some .corrupted) =>
+    panic! "Inference accepted a rejection fixture; certified evaluation reported allowed runtime corruption. Check the fixture and primitive contract."
+  | .outOfFuel =>
+    panic! "Inference or certified evaluation exhausted its fuel; rejection was not established. Soundness is inconclusive.") = true
 
 end Lp2lc.Active.STLC_minimal.AST
 
