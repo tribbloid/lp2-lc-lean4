@@ -16,12 +16,17 @@ end eval
 - Theorems, propositions, and properties should be excluded from tests.
 - Test assertions should use concise `#guard` expressions, sharing repeated setup and checks.
 
-## Scala syntax demo
+## Scala Syntax demo
 
-These files demonstrate Scala type system features. Each Lean AST should correspond to its Scala example:
+These files demonstrate Scala type system features. For each type system module (e.g. STLC or DSub).
+The mapping from Lean demo file structure to the Scala demo file structure must be maintained.
 
 - TrmDemo.lean ↔ TrmDemo.scala
 - TypDemo.lean ↔ TypDemo.scala
 - ValDemo.lean ↔ ValDemo.scala
+- `namespace Xxx` in Lean ↔ `object Xxx` in Scala
+
+Every new AST definition for testing should be added into both Lean demo and Scala demo (if not exists) at the
+same time:
 
 Prefer these Lean ASTs in other tests. Versions with and without type annotations are both valid.
