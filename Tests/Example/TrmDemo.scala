@@ -16,14 +16,8 @@ object TrmDemo extends Preamble {
 
   val vTrue: Boolean = true
 
-  val idFn: (v: Any) => v.type = // doesn't exist in STLC,
-    x => x
-
   val primitiveIdFn: Boolean => Boolean =
     x => x
-
-  val idFnOnFalse: Boolean =
-    idFn(vFalse)
 
   val primitiveIdFnOnFalse: Boolean =
     primitiveIdFn(vFalse)
@@ -39,18 +33,6 @@ object TrmDemo extends Preamble {
 
   val get2ndOnTuple: Boolean =
     get2nd(vFalse)(vTrue)
-
-  val apply1stOn2ndFn: ((v: Any) => v.type) => Boolean => Boolean =
-    f => x => f(x)
-
-  val apply1stOn2ndFnOnTuple: Boolean =
-    apply1stOn2ndFn(idFn)(vFalse)
-
-  val WrongTypeIdFnOnItself =
-    idFn(idFn)
-
-  val WrongTypeIdFnOnFalse2: Boolean =
-    WrongTypeIdFnOnItself(vFalse)
 
   val primitiveTrueFn: Boolean => Boolean =
     _ => true
@@ -91,7 +73,7 @@ object TrmDemo extends Preamble {
       vFalse.asInstanceOf[Boolean => Boolean](vTrue)
 
     lazy val applyLit2: Boolean =
-      idFn(vFalse).asInstanceOf[Boolean => Boolean](vTrue)
+      primitiveIdFn(vFalse).asInstanceOf[Boolean => Boolean](vTrue)
 
     lazy val applyLitToApplication: Boolean =
       vFalse.asInstanceOf[Boolean => Boolean](primitiveIdFnOnFalse)
@@ -101,23 +83,6 @@ object TrmDemo extends Preamble {
 
     lazy val primitiveLiteralIdFnOnFn: Boolean =
       primitiveLiteralIdFn(primitiveIdFn.asInstanceOf[Boolean])
-
-    lazy val primitiveFalseAsFn: Boolean => Boolean =
-      vFalse.asInstanceOf[Boolean => Boolean]
-
-    lazy val idFnAsPrimitive: Boolean =
-      idFn.asInstanceOf[Boolean]
-
-    lazy val binderIdentityCounterexample: Boolean = {
-      val fn: Boolean => Boolean => Boolean =
-        outer =>
-          inner =>
-            if (inner == outer)
-              inner
-            else
-              vFalse.asInstanceOf[Boolean => Boolean](vTrue)
-      fn(vFalse)(vTrue)
-    }
   }
 
   // Casts expose the primitive callbacks' broken result contracts; all failures stay lazy.
