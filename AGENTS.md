@@ -201,18 +201,20 @@ in one or more preceding git commits if necessary:
 
 ## Git (Version Control)
 
+- Your committed work should always be based on the current latest HEAD with no staged file.
 - Commit messages always have the following format:
 
 ```
-[{{LLM MODEL}}] {{Task Info}} {{Optional Subtask Category & Info}}
+[{{LLM MODEL}}] {{Task Name}} {{Optional Task/Subtask Category & Info}}
 ```
 
+- If worktree is used, the task name should be included in the branch path.
 - If a task contains multiple subtasks:
     - each subtask should have its own commit.
     - after each commit:
         - launch a subagent to review it for guardrail compliance.
 - If HEAD is detached, create a temporary branch and commit into it.
-- If the commit can't compile cleanly, include `[WIP]` in its message.
+- If the commit can't compile cleanly, prepend commit message with `[WIP]`.
 - Do not read files in other worktree or diverging branch.
 
 ## Planning
