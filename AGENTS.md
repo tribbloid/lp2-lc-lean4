@@ -201,7 +201,6 @@ in one or more preceding git commits if necessary:
 
 ## Git (Version Control)
 
-- Your committed work should always be based on the current latest HEAD with no staged file.
 - Commit messages always have the following format:
 
 ```
