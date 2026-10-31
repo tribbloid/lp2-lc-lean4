@@ -10,6 +10,8 @@ def bFalse := "false"
 
 def bTrue := "true"
 
+/- TODO: these test fixtures of type "Val" should be moved into "ValDemo.lean"
+This issue affects DSub, DTLC, STLC_minimal and STLC module -/
 def vFalse : Val := .lit bFalse
 
 def vTrue : Val := .lit bTrue
