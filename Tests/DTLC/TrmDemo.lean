@@ -1,37 +1,9 @@
-import Lean.Data.Json
+import «Lp2lc».Active.DTLC.Hash
 import «Tests».DTLC.ValDemo
 
 namespace Tests.DTLC.Sanity
 
 open Lp2lc.Active.DTLC Lp2lc.Active.Util
-open Lean (Json)
-
-@[match_pattern] private abbrev bind := @Pre.Binder.mk
-
-private def visit {P l} (self : Pre.AST P l) (get : ∀ index, P.I.getTRef index)
-    (sig : P.I.Index ⊕ P.B → Json) : Json :=
-  match self with
-  | .TLit => "primitive"
-  | .TFn tIn (bind output) =>
-    .arr #["fn", visit tIn get sig, visit (output (get P.Next.index)) get sig]
-  | .lit repr => .arr #["lit", sig (.inr repr)]
-  | .fn tIn (bind body) =>
-    .arr #["lam", visit (body (get P.Next.index)) get sig, visit tIn get sig]
-  | .fnPrimitive (bind output) _ => .arr #["primitiveFn", visit (output (get P.Next.index)) get sig]
-  | .val v => .arr #["val", visit v get sig]
-  | .apply fnTerm arg =>
-    .arr #["apply", visit fnTerm get sig, visit arg get sig]
-  | .ref _ under => .arr #["ref", sig (.inl under.sourceIndex)]
-
-def astToJson {n l} (self : AST n l)
-    (sigC : Nat → Json) (sigB : String → Json) : Json :=
-  visit self (λ _ => .only) (Sum.elim (sigC ∘ ULift.down) sigB)
-
-def astBEq {n m l} (a : AST n l) (b : AST m l)
-    (sigC : Nat → Json) (sigB : String → Json) (otherSigC : Nat → Json := sigC) : Bool :=
-  astToJson a sigC sigB == astToJson b otherSigC sigB
--- TODO: delete above, AST already have BEq instance
-
 open Lean (toJson)
 
 def bFalse := "false"

@@ -1,4 +1,5 @@
 import «Lp2lc».Active.DTLC.Serial.Infer
+import «Lp2lc».Active.DTLC.Hash
 import «Tests».DTLC.TrmDemo
 
 namespace Tests.DTLC.Sanity
