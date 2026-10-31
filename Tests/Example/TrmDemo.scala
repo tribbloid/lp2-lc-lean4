@@ -122,15 +122,16 @@ object TrmDemo extends Preamble {
   }
 
   object InDSub {
-    /* TODO: New syntax structure introduced by system DSub (e.g. TMember, TSel, typeDef) should have new examples here:
+    /* TODO: Add examples of DSub syntax (TMember, TSel, and typeDef) here.
 
-      for simplicity, all demo should use structural typing (where Scala class is denoted by a type member tag `type Type`)
+      Use structural types with a single member named `Type` instead of nominal Scala classes.
 
       Recommended workflow:
-        - add Scala example
-        - add corresponding Lean namespace & example in Tests/DSub/TrmDemo.lean (and TypDemo.lean)
-        - add unit tests for `Trm.infer` and `Trm.eval_certifiedByInfer` that are consistent with Scala compiler behaviour, break lean compilation if necessary.
-        - once finished, change the prefix of this issue from "TODO" to "DONE"
+        - Add Scala examples.
+        - Add matching Lean namespaces and examples in Tests/DSub/TrmDemo.lean and TypDemo.lean.
+        - Test `Trm.infer` and `Trm.eval_certified` from Serial/__Eval_certifiedByInfer.lean
+          against Scala compiler behaviour; let mismatches fail the Lean checks.
+        - Once finished, change this issue's prefix from "TODO" to "DONE".
      */
 
     object Malformed {}

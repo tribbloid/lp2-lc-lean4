@@ -6,7 +6,7 @@ namespace Lp2lc.Active.Util.RecOpt
 
 open Lp2lc.Active.DSub
 
-/-- Compare DSub's closure-wrapped inference result with the expected type syntax from DTLC. -/
+/-- Compare DSub's closure-wrapped inference result with the expected DSub type syntax. -/
 private abbrev shouldYieldType (computation : RecOpt CompilerTyp) (fuel : Nat) (expected : Typ) : Prop :=
   letI : BEq CompilerTyp :=
     ⟨λ first second => astBEq first.value second.value (λ _ => .null) (λ _ => .null)⟩
