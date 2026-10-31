@@ -1,52 +1,93 @@
 import «Lp2lc».Active.DSub.Serial.__Eval_certifiedByInfer
+import «Tests».DSub.TrmDemo
 
-namespace Tests.DSub.EvalCertifiedByInferSpec
+namespace Lp2lc.Active.DSub.AST
 
-open Lp2lc.Active.DSub Lp2lc.Active.Util
+open Lp2lc.Active.Util Tests.DSub.Sanity
 
-section eval_certified
+variable {n} (trm : Trm n) (fuel : Nat)
 
-private def erasedEval (trm : Trm) : RecOpt (Return ExeVal) :=
-  match hInfer : trm.infer .empty 32 with
+private def erasedEval (bindings : ExeBindings := .empty) (inferFuel : Nat := 8) : RecOpt (Return ExeVal) :=
+  match hInfer : trm.infer bindings inferFuel with
   | .yield (some _) => λ fuel =>
-      (trm.eval_certified .empty hInfer fuel).map (λ result => some (result.map Subtype.val))
+    (trm.eval_certified bindings hInfer fuel).map (λ result => some (result.map Subtype.val))
   | .yield none => λ _ => .yield none
   | .outOfFuel => λ _ => .outOfFuel
 
-private def literal : Trm := .val (.lit "ok")
-private def identity : Trm := .val (.fn .TLit (.mk (λ value => .ref value .same)))
-private def corruptApplication (n : Nat := 0) : Trm n :=
-  .apply (.val (.fnPrimitive (.mk (λ _ => .TBot)) .lit)) (.val (.lit "ok"))
+private abbrev evalShouldYield (expected : Val) (bindings : ExeBindings := .empty) : Prop :=
+  shouldYieldSyntax (erasedEval trm bindings) fuel (.some expected)
 
-private def literalAt (trm : Trm) (fuel : Nat) : Bool :=
-  match erasedEval trm fuel with
-  | .yield (some (.some ⟨_, .lit repr, _⟩)) => repr == "ok"
-  | _ => false
+private abbrev evalShouldCrash (bindings : ExeBindings := .empty) : Prop :=
+  shouldYieldSyntax (erasedEval trm bindings) fuel .corrupted
 
-private def corruptsAt (trm : Trm) (fuel : Nat) : Bool :=
-  match erasedEval trm fuel, erasedEval trm 64 with
-  | .yield (some .corrupted), .yield (some .corrupted) => true
-  | _, _ => false
+private abbrev evalShouldFail (bindings : ExeBindings := .empty) : Prop :=
+  (match hInfer : trm.infer bindings 8 with
+  | .yield none => true
+  | .yield (some _) =>
+    match trm.eval_certified bindings hInfer fuel with
+    | .yield (.some _) => panic! "The rejection test fixture is well-formed: inference and certified evaluation succeeded."
+    | .yield .corrupted =>
+      panic! "Inference accepted a rejection fixture; certified evaluation reported allowed runtime corruption. Check the fixture and primitive contract."
+    | .outOfFuel => panic! "Inference accepted a rejection fixture; certified evaluation exhausted its fuel. Soundness is inconclusive."
+  | .outOfFuel => panic! "Inference exhausted its fuel; rejection was not established.") = true
 
-#guard literalAt literal 1
-#guard literalAt (.apply identity literal) 8
-#guard literalAt (.apply (.val (.fnPrimitive (.mk (λ _ => .TLit)) .lit)) literal) 8
-#guard corruptsAt corruptApplication 3
-#guard corruptsAt (.apply corruptApplication literal) 4
-#guard corruptsAt (.apply identity corruptApplication) 4
-#guard corruptsAt (.apply (.val (.fn .TLit (.mk (λ _ => corruptApplication 1)))) literal) 8
+end Lp2lc.Active.DSub.AST
+
+namespace Tests.DSub.EvalCertifiedByInferSpec
+
+open Lp2lc.Active.DSub Tests.DSub.Sanity Tests.DSub.Sanity.Trm
+
+section eval_certified
+
+#guard vFalse.asTrm.evalShouldYield 1 vFalse
+
+#guard primitiveIdFn.evalShouldYield 1 Val.idFn
+
+#guard primitiveIdFnOnFalse.evalShouldYield 2 vFalse
 
 #guard
-  let primitive : Val := .fnPrimitive (.mk (λ _ => .TLit)) (λ _ => .typeDef (.TSel (.lit "bad")))
-  corruptsAt (.apply (.val primitive) literal) 4
+  let trm : Trm := .apply get2nd vFalse
+  trm.evalShouldYield 2 Val.idFn
 
-#guard match erasedEval corruptApplication 2 with
-  | .outOfFuel => true
-  | _ => false
+#guard get1stOnTuple.evalShouldYield 3 vFalse
 
-#guard match erasedEval (.apply literal literal) 8 with
-  | .yield none => true
-  | _ => false
+#guard get2ndOnTuple.evalShouldYield 3 vTrue
+
+#guard primitiveTrueFnOnFalse.evalShouldYield 2 vTrue
+
+#guard ¬ get1stOnFalse.evalShouldYield 2 Val.idFn
+
+#guard higherOrderApplication.evalShouldYield 4 vFalse
+
+#guard primitiveLiteralIdFnOnFalse.evalShouldYield 2 vFalse
+
+#guard primitiveFirstFnOnTuple.evalShouldYield 3 vFalse
+
+#guard Malformed.WrongTIn.evalShouldFail 3
+
+#guard Malformed.ContainWrongTIn.evalShouldFail 4
+
+#guard Malformed.applyLit1.evalShouldFail 2
+
+#guard Malformed.applyLit2.evalShouldFail 3
+
+#guard Malformed.applyLitToApplication.evalShouldFail 3
+
+#guard Malformed.wrongNestedTIn.evalShouldFail 4
+
+#guard Malformed.primitiveLiteralIdFnOnFn.evalShouldFail 2
+
+#guard Corrupted.corruptApplication.evalShouldCrash 2
+
+#guard Corrupted.corruptedCallee.evalShouldCrash 3
+
+#guard Corrupted.corruptedArgument.evalShouldCrash 3
+
+#guard Corrupted.corruptedBody.evalShouldCrash 3
+
+#guard Corrupted.illTypedPrimitiveResult.evalShouldCrash 4
+
+#guard Corrupted.primitiveFnOnTuple.evalShouldCrash 3
 
 end eval_certified
 
