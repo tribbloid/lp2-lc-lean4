@@ -165,9 +165,9 @@ When working on an issue that contains multiple subtasks:
 
 #### Definitions
 
-- Use camelCase for terms inhabiting `Type 0` or below (e.g. value, function, proposition, predicate, proof)
-- Use camelCase for case and constructor.
+- Use camelCase for terms inhabiting `Type 0` or below (e.g. value, function, proposition, predicate, proof).
 - Use PascalCase for terms inhabiting `Type 1` or above (e.g. type, type constructor, sort).
+- For inductive & match cases, camelCase is preferred but there are exceptions (e.g. for representing AST types of an object-language).
 
 #### Omission
 
