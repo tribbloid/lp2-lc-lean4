@@ -3,10 +3,10 @@ package Example
 import Example.Preamble
 
 /**
-  * All definitions in [[../**/**Demo.lean]] must be consistent with the following example in Scala (the
-  * object-language).
+  * Scala counterparts of the shared fixtures in Tests/STLC/TrmDemo.lean, Tests/STLC_minimal/TrmDemo.lean,
+  * Tests/DTLC/TrmDemo.lean, and Tests/DSub/TrmDemo.lean.
   *
-  * both terms and type hints should be consistent
+  * Both terms and type hints must stay consistent with those Lean demos.
   */
 object TrmDemo extends Preamble {
 

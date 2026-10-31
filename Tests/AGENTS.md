@@ -18,15 +18,21 @@ end eval
 
 ## Scala Syntax demo
 
-These files demonstrate Scala type system features. For each type system module (e.g. STLC or DSub).
-The mapping from Lean demo file structure to the Scala demo file structure must be maintained.
+The shared Scala files in `Tests/Example` demonstrate the AST fixtures in the mature STLC, STLC_minimal, DTLC,
+and DSub test modules. Maintain the following mapping from each module's Lean demos to these Scala demos:
 
 - TrmDemo.lean ↔ TrmDemo.scala
 - TypDemo.lean ↔ TypDemo.scala
 - ValDemo.lean ↔ ValDemo.scala
-- `namespace Xxx` in Lean ↔ `object Xxx` in Scala
+- The Lean `Trm`, `Typ`, and `Val` namespaces correspond to the Scala `TrmDemo`, `TypDemo`, and `ValDemo` objects.
+- Nested Lean namespaces (e.g. `Malformed` and `Corrupted`) correspond to identically named Scala objects.
 
-Every new AST definition for testing should be added into both Lean demo and Scala demo (if not exists) at the
-same time:
+Add every new test AST to its Lean demo and the corresponding Scala demo at the same time, preserving its name,
+term structure, and type annotation. Share a Scala example when the Lean modules use the same fixture. Runtime
+test helpers and disabled fixtures do not need Scala counterparts.
+
+Scala rejects the intentionally malformed ASTs and cannot express a primitive callback that breaks its declared
+result type without a cast. Keep these examples lazy and make the required casts explicit in `Malformed` or
+`Corrupted`, so loading the demo does not evaluate an expected failure.
 
 Prefer these Lean ASTs in other tests. Versions with and without type annotations are both valid.
