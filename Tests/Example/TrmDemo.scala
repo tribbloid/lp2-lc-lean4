@@ -58,17 +58,6 @@ object TrmDemo extends Preamble {
   val primitiveTrueFnOnFalse: Boolean =
     primitiveTrueFn(vFalse)
 
-  object TypeHinted {
-
-    val hintedFalse: Boolean =
-      false
-
-    val hintedIdFn: Boolean => Boolean = { x => x }
-
-    val hintedIdFnOnFalse: Boolean =
-      hintedIdFn(hintedFalse)
-  }
-
   object Malformed {
 
     lazy val applyLit1: Boolean =
@@ -85,12 +74,15 @@ object TrmDemo extends Preamble {
 
     lazy val binderIdentityCounterexample: Boolean = {
       val fn: Boolean => Boolean => Boolean =
-        outer => inner =>
-          if (inner == outer)
-            inner
-          else
-            vFalse.asInstanceOf[Boolean => Boolean](vTrue)
+        outer =>
+          inner =>
+            if (inner == outer)
+              inner
+            else
+              vFalse.asInstanceOf[Boolean => Boolean](vTrue)
       fn(vFalse)(vTrue)
     }
   }
+
+  object Corrupted {}
 }
