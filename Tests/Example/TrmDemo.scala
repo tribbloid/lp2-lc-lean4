@@ -122,7 +122,7 @@ object TrmDemo extends Preamble {
   }
 
   object InDSub {
-    /* TODO: Add examples of DSub syntax (TMember, TSel, and typeDef) here.
+    /* DONE: Add examples of DSub syntax (TMember, TSel, and typeDef) here.
 
       Use structural types with a single member named `Type` instead of nominal Scala classes.
 
@@ -134,6 +134,55 @@ object TrmDemo extends Preamble {
         - Once finished, change this issue's prefix from "TODO" to "DONE".
      */
 
-    object Malformed {}
+    val boolType: TypDemo.InDSub.boolType = new { type Type = Boolean }
+
+    val fnType: TypDemo.InDSub.fnType = new { type Type = Boolean => Boolean }
+
+    val boundedId: TypDemo.InDSub.boundedMember => TypDemo.InDSub.boundedMember =
+      x => x
+
+    val boundedApplication: TypDemo.InDSub.boundedMember =
+      boundedId(boolType)
+
+    val selectedId: TypDemo.InDSub.selectedBool => TypDemo.InDSub.selectedBool =
+      x => x
+
+    val selectedApplication: TypDemo.InDSub.selectedBool =
+      selectedId(vFalse)
+
+    val selectedFnId: TypDemo.InDSub.selectedFn => TypDemo.InDSub.selectedFn =
+      f => f
+
+    val selectedFnApplication: TypDemo.InDSub.selectedBool =
+      selectedFnId(primitiveIdFn)(vTrue)
+
+    object Malformed {
+
+      private inline def checkTyping(inline code: String, inline expected: Boolean): Unit =
+        inline if scala.compiletime.testing.typeChecks(code) != expected then
+          scala.compiletime.error("The DSub example has an unexpected type-checking result.")
+
+      checkTyping("boundedId(boolType); selectedId(vFalse); selectedFnId(primitiveIdFn)", true)
+
+      lazy val applyTypeDef: Boolean =
+        boolType.asInstanceOf[Boolean => Boolean](vFalse)
+
+      checkTyping("boolType(vFalse)", false)
+
+      lazy val wrongMember: TypDemo.InDSub.boundedMember =
+        boundedId(new { type Type = Any }.asInstanceOf[TypDemo.InDSub.boundedMember])
+
+      checkTyping("boundedId(new { type Type = Any })", false)
+
+      lazy val wrongSelectedArgument: TypDemo.InDSub.selectedBool =
+        selectedId(boolType.asInstanceOf[TypDemo.InDSub.selectedBool])
+
+      checkTyping("selectedId(boolType)", false)
+
+      lazy val wrongSelectedFnArgument: TypDemo.InDSub.selectedFn =
+        selectedFnId(vFalse.asInstanceOf[TypDemo.InDSub.selectedFn])
+
+      checkTyping("selectedFnId(vFalse)", false)
+    }
   }
 }

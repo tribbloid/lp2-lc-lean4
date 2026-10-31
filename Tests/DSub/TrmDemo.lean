@@ -1,5 +1,6 @@
 import «Lp2lc».Active.DSub.Hash
 import «Tests».DSub.ValDemo
+import «Tests».DSub.TypDemo
 
 namespace Tests.DSub.Sanity
 
@@ -115,6 +116,50 @@ def primitiveFnOnTuple : Trm :=
       (λ _ => .fnPrimitive (.mk (λ _ => .TLit)) (λ _ => Val.idFn)))) vFalse) vTrue
 
 end Corrupted
+
+namespace InDSub
+
+def boolType : Trm :=
+  .val (.typeDef .TLit)
+
+def fnType : Trm :=
+  .val (.typeDef Typ.idFn)
+
+def boundedId : Trm :=
+  .val (.fn Typ.InDSub.boundedMember (.mk (λ value => .ref value .same)))
+
+def boundedApplication : Trm :=
+  .apply boundedId boolType
+
+def selectedId : Trm :=
+  .val (.fn Typ.InDSub.selectedBool (.mk (λ value => .ref value .same)))
+
+def selectedApplication : Trm :=
+  .apply selectedId vFalse
+
+def selectedFnId : Trm :=
+  .val (.fn Typ.InDSub.selectedFn (.mk (λ value => .ref value .same)))
+
+def selectedFnApplication : Trm :=
+  .apply (.apply selectedFnId primitiveIdFn) vTrue
+
+namespace Malformed
+
+def applyTypeDef : Trm :=
+  .apply boolType vFalse
+
+def wrongMember : Trm :=
+  .apply boundedId (.val (.typeDef .TTop))
+
+def wrongSelectedArgument : Trm :=
+  .apply selectedId boolType
+
+def wrongSelectedFnArgument : Trm :=
+  .apply selectedFnId vFalse
+
+end Malformed
+
+end InDSub
 
 end Trm
 

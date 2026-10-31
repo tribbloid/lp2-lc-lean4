@@ -102,6 +102,39 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 end infer
 
+namespace InDSub
+
+section infer
+
+#guard boolType.infer.shouldYieldType 12 Typ.InDSub.boolType
+
+#guard fnType.infer.shouldYieldType 12 Typ.InDSub.fnType
+
+#guard boundedId.infer.shouldYieldType 12
+  (.TFn Typ.InDSub.boundedMember (.mk (λ _ => Typ.InDSub.boundedMember)))
+
+#guard boundedApplication.infer.shouldYieldType 12 Typ.InDSub.boundedMember
+
+#guard selectedId.infer.shouldYieldType 12 Typ.idFn
+
+#guard selectedApplication.infer.shouldYieldType 12 .TLit
+
+#guard selectedFnId.infer.shouldYieldType 12 Typ.apply1stOn2ndFn
+
+#guard selectedFnApplication.infer.shouldYieldType 12 .TLit
+
+#guard Malformed.applyTypeDef.infer.shouldFail 12
+
+#guard Malformed.wrongMember.infer.shouldFail 12
+
+#guard Malformed.wrongSelectedArgument.infer.shouldFail 12
+
+#guard Malformed.wrongSelectedFnArgument.infer.shouldFail 12
+
+end infer
+
+end InDSub
+
 end Trm
 
 end Sanity

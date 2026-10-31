@@ -91,4 +91,32 @@ section eval_certified
 
 end eval_certified
 
+namespace InDSub
+
+open Tests.DSub.Sanity.Trm.InDSub
+
+section eval_certified
+
+#guard boolType.evalShouldYield 16 (.typeDef .TLit)
+
+#guard fnType.evalShouldYield 16 (.typeDef Typ.idFn)
+
+#guard boundedApplication.evalShouldYield 16 (.typeDef .TLit)
+
+#guard selectedApplication.evalShouldYield 16 vFalse
+
+#guard selectedFnApplication.evalShouldYield 16 vTrue
+
+#guard Malformed.applyTypeDef.evalShouldFail 16
+
+#guard Malformed.wrongMember.evalShouldFail 16
+
+#guard Malformed.wrongSelectedArgument.evalShouldFail 16
+
+#guard Malformed.wrongSelectedFnArgument.evalShouldFail 16
+
+end eval_certified
+
+end InDSub
+
 end Tests.DSub.EvalCertifiedByInferSpec
