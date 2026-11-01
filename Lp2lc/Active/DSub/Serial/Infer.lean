@@ -25,7 +25,7 @@ private def freshIndex (self : CompilerTyp) (context : NatBindings CompilerTyp) 
 
 /-- An exact member records a reference substitution without replacing it by an abstract bound. -/
 private def memberAlias (index : Nat) : CompilerTyp :=
-  let selected : Typ index := .TSel (.ref (IndexEncoding.SerialProxy.only (C := index)) .same)
+  let selected : Typ index := .TSel (.ref IndexEncoding.SerialProxy.only .same)
   ⟨index, .TMember selected selected, .empty⟩
 
 /-- Combine fuel-bounded checks, retaining a conclusive conjunction or disjunction. -/
@@ -183,9 +183,9 @@ private def andThen {T R : Type 2} (result : Rec.Outcome (Option T))
 /-- Reconstruct only references whose source index exists in the target lexical context. -/
 private def reference (target index : Nat) : Option (Val target) :=
   match target with
-  | 0 => if index == 0 then some (.ref (IndexEncoding.SerialProxy.only (C := 0)) .same) else none
+  | 0 => if index == 0 then some (.ref IndexEncoding.SerialProxy.only .same) else none
   | target + 1 =>
-    if index == target + 1 then some (.ref (IndexEncoding.SerialProxy.only (C := target + 1)) .same) else
+    if index == target + 1 then some (.ref IndexEncoding.SerialProxy.only .same) else
       match reference target index with
       | some (.ref carrier under) => some (.ref carrier (.lower under))
       | _ => none
