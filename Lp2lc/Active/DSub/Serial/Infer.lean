@@ -240,7 +240,6 @@ private theorem quoteType (self : CompilerTyp) (imports : Option ExeBindings)
         CompilerTyp.Monotone.combine (result := value) false (hSubtype lower upper context) (hSubtype upper lower context)
       rcases self with ⟨n, typ, captured⟩
       cases typ
-      all_goals try cases ‹Trm n›
       all_goals try cases ‹Val n›
       all_goals simp only [AST.quoteType, andThen, Rec.Outcome.map, Rec.Outcome.flatMap] at h ⊢
       all_goals repeat' split at h
