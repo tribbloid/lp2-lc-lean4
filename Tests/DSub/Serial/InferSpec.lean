@@ -27,7 +27,7 @@ private def fnBindings : ExeBindings := (NatBindings.empty.set 0 ⟨0, Val.idFn,
 
 private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, vTrue, .empty⟩
 
-private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
+private def innerRef : Trm 1 := .val (.ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same)
 
 #guard vFalse.asTrm.infer.shouldYieldType 1 .TLit
 
@@ -88,7 +88,7 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 #guard Corrupted.primitiveFnOnTuple.infer.shouldYieldType 3 .TLit
 
 #guard (AST.infer (.val (.fn (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))))
-  (.mk (λ proxy => .ref proxy .same))) : Trm 7)).shouldYieldType 2
+  (.mk (λ proxy => .val (.ref proxy .same)))) : Trm 7)).shouldYieldType 2
   (.TFn (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit)))))) (.mk (λ _ => (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit)))))))))
 
 #guard (primitiveIdFn.infer fnBindings).shouldYieldType 2 (.TFn .TLit (.mk (λ _ => .TLit)))

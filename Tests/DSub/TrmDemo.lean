@@ -27,13 +27,13 @@ def get1st : Trm :=
   .val
     (.fn .TLit
       (.mk (λ first =>
-        .val (.fn .TLit (.mk (λ _ => .ref first (.lower .same)))))))
+        .val (.fn .TLit (.mk (λ _ => .val (.ref first (.lower .same))))))))
 
 def get2nd : Trm :=
   .val
     (.fn .TLit
       (.mk (λ _ =>
-        .val (.fn .TLit (.mk (λ second => .ref second .same))))))
+        .val (.fn .TLit (.mk (λ second => .val (.ref second .same)))))))
 
 def get1stOnTuple : Trm :=
   .apply (.apply get1st vFalse) vTrue
@@ -51,7 +51,7 @@ def get1stOnFalse : Trm :=
   .apply get1st vFalse
 
 def higherOrderId : Trm :=
-  .val (.fn (.TFn .TLit (.mk (λ _ => .TLit))) (.mk (λ fn => .ref fn .same)))
+  .val (.fn (.TFn .TLit (.mk (λ _ => .TLit))) (.mk (λ fn => .val (.ref fn .same))))
 
 def higherOrderApplication : Trm :=
   .apply (.apply higherOrderId primitiveIdFn) vFalse
@@ -126,19 +126,19 @@ def fnType : Trm :=
   .val (.typeDef Typ.idFn)
 
 def boundedId : Trm :=
-  .val (.fn Typ.InDSub.boundedMember (.mk (λ value => .ref value .same)))
+  .val (.fn Typ.InDSub.boundedMember (.mk (λ value => .val (.ref value .same))))
 
 def boundedApplication : Trm :=
   .apply boundedId boolType
 
 def selectedId : Trm :=
-  .val (.fn Typ.InDSub.selectedBool (.mk (λ value => .ref value .same)))
+  .val (.fn Typ.InDSub.selectedBool (.mk (λ value => .val (.ref value .same))))
 
 def selectedApplication : Trm :=
   .apply selectedId vFalse
 
 def selectedFnId : Trm :=
-  .val (.fn Typ.InDSub.selectedFn (.mk (λ value => .ref value .same)))
+  .val (.fn Typ.InDSub.selectedFn (.mk (λ value => .val (.ref value .same))))
 
 def selectedFnApplication : Trm :=
   .apply (.apply selectedFnId primitiveIdFn) vTrue

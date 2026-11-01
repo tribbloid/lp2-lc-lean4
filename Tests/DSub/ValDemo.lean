@@ -20,7 +20,7 @@ instance {n} (self : Val n) : CoeT (Val n) self (Trm n) := ⟨Val.asTrm self⟩
 namespace Val
 
 def idFn : AST 0 .val :=
-  .fn .TLit (.mk (λ proxy => .ref proxy .same))
+  .fn .TLit (.mk (λ proxy => .val (.ref proxy .same)))
 
 end Val
 

@@ -42,7 +42,8 @@ inductive AST : Parameters → Label → UAST where
 /-- `new { type Type = T }` -/
 | typeDef {P} (typ : AST P .typ) : AST P .val
 
-| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .trm
+/-- Lexical variables are source values and may occur in type selections. -/
+| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val
 
 -- Upstream guarded forms are deferred, as in GDOT, until their typing rules are settled.
 -- | TLater {P} (typ : AST P .typ) : AST P .typ -- ▷ T

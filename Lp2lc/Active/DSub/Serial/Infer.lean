@@ -197,7 +197,7 @@ def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Co
     | .val (.fnPrimitive output _) =>
       (resolveType (output.apply .only) (bindings.set (n + 1) ⟨n, .TLit, .empty⟩) fuel).map
         (Option.map (λ output => ⟨n, .TFn .TLit (.mk (λ _ => output)), .empty⟩))
-    | .ref _ under =>
+    | .val (.ref _ under) =>
       let found :=
         match bindings under.sourceIndex.down with
         | some (.inl typ) => .yield (some typ)
