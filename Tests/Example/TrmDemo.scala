@@ -187,12 +187,14 @@ object TrmDemo extends Preamble {
     }
 
     object Undecidable {
-      /* TODO: Add Scala examples illustrating undecidable subtyping.
+      /* DONE: Add Scala examples illustrating undecidable subtyping.
 
         Use the bounded-quantification encoding in Hu and Lhotak, Sections 4.2-4.7:
           https://plg.uwaterloo.ca/~olhotak/pubs/1908.05294.pdf
         and the cyclic-subtyping example in Mackay et al., Section 3.4:
           https://www.cs.cmu.edu/~aldrich/papers/popl20-decidable-DOT.pdf
+        Ghelli's nonterminating query is reproduced by Pierce in Section 6.2.3:
+          https://www.cs.cmu.edu/~rwh/students/pierce.pdf
 
         Finite examples illustrate the mechanisms; the papers supply the undecidability proofs.
         Recursive Wyvern examples go beyond DSub and must be identified as such.
@@ -200,6 +202,36 @@ object TrmDemo extends Preamble {
         Lean demo counterparts are deferred and must not be added in this task.
        */
 
+      import scala.compiletime.testing.typeChecks
+
+      // Bounded quantification selects x.Type from a structural member, as in Hu and Lhotak's encoding.
+      type negate[T] = (x: { type Type <: T }) => x.Type
+
+      // Ghelli's finite bound contains nested quantification and contravariant occurrences of selected types.
+      type expandingBound = (x: { type Type }) => negate[(y: { type Type <: x.Type }) => negate[y.Type]]
+
+      // Scala accepts an explicit adapter but rejects the direct dependent-function subtype comparison below.
+      val narrowNegation: negate[Any] => negate[Boolean] =
+        value => x => value(x)
+
+      val negateSubtypingAccepted: false = typeChecks("""
+        def narrow(value: negate[Any]): negate[Boolean] = value
+      """)
+
+      // Full F<: subtype search repeats the query with x1.Type in place of x0.Type, under x1.Type <: x0.Type,
+      // adding another binding each time. Scala 3.8.3 instead reports a type mismatch for this translation.
+      val expandingSubtypingAccepted: false = typeChecks("""
+        def expandingSubtyping(x0: { type Type <: expandingBound })(value: x0.Type):
+            (x1: { type Type <: x0.Type }) => negate[x1.Type] = value
+      """)
+
+      // Mackay et al., Section 3.4: direct self-reference, beyond DSub's nonrecursive objects.
+      // Scala 3.8.3 detects the illegal cyclic upper bound; this is distinct from Ghelli's growing context.
+      val cyclicBoundAccepted: false = typeChecks("""
+        object cyclic {
+          type Type <: cyclic.Type
+        }
+      """)
     }
   }
 }
