@@ -133,6 +133,21 @@ section infer
 
 end infer
 
+namespace Undecidable
+
+section infer
+
+-- Record current inference behavior, including the result-annotation checks in the fixtures.
+-- Even the Scala-accepted adapter is rejected: quoteType does not resolve bound-variable selections.
+-- This exact-fuel check distinguishes conclusive rejection from fuel exhaustion; it does not reach
+-- Ghelli's expanding subtype query. narrowNegation2 shares narrowNegation1's AST and check.
+#guard [(narrowNegation1, 4), (narrow, 4), (expandingSubtyping, 8)].all
+  (λ (term, fuel) => decide (term.infer.shouldFail fuel fuel))
+
+end infer
+
+end Undecidable
+
 end InDSub
 
 end Trm
