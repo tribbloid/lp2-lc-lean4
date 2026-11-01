@@ -37,8 +37,8 @@ inductive AST : Parameters → Label → UAST where
 
 /-- `{ type Type >: L <: U }` -/
 | TMember {P} (lower upper : AST P .typ) : AST P .typ
-/-- `Scala type: v.Type (stable v)` -/
-| TSel {P} (value : AST P .val) : AST P .typ
+/-- `Scala type: v.Type (stable reference or source value, represented as a term)` -/
+| TSel {P} (value : AST P .trm) : AST P .typ
 /-- `new { type Type = T }` -/
 | typeDef {P} (typ : AST P .typ) : AST P .val
 
