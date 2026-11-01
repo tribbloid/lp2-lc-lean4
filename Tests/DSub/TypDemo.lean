@@ -30,6 +30,31 @@ def fnType : Typ n :=
 def boundedMember : Typ n :=
   .TMember .TBot .TLit
 
+def lowerBoundedMember : Typ n :=
+  .TMember .TLit .TTop
+
+def abstractMember : Typ n :=
+  .TMember .TBot .TTop
+
+def dependentId : Typ n :=
+  .TFn abstractMember (.mk (λ x =>
+    .TFn (.TSel (.ref x .same)) (.mk (λ _ => .TSel (.ref x (.lower .same))))))
+
+def dependentType : Typ n :=
+  .TFn abstractMember (.mk (λ x =>
+    let selected := .TSel (.ref x .same)
+    .TMember selected selected))
+
+def capturedId : Typ n :=
+  .TFn abstractMember (.mk (λ x =>
+    .TFn abstractMember (.mk (λ _ =>
+      .TFn (.TSel (.ref x (.lower .same))) (.mk (λ _ =>
+        .TSel (.ref x (.lower (.lower .same)))))))))
+
+def boundedDependentId : Typ n :=
+  .TFn boundedMember (.mk (λ x =>
+    .TFn (.TSel (.ref x .same)) (.mk (λ _ => .TLit))))
+
 def selectedBool : Typ n :=
   .TSel (.typeDef .TLit)
 

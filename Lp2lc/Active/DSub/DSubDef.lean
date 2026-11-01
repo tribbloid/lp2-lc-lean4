@@ -23,6 +23,8 @@ inductive Binder : Parameters → Label → UAST where
 extension to System D that supports subtyping semilattice (defined through the only type member, because structural typing).
 
 The original System D_Sub (only supports subtyping tree) was deliberately omitted by gDOT article for being trivial
+
+By default, docstring of each case either starts with Scala code it encodes, or can be found in DTLC.
 -/
 inductive AST : Parameters → Label → UAST where
 | TTop {P} : AST P .typ
@@ -37,12 +39,13 @@ inductive AST : Parameters → Label → UAST where
 
 /-- `{ type Type >: L <: U }` -/
 | TMember {P} (lower upper : AST P .typ) : AST P .typ
-/-- `Scala type: v.Type (stable v)` -/
+/-- `value.Type`, Type selection of the sole type member -/
 | TSel {P} (value : AST P .val) : AST P .typ
 /-- `new { type Type = T }` -/
 | typeDef {P} (typ : AST P .typ) : AST P .val
 
-| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .trm
+/-- Lexical variables are source values and may occur in type selections. -/
+| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .val
 
 -- Upstream guarded forms are deferred, as in GDOT, until their typing rules are settled.
 -- | TLater {P} (typ : AST P .typ) : AST P .typ -- ▷ T

@@ -5,11 +5,17 @@ import «Tests».DSub.TrmDemo
 namespace Lp2lc.Active.Util.RecOpt
 
 open Lp2lc.Active.DSub
+open Lean (toJson)
 
 /-- Compare DSub's closure-wrapped inference result with the expected DSub type syntax. -/
 private abbrev shouldYieldType (computation : RecOpt CompilerTyp) (fuel : Nat) (expected : Typ) : Prop :=
+  let offset (n index : Nat) := toJson (Int.ofNat index - Int.ofNat n)
   letI : BEq CompilerTyp :=
-    ⟨λ first second => astBEq first.value second.value (λ _ => .null) (λ _ => .null)⟩
+    ⟨λ first second =>
+      match first.captured, second.captured with
+      | .empty, .empty =>
+        astBEq first.value second.value (offset first.n) toJson (offset second.n)
+      | _, _ => false⟩
   computation.shouldYield fuel ⟨0, expected, .empty⟩
 
 end Lp2lc.Active.Util.RecOpt
@@ -27,7 +33,7 @@ private def fnBindings : ExeBindings := (NatBindings.empty.set 0 ⟨0, Val.idFn,
 
 private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, vTrue, .empty⟩
 
-private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
+private def innerRef : Trm 1 := .val (.ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same)
 
 #guard vFalse.asTrm.infer.shouldYieldType 1 .TLit
 
@@ -88,7 +94,7 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 #guard Corrupted.primitiveFnOnTuple.infer.shouldYieldType 3 .TLit
 
 #guard (AST.infer (.val (.fn (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))))
-  (.mk (λ proxy => .ref proxy .same))) : Trm 7)).shouldYieldType 2
+  (.mk (λ proxy => .val (.ref proxy .same)))) : Trm 7)).shouldYieldType 2
   (.TFn (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit)))))) (.mk (λ _ => (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit)))))))))
 
 #guard (primitiveIdFn.infer fnBindings).shouldYieldType 2 (.TFn .TLit (.mk (λ _ => .TLit)))
@@ -105,6 +111,19 @@ end infer
 namespace InDSub
 
 section infer
+
+private def selectedReference {n} : Typ n :=
+  .TSel (.ref IndexEncoding.SerialProxy.only .same)
+
+private def capturedSelection (member : Typ) : CompilerTyp :=
+  ⟨0, selectedReference, NatBindings.empty.set 0 ⟨0, member, .empty⟩⟩
+
+private def importedSelection : Trm 1 :=
+  .val (.typeDef selectedReference)
+
+private def importedRuntime : ExeBindings :=
+  let own : ExeBindings := NatBindings.empty.set 0 ⟨0, .typeDef .TLit, .empty⟩
+  (NatBindings.empty.set 0 ⟨0, .typeDef Typ.idFn, .empty⟩).set 1 ⟨0, .typeDef selectedReference, own⟩
 
 #guard boolType.infer.shouldYieldType 12 Typ.InDSub.boolType
 
@@ -123,6 +142,39 @@ section infer
 
 #guard selectedFnApplication.infer.shouldYieldType 12 .TLit
 
+#guard [(dependentId, Typ.InDSub.dependentId), (dependentApplication, .TLit),
+  (dependentType, Typ.InDSub.dependentType), (dependentTypeApplication, Typ.InDSub.boolType),
+  (dependentFnTypeApplication, Typ.InDSub.fnType), (capturedId, Typ.InDSub.capturedId),
+  (capturedApplication, .TLit), (capturedFnApplication, Typ.idFn),
+  (boundedDependentId, Typ.InDSub.boundedDependentId), (boundedDependentApplication, .TLit)].all
+    (λ (term, typ) => decide (term.infer.shouldYieldType 16 typ))
+
+-- Identical source slots do not identify selections with different captured members.
+#guard
+  let literal : CompilerTyp := ⟨0, .TLit, .empty⟩
+  let boolSelection := capturedSelection Typ.InDSub.boolType
+  let bounded := capturedSelection Typ.InDSub.boundedMember
+  let lowerBounded := capturedSelection Typ.InDSub.lowerBoundedMember
+  let dependent : CompilerTyp := ⟨0, Typ.InDSub.dependentId, .empty⟩
+  let reindexed : CompilerTyp := ⟨7, Typ.InDSub.dependentId, .empty⟩
+  [(boolSelection, boolSelection, true), (boolSelection, capturedSelection Typ.InDSub.fnType, false),
+    (bounded, literal, true), (literal, bounded, false),
+    (literal, lowerBounded, true), (lowerBounded, literal, false),
+    (dependent, reindexed, true), (reindexed, dependent, true)].all
+      (λ (actual, upper, expected) =>
+        match actual.subtype upper .empty 32 with
+        | .yield accepted => accepted == expected
+        | .outOfFuel => false)
+
+-- An imported object's inner reference belongs to its own runtime, even when caller slots collide.
+#guard [(⟨importedRuntime, .empty⟩ : CompilerBindings),
+  ⟨importedRuntime, NatBindings.empty.set 0 ⟨0, Typ.InDSub.fnType, .empty⟩⟩].all
+    (λ bindings => decide ((importedSelection.infer bindings).shouldYieldType 16 Typ.InDSub.boolType))
+
+#guard [CompilerBindings.empty,
+  ⟨NatBindings.empty.set 1 ⟨0, .lit bFalse, .empty⟩, .empty⟩].all
+    (λ bindings => decide ((importedSelection.infer bindings).shouldFail 16))
+
 #guard Malformed.applyTypeDef.infer.shouldFail 12
 
 #guard Malformed.wrongMember.infer.shouldFail 12
@@ -131,7 +183,35 @@ section infer
 
 #guard Malformed.wrongSelectedFnArgument.infer.shouldFail 12
 
+#guard Malformed.wrongDependentArgument.infer.shouldFail 16
+
 end infer
+
+namespace Undecidable
+
+section typeSelection
+
+-- A function application is a term, not an operand of value selection.
+#check_failure (Pre.AST.TSel primitiveIdFnOnFalse)
+
+end typeSelection
+
+section infer
+
+-- Full dependent-function subtyping accepts the direct narrowing that Scala rejects.
+-- The identical narrowNegation2 fixture shares narrowNegation1's check.
+#guard [narrowNegation1, narrow].all (λ term => decide (term.infer.shouldYieldType 16
+  (.TFn (Negate .TTop) (.mk (λ _ => Negate .TLit)))))
+
+-- Finite checkpoints observe the expanding query exhausting fuel; they do not prove divergence.
+#guard [16, 128].all (λ fuel =>
+  match expandingSubtyping.infer .empty fuel with
+  | .outOfFuel => true
+  | .yield _ => false)
+
+end infer
+
+end Undecidable
 
 end InDSub
 

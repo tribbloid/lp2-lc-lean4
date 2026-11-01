@@ -27,13 +27,13 @@ def get1st : Trm :=
   .val
     (.fn .TLit
       (.mk (λ first =>
-        .val (.fn .TLit (.mk (λ _ => .ref first (.lower .same)))))))
+        .val (.fn .TLit (.mk (λ _ => .val (.ref first (.lower .same))))))))
 
 def get2nd : Trm :=
   .val
     (.fn .TLit
       (.mk (λ _ =>
-        .val (.fn .TLit (.mk (λ second => .ref second .same))))))
+        .val (.fn .TLit (.mk (λ second => .val (.ref second .same)))))))
 
 def get1stOnTuple : Trm :=
   .apply (.apply get1st vFalse) vTrue
@@ -51,7 +51,7 @@ def get1stOnFalse : Trm :=
   .apply get1st vFalse
 
 def higherOrderId : Trm :=
-  .val (.fn (.TFn .TLit (.mk (λ _ => .TLit))) (.mk (λ fn => .ref fn .same)))
+  .val (.fn (.TFn .TLit (.mk (λ _ => .TLit))) (.mk (λ fn => .val (.ref fn .same))))
 
 def higherOrderApplication : Trm :=
   .apply (.apply higherOrderId primitiveIdFn) vFalse
@@ -119,6 +119,13 @@ end Corrupted
 
 namespace InDSub
 
+variable {n : Nat}
+
+/-- Elaborate a Scala result annotation `term: T` as `(λ result: T => result)(term)`.
+This retains the required subtype check without adding a production ascription form. -/
+private def ascribed (term : Trm n) (typ : Typ n) : Trm n :=
+  .apply (.val (.fn typ (.mk (λ result => .val (.ref result .same))))) term
+
 def boolType : Trm :=
   .val (.typeDef .TLit)
 
@@ -126,22 +133,59 @@ def fnType : Trm :=
   .val (.typeDef Typ.idFn)
 
 def boundedId : Trm :=
-  .val (.fn Typ.InDSub.boundedMember (.mk (λ value => .ref value .same)))
+  .val (.fn Typ.InDSub.boundedMember (.mk (λ value => .val (.ref value .same))))
 
 def boundedApplication : Trm :=
   .apply boundedId boolType
 
 def selectedId : Trm :=
-  .val (.fn Typ.InDSub.selectedBool (.mk (λ value => .ref value .same)))
+  .val (.fn Typ.InDSub.selectedBool (.mk (λ value => .val (.ref value .same))))
 
 def selectedApplication : Trm :=
   .apply selectedId vFalse
 
 def selectedFnId : Trm :=
-  .val (.fn Typ.InDSub.selectedFn (.mk (λ value => .ref value .same)))
+  .val (.fn Typ.InDSub.selectedFn (.mk (λ value => .val (.ref value .same))))
 
 def selectedFnApplication : Trm :=
   .apply (.apply selectedFnId primitiveIdFn) vTrue
+
+def dependentId : Trm :=
+  .val (.fn Typ.InDSub.abstractMember (.mk (λ x =>
+    .val (.fn (.TSel (.ref x .same)) (.mk (λ value => .val (.ref value .same)))))))
+
+def dependentApplication : Trm :=
+  .apply (.apply dependentId boolType) vFalse
+
+def dependentType : Trm :=
+  .val (.fn Typ.InDSub.abstractMember (.mk (λ x =>
+    .val (.typeDef (.TSel (.ref x .same))))))
+
+def dependentTypeApplication : Trm :=
+  .apply dependentType boolType
+
+def dependentFnTypeApplication : Trm :=
+  .apply dependentType fnType
+
+def capturedId : Trm :=
+  .val (.fn Typ.InDSub.abstractMember (.mk (λ x =>
+    .val (.fn Typ.InDSub.abstractMember (.mk (λ _ =>
+      .val (.fn (.TSel (.ref x (.lower .same))) (.mk (λ value =>
+        .val (.ref value .same))))))))))
+
+def capturedApplication : Trm :=
+  .apply (.apply (.apply capturedId boolType) fnType) vFalse
+
+def capturedFnApplication : Trm :=
+  .apply (.apply (.apply capturedId fnType) boolType) primitiveIdFn
+
+def boundedDependentId : Trm :=
+  .val (.fn Typ.InDSub.boundedMember (.mk (λ x =>
+    .val (.fn (.TSel (.ref x .same)) (.mk (λ value =>
+      ascribed (.val (.ref value .same)) .TLit))))))
+
+def boundedDependentApplication : Trm :=
+  .apply (.apply boundedDependentId boolType) vTrue
 
 namespace Malformed
 
@@ -157,7 +201,48 @@ def wrongSelectedArgument : Trm :=
 def wrongSelectedFnArgument : Trm :=
   .apply selectedFnId vFalse
 
+def wrongDependentArgument : Trm :=
+  .apply (.apply dependentId boolType) boolType
+
 end Malformed
+
+namespace Undecidable
+
+/-- Scala's `Negate[T]`, with its lexical variable represented as a source value. -/
+def Negate (bound : Typ n) : Typ n :=
+  .TFn (.TMember .TBot bound) (.mk (λ x => .TSel (.ref x .same)))
+
+def ExpandingBound : Typ n :=
+  .TFn (.TMember .TBot .TTop) (.mk (λ x =>
+    Negate (.TFn (.TMember .TBot (.TSel (.ref x .same))) (.mk (λ y =>
+      Negate (.TSel (.ref y .same)))))))
+
+def narrowNegation1 : Trm :=
+  .val (.fn (Negate .TTop) (.mk (λ value =>
+    ascribed
+      (.val (.fn (.TMember .TBot .TLit) (.mk (λ x =>
+        .apply (.val (.ref value (.lower .same))) (.val (.ref x .same))))))
+      (Negate .TLit))))
+
+/-- Scala's method and function-valued versions have the same core AST. -/
+abbrev narrowNegation2 : Trm := narrowNegation1
+
+/-- The annotated method inside Scala's `narrowAccepted` compile-time probe. -/
+def narrow : Trm :=
+  .val (.fn (Negate .TTop) (.mk (λ value =>
+    ascribed (.val (.ref value .same)) (Negate .TLit))))
+
+/-- The annotated method inside Scala's `expandingSubtypingAccepted` probe. -/
+def expandingSubtyping : Trm :=
+  .val (.fn (.TMember .TBot ExpandingBound) (.mk (λ x0 =>
+    .val (.fn (.TSel (.ref x0 .same)) (.mk (λ value =>
+      ascribed (.val (.ref value .same))
+        (.TFn (.TMember .TBot (.TSel (.ref x0 (.lower .same)))) (.mk (λ x1 =>
+          Negate (.TSel (.ref x1 .same)))))))))))
+
+-- Scala's disabled cyclicBoundAccepted probe requires recursive objects, outside System DSub.
+
+end Undecidable
 
 end InDSub
 
