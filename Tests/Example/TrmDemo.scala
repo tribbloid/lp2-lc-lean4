@@ -6,8 +6,8 @@ import Example.Preamble
   * Scala counterparts of the shared fixtures in Tests/STLC/TrmDemo.lean, Tests/STLC_minimal/TrmDemo.lean,
   * Tests/DTLC/TrmDemo.lean, and Tests/DSub/TrmDemo.lean.
   *
-  * Shared terms and type hints must stay consistent with those Lean demos. InDSub.Undecidable contains
-  * Scala-only examples whose Lean counterparts are deferred.
+  * Shared terms and type hints must stay consistent with those Lean demos. InDSub.Undecidable contains Scala-only
+  * examples whose Lean counterparts are deferred.
   */
 object TrmDemo extends Preamble {
 
@@ -205,28 +205,35 @@ object TrmDemo extends Preamble {
       import scala.compiletime.testing.typeChecks
 
       // Bounded quantification selects x.Type from a structural member, as in Hu and Lhotak's encoding.
-      type negate[T] = (x: { type Type <: T }) => x.Type
-
-      // Ghelli's finite bound contains nested quantification and contravariant occurrences of selected types.
-      type expandingBound = (x: { type Type }) => negate[(y: { type Type <: x.Type }) => negate[y.Type]]
+      type Negate[T] = (x: { type Type <: T }) => x.Type
 
       // Scala accepts an explicit adapter but rejects the direct dependent-function subtype comparison below.
-      val narrowNegation: negate[Any] => negate[Boolean] =
-        value => x => value(x)
+      def narrowNegation1: Negate[Any] => Negate[Boolean] =
+        value => { x => value(x) }
 
-      val negateSubtypingAccepted: false = typeChecks("""
-        def narrow(value: negate[Any]): negate[Boolean] = value
+      def narrowNegation2(value: Negate[Any]): Negate[Boolean] = { x => value(x) }
+
+// [error] 216 |      def narrow(value: Negate[Any]): Negate[Boolean] = value
+// [error]     |                                                        ^^^^^
+// [error]     |    Found:    (value : Example.TrmDemo.InDSub.Undecidable.Negate[Any])
+// [error]     |    Required: Example.TrmDemo.InDSub.Undecidable.Negate[Boolean]
+      def narrowAccepted: false = typeChecks("""
+      def narrow(value: Negate[Any]): Negate[Boolean] = value
       """)
 
+      // Ghelli's finite bound contains nested quantification and contravariant occurrences of selected types.
+      type ExpandingBound = (x: { type Type }) => Negate[(y: { type Type <: x.Type }) => Negate[y.Type]]
+
       // Full F<: subtype search repeats the query with x1.Type in place of x0.Type, under x1.Type <: x0.Type,
-      // adding another binding each time. Scala 3.8.3 instead reports a type mismatch for this translation.
+      // adding another binding each time. Scala 3.10.0 instead reports a type mismatch for this translation.
       val expandingSubtypingAccepted: false = typeChecks("""
-        def expandingSubtyping(x0: { type Type <: expandingBound })(value: x0.Type):
-            (x1: { type Type <: x0.Type }) => negate[x1.Type] = value
+      def expandingSubtyping(x0: { type Type <: ExpandingBound })(value: x0.Type): (x1: {
+        type Type <: x0.Type
+      }) => Negate[x1.Type] = value
       """)
 
       // Mackay et al., Section 3.4: direct self-reference, beyond DSub's nonrecursive objects.
-      // Scala 3.8.3 detects the illegal cyclic upper bound; this is distinct from Ghelli's growing context.
+      // Scala 3.10.0 detects the illegal cyclic upper bound; this is distinct from Ghelli's growing context.
       val cyclicBoundAccepted: false = typeChecks("""
         object cyclic {
           type Type <: cyclic.Type
