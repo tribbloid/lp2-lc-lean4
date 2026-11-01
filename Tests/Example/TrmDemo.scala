@@ -3,11 +3,7 @@ package Example
 import Example.Preamble
 
 /**
-  * Scala counterparts of the shared fixtures in Tests/STLC/TrmDemo.lean, Tests/STLC_minimal/TrmDemo.lean,
-  * Tests/DTLC/TrmDemo.lean, and Tests/DSub/TrmDemo.lean.
-  *
-  * Shared terms and type hints must stay consistent with those Lean demos. InDSub.Undecidable contains Scala-only
-  * examples whose Lean counterparts are deferred.
+  * Shared syntax fixtures for ordinary functions, structural type members, and dependent function types.
   */
 object TrmDemo extends Preamble {
 
@@ -50,7 +46,7 @@ object TrmDemo extends Preamble {
   val higherOrderApplication: Boolean =
     higherOrderId(primitiveIdFn)(vFalse)
 
-  // Native Scala callbacks represent fnPrimitive; ordinary lambdas above represent fn.
+  // Native Scala callbacks represent primitive operations; ordinary lambdas above represent source functions.
   val primitiveLiteralIdFn: Boolean => Boolean =
     identity[Boolean]
 
@@ -123,16 +119,7 @@ object TrmDemo extends Preamble {
   }
 
   object InDSub {
-    /* DONE: Add examples of DSub syntax (TMember, TSel, and typeDef) here.
-
-      Use structural types with a single member named `Type` instead of nominal Scala classes.
-
-      Recommended workflow:
-        - Add Scala examples.
-        - Add matching Lean namespaces and examples in Tests/DSub/TrmDemo.lean and TypDemo.lean.
-        - Test `Trm.infer` and `Trm.eval_certified` from Serial/__Eval_certifiedByInfer.lean
-          against Scala compiler behaviour; let mismatches fail the Lean checks.
-        - Once finished, change this issue's prefix from "TODO" to "DONE".
+    /* DSub examples use structural types with a single member named `Type` instead of nominal Scala classes.
      */
 
     val boolType: TypDemo.InDSub.boolType = new { type Type = Boolean }
@@ -199,7 +186,6 @@ object TrmDemo extends Preamble {
         Finite examples illustrate the mechanisms; the papers supply the undecidability proofs.
         Recursive Wyvern examples go beyond DSub and must be identified as such.
         Compiler rejection is acceptable; it does not itself prove undecidability.
-        Lean demo counterparts are deferred and must not be added in this task.
        */
 
       import scala.compiletime.testing.typeChecks
@@ -213,10 +199,6 @@ object TrmDemo extends Preamble {
 
       def narrowNegation2(value: Negate[Any]): Negate[Boolean] = { x => value(x) }
 
-// [error] 216 |      def narrow(value: Negate[Any]): Negate[Boolean] = value
-// [error]     |                                                        ^^^^^
-// [error]     |    Found:    (value : Example.TrmDemo.InDSub.Undecidable.Negate[Any])
-// [error]     |    Required: Example.TrmDemo.InDSub.Undecidable.Negate[Boolean]
       def narrowAccepted: false = typeChecks("""
       def narrow(value: Negate[Any]): Negate[Boolean] = value
       """)
