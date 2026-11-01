@@ -133,6 +133,28 @@ section infer
 
 end infer
 
+namespace Undecidable
+
+section typeSelection
+
+-- A function application is a term, not an operand of value selection.
+#check_failure (Pre.AST.TSel primitiveIdFnOnFalse)
+
+end typeSelection
+
+section infer
+
+-- Record current behavior for the paired ASTs, retaining their result annotations.
+-- quoteType rejects variable selections before reaching the return-type subtype checks.
+-- Exact fuel distinguishes conclusive rejection from exhaustion. The identical
+-- narrowNegation2 fixture shares narrowNegation1's check.
+#guard [(narrowNegation1, 4), (narrow, 4), (expandingSubtyping, 8)].all
+  (λ (term, fuel) => decide (term.infer.shouldFail fuel fuel))
+
+end infer
+
+end Undecidable
+
 end InDSub
 
 end Trm

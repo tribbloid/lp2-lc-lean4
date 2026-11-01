@@ -159,6 +159,51 @@ def wrongSelectedFnArgument : Trm :=
 
 end Malformed
 
+namespace Undecidable
+
+variable {n : Nat}
+
+/-- Scala's `Negate[T]`, with its lexical variable represented as a source value. -/
+def Negate (bound : Typ n) : Typ n :=
+  .TFn (.TMember .TBot bound) (.mk (λ x => .TSel (.ref x .same)))
+
+def ExpandingBound : Typ n :=
+  .TFn (.TMember .TBot .TTop) (.mk (λ x =>
+    Negate (.TFn (.TMember .TBot (.TSel (.ref x .same))) (.mk (λ y =>
+      Negate (.TSel (.ref y .same)))))))
+
+/-- Elaborate a Scala result annotation `term: T` as `(λ result: T => result)(term)`.
+This retains the required subtype check without adding a production ascription form. -/
+private def ascribed (term : Trm n) (typ : Typ n) : Trm n :=
+  .apply (.val (.fn typ (.mk (λ result => .val (.ref result .same))))) term
+
+def narrowNegation1 : Trm :=
+  .val (.fn (Negate .TTop) (.mk (λ value =>
+    ascribed
+      (.val (.fn (.TMember .TBot .TLit) (.mk (λ x =>
+        .apply (.val (.ref value (.lower .same))) (.val (.ref x .same))))))
+      (Negate .TLit))))
+
+/-- Scala's method and function-valued versions have the same core AST. -/
+abbrev narrowNegation2 : Trm := narrowNegation1
+
+/-- The annotated method inside Scala's `narrowAccepted` compile-time probe. -/
+def narrow : Trm :=
+  .val (.fn (Negate .TTop) (.mk (λ value =>
+    ascribed (.val (.ref value .same)) (Negate .TLit))))
+
+/-- The annotated method inside Scala's `expandingSubtypingAccepted` probe. -/
+def expandingSubtyping : Trm :=
+  .val (.fn (.TMember .TBot ExpandingBound) (.mk (λ x0 =>
+    .val (.fn (.TSel (.ref x0 .same)) (.mk (λ value =>
+      ascribed (.val (.ref value .same))
+        (.TFn (.TMember .TBot (.TSel (.ref x0 (.lower .same)))) (.mk (λ x1 =>
+          Negate (.TSel (.ref x1 .same)))))))))))
+
+-- Scala's disabled cyclicBoundAccepted probe requires recursive objects, outside System DSub.
+
+end Undecidable
+
 end InDSub
 
 end Trm
