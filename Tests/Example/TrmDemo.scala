@@ -184,5 +184,19 @@ object TrmDemo extends Preamble {
 
       checkTyping("selectedFnId(vFalse)", false)
     }
+
+    object Undecidable {
+      /* TODO: System DSub is undecidable
+
+      as shown in articles:
+        - Undecidability of D<: and Its Decidable Fragments
+        - Decidable Subtyping for Path Dependent Types
+
+      the examples that shows undecidability should be added here, breaking compilation is acceptable
+
+      The Lean Demo counterparts don't need to be added and will be added later.
+       */
+
+    }
   }
 }
