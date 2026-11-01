@@ -29,11 +29,11 @@ private def memberBounds (self : CompilerTyp) (context : NatBindings CompilerTyp
       | none => .yield none)
   | _ + 1, _ => .yield none
 
-private def selectionBounds {n} (value : Trm n) (captured context : NatBindings CompilerTyp) :
+private def selectionBounds {n} (value : Val n) (captured context : NatBindings CompilerTyp) :
     RecOpt (CompilerTyp × CompilerTyp) := λ fuel =>
   match fuel, value with
   | 0, _ => .outOfFuel
-  | _ + 1, .val (.typeDef typ) => .yield (some (⟨n, typ, captured⟩, ⟨n, typ, captured⟩))
+  | _ + 1, .typeDef typ => .yield (some (⟨n, typ, captured⟩, ⟨n, typ, captured⟩))
   | _ + 1, _ => .yield none
 
 end
@@ -84,7 +84,7 @@ private theorem combine {left right left' right' : Rec.Outcome Bool} {result : B
 private theorem bounds (less more : Nat) (hFuel : less ≤ more) :
     (∀ self context result, memberBounds self context less = .yield result →
       memberBounds self context more = .yield result) ∧
-    (∀ {n} (value : Trm n) captured context result, selectionBounds value captured context less = .yield result →
+    (∀ {n} (value : Val n) captured context result, selectionBounds value captured context less = .yield result →
       selectionBounds value captured context more = .yield result) := by
   induction less generalizing more with
   | zero => constructor <;> intros <;> contradiction
@@ -159,7 +159,7 @@ private def quoteType (self : CompilerTyp) (imports : Option ExeBindings)
     andThen (quoteType ⟨self.n, input, self.captured⟩ imports context target names targetCaptures fuel) (λ input =>
       (quoteType ⟨self.n + 1, output.apply .only, self.captured⟩ imports context (target + 1)
         names targetCaptures fuel).map (Option.map (λ output => .TFn input (.mk (λ _ => output)))))
-  | fuel + 1, .TSel (.val (.typeDef typ)) =>
+  | fuel + 1, .TSel (.typeDef typ) =>
     quoteType ⟨self.n, typ, self.captured⟩ imports context target names targetCaptures fuel
   | _ + 1, .TSel _ => .yield none
 

@@ -31,10 +31,10 @@ def boundedMember : Typ n :=
   .TMember .TBot .TLit
 
 def selectedBool : Typ n :=
-  .TSel (.val (.typeDef .TLit))
+  .TSel (.typeDef .TLit)
 
 def selectedFn : Typ n :=
-  .TSel (.val (.typeDef idFn))
+  .TSel (.typeDef idFn)
 
 end InDSub
 
