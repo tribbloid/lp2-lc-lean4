@@ -119,6 +119,13 @@ end Corrupted
 
 namespace InDSub
 
+variable {n : Nat}
+
+/-- Elaborate a Scala result annotation `term: T` as `(λ result: T => result)(term)`.
+This retains the required subtype check without adding a production ascription form. -/
+private def ascribed (term : Trm n) (typ : Typ n) : Trm n :=
+  .apply (.val (.fn typ (.mk (λ result => .val (.ref result .same))))) term
+
 def boolType : Trm :=
   .val (.typeDef .TLit)
 
@@ -143,6 +150,43 @@ def selectedFnId : Trm :=
 def selectedFnApplication : Trm :=
   .apply (.apply selectedFnId primitiveIdFn) vTrue
 
+def dependentId : Trm :=
+  .val (.fn Typ.InDSub.abstractMember (.mk (λ x =>
+    .val (.fn (.TSel (.ref x .same)) (.mk (λ value => .val (.ref value .same)))))))
+
+def dependentApplication : Trm :=
+  .apply (.apply dependentId boolType) vFalse
+
+def dependentType : Trm :=
+  .val (.fn Typ.InDSub.abstractMember (.mk (λ x =>
+    .val (.typeDef (.TSel (.ref x .same))))))
+
+def dependentTypeApplication : Trm :=
+  .apply dependentType boolType
+
+def dependentFnTypeApplication : Trm :=
+  .apply dependentType fnType
+
+def capturedId : Trm :=
+  .val (.fn Typ.InDSub.abstractMember (.mk (λ x =>
+    .val (.fn Typ.InDSub.abstractMember (.mk (λ _ =>
+      .val (.fn (.TSel (.ref x (.lower .same))) (.mk (λ value =>
+        .val (.ref value .same))))))))))
+
+def capturedApplication : Trm :=
+  .apply (.apply (.apply capturedId boolType) fnType) vFalse
+
+def capturedFnApplication : Trm :=
+  .apply (.apply (.apply capturedId fnType) boolType) primitiveIdFn
+
+def boundedDependentId : Trm :=
+  .val (.fn Typ.InDSub.boundedMember (.mk (λ x =>
+    .val (.fn (.TSel (.ref x .same)) (.mk (λ value =>
+      ascribed (.val (.ref value .same)) .TLit))))))
+
+def boundedDependentApplication : Trm :=
+  .apply (.apply boundedDependentId boolType) vTrue
+
 namespace Malformed
 
 def applyTypeDef : Trm :=
@@ -157,11 +201,12 @@ def wrongSelectedArgument : Trm :=
 def wrongSelectedFnArgument : Trm :=
   .apply selectedFnId vFalse
 
+def wrongDependentArgument : Trm :=
+  .apply (.apply dependentId boolType) boolType
+
 end Malformed
 
 namespace Undecidable
-
-variable {n : Nat}
 
 /-- Scala's `Negate[T]`, with its lexical variable represented as a source value. -/
 def Negate (bound : Typ n) : Typ n :=
@@ -171,11 +216,6 @@ def ExpandingBound : Typ n :=
   .TFn (.TMember .TBot .TTop) (.mk (λ x =>
     Negate (.TFn (.TMember .TBot (.TSel (.ref x .same))) (.mk (λ y =>
       Negate (.TSel (.ref y .same)))))))
-
-/-- Elaborate a Scala result annotation `term: T` as `(λ result: T => result)(term)`.
-This retains the required subtype check without adding a production ascription form. -/
-private def ascribed (term : Trm n) (typ : Typ n) : Trm n :=
-  .apply (.val (.fn typ (.mk (λ result => .val (.ref result .same))))) term
 
 def narrowNegation1 : Trm :=
   .val (.fn (Negate .TTop) (.mk (λ value =>

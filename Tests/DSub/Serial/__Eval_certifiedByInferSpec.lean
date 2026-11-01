@@ -7,7 +7,7 @@ open Lp2lc.Active.Util Tests.DSub.Sanity
 
 variable {n} (trm : Trm n) (fuel : Nat)
 
-private def erasedEval (bindings : ExeBindings := .empty) (inferFuel : Nat := 8) : RecOpt (Return ExeVal) :=
+private def erasedEval (bindings : ExeBindings := .empty) (inferFuel : Nat := 64) : RecOpt (Return ExeVal) :=
   match hInfer : trm.infer bindings inferFuel with
   | .yield (some _) => λ fuel =>
     (trm.eval_certified bindings hInfer fuel).map (λ result => some (result.map Subtype.val))
@@ -21,7 +21,7 @@ private abbrev evalShouldCrash (bindings : ExeBindings := .empty) : Prop :=
   shouldYieldSyntax (erasedEval trm bindings) fuel .corrupted
 
 private abbrev evalShouldFail (bindings : ExeBindings := .empty) : Prop :=
-  (match hInfer : trm.infer bindings 8 with
+  (match hInfer : trm.infer bindings 64 with
   | .yield none => true
   | .yield (some _) =>
     match trm.eval_certified bindings hInfer fuel with
@@ -35,7 +35,7 @@ end Lp2lc.Active.DSub.AST
 
 namespace Tests.DSub.EvalCertifiedByInferSpec
 
-open Lp2lc.Active.DSub Tests.DSub.Sanity Tests.DSub.Sanity.Trm
+open Lp2lc.Active.DSub Lp2lc.Active.Util Tests.DSub.Sanity Tests.DSub.Sanity.Trm
 
 section eval_certified
 
@@ -97,6 +97,16 @@ open Tests.DSub.Sanity.Trm.InDSub
 
 section eval_certified
 
+private def aliasBindings (value : Val) : ExeBindings :=
+  let reference : Val := .ref IndexEncoding.SerialProxy.only .same
+  NatBindings.empty.set 0 ⟨0, reference, NatBindings.empty.set 0 ⟨0, value, .empty⟩⟩
+
+private def aliasCallee : Trm :=
+  .apply (.val (.ref IndexEncoding.SerialProxy.only .same)) vFalse
+
+private def aliasArgument : Trm :=
+  .apply primitiveIdFn (.val (.ref IndexEncoding.SerialProxy.only .same))
+
 #guard boolType.evalShouldYield 16 (.typeDef .TLit)
 
 #guard fnType.evalShouldYield 16 (.typeDef Typ.idFn)
@@ -107,6 +117,25 @@ section eval_certified
 
 #guard selectedFnApplication.evalShouldYield 16 vTrue
 
+#guard [dependentApplication, capturedApplication].all
+  (λ term => decide (term.evalShouldYield 32 vFalse))
+
+#guard boundedDependentApplication.evalShouldYield 32 vTrue
+
+#guard capturedFnApplication.evalShouldYield 32 Val.idFn
+
+-- Returned type definitions retain a reference in their source syntax and capture its member value.
+#guard [dependentTypeApplication, dependentFnTypeApplication].all (λ term => decide
+  (term.evalShouldYield 32 (.typeDef (.TSel (.ref IndexEncoding.SerialProxy.only .same)))))
+
+#guard [(aliasCallee, aliasBindings Val.idFn), (aliasArgument, aliasBindings vFalse)].all
+  (λ (term, bindings) => decide (term.evalShouldYield 32 vFalse bindings))
+
+#guard
+  match (aliasCallee.erasedEval (aliasBindings Val.idFn) 64) 2 with
+  | .outOfFuel => true
+  | .yield _ => false
+
 #guard Malformed.applyTypeDef.evalShouldFail 16
 
 #guard Malformed.wrongMember.evalShouldFail 16
@@ -114,6 +143,8 @@ section eval_certified
 #guard Malformed.wrongSelectedArgument.evalShouldFail 16
 
 #guard Malformed.wrongSelectedFnArgument.evalShouldFail 16
+
+#guard Malformed.wrongDependentArgument.evalShouldFail 32
 
 end eval_certified
 

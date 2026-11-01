@@ -144,6 +144,36 @@ object TrmDemo extends Preamble {
     val selectedFnApplication: TypDemo.InDSub.selectedBool =
       selectedFnId(primitiveIdFn)(vTrue)
 
+    val dependentId: TypDemo.InDSub.dependentId =
+      x => value => value
+
+    val dependentApplication: Boolean =
+      dependentId(boolType)(vFalse)
+
+    val dependentType: TypDemo.InDSub.dependentType =
+      x => new { type Type = x.Type }
+
+    val dependentTypeApplication: TypDemo.InDSub.boolType =
+      dependentType(boolType)
+
+    val dependentFnTypeApplication: TypDemo.InDSub.fnType =
+      dependentType(fnType)
+
+    val capturedId: TypDemo.InDSub.capturedId =
+      x => _y => value => value
+
+    val capturedApplication: Boolean =
+      capturedId(boolType)(fnType)(vFalse)
+
+    val capturedFnApplication: Boolean => Boolean =
+      capturedId(fnType)(boolType)(primitiveIdFn)
+
+    val boundedDependentId: TypDemo.InDSub.boundedDependentId =
+      x => value => value
+
+    val boundedDependentApplication: Boolean =
+      boundedDependentId(boolType)(vTrue)
+
     object Malformed {
 
       private inline def checkTyping(inline code: String, inline expected: Boolean): Unit =
@@ -171,6 +201,11 @@ object TrmDemo extends Preamble {
         selectedFnId(vFalse.asInstanceOf[TypDemo.InDSub.selectedFn])
 
       checkTyping("selectedFnId(vFalse)", false)
+
+      lazy val wrongDependentArgument: Boolean =
+        dependentId(boolType)(boolType.asInstanceOf[Boolean])
+
+      checkTyping("dependentId(boolType)(boolType)", false)
     }
 
     object Undecidable {
