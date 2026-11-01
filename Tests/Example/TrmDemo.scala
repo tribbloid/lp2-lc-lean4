@@ -6,7 +6,8 @@ import Example.Preamble
   * Scala counterparts of the shared fixtures in Tests/STLC/TrmDemo.lean, Tests/STLC_minimal/TrmDemo.lean,
   * Tests/DTLC/TrmDemo.lean, and Tests/DSub/TrmDemo.lean.
   *
-  * Both terms and type hints must stay consistent with those Lean demos.
+  * Shared terms and type hints must stay consistent with those Lean demos. InDSub.Undecidable contains
+  * Scala-only examples whose Lean counterparts are deferred.
   */
 object TrmDemo extends Preamble {
 
@@ -186,15 +187,17 @@ object TrmDemo extends Preamble {
     }
 
     object Undecidable {
-      /* TODO: System DSub is undecidable
+      /* TODO: Add Scala examples illustrating undecidable subtyping.
 
-      as shown in articles:
-        - Undecidability of D<: and Its Decidable Fragments
-        - Decidable Subtyping for Path Dependent Types
+        Use the bounded-quantification encoding in Hu and Lhotak, Sections 4.2-4.7:
+          https://plg.uwaterloo.ca/~olhotak/pubs/1908.05294.pdf
+        and the cyclic-subtyping example in Mackay et al., Section 3.4:
+          https://www.cs.cmu.edu/~aldrich/papers/popl20-decidable-DOT.pdf
 
-      the examples that shows undecidability should be added here, breaking compilation is acceptable
-
-      The Lean Demo counterparts don't need to be added and will be added later.
+        Finite examples illustrate the mechanisms; the papers supply the undecidability proofs.
+        Recursive Wyvern examples go beyond DSub and must be identified as such.
+        Compiler rejection is acceptable; it does not itself prove undecidability.
+        Lean demo counterparts are deferred and must not be added in this task.
        */
 
     }
