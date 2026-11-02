@@ -14,14 +14,14 @@ def check {n} (self : Trm n) (typ : Typ)
   | 0 => .yield False
   | fuel + 1 =>
     .yield (match self, typ with
-      | .val (.lit _), .TLit => True
-      | .val (.lit _), .TFn _ _
-      | .val (.fn _ _), .TLit => False
-      | .val (.fn annotation body), .TFn input output =>
+      | .pure (.val (.lit _)), .TLit => True
+      | .pure (.val (.lit _)), .TFn _ _
+      | .pure (.val (.fn _ _)), .TLit => False
+      | .pure (.val (.fn annotation body)), .TFn input output =>
         resolveType annotation = input ∧
           (check (body.apply .only) output
             (bindings.set (n + 1) ⟨n, annotation, .empty⟩) fuel).getOrElse False
-      | .ref _ under, _ =>
+      | .pure (.ref _ under), _ =>
         match bindings under.sourceIndex.down with
         | some (.inl ⟨_, bound, _⟩) => resolveType bound = typ
         | some (.inr ⟨_, value, captured⟩) => (check value.asTrm typ captured fuel).getOrElse False
@@ -29,7 +29,7 @@ def check {n} (self : Trm n) (typ : Typ)
       | .apply fn arg, _ =>
         ∃ input, (check fn (.TFn input typ) bindings fuel).getOrElse False ∧
           (check arg input bindings fuel).getOrElse False
-      | .val (.fnPrimitive tOut _), _ => typ = .TFn .TLit (resolveType tOut))
+      | .pure (.val (.fnPrimitive tOut _)), _ => typ = .TFn .TLit (resolveType tOut))
 
 def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ: Typ) : Prop :=
   (check self typ bindings fuel).getOrElse False
@@ -46,19 +46,21 @@ theorem termCheck {n} (trm : Trm n) (bindings : CompilerBindings)
     cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
     replace hFuel := Nat.le_of_succ_le_succ hFuel
     cases trm with
-    | val value =>
+    | pure value =>
       cases value with
-      | lit repr => cases typ <;> exact hType
-      | fnPrimitive tOut op => exact hType
-      | fn annotation body =>
-        cases typ <;> simp only [semType, check, Rec.Outcome.getOrElse] at hType ⊢
-        exact ⟨hType.1, ih _ _ hFuel hType.2⟩
-    | ref carrier under =>
-      simp only [semType, check, Rec.Outcome.getOrElse] at hType ⊢
-      cases hEntry : bindings under.sourceIndex.down <;>
-        (try cases ‹CompilerTyp ⊕ ExeVal›) <;> (try cases ‹CompilerTyp›) <;> (try cases ‹ExeVal›)
-      all_goals simp only [hEntry] at hType ⊢
-      all_goals first | exact hType | exact ih _ _ hFuel hType
+      | val value =>
+        cases value with
+        | lit repr => cases typ <;> exact hType
+        | fnPrimitive tOut op => exact hType
+        | fn annotation body =>
+          cases typ <;> simp only [semType, check, Rec.Outcome.getOrElse] at hType ⊢
+          exact ⟨hType.1, ih _ _ hFuel hType.2⟩
+      | ref carrier under =>
+        simp only [semType, check, Rec.Outcome.getOrElse] at hType ⊢
+        cases hEntry : bindings under.sourceIndex.down <;>
+          (try cases ‹CompilerTyp ⊕ ExeVal›) <;> (try cases ‹CompilerTyp›) <;> (try cases ‹ExeVal›)
+        all_goals simp only [hEntry] at hType ⊢
+        all_goals first | exact hType | exact ih _ _ hFuel hType
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := hType
       exact ⟨input, ih _ _ hFuel hFn, ih _ _ hFuel hArg⟩

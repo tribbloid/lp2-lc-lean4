@@ -16,7 +16,7 @@ def vTrue : Val := .lit bTrue
 namespace Val
 
 def idFn : AST 0 .val :=
-  .fn .TLit (.mk (λ proxy => .ref proxy .same))
+  .fn .TLit (.mk (λ proxy => .pure (.ref proxy .same)))
 
 end Val
 

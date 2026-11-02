@@ -13,8 +13,8 @@ def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt (Return 
   | fuel + 1 =>
     letI : DecidableEq (Option Typ) := Option.instDecidableEq (inst := typDecidableLE)
     match self with
-    | .val value => .yield (some (.some (.mk n value bindings)))
-    | .ref _ under => .yield ((bindings under.sourceIndex.down).map .some)
+    | .pure (.val value) => .yield (some (.some (.mk n value bindings)))
+    | .pure (.ref _ under) => .yield ((bindings under.sourceIndex.down).map .some)
     | .apply fn arg =>
       match eval fn bindings fuel, eval arg bindings fuel with
       | .yield (some (.some (.mk context (.fn tIn body) captured))), .yield (some (.some value)) =>
@@ -25,7 +25,7 @@ def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt (Return 
       | .yield (some (.some (.mk context (.fnPrimitive tOut op) captured))),
           .yield (some (.some (.mk _ (.lit repr) _))) =>
         let value := op repr
-        (infer (.val value) captured fuel).map (λ result =>
+        (infer (.pure (.val value)) captured fuel).map (λ result =>
           some (if result = some (resolveType tOut) then .some ⟨context, value, captured⟩ else .corrupted))
       | .yield (some .corrupted), .yield (some _)
       | .yield (some _), .yield (some .corrupted) => .yield (some .corrupted)
@@ -43,7 +43,7 @@ theorem termEval {n} (trm) (bindings : ExeBindings) :
   | succ fuel ih =>
     cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
     replace hFuel := Nat.le_of_succ_le_succ hFuel
-    cases trm <;> simp only [eval.eq_2, eval.eq_3, eval.eq_4] at hEval ⊢
+    cases trm <;> (try cases ‹Pure n›) <;> simp only [eval.eq_2, eval.eq_3, eval.eq_4] at hEval ⊢
     all_goals
       repeat split at hEval
       all_goals simp_all
@@ -57,7 +57,7 @@ theorem termEval {n} (trm) (bindings : ExeBindings) :
             simp only [hCheck, hMore, Rec.Outcome.flatMap] at hEval ⊢
             split at hEval <;> simp_all
         | rename_i context tOut op captured argContext repr argCaptured hFn hArg
-          cases hCheck : infer (.val (op repr)) captured fuel with
+          cases hCheck : infer (.pure (.val (op repr))) captured fuel with
           | outOfFuel => simp [hCheck, Rec.Outcome.map] at hEval
           | yield typ =>
             have hMore := termInfer _ _ _ _ _ hFuel hCheck

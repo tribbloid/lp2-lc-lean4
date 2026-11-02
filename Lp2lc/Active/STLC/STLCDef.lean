@@ -23,7 +23,7 @@ and substitutes receipts structurally; serial binders receive their sole context
 -/
 | private body {P} (body : P.Next.TRef → AST P.Next l) : Binder P l
 
-/-- Source type, value, and term syntax.
+/-- Source type, value, pure expression, and term syntax.
 
 `TLit` classifies primitive bytecode values and `TFn` classifies functions.
 -/
@@ -42,10 +42,12 @@ Technically not part of STLC. AKA PrimitiveOp -/
 | fnPrimitive {P} (tOut : AST P .typ) (op : P.B → AST P .val) : AST P .val
 
 /-- A lexical reference retains its source context and a witness reaching the current context. AKA variable, var -/
-| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .trm
+| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .pure
 
-/-- a thin wrapper of value as term -/
-| val {P} (v : AST P .val) : AST P .trm -- AKA literal
+/-- A value is a pure expression. -/
+| val {P} (v : AST P .val) : AST P .pure -- AKA literal
+/-- A pure expression is a term. -/
+| pure {P} (v : AST P .pure) : AST P .trm
 /-- `fn (arg)`, `fn` and `arg` should be converted to ANF first -/
 | apply {P} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
 

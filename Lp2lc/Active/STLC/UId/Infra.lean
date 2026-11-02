@@ -45,6 +45,7 @@ where
     | .fnPrimitive tOut op =>
       .fnPrimitive (visit tOut encoding map) (λ repr => visit (op repr) encoding map)
     | .val value => .val (visit value encoding map)
+    | .pure value => .pure (visit value encoding map)
     | .apply fnTerm arg => .apply (visit fnTerm encoding map) (visit arg encoding map)
     | .ref carrier under => .ref (map (mapRef under carrier encoding)) .same
 

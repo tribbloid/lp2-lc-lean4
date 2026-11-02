@@ -14,7 +14,7 @@ def eval {refs : UIdRefs} [build : BuildEnv refs] (self : refs.base.Trm) : RecOp
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val value => .yield (some (.some value))
+    | .pure (.val value) => .yield (some (.some value))
     | .apply fnTerm arg =>
       match eval fnTerm fuel, eval arg fuel with
       | .yield (some (.some (.fn _ body))), .yield (some (.some arg)) =>
@@ -22,13 +22,13 @@ def eval {refs : UIdRefs} [build : BuildEnv refs] (self : refs.base.Trm) : RecOp
       | .yield (some (.some (.fnPrimitive tOut op))), .yield (some (.some (.lit repr))) =>
         let value := op repr
         letI : DecidableEq (Option refs.base.Typ) := Option.instDecidableEq (inst := typDecidableLE)
-        (infer (.val value) fuel).map (λ result =>
+        (infer (.pure (.val value)) fuel).map (λ result =>
           some (if result = some tOut then .some value else .corrupted))
       | .yield (some .corrupted), .yield (some _)
       | .yield (some _), .yield (some .corrupted) => .yield (some .corrupted)
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
-    | .ref carrier under => .yield ((refs.uid2both.get (mapRef under carrier)).getRight?.map .some)
+    | .pure (.ref carrier under) => .yield ((refs.uid2both.get (mapRef under carrier)).getRight?.map .some)
 
 namespace Monotone
 
@@ -41,14 +41,14 @@ theorem termEval {refs : UIdRefs} [build : BuildEnv refs] (trm : refs.base.Trm) 
   | succ fuel ih =>
     cases more <;> try omega
     replace hFuel := Nat.le_of_succ_le_succ hFuel
-    cases trm <;> simp only [eval.eq_2, eval.eq_3, eval.eq_4] at hEval ⊢
+    cases trm <;> (try cases ‹Pre.AST _ .pure›) <;> simp only [eval.eq_2, eval.eq_3, eval.eq_4] at hEval ⊢
     all_goals
       repeat split at hEval
       all_goals simp_all
       all_goals
         first
         | rename_i tOut op repr hFn hArg
-          cases hCheck : infer (.val (op repr)) fuel with
+          cases hCheck : infer (.pure (.val (op repr))) fuel with
           | outOfFuel => simp [hCheck, Rec.Outcome.map] at hEval
           | yield typ =>
             have hMore := termInfer _ _ _ _ hFuel hCheck

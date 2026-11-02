@@ -24,8 +24,8 @@ def infer {refs : UIdRefs} [env : BuildEnv refs] (self : refs.base.Trm) : RecOpt
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val (.lit _) => .yield (some .TLit)
-    | .val (.fn tIn body) =>
+    | .pure (.val (.lit _)) => .yield (some .TLit)
+    | .pure (.val (.fn tIn body)) =>
       let receipt := env.uid2bothCtx.inv (.inl tIn)
       (infer (Root.Binder.apply body receipt) fuel).map (Option.map (.TFn tIn))
     | .apply fnTerm arg =>
@@ -34,11 +34,11 @@ def infer {refs : UIdRefs} [env : BuildEnv refs] (self : refs.base.Trm) : RecOpt
         .yield (if argTyp ≤ tIn then some tOut else none)
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
-    | .ref carrier under =>
+    | .pure (.ref carrier under) =>
       match refs.uid2both.get (mapRef under carrier) with
       | .inl typ => .yield (some typ)
       | .inr value => infer value.asTrm fuel
-    | .val (.fnPrimitive tOut _) => .yield (some (.TFn .TLit tOut))
+    | .pure (.val (.fnPrimitive tOut _)) => .yield (some (.TFn .TLit tOut))
 
 namespace Monotone
 
@@ -52,7 +52,7 @@ theorem termInfer (trm : refs.base.Trm) : trm.infer.Monotone := by
   | succ less ih =>
     cases more <;> try omega
     have le := Nat.le_of_succ_le_succ le
-    cases trm <;> try cases ‹Pre.AST _ .val›
+    cases trm <;> try cases ‹Pre.AST _ .pure› <;> try cases ‹Pre.AST _ .val›
     all_goals
       simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5, infer.eq_6, Rec.Outcome.map] at h ⊢
       repeat split at h

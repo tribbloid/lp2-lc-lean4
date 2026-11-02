@@ -25,7 +25,7 @@ private theorem inferApplySuccess {fn arg : Trm n}
 
 private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
     {entries : CompilerBindings} {fuel : Nat} {typ : Typ}
-    (hInfer : infer (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
+    (hInfer : infer (.pure (.val (.fn annotation body))) entries (fuel + 1) = .yield (some typ)) :
     let input := resolveType annotation
     ∃ output, infer (body.apply .only)
         (entries.set (n + 1) ⟨n, annotation, .empty⟩) fuel = .yield (some output) ∧
@@ -53,33 +53,35 @@ private theorem inferReplace {trm : Trm n}
   | zero => simp [infer] at hInfer
   | succ fuel ih =>
     cases trm with
-    | val value =>
+    | pure value =>
       cases value with
-      | lit repr =>
-        exact ⟨1, by simpa only [infer.eq_2] using hInfer⟩
-      | fnPrimitive tOut op =>
-        exact ⟨1, by simpa only [infer.eq_6] using hInfer⟩
-      | fn annotation body =>
-        obtain ⟨output, hBody, hType⟩ := inferFnSuccess hInfer
-        subst typ
-        obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
-          (by
-            intro index inputTyp
-            simp only [CompilerBindings.get, NatBindings.get]
-            split <;> first | exact id | exact hReplace index inputTyp) hBody
-        exact ⟨bodyFuel + 1, by simp only [infer.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
-    | ref carrier under =>
-      simp only [infer.eq_4] at hInfer
-      have hFit : entryFits (source under.sourceIndex.down) typ := by
-        split at hInfer <;> simp_all [entryFits]
-        all_goals first | exact ⟨fuel, hInfer⟩ | exact Option.some.inj hInfer
-      have hTarget := hReplace under.sourceIndex.down typ hFit
-      unfold entryFits at hTarget
-      split at hTarget
-      · contradiction
-      · exact ⟨1, by simp_all [infer.eq_4]⟩
-      · obtain ⟨valueFuel, hValue⟩ := hTarget
-        exact ⟨valueFuel + 1, by simp_all [infer.eq_4]⟩
+      | val value =>
+        cases value with
+        | lit repr =>
+          exact ⟨1, by simpa only [infer.eq_2] using hInfer⟩
+        | fnPrimitive tOut op =>
+          exact ⟨1, by simpa only [infer.eq_6] using hInfer⟩
+        | fn annotation body =>
+          obtain ⟨output, hBody, hType⟩ := inferFnSuccess hInfer
+          subst typ
+          obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
+            (by
+              intro index inputTyp
+              simp only [CompilerBindings.get, NatBindings.get]
+              split <;> first | exact id | exact hReplace index inputTyp) hBody
+          exact ⟨bodyFuel + 1, by simp only [infer.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
+      | ref carrier under =>
+        simp only [infer.eq_4] at hInfer
+        have hFit : entryFits (source under.sourceIndex.down) typ := by
+          split at hInfer <;> simp_all [entryFits]
+          all_goals first | exact ⟨fuel, hInfer⟩ | exact Option.some.inj hInfer
+        have hTarget := hReplace under.sourceIndex.down typ hFit
+        unfold entryFits at hTarget
+        split at hTarget
+        · contradiction
+        · exact ⟨1, by simp_all [infer.eq_4]⟩
+        · obtain ⟨valueFuel, hValue⟩ := hTarget
+          exact ⟨valueFuel + 1, by simp_all [infer.eq_4]⟩
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
@@ -106,12 +108,14 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
     | zero => simp [infer] at hInfer
     | succ inferFuel =>
       cases trm with
-      | val value => exact ⟨inferFuel + 1, hInfer⟩
-      | ref carrier under =>
-        cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeVal›)
-        all_goals simp only [infer, infer.eq_4, CompilerBindings.get, hBinding,
-          Option.map, eval.eq_3] at hInfer ⊢
-        all_goals first | cases hInfer | exact ⟨inferFuel, hInfer⟩
+      | pure value =>
+        cases value with
+        | val value => exact ⟨inferFuel + 1, hInfer⟩
+        | ref carrier under =>
+          cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeVal›)
+          all_goals simp only [infer, infer.eq_4, CompilerBindings.get, hBinding,
+            Option.map, eval.eq_3] at hInfer ⊢
+          all_goals first | cases hInfer | exact ⟨inferFuel, hInfer⟩
       | apply fn arg =>
         obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
         have hFnSafety := ih fn bindings inferFuel (.TFn input typ) hFn
@@ -182,7 +186,7 @@ theorem inferEvalSafety (trm : Trm n) (bindings : ExeBindings)
                   cases argValue with
                   | lit repr =>
                     simp only [eval.eq_4, hFnEval, hArgEval]
-                    cases hCheck : infer (.val (op repr)) captured evalFuel with
+                    cases hCheck : infer (.pure (.val (op repr))) captured evalFuel with
                     | outOfFuel => simp [Rec.Outcome.map]
                     | yield output =>
                       simp only [Rec.Outcome.map]

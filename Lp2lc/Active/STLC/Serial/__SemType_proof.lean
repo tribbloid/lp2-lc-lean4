@@ -29,34 +29,36 @@ private theorem checkReplace {trm : Trm n}
   | zero => simp [semType, check, Rec.Outcome.getOrElse] at hType
   | succ fuel ih =>
     cases trm with
-    | val value =>
+    | pure value =>
       cases value with
-      | lit repr => cases typ <;> exact ⟨1, hType⟩
-      | fnPrimitive tOut op => exact ⟨1, hType⟩
-      | fn annotation body =>
-        cases typ with
-        | TLit => exact False.elim hType
-        | TFn input output =>
-          obtain ⟨hInput, hBody⟩ := hType
-          obtain ⟨bodyFuel, hTarget⟩ := ih
-            (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
-            (by
-              intro index inputTyp
-              simp only [CompilerBindings.get, NatBindings.get]
-              split <;> first | exact id | exact hReplace index inputTyp) hBody
-          exact ⟨bodyFuel + 1, hInput, hTarget⟩
-    | ref carrier under =>
-      simp only [semType, check, Rec.Outcome.getOrElse] at hType
-      have hFit : entryFits (source under.sourceIndex.down) typ := by
-        split at hType <;> simp_all [entryFits]
-        all_goals first | exact ⟨fuel, hType⟩ | rfl
-      have hTarget := hReplace under.sourceIndex.down typ hFit
-      unfold entryFits at hTarget
-      split at hTarget
-      · contradiction
-      · exact ⟨1, by simp_all [semType, check, Rec.Outcome.getOrElse] <;> rfl⟩
-      · obtain ⟨valueFuel, hValue⟩ := hTarget
-        exact ⟨valueFuel + 1, by simp_all [semType, check, Rec.Outcome.getOrElse]⟩
+      | val value =>
+        cases value with
+        | lit repr => cases typ <;> exact ⟨1, hType⟩
+        | fnPrimitive tOut op => exact ⟨1, hType⟩
+        | fn annotation body =>
+          cases typ with
+          | TLit => exact False.elim hType
+          | TFn input output =>
+            obtain ⟨hInput, hBody⟩ := hType
+            obtain ⟨bodyFuel, hTarget⟩ := ih
+              (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
+              (by
+                intro index inputTyp
+                simp only [CompilerBindings.get, NatBindings.get]
+                split <;> first | exact id | exact hReplace index inputTyp) hBody
+            exact ⟨bodyFuel + 1, hInput, hTarget⟩
+      | ref carrier under =>
+        simp only [semType, check, Rec.Outcome.getOrElse] at hType
+        have hFit : entryFits (source under.sourceIndex.down) typ := by
+          split at hType <;> simp_all [entryFits]
+          all_goals first | exact ⟨fuel, hType⟩ | rfl
+        have hTarget := hReplace under.sourceIndex.down typ hFit
+        unfold entryFits at hTarget
+        split at hTarget
+        · contradiction
+        · exact ⟨1, by simp_all [semType, check, Rec.Outcome.getOrElse] <;> rfl⟩
+        · obtain ⟨valueFuel, hValue⟩ := hTarget
+          exact ⟨valueFuel + 1, by simp_all [semType, check, Rec.Outcome.getOrElse]⟩
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := hType
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
@@ -72,36 +74,38 @@ private theorem inferSuccessIff {n} (term : Trm n) (entries : CompilerBindings) 
   | zero => simp [infer, semType, check, Rec.Outcome.getOrElse]
   | succ budget ih =>
     cases term with
-    | val value =>
+    | pure value =>
       cases value with
-      | lit repr =>
-        cases ty <;> simp only [infer, semType, check, Rec.Outcome.getOrElse, Rec.Outcome.yield.injEq,
+      | val value =>
+        cases value with
+        | lit repr =>
+          cases ty <;> simp only [infer, semType, check, Rec.Outcome.getOrElse, Rec.Outcome.yield.injEq,
+            Option.some.injEq (α := Typ), reduceCtorEq]
+        | fnPrimitive tOut op =>
+          simp only [infer, semType, check, Rec.Outcome.getOrElse, Rec.Outcome.yield.injEq,
+            Option.some.injEq (α := Typ), eq_comm]
+        | fn annotation body =>
+          cases ty with
+          | TLit =>
+            simp only [infer.eq_3]
+            cases infer (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget <;>
+              (try cases ‹Option Typ›) <;>
+              simp only [semType, check, Rec.Outcome.getOrElse, Rec.Outcome.map, Option.map, Rec.Outcome.yield.injEq,
+                Option.some.injEq (α := Typ), reduceCtorEq]
+          | TFn input output =>
+            change (infer (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget).map _ = _ ↔
+              resolveType annotation = input ∧
+                semType (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget output
+            rw [← ih]
+            cases infer (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget <;>
+              (try cases ‹Option Typ›) <;>
+              simp only [Rec.Outcome.map, Option.map, Rec.Outcome.yield.injEq, Option.some.injEq (α := Typ),
+                Pre.AST.TFn.injEq, reduceCtorEq, and_false]
+      | ref carrier under =>
+        cases hEntry : entries under.sourceIndex.down <;>
+          (try cases ‹CompilerTyp ⊕ ExeVal›) <;> (try cases ‹CompilerTyp›) <;> (try cases ‹ExeVal›)
+        all_goals simp only [infer.eq_4, semType, check, Rec.Outcome.getOrElse, hEntry, ih, Rec.Outcome.yield.injEq,
           Option.some.injEq (α := Typ), reduceCtorEq]
-      | fnPrimitive tOut op =>
-        simp only [infer, semType, check, Rec.Outcome.getOrElse, Rec.Outcome.yield.injEq,
-          Option.some.injEq (α := Typ), eq_comm]
-      | fn annotation body =>
-        cases ty with
-        | TLit =>
-          simp only [infer.eq_3]
-          cases infer (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget <;>
-            (try cases ‹Option Typ›) <;>
-            simp only [semType, check, Rec.Outcome.getOrElse, Rec.Outcome.map, Option.map, Rec.Outcome.yield.injEq,
-              Option.some.injEq (α := Typ), reduceCtorEq]
-        | TFn input output =>
-          change (infer (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget).map _ = _ ↔
-            resolveType annotation = input ∧
-              semType (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget output
-          rw [← ih]
-          cases infer (body.apply .only) (entries.set (n + 1) ⟨n, annotation, .empty⟩) budget <;>
-            (try cases ‹Option Typ›) <;>
-            simp only [Rec.Outcome.map, Option.map, Rec.Outcome.yield.injEq, Option.some.injEq (α := Typ),
-              Pre.AST.TFn.injEq, reduceCtorEq, and_false]
-    | ref carrier under =>
-      cases hEntry : entries under.sourceIndex.down <;>
-        (try cases ‹CompilerTyp ⊕ ExeVal›) <;> (try cases ‹CompilerTyp›) <;> (try cases ‹ExeVal›)
-      all_goals simp only [infer.eq_4, semType, check, Rec.Outcome.getOrElse, hEntry, ih, Rec.Outcome.yield.injEq,
-        Option.some.injEq (α := Typ), reduceCtorEq]
     | apply fn arg =>
       change infer (.apply fn arg) entries (budget + 1) = _ ↔
         ∃ input, semType fn entries budget (.TFn input ty) ∧ semType arg entries budget input
@@ -134,12 +138,14 @@ theorem main (fuel : Nat) (typ : Typ)
     | zero => simp [semType, check, Rec.Outcome.getOrElse] at hType
     | succ fuel =>
       cases trm with
-      | val value => exact ⟨fuel + 1, hType⟩
-      | ref carrier under =>
-        cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeVal›)
-        all_goals simp only [semType, check, Rec.Outcome.getOrElse,
-          CompilerBindings.get, hBinding, Option.map, eval.eq_3] at hType ⊢
-        all_goals first | contradiction | exact ⟨fuel, hType⟩
+      | pure value =>
+        cases value with
+        | val value => exact ⟨fuel + 1, hType⟩
+        | ref carrier under =>
+          cases hBinding : bindings under.sourceIndex.down <;> (try cases ‹ExeVal›)
+          all_goals simp only [semType, check, Rec.Outcome.getOrElse,
+            CompilerBindings.get, hBinding, Option.map, eval.eq_3] at hType ⊢
+          all_goals first | contradiction | exact ⟨fuel, hType⟩
       | apply fn arg =>
         obtain ⟨input, hFn, hArg⟩ := hType
         have hFnSafety := ih fn bindings fuel (.TFn input typ) hFn
@@ -207,7 +213,7 @@ theorem main (fuel : Nat) (typ : Typ)
                   cases argValue with
                   | lit repr =>
                     simp only [eval.eq_4, hFnEval, hArgEval]
-                    cases hCheck : infer (.val (op repr)) captured evalFuel with
+                    cases hCheck : infer (.pure (.val (op repr))) captured evalFuel with
                     | outOfFuel => simp [Rec.Outcome.map]
                     | yield output =>
                       simp only [Rec.Outcome.map]

@@ -18,22 +18,22 @@ abbrev shouldYieldSyntax (computation : RecOpt (Return ExeVal)) (fuel : Nat) (ex
 namespace Trm
 
 def primitiveIdFn : Trm :=
-  .val Val.idFn
+  .pure (.val Val.idFn)
 
 def primitiveIdFnOnFalse : Trm :=
   .apply primitiveIdFn vFalse
 
 def get1st : Trm :=
-  .val
+  .pure (.val
     (.fn .TLit
       (.mk (λ first =>
-        .val (.fn .TLit (.mk (λ _ => .ref first (.lower .same)))))))
+        .pure (.val (.fn .TLit (.mk (λ _ => .pure (.ref first (.lower .same))))))))))
 
 def get2nd : Trm :=
-  .val
+  .pure (.val
     (.fn .TLit
       (.mk (λ _ =>
-        .val (.fn .TLit (.mk (λ second => .ref second .same))))))
+        .pure (.val (.fn .TLit (.mk (λ second => .pure (.ref second .same)))))))))
 
 def get1stOnTuple : Trm :=
   .apply (.apply get1st vFalse) vTrue
@@ -42,7 +42,7 @@ def get2ndOnTuple : Trm :=
   .apply (.apply get2nd vFalse) vTrue
 
 def primitiveTrueFn : Trm :=
-  .val (.fn .TLit (.mk (λ _ => .val (.lit bTrue))))
+  .pure (.val (.fn .TLit (.mk (λ _ => .pure (.val (.lit bTrue))))))
 
 def primitiveTrueFnOnFalse : Trm :=
   .apply primitiveTrueFn vFalse
@@ -51,21 +51,21 @@ def get1stOnFalse : Trm :=
   .apply get1st vFalse
 
 def higherOrderId : Trm :=
-  .val (.fn (.TFn .TLit .TLit) (.mk (λ fn => .ref fn .same)))
+  .pure (.val (.fn (.TFn .TLit .TLit) (.mk (λ fn => .pure (.ref fn .same)))))
 
 def higherOrderApplication : Trm :=
   .apply (.apply higherOrderId primitiveIdFn) vFalse
 
 def primitiveLiteralIdFn : Trm :=
-  .val (.fnPrimitive .TLit .lit)
+  .pure (.val (.fnPrimitive .TLit .lit))
 
 def primitiveLiteralIdFnOnFalse : Trm :=
   .apply primitiveLiteralIdFn vFalse
 
 def primitiveFirstFnOnTuple : Trm :=
   .apply
-    (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
-      (λ first => .fnPrimitive .TLit (λ _ => .lit first)))) vFalse) vTrue
+    (.apply (.pure (.val (.fnPrimitive (.TFn .TLit .TLit)
+      (λ first => .fnPrimitive .TLit (λ _ => .lit first))))) vFalse) vTrue
 
 -- Free-variable capture fixtures remain disabled while their test setup is simplified.
 -- namespace FreeVarCapture
@@ -74,13 +74,13 @@ def primitiveFirstFnOnTuple : Trm :=
 -- def freeSlot : IndexEncoding.SerialProxy 0 := .only
 
 -- def directRef : Trm 0 :=
---   .ref freeSlot .same
+--   .pure (.ref freeSlot .same)
 
 -- def capturedValue : Val :=
---   .fn .TLit (.mk (λ _ => .ref freeSlot (.lower .same)))
+--   .fn .TLit (.mk (λ _ => .pure (.ref freeSlot (.lower .same))))
 
 -- def capturedRef : Trm :=
---   .val capturedValue
+--   .pure (.val capturedValue)
 
 -- def capturedRefOnFalse : Trm :=
 --   .apply capturedRef vFalse
@@ -96,7 +96,7 @@ def primitiveFirstFnOnTuple : Trm :=
 --   .apply directRef vTrue
 
 -- def shiftedRef : Trm 3 :=
---   .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same))
+--   .pure (.ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only (.lower (.lower .same)))
 
 -- def capturedPrimitiveBindings : ExeBindings :=
 --   NatBindings.empty.set 0 ⟨0, primitive, freeBindings⟩
@@ -131,7 +131,7 @@ end Malformed
 namespace Corrupted
 
 def corruptApplication (n : Nat := 0) : Trm n :=
-  .apply (.val (.fnPrimitive (.TFn .TLit .TLit) .lit)) (.val (.lit bFalse))
+  .apply (.pure (.val (.fnPrimitive (.TFn .TLit .TLit) .lit))) (.pure (.val (.lit bFalse)))
 
 def corruptedCallee : Trm :=
   .apply corruptApplication vTrue
@@ -140,17 +140,17 @@ def corruptedArgument : Trm :=
   .apply higherOrderId corruptApplication
 
 def corruptedBody : Trm :=
-  .apply (.val (.fn .TLit (.mk (λ _ => corruptApplication 1)))) vFalse
+  .apply (.pure (.val (.fn .TLit (.mk (λ _ => corruptApplication 1))))) vFalse
 
 def illTypedPrimitiveResult : Trm :=
-  .apply (.val (.fnPrimitive .TLit
-    (λ _ => .fn .TLit (.mk (λ _ => .apply (.val (.lit "bad")) (.val (.lit "bad"))))))) vFalse
+  .apply (.pure (.val (.fnPrimitive .TLit
+    (λ _ => .fn .TLit (.mk (λ _ => .apply (.pure (.val (.lit "bad"))) (.pure (.val (.lit "bad"))))))))) vFalse
 
 -- The declared curried type is valid; the callback violates its final literal result type at runtime.
 def primitiveFnOnTuple : Trm :=
   .apply
-    (.apply (.val (.fnPrimitive (.TFn .TLit .TLit)
-      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn)))) vFalse) vTrue
+    (.apply (.pure (.val (.fnPrimitive (.TFn .TLit .TLit)
+      (λ _ => .fnPrimitive .TLit (λ _ => Val.idFn))))) vFalse) vTrue
 
 end Corrupted
 

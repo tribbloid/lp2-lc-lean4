@@ -4,7 +4,7 @@ import «Lp2lc».Active.STLC.STLCDef
 # UId syntax with structural binder slots
 
 `Root` fixes the carrier of free reference receipts. Its syntax uses `String` literals and the
-`FreeOrUnit` encoding, with separate `.typ`, `.val`, and `.trm` families in the shared `Pre.AST`.
+`FreeOrUnit` encoding, with separate `.typ`, `.val`, `.pure`, and `.trm` families in the shared `Pre.AST`.
 
 For an outer carrier `C`, a binder extends references to `C ⊕ Unit`: `.inl outer` retains an outer
 reference, and `.inr ()` denotes the newest bound slot. Nested binders repeat this extension, giving
@@ -40,12 +40,13 @@ nonuniform function. Instantiate UId syntax with `Root.Binder.apply`.
 -/
 abbrev Binder (l : Label) := Pre.Binder this.P l
 abbrev Val := this.AST .val
+abbrev Pure := this.AST .pure
 abbrev Trm := this.AST .trm
 abbrev Typ := this.AST .typ
 
 end
 
-def Val.asTrm {this : Root} (v : this.Val) : this.Trm := .val v
+def Val.asTrm {this : Root} (v : this.Val) : this.Trm := .pure (.val v)
 end Root
 
 end Lp2lc.Active.STLC
