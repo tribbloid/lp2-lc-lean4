@@ -39,8 +39,8 @@ inductive AST : Parameters → Label → UAST where
 
 /-- `{ type Type >: L <: U }` -/
 | TMember {P} (lower upper : AST P .typ) : AST P .typ
-/-- `value.Type`, Type selection of the sole type member -/
-| TSel {P} (value : AST P .val) : AST P .typ
+/-- `value.Type`, selecting the sole type member of a stable pure expression. -/
+| TSel {P} (value : AST P .pure) : AST P .typ
 /-- `new { type Type = T }` -/
 | typeDef {P} (typ : AST P .typ) : AST P .val
 
@@ -55,7 +55,7 @@ Fix the remainder of the DSub module to adapt to it. Don't change other modules 
 
 This change should affect every weaker type systems in "Active" module: STLC, DTLC, DSub. STLC_minimal module should be regenerated.
 -/
-/-- Lexical variables are source values and may occur in type selections. -/
+/-- Lexical references are pure expressions and may occur in type selections. -/
 | ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .pure
 
 -- Upstream guarded forms are deferred, as in GDOT, until their typing rules are settled.

@@ -29,6 +29,7 @@ private def visit {P l} (self : Pre.AST P l) (get : ∀ index, P.I.getTRef index
   | .typeDef typ => .arr #["typeDef", visit typ get sig]
   | .ref _ under => .arr #["ref", sig (.inl under.sourceIndex)]
   | .val value => .arr #["val", visit value get sig]
+  | .pure value => .arr #["pure", visit value get sig]
   | .apply fnTerm arg =>
     .arr #["apply", visit fnTerm get sig, visit arg get sig]
 

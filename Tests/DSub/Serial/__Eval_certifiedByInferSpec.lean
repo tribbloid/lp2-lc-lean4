@@ -36,8 +36,23 @@ end Lp2lc.Active.DSub.AST
 namespace Tests.DSub.EvalCertifiedByInferSpec
 
 open Lp2lc.Active.DSub Lp2lc.Active.Util Tests.DSub.Sanity Tests.DSub.Sanity.Trm
+open Lean (toJson)
 
 section eval_certified
+
+-- Pure wrappers and applications retain the evaluator's zero-fuel boundary.
+#guard [vFalse.asTrm, primitiveIdFn, primitiveIdFnOnFalse].all (λ term =>
+  match term.erasedEval .empty 64 0 with
+  | .outOfFuel => true
+  | .yield _ => false)
+
+-- A minimal inference budget is a validation floor, so more evaluation fuel can finish checking.
+#guard
+  let run := primitiveLiteralIdFn.erasedEval .empty 1
+  match run 1, run 2 with
+  | .outOfFuel, .yield (some (.some value)) =>
+    astBEq value.value.asTrm primitiveLiteralIdFn toJson toJson
+  | _, _ => false
 
 #guard vFalse.asTrm.evalShouldYield 1 vFalse
 
@@ -97,15 +112,14 @@ open Tests.DSub.Sanity.Trm.InDSub
 
 section eval_certified
 
-private def aliasBindings (value : Val) : ExeBindings :=
-  let reference : Val := .ref IndexEncoding.SerialProxy.only .same
-  NatBindings.empty.set 0 ⟨0, reference, NatBindings.empty.set 0 ⟨0, value, .empty⟩⟩
+private def referenceBindings (value : Val) : ExeBindings :=
+  NatBindings.empty.set 0 ⟨0, value, .empty⟩
 
-private def aliasCallee : Trm :=
-  .apply (.val (.ref IndexEncoding.SerialProxy.only .same)) vFalse
+private def referencedValue : Trm :=
+  .pure (.ref IndexEncoding.SerialProxy.only .same)
 
-private def aliasArgument : Trm :=
-  .apply primitiveIdFn (.val (.ref IndexEncoding.SerialProxy.only .same))
+private def referencedCallee : Trm :=
+  .apply referencedValue vFalse
 
 #guard boolType.evalShouldYield 16 (.typeDef .TLit)
 
@@ -128,11 +142,21 @@ private def aliasArgument : Trm :=
 #guard [dependentTypeApplication, dependentFnTypeApplication].all (λ term => decide
   (term.evalShouldYield 32 (.typeDef (.TSel (.ref IndexEncoding.SerialProxy.only .same)))))
 
-#guard [(aliasCallee, aliasBindings Val.idFn), (aliasArgument, aliasBindings vFalse)].all
+#guard referencedValue.evalShouldYield 1 vFalse (referenceBindings vFalse)
+
+-- Lookup retains the returned function's own capture despite colliding slots in its caller.
+#guard
+  match get1stOnFalse.erasedEval .empty 64 2 with
+  | .yield (some (.some value)) =>
+    let bindings := (NatBindings.empty.set 0 value).set 1 ⟨0, vTrue, .empty⟩
+    decide (referencedCallee.evalShouldYield 32 vFalse bindings)
+  | _ => false
+
+#guard [(referencedCallee, referenceBindings Val.idFn), (.apply primitiveIdFn referencedValue, referenceBindings vFalse)].all
   (λ (term, bindings) => decide (term.evalShouldYield 32 vFalse bindings))
 
 #guard
-  match (aliasCallee.erasedEval (aliasBindings Val.idFn) 64) 2 with
+  match (capturedApplication.erasedEval .empty 64) 2 with
   | .outOfFuel => true
   | .yield _ => false
 

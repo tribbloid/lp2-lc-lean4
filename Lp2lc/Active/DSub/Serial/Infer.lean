@@ -20,8 +20,8 @@ termination_by sizeOf entries
 end
 
 /-- Fresh identities must avoid both lexical slots and recursively captured substitutions. -/
-private def freshIndex (self : CompilerTyp) (context : NatBindings CompilerTyp) (extra : Nat) : Nat :=
-  max self.scopeIndex (max (bindingIndex context) extra) + 1
+private def freshIndex (index : Nat) (captured context : NatBindings CompilerTyp) (extra : Nat) : Nat :=
+  max (max index (bindingIndex captured)) (max (bindingIndex context) extra) + 1
 
 /-- An exact member records a reference substitution without replacing it by an abstract bound. -/
 private def memberAlias (index : Nat) : CompilerTyp :=
@@ -53,11 +53,11 @@ private def memberBounds (self : CompilerTyp) (context : NatBindings CompilerTyp
       | none => .yield none)
   | _ + 1, _ => .yield none
 
-private def selectionBounds {n} (value : Val n) (captured context : NatBindings CompilerTyp) :
+private def selectionBounds {n} (value : Pure n) (captured context : NatBindings CompilerTyp) :
     RecOpt (CompilerTyp × CompilerTyp) := λ fuel =>
   match fuel, value with
   | 0, _ => .outOfFuel
-  | _ + 1, .typeDef typ => .yield (some (⟨n, typ, captured⟩, ⟨n, typ, captured⟩))
+  | _ + 1, .val (.typeDef typ) => .yield (some (⟨n, typ, captured⟩, ⟨n, typ, captured⟩))
   | fuel + 1, .ref _ under =>
     match (captured under.sourceIndex.down).orElse (λ _ => context under.sourceIndex.down) with
     | some typ => memberBounds typ context fuel
@@ -81,7 +81,7 @@ def subtype (self upper : CompilerTyp) (context : NatBindings CompilerTyp := .em
         (subtype ⟨self.n, upper₁, self.captured⟩ ⟨upper.n, upper₂, upper.captured⟩ context fuel)
     | .TFn input₁ output₁, .TFn input₂ output₂ =>
       let rightInput : CompilerTyp := ⟨upper.n, input₂, upper.captured⟩
-      let fresh := self.freshIndex context upper.scopeIndex
+      let fresh := freshIndex self.n self.captured context upper.scopeIndex
       let alias := memberAlias fresh
       combine false
         (subtype rightInput ⟨self.n, input₁, self.captured⟩ context fuel)
@@ -123,7 +123,7 @@ private theorem combine {left right left' right' : Rec.Outcome Bool} {result : B
 private theorem bounds (less more : Nat) (hFuel : less ≤ more) :
     (∀ self context result, memberBounds self context less = .yield result →
       memberBounds self context more = .yield result) ∧
-    (∀ {n} (value : Val n) captured context result, selectionBounds value captured context less = .yield result →
+    (∀ {n} (value : Pure n) captured context result, selectionBounds value captured context less = .yield result →
       selectionBounds value captured context more = .yield result) := by
   induction less generalizing more with
   | zero => constructor <;> intros <;> contradiction
@@ -139,7 +139,7 @@ private theorem bounds (less more : Nat) (hFuel : less ≤ more) :
         all_goals repeat split at h
         all_goals simp_all <;> subst_vars <;> rfl
       · intro n value captured context result h
-        cases value
+        cases value <;> try cases ‹Val n›
         all_goals simp only [selectionBounds] at h ⊢
         all_goals repeat split at h
         all_goals simp_all
@@ -181,7 +181,7 @@ private def andThen {T R : Type 2} (result : Rec.Outcome (Option T))
     | none => .yield none)
 
 /-- Reconstruct only references whose source index exists in the target lexical context. -/
-private def reference (target index : Nat) : Option (Val target) :=
+private def reference (target index : Nat) : Option (Pure target) :=
   match target with
   | 0 => if index == 0 then some (.ref IndexEncoding.SerialProxy.only .same) else none
   | target + 1 =>
@@ -190,51 +190,65 @@ private def reference (target index : Nat) : Option (Val target) :=
       | some (.ref carrier under) => some (.ref carrier (.lower under))
       | _ => none
 
+@[match_pattern] private abbrev bind := @Pre.Binder.mk
+
 /-- Re-express a type in the caller's context without evaluating terms.
+Finite syntax traversal is structural; following captured or imported selections consumes fuel.
 Binder identities are renamed together; imports and exact captured members substitute selections. -/
 private def quoteType (self : CompilerTyp) (imports : Option ExeBindings)
     (context : NatBindings CompilerTyp) (target : Nat) (names : Nat → Nat)
     (targetCaptures : NatBindings CompilerTyp) : RecOpt (Typ target) := λ fuel =>
-  match fuel, self.value with
-  | 0, _ => .outOfFuel
-  | _ + 1, .TTop => .yield (some .TTop)
-  | _ + 1, .TBot => .yield (some .TBot)
-  | _ + 1, .TLit => .yield (some .TLit)
-  | fuel + 1, .TMember lower upper =>
-    andThen (quoteType ⟨self.n, lower, self.captured⟩ imports context target names targetCaptures fuel) (λ lower =>
-      (quoteType ⟨self.n, upper, self.captured⟩ imports context target names targetCaptures fuel).map
-        (Option.map (.TMember lower)))
-  | fuel + 1, .TFn input output =>
-    andThen (quoteType ⟨self.n, input, self.captured⟩ imports context target names targetCaptures fuel) (λ input =>
-      let fresh := self.freshIndex context (max target (CompilerTyp.bindingIndex targetCaptures))
-      let alias := CompilerTyp.memberAlias fresh
-      (quoteType ⟨self.n + 1, output.apply .only, self.captured.set (self.n + 1) alias⟩ imports
-        (context.set fresh ⟨target, input, targetCaptures⟩) (target + 1)
-        (λ index => if index == fresh then target + 1 else names index)
-        (targetCaptures.set (target + 1) alias) fuel).map (Option.map (λ output => .TFn input (.mk (λ _ => output)))))
-  | fuel + 1, .TSel (.typeDef typ) =>
-    quoteType ⟨self.n, typ, self.captured⟩ imports context target names targetCaptures fuel
-  | fuel + 1, .TSel (.ref _ under) =>
-    let index := under.sourceIndex.down
-    match self.captured index with
-    | some typ =>
-      andThen (CompilerTyp.memberBounds typ context fuel) (λ (lower, upper) =>
-        (CompilerTyp.combine false (lower.subtype upper context fuel) (upper.subtype lower context fuel)).flatMap
-          (λ accepted => if accepted then quoteType upper none context target names targetCaptures fuel
-            else .yield none))
-    | none =>
-      match imports with
-      | some bindings =>
-        match bindings index with
-        | some value => quoteType ⟨value.n, .TSel value.value, .empty⟩ (some value.captured)
-            context target names targetCaptures fuel
-        | none => .yield none
-      | none =>
-        match context index with
-        | some typ => andThen (CompilerTyp.memberBounds typ context fuel) (λ _ =>
-            .yield ((reference target (names index)).map .TSel))
-        | none => .yield none
-  | _ + 1, .TSel _ => .yield none
+  match fuel with
+  | 0 => .outOfFuel
+  | fuel + 1 =>
+    let follow (self : CompilerTyp) (imports : Option ExeBindings) (context : NatBindings CompilerTyp)
+        (target : Nat) (names : Nat → Nat) (targetCaptures : NatBindings CompilerTyp) :=
+      quoteType self imports context target names targetCaptures fuel
+    let rec visit {P l} (node : Pre.AST P l) (get : ∀ index, P.I.getTRef index)
+        (encoding : P.I = .Serial) (captured context : NatBindings CompilerTyp)
+        (target : Nat) (names : Nat → Nat) (targetCaptures : NatBindings CompilerTyp) :
+        Rec.Outcome (Option (Typ target)) :=
+      match node with
+      | .TTop => .yield (some .TTop)
+      | .TBot => .yield (some .TBot)
+      | .TLit => .yield (some .TLit)
+      | .TMember lower upper =>
+        andThen (visit lower get encoding captured context target names targetCaptures) (λ lower =>
+          (visit upper get encoding captured context target names targetCaptures).map (Option.map (.TMember lower)))
+      | .TFn input (bind output) =>
+        andThen (visit input get encoding captured context target names targetCaptures) (λ input =>
+          let n := (encoding ▸ P.index).down
+          let fresh := CompilerTyp.freshIndex n captured context
+            (max target (CompilerTyp.bindingIndex targetCaptures))
+          let alias := CompilerTyp.memberAlias fresh
+          (visit (output (get P.Next.index)) get encoding (captured.set (n + 1) alias)
+            (context.set fresh ⟨target, input, targetCaptures⟩) (target + 1)
+            (λ index => if index == fresh then target + 1 else names index)
+            (targetCaptures.set (target + 1) alias)).map
+              (Option.map (λ output => .TFn input (.mk (λ _ => output)))))
+      | .TSel (.val (.typeDef typ)) => visit typ get encoding captured context target names targetCaptures
+      | .TSel (.ref _ under) =>
+        let index := (encoding ▸ under.sourceIndex).down
+        match captured index with
+        | some typ =>
+          andThen (CompilerTyp.memberBounds typ context fuel) (λ (lower, upper) =>
+            (CompilerTyp.combine false (lower.subtype upper context fuel) (upper.subtype lower context fuel)).flatMap
+              (λ accepted => if accepted then follow upper none context target names targetCaptures
+                else .yield none))
+        | none =>
+          match imports with
+          | some bindings =>
+            match bindings index with
+            | some value => follow ⟨value.n, .TSel (.val value.value), .empty⟩ (some value.captured)
+                context target names targetCaptures
+            | none => .yield none
+          | none =>
+            match context index with
+            | some typ => andThen (CompilerTyp.memberBounds typ context fuel) (λ _ =>
+                .yield ((reference target (names index)).map .TSel))
+            | none => .yield none
+      | _ => .yield none
+    visit self.value (λ _ => .only) rfl self.captured context target names targetCaptures
 
 /-- Current hypothetical variables shadow imports without rebinding an imported closure's own slots. -/
 private def captureAliases (entries : NatBindings CompilerTyp) : NatBindings CompilerTyp :=
@@ -264,26 +278,26 @@ def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Co
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val (.lit _) => .yield (some ⟨n, .TLit, .empty⟩)
-    | .val (.typeDef typ) =>
-      (resolveType typ bindings fuel).map (Option.map (λ typ => ⟨n, .TMember typ typ, .empty⟩))
-    | .val (.fn input body) =>
-      andThen (resolveType input bindings fuel) (λ input =>
+    | .pure (.val (.lit _)) => .yield (some ⟨n, .TLit, .empty⟩)
+    | .pure (.val (.typeDef typ)) =>
+      (resolveType typ bindings (fuel + 1)).map (Option.map (λ typ => ⟨n, .TMember typ typ, .empty⟩))
+    | .pure (.val (.fn input body)) =>
+      andThen (resolveType input bindings (fuel + 1)) (λ input =>
         let entries := bindings.set (n + 1) ⟨n, input, .empty⟩
         andThen (infer (body.apply .only) entries fuel) (λ output =>
-          (quoteType output none entries.types (n + 1) id .empty fuel).map
+          (quoteType output none entries.types (n + 1) id .empty (fuel + 1)).map
             (Option.map (λ output => ⟨n, .TFn input (.mk (λ _ => output)), .empty⟩))))
-    | .val (.fnPrimitive output _) =>
-      (resolveType (output.apply .only) (bindings.set (n + 1) ⟨n, .TLit, .empty⟩) fuel).map
+    | .pure (.val (.fnPrimitive output _)) =>
+      (resolveType (output.apply .only) (bindings.set (n + 1) ⟨n, .TLit, .empty⟩) (fuel + 1)).map
         (Option.map (λ output => ⟨n, .TFn .TLit (.mk (λ _ => output)), .empty⟩))
-    | .val (.ref _ under) =>
+    | .pure (.ref _ under) =>
       let found :=
         match bindings under.sourceIndex.down with
         | some (.inl typ) => .yield (some typ)
         | some (.inr value) => infer value.value.asTrm value.captured fuel
         | none => .yield none
       andThen found (λ typ =>
-        (quoteType typ none bindings.types n id .empty fuel).map (Option.map (λ typ => ⟨n, typ, .empty⟩)))
+        (quoteType typ none bindings.types n id .empty (fuel + 1)).map (Option.map (λ typ => ⟨n, typ, .empty⟩)))
     | .apply fn arg =>
       andThen (infer fn bindings fuel) (λ fnType =>
         andThen (infer arg bindings fuel) (λ argType =>
@@ -292,12 +306,12 @@ def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Co
               if accepted then
                 let replacement :=
                   match arg with
-                  | .val (.ref _ under) =>
+                  | .pure (.ref _ under) =>
                     if (bindings.types under.sourceIndex.down).isSome then
                       CompilerTyp.memberAlias under.sourceIndex.down else argType
                   | _ => argType
                 (quoteType ⟨index + 1, output.apply .only, captured.set (index + 1) replacement⟩ none
-                  bindings.types n id .empty fuel).map (Option.map (λ typ => ⟨n, typ, .empty⟩))
+                  bindings.types n id .empty (fuel + 1)).map (Option.map (λ typ => ⟨n, typ, .empty⟩))
               else .yield none))))
 
 def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ : CompilerTyp) : Prop :=
@@ -323,13 +337,53 @@ private theorem quoteType (self : CompilerTyp) (imports : Option ExeBindings)
         CompilerTyp.Monotone.subtype self upper context fuel more value hFuel
       have hCheck (lower upper : CompilerTyp) (context : NatBindings CompilerTyp) (value : Bool) :=
         CompilerTyp.Monotone.combine (result := value) false (hSubtype lower upper context) (hSubtype upper lower context)
-      rcases self with ⟨n, typ, captured⟩
-      cases typ
-      all_goals try cases ‹Val n›
-      all_goals simp only [AST.quoteType, andThen, Rec.Outcome.map, Rec.Outcome.flatMap] at h ⊢
-      all_goals repeat' split at h
-      all_goals try simp_all [-Bool.forall_bool]
-      all_goals first | exact ih _ _ _ _ _ _ more _ hFuel h | subst_vars; rfl
+      let rec visit {P l} (node : Pre.AST P l) (get : ∀ index, P.I.getTRef index)
+          (encoding : P.I = .Serial) (captured context : NatBindings CompilerTyp)
+          (target : Nat) (names : Nat → Nat) (targetCaptures : NatBindings CompilerTyp) (result) :
+          AST.quoteType.visit imports fuel (λ a b c d e f => AST.quoteType a b c d e f fuel)
+              node get encoding captured context target names targetCaptures = .yield result →
+          AST.quoteType.visit imports more (λ a b c d e f => AST.quoteType a b c d e f more)
+              node get encoding captured context target names targetCaptures = .yield result := by
+        match node with
+        | .TMember lower upper =>
+          have hLower := visit lower get encoding
+          have hUpper := visit upper get encoding
+          simp only [AST.quoteType.visit, andThen, Rec.Outcome.map, Rec.Outcome.flatMap]
+          intro h
+          repeat' split at h
+          all_goals simp_all [-Bool.forall_bool] <;> subst_vars <;> simp_all
+        | .TFn input (bind output) =>
+          have hInput := visit input get encoding
+          have hOutput := visit (output (get P.Next.index)) get encoding
+          unfold AST.quoteType.visit
+          simp only [andThen, Rec.Outcome.map, Rec.Outcome.flatMap]
+          intro h
+          repeat' split at h
+          all_goals simp_all [bind, Pre.Binder.mk, -Bool.forall_bool] <;> subst_vars <;> simp_all
+        | .TSel (.val (.typeDef typ)) =>
+          exact visit typ get encoding captured context target names targetCaptures result
+        | .TSel (.val (.lit _))
+        | .TSel (.val (.fn _ _))
+        | .TSel (.val (.fnPrimitive _ _)) => exact id
+        | .TSel (.ref _ _) =>
+          intro h
+          simp only [AST.quoteType.visit, andThen, Rec.Outcome.flatMap] at h ⊢
+          repeat' split at h
+          all_goals try simp_all [-Bool.forall_bool]
+          all_goals exact ih _ _ _ _ _ _ more _ hFuel h
+        | .TTop
+        | .TBot
+        | .TLit
+        | .lit _
+        | .fn _ _
+        | .fnPrimitive _ _
+        | .typeDef _
+        | .val _
+        | .pure _
+        | .ref _ _
+        | .apply _ _ => exact id
+      termination_by structural node
+      exact visit self.value (λ _ => .only) rfl self.captured context target names targetCaptures result h
 
 private theorem functionType (self : CompilerTyp) (context : NatBindings CompilerTyp) :
     (AST.functionType self context).Monotone := by
@@ -360,10 +414,10 @@ theorem termInfer {n} (trm : Trm n) (bindings : CompilerBindings) :
     | succ more =>
       replace hFuel := Nat.le_of_succ_le_succ hFuel
       have hQuote (self imports context target names captures result) :=
-        quoteType self imports context target names captures fuel more result hFuel
+        quoteType self imports context target names captures (fuel + 1) (more + 1) result (Nat.succ_le_succ hFuel)
       have hFunction (self context result) := functionType self context fuel more result hFuel
       have hSubtype (self upper context result) := CompilerTyp.Monotone.subtype self upper context fuel more result hFuel
-      cases trm <;> try cases ‹Val n›
+      cases trm <;> try cases ‹Pure n› <;> try cases ‹Val n›
       all_goals simp only [infer, resolveType, andThen, Rec.Outcome.flatMap, Rec.Outcome.map] at h ⊢
       all_goals repeat' split at h
       all_goals try simp_all [-Bool.forall_bool]

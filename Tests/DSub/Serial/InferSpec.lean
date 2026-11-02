@@ -26,6 +26,16 @@ namespace Trm
 
 open Lp2lc.Active.Util
 open Lp2lc.Active.DSub
+open Lean (toJson)
+
+section pure
+
+#check_failure ((.ref IndexEncoding.SerialProxy.only .same : Pure) : Val)
+
+#guard astToJson vFalse.asTrm toJson toJson ==
+  .arr #["pure", .arr #["val", astToJson vFalse toJson toJson]]
+
+end pure
 
 section infer
 
@@ -33,7 +43,7 @@ private def fnBindings : ExeBindings := (NatBindings.empty.set 0 ⟨0, Val.idFn,
 
 private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, vTrue, .empty⟩
 
-private def innerRef : Trm 1 := .val (.ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same)
+private def innerRef : Trm 1 := .pure (.ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same)
 
 #guard vFalse.asTrm.infer.shouldYieldType 1 .TLit
 
@@ -93,8 +103,8 @@ private def innerRef : Trm 1 := .val (.ref (P' := { B := String, I := IndexEncod
 
 #guard Corrupted.primitiveFnOnTuple.infer.shouldYieldType 3 .TLit
 
-#guard (AST.infer (.val (.fn (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))))
-  (.mk (λ proxy => .val (.ref proxy .same)))) : Trm 7)).shouldYieldType 2
+#guard (AST.infer (.pure (.val (.fn (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))))
+  (.mk (λ proxy => .pure (.ref proxy .same))))) : Trm 7)).shouldYieldType 2
   (.TFn (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit)))))) (.mk (λ _ => (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit)))))))))
 
 #guard (primitiveIdFn.infer fnBindings).shouldYieldType 2 (.TFn .TLit (.mk (λ _ => .TLit)))
@@ -103,7 +113,7 @@ private def innerRef : Trm 1 := .val (.ref (P' := { B := String, I := IndexEncod
 
 #guard (innerRef.infer mixedBindings).shouldYieldType 2 .TLit
 
-#guard (AST.infer (.val (.fnPrimitive (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))) .lit) : Trm)).shouldYieldType 1
+#guard (AST.infer (.pure (.val (.fnPrimitive (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))) .lit)) : Trm)).shouldYieldType 1
   (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))))
 
 end infer
@@ -119,7 +129,7 @@ private def capturedSelection (member : Typ) : CompilerTyp :=
   ⟨0, selectedReference, NatBindings.empty.set 0 ⟨0, member, .empty⟩⟩
 
 private def importedSelection : Trm 1 :=
-  .val (.typeDef selectedReference)
+  .pure (.val (.typeDef selectedReference))
 
 private def importedRuntime : ExeBindings :=
   let own : ExeBindings := NatBindings.empty.set 0 ⟨0, .typeDef .TLit, .empty⟩
@@ -191,7 +201,7 @@ namespace Undecidable
 
 section typeSelection
 
--- A function application is a term, not an operand of value selection.
+-- A function application is a term, not an operand of pure selection.
 #check_failure (Pre.AST.TSel primitiveIdFnOnFalse)
 
 end typeSelection
