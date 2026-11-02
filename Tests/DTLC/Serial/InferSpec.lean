@@ -11,6 +11,8 @@ open Lp2lc.Active.DTLC
 
 section infer
 
+#check_failure ((.ref IndexEncoding.SerialProxy.only .same : Pure) : Val)
+
 local instance : BEq Typ :=
   ⟨λ first second => astBEq first second (λ _ => .null) (λ _ => .null)⟩
 
@@ -18,7 +20,7 @@ private def fnBindings : ExeBindings := (NatBindings.empty.set 0 ⟨0, Val.idFn,
 
 private def mixedBindings : ExeBindings := fnBindings.set 1 ⟨0, vTrue, .empty⟩
 
-private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same
+private def innerRef : Trm 1 := .pure (.ref (P' := { B := String, I := IndexEncoding.Serial, index := ⟨1⟩ }) .only .same)
 
 #guard vFalse.asTrm.infer.shouldYield 1 .TLit
 
@@ -78,8 +80,8 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard Corrupted.primitiveFnOnTuple.infer.shouldYield 3 .TLit
 
-#guard (AST.infer (.val (.fn (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))))
-  (.mk (λ proxy => .ref proxy .same))) : Trm 7)).shouldYield 2
+#guard (AST.infer (.pure (.val (.fn (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))))
+  (.mk (λ proxy => .pure (.ref proxy .same))))) : Trm 7)).shouldYield 2
   (.TFn (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit)))))) (.mk (λ _ => (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit)))))))))
 
 #guard (primitiveIdFn.infer fnBindings).shouldYield 2 (.TFn .TLit (.mk (λ _ => .TLit)))
@@ -88,7 +90,7 @@ private def innerRef : Trm 1 := .ref (P' := { B := String, I := IndexEncoding.Se
 
 #guard (innerRef.infer mixedBindings).shouldYield 2 .TLit
 
-#guard (AST.infer (.val (.fnPrimitive (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))) .lit) : Trm)).shouldYield 1
+#guard (AST.infer (.pure (.val (.fnPrimitive (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))) .lit)) : Trm)).shouldYield 1
   (.TFn .TLit (.mk (λ _ => (.TFn .TLit (.mk (λ _ => .TLit))))))
 
 end infer

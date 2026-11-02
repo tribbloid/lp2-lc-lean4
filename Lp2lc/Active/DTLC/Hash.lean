@@ -23,6 +23,7 @@ private def visit {P l} (self : Pre.AST P l) (get : ∀ index, P.I.getTRef index
     .arr #["lam", visit (body (get P.Next.index)) get sig, visit tIn get sig]
   | .fnPrimitive (bind output) _ => .arr #["primitiveFn", visit (output (get P.Next.index)) get sig]
   | .val v => .arr #["val", visit v get sig]
+  | .pure v => .arr #["pure", visit v get sig]
   | .apply fnTerm arg =>
     .arr #["apply", visit fnTerm get sig, visit arg get sig]
   | .ref _ under => .arr #["ref", sig (.inl under.sourceIndex)]

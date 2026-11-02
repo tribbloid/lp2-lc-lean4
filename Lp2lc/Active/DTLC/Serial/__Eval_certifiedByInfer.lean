@@ -39,6 +39,7 @@ private theorem resolveTypeResolve {P l} (self : Pre.AST P l) (get : ∀ index, 
   | .fnPrimitive _ _
   | .ref _ _
   | .val _
+  | .pure _
   | .apply _ _ => rfl
 termination_by structural self
 
@@ -65,6 +66,7 @@ private theorem typeMatchesEq {P l m} (self : Pre.AST P l) (other : Typ m)
   | .fnPrimitive _ _
   | .ref _ _
   | .val _
+  | .pure _
   | .apply _ _ => cases h
 termination_by structural self
 
@@ -94,6 +96,7 @@ private theorem typeMatchesResolve {P l} (self : Pre.AST P l) (get : ∀ index, 
   | .fnPrimitive _ _
   | .ref _ _
   | .val _
+  | .pure _
   | .apply _ _ => rfl
 termination_by structural self
 
@@ -111,25 +114,27 @@ private theorem inferNormalized {trm : Trm n}
   | zero => cases hInfer
   | succ fuel ih =>
     cases trm with
-    | val value =>
+    | pure value =>
       cases value with
-      | lit repr => cases hInfer; rfl
-      | fn input body =>
-        cases hBody : infer (body.apply .only) (entries.set (n + 1) ⟨n, input, .empty⟩) fuel <;>
-          (try cases ‹Option Typ›) <;> simp_all [infer.eq_3, Rec.Outcome.map, Option.map]
-        cases Option.some.inj hInfer
-        exact functionTypeNormalized _ _
-      | fnPrimitive output op =>
-        cases hInfer
-        exact functionTypeNormalized _ _
-    | ref carrier under =>
-      simp only [infer.eq_5] at hInfer
-      split at hInfer
-      · rename_i context input captured hEntry
-        cases Option.some.inj (Rec.Outcome.yield.inj hInfer)
-        exact resolveTypeResolve input (λ _ => .only) 0 0
-      · exact ih hInfer
-      · cases hInfer
+      | val value =>
+        cases value with
+        | lit repr => cases hInfer; rfl
+        | fn input body =>
+          cases hBody : infer (body.apply .only) (entries.set (n + 1) ⟨n, input, .empty⟩) fuel <;>
+            (try cases ‹Option Typ›) <;> simp_all [infer.eq_3, Rec.Outcome.map, Option.map]
+          cases Option.some.inj hInfer
+          exact functionTypeNormalized _ _
+        | fnPrimitive output op =>
+          cases hInfer
+          exact functionTypeNormalized _ _
+      | ref carrier under =>
+        simp only [infer.eq_5] at hInfer
+        split at hInfer
+        · rename_i context input captured hEntry
+          cases Option.some.inj (Rec.Outcome.yield.inj hInfer)
+          exact resolveTypeResolve input (λ _ => .only) 0 0
+        · exact ih hInfer
+        · cases hInfer
     | apply fn arg =>
       simp only [infer.eq_6, Rec.Outcome.flatMap] at hInfer
       repeat split at hInfer
@@ -174,7 +179,7 @@ private theorem inferApplySuccess {fn arg : Trm n}
 
 /-- Successful lambda inference exposes its body type and canonical function type. -/
 private theorem inferFnSuccess {input : Typ n} {body : Binder n .trm}
-    (hInfer : infer (.val (.fn input body)) entries (fuel + 1) = .yield (some typ)) :
+    (hInfer : infer (.pure (.val (.fn input body))) entries (fuel + 1) = .yield (some typ)) :
     ∃ output, infer (body.apply .only) (entries.set (n + 1) ⟨n, input, .empty⟩) fuel =
       .yield (some output) ∧ typ = functionType input output := by
   cases hBody : infer (body.apply .only) (entries.set (n + 1) ⟨n, input, .empty⟩) fuel <;>
@@ -198,26 +203,28 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
   | zero => cases hInfer
   | succ fuel ih =>
     cases trm with
-    | val value =>
+    | pure value =>
       cases value with
-      | lit repr => exact ⟨1, by simpa only [infer.eq_2] using hInfer⟩
-      | fn annotation body =>
-        obtain ⟨output, hBody, rfl⟩ := inferFnSuccess hInfer
-        obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
-          (by
-            intro index inputTyp
-            simp only [CompilerBindings.get, NatBindings.get]
-            split <;> first | exact id | exact hReplace index inputTyp) hBody
-        exact ⟨bodyFuel + 1, by simp only [infer.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
-      | fnPrimitive _ _ => exact ⟨fuel + 1, by simpa only [infer.eq_4] using hInfer⟩
-    | ref carrier under =>
-      obtain ⟨targetFuel, hTarget⟩ := hReplace under.sourceIndex.down typ
-        ⟨fuel, by
-          simp only [infer.eq_5] at hInfer
-          split at hInfer <;> simp_all⟩
-      exact ⟨targetFuel + 1, by
-        simp only [infer.eq_5]
-        split <;> simp_all [entryFits]⟩
+      | val value =>
+        cases value with
+        | lit repr => exact ⟨1, by simpa only [infer.eq_2] using hInfer⟩
+        | fn annotation body =>
+          obtain ⟨output, hBody, rfl⟩ := inferFnSuccess hInfer
+          obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
+            (by
+              intro index inputTyp
+              simp only [CompilerBindings.get, NatBindings.get]
+              split <;> first | exact id | exact hReplace index inputTyp) hBody
+          exact ⟨bodyFuel + 1, by simp only [infer.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
+        | fnPrimitive _ _ => exact ⟨fuel + 1, by simpa only [infer.eq_4] using hInfer⟩
+      | ref carrier under =>
+        obtain ⟨targetFuel, hTarget⟩ := hReplace under.sourceIndex.down typ
+          ⟨fuel, by
+            simp only [infer.eq_5] at hInfer
+            split at hInfer <;> simp_all⟩
+        exact ⟨targetFuel + 1, by
+          simp only [infer.eq_5]
+          split <;> simp_all [entryFits]⟩
     | apply fn arg =>
       obtain ⟨input, output, hFn, hArg, rfl⟩ := inferApplySuccess hInfer
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
@@ -268,8 +275,8 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) : Rec (Retu
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val value => .yield (.some ⟨n, value, bindings⟩)
-    | .ref _ under =>
+    | .pure (.val value) => .yield (.some ⟨n, value, bindings⟩)
+    | .pure (.ref _ under) =>
       match bindings under.sourceIndex.down with
       | some value => .yield (.some value)
       | none => .outOfFuel
@@ -300,19 +307,21 @@ private theorem evalPreserves {self : Trm n} {bindings : ExeBindings} {value : E
     | zero => cases hInfer
     | succ inferFuel =>
       cases self with
-      | val source =>
-        cases hEval
-        exact ⟨inferFuel + 1, hInfer⟩
-      | ref carrier under =>
-        simp only [evalInternal] at hEval
-        split at hEval
-        · rename_i result hBinding
+      | pure source =>
+        cases source with
+        | val source =>
           cases hEval
-          rcases value with ⟨context, source, captured⟩
-          exact ⟨inferFuel, by
-            simpa only [infer.eq_5, CompilerBindings.get, CompilerBindings.breakpoint,
-              NatBindings.get, hBinding, Option.map, Option.orElse] using hInfer⟩
-        · cases hEval
+          exact ⟨inferFuel + 1, hInfer⟩
+        | ref carrier under =>
+          simp only [evalInternal] at hEval
+          split at hEval
+          · rename_i result hBinding
+            cases hEval
+            rcases value with ⟨context, source, captured⟩
+            exact ⟨inferFuel, by
+              simpa only [infer.eq_5, CompilerBindings.get, CompilerBindings.breakpoint,
+                NatBindings.get, hBinding, Option.map, Option.orElse] using hInfer⟩
+          · cases hEval
       | apply fn arg =>
         obtain ⟨input, output, hFn, _hArg, rfl⟩ := inferApplySuccess hInfer
         simp only [evalInternal, Rec.Outcome.flatMap, Rec.Outcome.map] at hEval

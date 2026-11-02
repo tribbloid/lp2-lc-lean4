@@ -49,7 +49,7 @@ def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Ty
   | 0 => .outOfFuel
   | fuel + 1 =>
     match self with
-    | .val value =>
+    | .pure (.val value) =>
       match value with
       | .lit _ => .yield (some .TLit)
       | .fn input body =>
@@ -57,7 +57,7 @@ def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Ty
           (Option.map (functionType input))
       | .fnPrimitive output _ =>
         .yield (some (functionType (.TLit : Typ n) (output.apply .only)))
-    | .ref _ under =>
+    | .pure (.ref _ under) =>
       match bindings under.sourceIndex.down with
       | some (.inl ⟨_, typ, _⟩) => .yield (some (resolveType typ (λ _ => .only)))
       | some (.inr ⟨_, value, captured⟩) => infer value.asTrm captured fuel
@@ -90,7 +90,7 @@ theorem termInfer (trm : Trm n) (bindings : CompilerBindings) :
       have hSame {a b : Typ} : ∀ result, a.sameType b fuel = .yield result →
           a.sameType b more = .yield result := by
         cases fuel <;> cases more <;> simp_all [sameType]
-      cases trm <;> try cases ‹Val n›
+      cases trm <;> try cases ‹Pure n› <;> try cases ‹Val n›
       all_goals
         simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5, infer.eq_6,
           Rec.Outcome.map, Rec.Outcome.flatMap] at hInfer ⊢
