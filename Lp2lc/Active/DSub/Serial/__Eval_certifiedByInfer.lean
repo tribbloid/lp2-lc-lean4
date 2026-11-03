@@ -80,6 +80,14 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) (validation
 
 namespace Monotone
 
+/-
+TODO: are any of the monotonicity lemma (for any Trm evaluation or inference) used by the main soundness theorem or certified evaluation?
+
+- if so, they should be in the same file, as private theorems
+- if not, they should be moved into a new file nearby called `Aux.lean`, as public theorems
+
+This change should affect all modules defining a type system: DSub, STLC and DTLC
+-/
 /-- Completed evaluation results are preserved when fuel increases. -/
 private theorem termEval {n} (trm : Trm n) (bindings : ExeBindings) (validationFuel : Nat) :
     (evalInternal trm bindings validationFuel).Monotone := by
