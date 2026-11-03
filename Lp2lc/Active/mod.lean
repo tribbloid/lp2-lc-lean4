@@ -20,5 +20,3 @@ import «Lp2lc».Active.STLC_minimal.mod
 
 -- DTLC syntax and serial type inference (certified evaluation remains experimental).
 import «Lp2lc».Active.DTLC.mod
-
--- import «Lp2lc».Active.DOT.DOTDef

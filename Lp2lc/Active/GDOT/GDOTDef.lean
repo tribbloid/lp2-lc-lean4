@@ -3,7 +3,7 @@ import «Lp2lc».Active.Parameters
 /-!
 Syntax based on [gDOT v1.0](https://github.com/Blaisorblade/dot-iris/blob/v1.0/theories/Dot/syn/syn.v).
 As in STLC, `Parameters` chooses bytecode and lexical references; `Binder` extends the context.
-Here `TLit` groups all bytecode values, and unary native `primitive` values replace the concrete
+Here `TLit` groups all bytecode values, and unary native `fnPrimitive` values replace the concrete
 Int/Bool operations. Returning function values supports currying. Conditionals use a bytecode
 predicate to select between `.fn` thunks, then apply only the chosen thunk.
 Type definitions contain source syntax. Guarded reference constructs are commented out below
@@ -54,12 +54,13 @@ inductive AST : Parameters → Label → Type 2 where
 | nil {P} : AST P .members
 | cons {P} (name : String) (member : AST P .member) (rest : AST P .members) : AST P .members
 
--- TODO: should this fold into TSingleton?
-| TRec {P} (body : Binder P .typ) : AST P .typ -- μ x. T AKA this.type?
+-- Recursive types bind self; singleton types select the type inhabited by one path.
+| TRec {P} (body : Binder P .typ) : AST P .typ -- μ x. T
 
 | TField {P} (name : String) (typ : AST P .typ) : AST P .typ
 | TMember {P} (name : String) (lower upper : AST P .typ) : AST P .typ
--- TODO: both type member and term fields are named, why is an object type be constructed by intersecting (TAnd) TField/TMember without order, but obj term must be constructed from members with order?
+-- TODO: clarify why object types use TAnd over named TField/TMember declarations,
+-- while obj bodies use ordered named definitions; distinguish syntax from typing equivalence.
 | obj {P} (body : Binder P .members) : AST P .val -- ν self. { ... }
 
 | TSel {P} (path : AST P .path) (name : String) : AST P .typ -- xx.T
