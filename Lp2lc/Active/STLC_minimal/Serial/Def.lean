@@ -12,12 +12,13 @@ abbrev Binder (n : Nat := 0) (l : Label)  :=
   Pre.Binder { B := String, I := IndexEncoding.Serial, index := ⟨n⟩ } l
 
 abbrev Val (n : Nat := 0) := AST n .val
+abbrev Pure (n : Nat := 0) := AST n .pure
 abbrev Trm (n : Nat := 0) := AST n .trm
 abbrev Typ (n : Nat := 0) := AST n .typ
 
 namespace Val
 
-def asTrm (self : Val n) : Trm n := .val self
+def asTrm (self : Val n) : Trm n := .pure (.val self)
 
 instance : Coe (Val n) (Trm n) := ⟨asTrm⟩
 

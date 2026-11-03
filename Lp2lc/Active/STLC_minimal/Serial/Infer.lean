@@ -19,11 +19,11 @@ local instance typDecidableLE : DecidableLE (Pre.AST P .typ)
 def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Typ := λ fuel =>
   match fuel, self with
   | 0, _ => .outOfFuel
-  | _ + 1, .val (.lit _) => .yield (some .TLit)
-  | fuel + 1, .val (.fn tIn body) =>
+  | _ + 1, .pure (.val (.lit _)) => .yield (some .TLit)
+  | fuel + 1, .pure (.val (.fn tIn body)) =>
     (infer (body.apply .only)
       (bindings.set (n + 1) ⟨n, tIn, .empty⟩) fuel).map (Option.map (.TFn (resolveType tIn)))
-  | fuel + 1, .ref _ under =>
+  | fuel + 1, .pure (.ref _ under) =>
     match bindings under.sourceIndex.down with
     | some (.inl ⟨_, typ, _⟩) => .yield (some typ.resolveType)
     | some (.inr ⟨_, value, captured⟩) => infer value.asTrm captured fuel
@@ -34,7 +34,7 @@ def infer {n} (self : Trm n) (bindings : CompilerBindings := .empty) : RecOpt Ty
       .yield (if argTyp ≤ tIn then some tOut else none)
     | .yield _, .yield _ => .yield none
     | _, _ => .outOfFuel
-  | _ + 1, .val (.fnPrimitive tOut _) => .yield (some (.TFn .TLit (resolveType tOut)))
+  | _ + 1, .pure (.val (.fnPrimitive tOut _)) => .yield (some (.TFn .TLit (resolveType tOut)))
 
 def semType {n} (self : Trm n) (bindings : CompilerBindings) (fuel : Nat) (typ: Typ) :=
   self.infer bindings fuel = .yield (.some typ)
@@ -52,7 +52,7 @@ theorem termInfer (trm : Trm n)
   | succ fuel ih =>
     cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
     replace hFuel := Nat.le_of_succ_le_succ hFuel
-    cases trm <;> try cases ‹Val n›
+    cases trm <;> try cases ‹Pure n› <;> try cases ‹Val n›
     all_goals
       simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5, infer.eq_6,
         Rec.Outcome.map] at hInfer ⊢

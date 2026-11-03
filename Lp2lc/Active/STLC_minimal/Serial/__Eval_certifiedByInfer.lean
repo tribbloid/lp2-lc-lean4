@@ -26,7 +26,7 @@ private theorem inferApplySuccess {fn arg : Trm n}
   all_goals injection hInfer; subst_vars; exact ⟨_, rfl, rfl⟩
 
 private theorem inferFnSuccess {annotation : Typ n} {body : Binder n .trm}
-    (hInfer : infer (.val (.fn annotation body)) entries (fuel + 1) = .yield (some typ)) :
+    (hInfer : infer (.pure (.val (.fn annotation body))) entries (fuel + 1) = .yield (some typ)) :
     let input := resolveType annotation
     ∃ output, infer (body.apply .only)
         (entries.set (n + 1) ⟨n, annotation, .empty⟩) fuel = .yield (some output) ∧
@@ -51,26 +51,28 @@ private theorem inferReplace {trm : Trm n} {source target : CompilerBindings}
   | zero => cases hInfer
   | succ fuel ih =>
     cases trm with
-    | val value =>
+    | pure value =>
       cases value with
-      | lit repr => exact ⟨1, by simpa only [infer.eq_2] using hInfer⟩
-      | fn annotation body =>
-        obtain ⟨output, hBody, rfl⟩ := inferFnSuccess hInfer
-        obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
-          (by
-            intro index inputTyp
-            simp only [CompilerBindings.get, NatBindings.get]
-            split <;> first | exact id | exact hReplace index inputTyp) hBody
-        exact ⟨bodyFuel + 1, by simp only [infer.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
-      | fnPrimitive _ _ => exact ⟨fuel + 1, by simpa only [infer.eq_6] using hInfer⟩
-    | ref carrier under =>
-      obtain ⟨targetFuel, hTarget⟩ := hReplace under.sourceIndex.down typ
-        ⟨fuel, by
-          simp only [infer.eq_4] at hInfer
-          split at hInfer <;> simp_all⟩
-      exact ⟨targetFuel + 1, by
-        simp only [infer.eq_4]
-        split <;> simp_all [entryFits]⟩
+      | val value =>
+        cases value with
+        | lit repr => exact ⟨1, by simpa only [infer.eq_2] using hInfer⟩
+        | fn annotation body =>
+          obtain ⟨output, hBody, rfl⟩ := inferFnSuccess hInfer
+          obtain ⟨bodyFuel, hTarget⟩ := ih (target := target.set (n + 1) ⟨n, annotation, .empty⟩)
+            (by
+              intro index inputTyp
+              simp only [CompilerBindings.get, NatBindings.get]
+              split <;> first | exact id | exact hReplace index inputTyp) hBody
+          exact ⟨bodyFuel + 1, by simp only [infer.eq_3, hTarget, Rec.Outcome.map]; rfl⟩
+        | fnPrimitive _ _ => exact ⟨fuel + 1, by simpa only [infer.eq_6] using hInfer⟩
+      | ref carrier under =>
+        obtain ⟨targetFuel, hTarget⟩ := hReplace under.sourceIndex.down typ
+          ⟨fuel, by
+            simp only [infer.eq_4] at hInfer
+            split at hInfer <;> simp_all⟩
+        exact ⟨targetFuel + 1, by
+          simp only [infer.eq_4]
+          split <;> simp_all [entryFits]⟩
     | apply fn arg =>
       obtain ⟨input, hFn, hArg⟩ := inferApplySuccess hInfer
       obtain ⟨fnFuel, hFnTarget⟩ := ih hReplace hFn
@@ -86,8 +88,8 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
       preservesType (self.infer bindings) (value.value.asTrm.infer value.captured)}) := λ fuel =>
   match fuel, self with
   | 0, _ => .outOfFuel
-  | fuel + 1, .val value => .yield (.some ⟨.mk n value bindings, λ {inferFuel typ} hInfer => ⟨inferFuel, hInfer⟩⟩)
-  | fuel + 1, .ref _ under =>
+  | fuel + 1, .pure (.val value) => .yield (.some ⟨.mk n value bindings, λ {inferFuel typ} hInfer => ⟨inferFuel, hInfer⟩⟩)
+  | fuel + 1, .pure (.ref _ under) =>
     match hBinding : bindings under.sourceIndex.down with
     | none => .outOfFuel
     | some (.mk context value captured) => .yield (.some ⟨.mk context value captured, by
@@ -124,7 +126,7 @@ private def evalInternal {n} (self : Trm n) (bindings : ExeBindings) :
     | .yield (.some ⟨.mk context (.fnPrimitive tOut op) captured, fnSafe⟩),
         .yield (.some ⟨.mk _ (.lit repr) _, _⟩) =>
       letI : DecidableEq Typ := λ a b => typDecidableLE a b
-      match hCheck : infer (.val (op repr)) captured fuel with
+      match hCheck : infer (.pure (.val (op repr))) captured fuel with
       | .yield (some checked) =>
         if hSame : checked = resolveType tOut then
           .yield (.some ⟨.mk context (op repr) captured, by

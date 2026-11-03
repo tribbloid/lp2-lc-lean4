@@ -25,9 +25,11 @@ inductive AST : Parameters → Label → UAST where
 
 | fnPrimitive {P} (tOut : AST P .typ) (op : P.B → AST P .val) : AST P .val
 
-| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .trm
+| ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .pure
 
-| val {P} (v : AST P .val) : AST P .trm
+| val {P} (v : AST P .val) : AST P .pure
+
+| pure {P} (v : AST P .pure) : AST P .trm
 
 | apply {P} (fn : AST P .trm) (arg : AST P .trm) : AST P .trm
 

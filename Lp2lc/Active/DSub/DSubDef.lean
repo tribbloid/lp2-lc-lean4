@@ -46,15 +46,6 @@ inductive AST : Parameters → Label → UAST where
 
 | val {P} (this : AST P .val) : AST P .pure
 
-/-
-TODO: the old encoding of reference (as a value) is not accurate as evaluation cannot just return a reference (it must return an actual value)
-
-To accommodate dependent types, a new "Label.pure" has been introduced and used to improve this definition
-
-Fix the remainder of the DSub module to adapt to it. Don't change other modules yet. Compilation errors in other modules are acceptable
-
-This change should affect every weaker type systems in "Active" module: STLC, DTLC, DSub. STLC_minimal module should be regenerated.
--/
 /-- Lexical references are pure expressions and may occur in type selections. -/
 | ref {P} {P' : Parameters} (carrier : P'.TRef) (under : P'.Under P) : AST P .pure
 
