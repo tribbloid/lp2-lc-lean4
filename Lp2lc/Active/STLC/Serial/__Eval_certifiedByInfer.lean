@@ -1,4 +1,4 @@
-import «Lp2lc».Active.STLC.Serial.Infer
+import «Lp2lc».Active.STLC.Serial.Auxiliary
 
 namespace Lp2lc.Active.STLC.AST
 

@@ -7,7 +7,7 @@
         - `<module-name>Def.lean`: definitions, types, and supporting data structures.
         - `Hash.lean`: runtime JSON signatures, signature equality, and hashing for the module's syntax.
         - `Proof.lean`: important theorems and their proofs.
-        - `Aux.lean`: lemma, less important theorems and their proofs.
+        - `Auxiliary.lean`: lemmas, less important theorems and their proofs.
         - `mod.lean`: module aggregator; active imports compile modules, while import comments record
               disabled modules.
     - Markdown:

@@ -40,25 +40,5 @@ def infer {refs : UIdRefs} [env : BuildEnv refs] (self : refs.base.Trm) : RecOpt
       | .inr value => infer value.asTrm fuel
     | .pure (.val (.fnPrimitive tOut _)) => .yield (some (.TFn .TLit tOut))
 
-namespace Monotone
-
-variable {refs : UIdRefs} [build : BuildEnv refs]
-
-/-- Runtime inference preserves every completed result when fuel increases. -/
-theorem termInfer (trm : refs.base.Trm) : trm.infer.Monotone := by
-  intro less more result le h
-  induction less generalizing trm more result with
-  | zero => simp [infer] at h
-  | succ less ih =>
-    cases more <;> try omega
-    have le := Nat.le_of_succ_le_succ le
-    cases trm <;> try cases ‹Pre.AST _ .pure› <;> try cases ‹Pre.AST _ .val›
-    all_goals
-      simp only [infer.eq_2, infer.eq_3, infer.eq_4, infer.eq_5, infer.eq_6, Rec.Outcome.map] at h ⊢
-      repeat split at h
-      all_goals simp_all
-
-end Monotone
-
 end Root.Trm
 end Lp2lc.Active.STLC

@@ -32,41 +32,6 @@ def eval {n} (self : Trm n) (bindings : ExeBindings := .empty) : RecOpt (Return 
       | .yield _, .yield _ => .yield none
       | _, _ => .outOfFuel
 
-namespace Monotone
-
-/-- Evaluation that succeeds with smaller fuel succeeds with the same value at larger fuel. -/
-theorem termEval {n} (trm) (bindings : ExeBindings) :
-    (eval (n := n) trm bindings).Monotone := by
-  intro less more result hFuel hEval
-  induction less generalizing n trm bindings more result with
-  | zero => simp [eval] at hEval
-  | succ fuel ih =>
-    cases more <;> try (exact False.elim (Nat.not_succ_le_zero _ hFuel))
-    replace hFuel := Nat.le_of_succ_le_succ hFuel
-    cases trm <;> (try cases ‹Pure n›) <;> simp only [eval.eq_2, eval.eq_3, eval.eq_4] at hEval ⊢
-    all_goals
-      repeat split at hEval
-      all_goals simp_all
-      all_goals
-        first
-        | rename_i context tIn body captured value hFn hArg
-          cases hCheck : infer value.value.asTrm value.captured fuel with
-          | outOfFuel => simp [hCheck, Rec.Outcome.flatMap] at hEval
-          | yield typ =>
-            have hMore := termInfer _ _ _ _ _ hFuel hCheck
-            simp only [hCheck, hMore, Rec.Outcome.flatMap] at hEval ⊢
-            split at hEval <;> simp_all
-        | rename_i context tOut op captured argContext repr argCaptured hFn hArg
-          cases hCheck : infer (.pure (.val (op repr))) captured fuel with
-          | outOfFuel => simp [hCheck, Rec.Outcome.map] at hEval
-          | yield typ =>
-            have hMore := termInfer _ _ _ _ _ hFuel hCheck
-            simpa only [hCheck, hMore] using hEval
-        | subst_vars; cases ‹Return ExeVal› <;>
-            (try cases ‹ExeVal›) <;> (try cases ‹Val _›) <;> rfl
-
-end Monotone
-
 end AST
 
 end Lp2lc.Active.STLC

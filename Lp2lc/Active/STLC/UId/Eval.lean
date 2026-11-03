@@ -30,32 +30,5 @@ def eval {refs : UIdRefs} [build : BuildEnv refs] (self : refs.base.Trm) : RecOp
       | _, _ => .outOfFuel
     | .pure (.ref carrier under) => .yield ((refs.uid2both.get (mapRef under carrier)).getRight?.map .some)
 
-namespace Monotone
-
-/-- Evaluation preserves every completed result, including rejection, when fuel increases. -/
-theorem termEval {refs : UIdRefs} [build : BuildEnv refs] (trm : refs.base.Trm) :
-    trm.eval.Monotone := by
-  intro less more result hFuel hEval
-  induction less generalizing trm more result with
-  | zero => simp [eval] at hEval
-  | succ fuel ih =>
-    cases more <;> try omega
-    replace hFuel := Nat.le_of_succ_le_succ hFuel
-    cases trm <;> (try cases ‹Pre.AST _ .pure›) <;> simp only [eval.eq_2, eval.eq_3, eval.eq_4] at hEval ⊢
-    all_goals
-      repeat split at hEval
-      all_goals simp_all
-      all_goals
-        first
-        | rename_i tOut op repr hFn hArg
-          cases hCheck : infer (.pure (.val (op repr))) fuel with
-          | outOfFuel => simp [hCheck, Rec.Outcome.map] at hEval
-          | yield typ =>
-            have hMore := termInfer _ _ _ _ hFuel hCheck
-            simpa only [hCheck, hMore] using hEval
-        | subst_vars; cases ‹Return refs.base.Val› <;> (try cases ‹refs.base.Val›) <;> rfl
-
-end Monotone
-
 end Root.Trm
 end Lp2lc.Active.STLC
